@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using SkiaSharp;
 using UndertaleModLib.Util;
 
 namespace UndertaleModLib.Models;
@@ -166,5 +167,27 @@ public class UndertaleTexturePageItem : UndertaleNamedResource, INotifyPropertyC
 
         TargetWidth = (ushort)replaceImage.Width;
         TargetHeight = (ushort)replaceImage.Height;
+    }
+    public void ReplaceTexture(SKBitmap replaceBmp)
+    {
+        // 1. 生成最终要贴上去的位图（尺寸、像素格式统一）
+        using var finalBmp = TextureWorkerSkia.ResizeImage(replaceBmp, SourceWidth, SourceHeight);
+
+        // 2. 把整张纹理页取出来
+        lock (TexturePage.TextureData)
+        {
+            using TextureWorkerSkia worker = new();
+            using var pageBmp = worker.GetEmbeddedTexture(TexturePage);
+
+            // 3. 把 finalBmp 贴到纹理页的指定位置
+            using var canvas = new SKCanvas(pageBmp);
+            canvas.DrawBitmap(finalBmp, SourceX, SourceY);
+
+            // 4. 将修改后的纹理页重新写回 GMImage（保持原始格式）
+            TexturePage.TextureData.Image = GMImage.FromSkiaImage(SKImage.FromBitmap(pageBmp))
+                .ConvertToFormat(TexturePage.TextureData.Image.Format);
+        }
+        TargetWidth = (ushort)replaceBmp.Width;
+        TargetHeight = (ushort)replaceBmp.Height;
     }
 }

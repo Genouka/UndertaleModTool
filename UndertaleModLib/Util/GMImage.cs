@@ -3,6 +3,8 @@ using ImageMagick;
 using System;
 using System.Buffers.Binary;
 using System.IO;
+using QiuSkiaBridge;
+using SkiaSharp;
 
 namespace UndertaleModLib.Util;
 
@@ -100,6 +102,7 @@ public class GMImage
         {
             throw new ArgumentOutOfRangeException(nameof(width));
         }
+
         if (height is < 0 or > MaxImageDimension)
         {
             throw new ArgumentOutOfRangeException(nameof(height));
@@ -213,7 +216,8 @@ public class GMImage
     /// <summary>
     /// Finds the end position of a BZ2 stream exactly, given the start and end bounds of the data.
     /// </summary>
-    private static long FindEndOfBZ2Stream(IBinaryReader reader, long startOfStreamPosition, long maxEndOfStreamPosition)
+    private static long FindEndOfBZ2Stream(IBinaryReader reader, long startOfStreamPosition,
+        long maxEndOfStreamPosition)
     {
         if (startOfStreamPosition >= maxEndOfStreamPosition)
         {
@@ -247,8 +251,7 @@ public class GMImage
 
             // Move backwards to next chunk
             chunkStartPosition = Math.Max(startOfStreamPosition, chunkStartPosition - maxChunkSize);
-        }
-        while (chunkStartPosition > startOfStreamPosition);
+        } while (chunkStartPosition > startOfStreamPosition);
 
         throw new IOException("Failed to find nonzero data");
     }
@@ -366,6 +369,7 @@ public class GMImage
         {
             throw new InvalidDataException("PNG data is too short");
         }
+
         ReadOnlySpan<byte> span = data.AsSpan();
 
         // Verify header, if requested
@@ -383,6 +387,7 @@ public class GMImage
         {
             throw new InvalidDataException($"Width out of range ({width})");
         }
+
         if (height is < 0 or > MaxImageDimension)
         {
             throw new InvalidDataException($"Height out of range ({height})");
@@ -409,6 +414,7 @@ public class GMImage
         {
             throw new InvalidDataException($"Width out of range ({width})");
         }
+
         if (height is < 0 or > MaxImageDimension)
         {
             throw new InvalidDataException($"Height out of range ({height})");
@@ -443,6 +449,7 @@ public class GMImage
         {
             throw new InvalidDataException($"Width out of range ({width})");
         }
+
         if (height is < 0 or > MaxImageDimension)
         {
             throw new InvalidDataException($"Height out of range ({height})");
@@ -455,6 +462,7 @@ public class GMImage
     // Settings to be used for raw data, and when encoding a PNG
     private MagickReadSettings GetMagickRawToPngSettings()
     {
+        if (SkiaConfig.UseSkiaSharp()) return null;
         var settings = new MagickReadSettings()
         {
             Width = (uint)Width,
@@ -476,48 +484,72 @@ public class GMImage
         switch (Format)
         {
             case ImageFormat.RawBgra:
+            {
+                if (SkiaConfig.UseSkiaSharp())
+                {
+                    var info = new SKImageInfo(Width, Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+                    using var bitmap = new SKBitmap();
+                    // 将 _data 拷贝到 bitmap
+                    unsafe
+                    {
+                        fixed (byte* ptr = _data)
+                        {
+                            bitmap.InstallPixels(info, (nint)ptr);
+                        }
+                    }
+
+                    // 2. 将 SKBitmap 编码为 PNG
+                    using var image = SKImage.FromBitmap(bitmap); // 也可以用 SKImage.FromPixels 跳过 bitmap
+                    using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);
+
+                    // 3. 写入输出流
+                    encoded.SaveTo(stream);
+                }
+                else
                 {
                     // Create image using ImageMagick, and save it as PNG format
                     using var image = new MagickImage(_data, GetMagickRawToPngSettings());
                     image.Alpha(AlphaOption.Set);
                     image.Format = MagickFormat.Png32;
                     image.Write(stream);
-                    break;
                 }
-            case ImageFormat.Png:
-                {
-                    // Data is already encoded as PNG; just use that
-                    stream.Write(_data);
-                    break;
-                }
-            case ImageFormat.Qoi:
-                {
-                    // Convert to raw image data, and then save that to a PNG
-                    GMImage rawImage = QoiConverter.GetImageFromSpan(_data);
-                    rawImage.SavePng(stream);
-                    break;
-                }
-            case ImageFormat.Bz2Qoi:
-                {
-                    GMImage rawImage;
-                    
-                    using (MemoryStream uncompressedData = new(GetInitialUncompressedBufferCapacity()))
-                    {
-                        // Decompress BZ2 data
-                        using (MemoryStream compressedData = new(_data))
-                        {
-                            BZip2.Decompress(compressedData, uncompressedData, false);
-                        }
 
-                        // Convert to raw image data
-                        uncompressedData.Seek(0, SeekOrigin.Begin);
-                        rawImage = QoiConverter.GetImageFromStream(uncompressedData);
+                break;
+            }
+            case ImageFormat.Png:
+            {
+                // Data is already encoded as PNG; just use that
+                stream.Write(_data);
+                break;
+            }
+            case ImageFormat.Qoi:
+            {
+                // Convert to raw image data, and then save that to a PNG
+                GMImage rawImage = QoiConverter.GetImageFromSpan(_data);
+                rawImage.SavePng(stream);
+                break;
+            }
+            case ImageFormat.Bz2Qoi:
+            {
+                GMImage rawImage;
+
+                using (MemoryStream uncompressedData = new(GetInitialUncompressedBufferCapacity()))
+                {
+                    // Decompress BZ2 data
+                    using (MemoryStream compressedData = new(_data))
+                    {
+                        BZip2.Decompress(compressedData, uncompressedData, false);
                     }
 
-                    // Save raw image to PNG
-                    rawImage.SavePng(stream);
-                    break;
+                    // Convert to raw image data
+                    uncompressedData.Seek(0, SeekOrigin.Begin);
+                    rawImage = QoiConverter.GetImageFromStream(uncompressedData);
                 }
+
+                // Save raw image to PNG
+                rawImage.SavePng(stream);
+                break;
+            }
             default:
                 throw new InvalidOperationException($"Unknown format {Format}");
         }
@@ -548,13 +580,48 @@ public class GMImage
         switch (Format)
         {
             case ImageFormat.RawBgra:
-                {
-                    // Already in correct format; no conversion to be done
-                    return this;
-                }
+            {
+                // Already in correct format; no conversion to be done
+                return this;
+            }
             case ImageFormat.Png:
+            {
+                // Convert image to raw byte array
+                if (SkiaConfig.UseSkiaSharp())
                 {
-                    // Convert image to raw byte array
+                    // 1. 把 PNG 原始字节解码成 SKBitmap
+                    using var skData = SKData.CreateCopy(_data); // _data 是原 PNG 的 byte[]
+                    using var codec = SKCodec.Create(skData);
+                    using var bitmap = SKBitmap.Decode(codec);
+
+                    if (bitmap == null)
+                        throw new InvalidOperationException("SkiaSharp 无法解码 PNG");
+
+                    // 2. 如果原图格式不对就拷贝一份
+                    var bgraBitmap = bitmap.ColorType == SKColorType.Bgra8888
+                        ? bitmap
+                        : bitmap.Copy(SKColorType.Bgra8888);
+
+                    if (bgraBitmap == null)
+                        throw new InvalidOperationException("无法转换到 BGRA");
+
+                    // 3. 读回原始像素
+                    int bytesPerPixel = 4;
+                    int byteCount = bgraBitmap.Width * bgraBitmap.Height * bytesPerPixel;
+                    byte[] rawBytes = new byte[byteCount];
+                    IntPtr ptr = bgraBitmap.GetPixels();
+
+                    // 拷贝到托管数组
+                    System.Runtime.InteropServices.Marshal.Copy(ptr, rawBytes, 0, byteCount);
+
+                    if (!ReferenceEquals(bgraBitmap, bitmap)) // 自己拷贝出来的才需要 Dispose
+                        bgraBitmap.Dispose();
+
+                    // 4. 包装成 GMImage，格式标记为 RawBgra
+                    return new GMImage(ImageFormat.RawBgra, bitmap.Width, bitmap.Height, rawBytes);
+                }
+                else
+                {
                     var image = new MagickImage(_data);
                     image.Alpha(AlphaOption.Set);
                     image.Format = MagickFormat.Bgra;
@@ -562,26 +629,27 @@ public class GMImage
                     image.SetCompression(CompressionMethod.NoCompression);
                     return new GMImage(ImageFormat.RawBgra, Width, Height, image.ToByteArray());
                 }
+            }
             case ImageFormat.Qoi:
-                {
-                    // Convert to raw image data
-                    return QoiConverter.GetImageFromSpan(_data);
-                }
+            {
+                // Convert to raw image data
+                return QoiConverter.GetImageFromSpan(_data);
+            }
             case ImageFormat.Bz2Qoi:
+            {
+                using (MemoryStream uncompressedData = new(GetInitialUncompressedBufferCapacity()))
                 {
-                    using (MemoryStream uncompressedData = new(GetInitialUncompressedBufferCapacity()))
+                    // Decompress BZ2 data
+                    using (MemoryStream compressedData = new(_data))
                     {
-                        // Decompress BZ2 data
-                        using (MemoryStream compressedData = new(_data))
-                        {
-                            BZip2.Decompress(compressedData, uncompressedData, false);
-                        }
-
-                        // Convert to raw image data
-                        uncompressedData.Seek(0, SeekOrigin.Begin);
-                        return QoiConverter.GetImageFromStream(uncompressedData);
+                        BZip2.Decompress(compressedData, uncompressedData, false);
                     }
+
+                    // Convert to raw image data
+                    uncompressedData.Seek(0, SeekOrigin.Begin);
+                    return QoiConverter.GetImageFromStream(uncompressedData);
                 }
+            }
         }
 
         throw new InvalidOperationException($"Unknown source format {Format}");
@@ -595,6 +663,29 @@ public class GMImage
         switch (Format)
         {
             case ImageFormat.RawBgra:
+            {
+                if (SkiaConfig.UseSkiaSharp())
+                {
+                    // 1. 告诉 Skia 数据格式：32 bpp（8-8-8-8），BGRA 顺序
+                    var info = new SKImageInfo(
+                        width: Width,
+                        height: Height,
+                        colorType: SKColorType.Bgra8888,
+                        alphaType: SKAlphaType.Premul); // 如果你的数据不是 Premul，改成 Unpremul
+
+                    // 2. 用原始字节构建 SKBitmap
+                    //    注意：Skia 会把 _data 拷贝到内部，之后可以安全释放 _data
+                    using var bitmap = SKBitmap.Decode(_data, info);
+
+                    // 3. 把 SKBitmap 编码成 PNG
+                    using var image = SKImage.FromBitmap(bitmap);
+                    using var encoded = image.Encode(SKEncodedImageFormat.Png, 100); // 100 为质量，PNG 会忽略
+                    var pngBytes = encoded.ToArray();
+
+                    // 4. 返回新的 GMImage
+                    return new GMImage(ImageFormat.Png, Width, Height, pngBytes);
+                }
+                else
                 {
                     // Create image using ImageMagick, and convert it to PNG format
                     using var image = new MagickImage(_data, GetMagickRawToPngSettings());
@@ -602,37 +693,38 @@ public class GMImage
                     image.Format = MagickFormat.Png32;
                     return new GMImage(ImageFormat.Png, Width, Height, image.ToByteArray());
                 }
+            }
             case ImageFormat.Png:
-                {
-                    // Already in correct format; no conversion to be done
-                    return this;
-                }
+            {
+                // Already in correct format; no conversion to be done
+                return this;
+            }
             case ImageFormat.Qoi:
-                {
-                    // Convert to raw image data, and then convert that to a PNG
-                    GMImage rawImage = QoiConverter.GetImageFromSpan(_data);
-                    return rawImage.ConvertToPng();
-                }
+            {
+                // Convert to raw image data, and then convert that to a PNG
+                GMImage rawImage = QoiConverter.GetImageFromSpan(_data);
+                return rawImage.ConvertToPng();
+            }
             case ImageFormat.Bz2Qoi:
+            {
+                GMImage rawImage;
+
+                using (MemoryStream uncompressedData = new(GetInitialUncompressedBufferCapacity()))
                 {
-                    GMImage rawImage;
-
-                    using (MemoryStream uncompressedData = new(GetInitialUncompressedBufferCapacity()))
+                    // Decompress BZ2 data
+                    using (MemoryStream compressedData = new(_data))
                     {
-                        // Decompress BZ2 data
-                        using (MemoryStream compressedData = new(_data))
-                        {
-                            BZip2.Decompress(compressedData, uncompressedData, false);
-                        }
-
-                        // Convert to raw image data
-                        uncompressedData.Seek(0, SeekOrigin.Begin);
-                        rawImage = QoiConverter.GetImageFromStream(uncompressedData);
+                        BZip2.Decompress(compressedData, uncompressedData, false);
                     }
 
-                    // Convert raw image to PNG
-                    return rawImage.ConvertToPng();
+                    // Convert to raw image data
+                    uncompressedData.Seek(0, SeekOrigin.Begin);
+                    rawImage = QoiConverter.GetImageFromStream(uncompressedData);
                 }
+
+                // Convert raw image to PNG
+                return rawImage.ConvertToPng();
+            }
         }
 
         throw new InvalidOperationException($"Unknown source format {Format}");
@@ -648,15 +740,15 @@ public class GMImage
             case ImageFormat.RawBgra:
             case ImageFormat.Png:
             case ImageFormat.Bz2Qoi:
-                {
-                    // Encode image as QOI
-                    return new GMImage(ImageFormat.Qoi, Width, Height, QoiConverter.GetArrayFromImage(this));
-                }
+            {
+                // Encode image as QOI
+                return new GMImage(ImageFormat.Qoi, Width, Height, QoiConverter.GetArrayFromImage(this));
+            }
             case ImageFormat.Qoi:
-                {
-                    // Already in correct format; no conversion to be done
-                    return this;
-                }
+            {
+                // Already in correct format; no conversion to be done
+                return this;
+            }
         }
 
         throw new InvalidOperationException($"Unknown source format {Format}");
@@ -679,6 +771,7 @@ public class GMImage
                 // Ensure shared stream is at the beginning
                 sharedStream.Seek(0, SeekOrigin.Begin);
             }
+
             BZip2.Compress(input, sharedStream, false, 9);
             compressed = sharedStream.GetBuffer().AsSpan()[..(int)sharedStream.Position].ToArray();
         }
@@ -707,21 +800,21 @@ public class GMImage
         {
             case ImageFormat.RawBgra:
             case ImageFormat.Png:
-                {
-                    // Encode image as QOI, first
-                    byte[] data = QoiConverter.GetArrayFromImage(this);
-                    return CompressQoiData(Width, Height, data, sharedStream);
-                }
+            {
+                // Encode image as QOI, first
+                byte[] data = QoiConverter.GetArrayFromImage(this);
+                return CompressQoiData(Width, Height, data, sharedStream);
+            }
             case ImageFormat.Qoi:
-                {
-                    // Already have QOI data, so just compress it
-                    return CompressQoiData(Width, Height, _data, sharedStream);
-                }
+            {
+                // Already have QOI data, so just compress it
+                return CompressQoiData(Width, Height, _data, sharedStream);
+            }
             case ImageFormat.Bz2Qoi:
-                {
-                    // Already in correct format; no conversion to be done
-                    return this;
-                }
+            {
+                // Already in correct format; no conversion to be done
+                return this;
+            }
         }
 
         throw new InvalidOperationException($"Unknown source format {Format}");
@@ -771,8 +864,10 @@ public class GMImage
                     {
                         throw new InvalidOperationException("BZ2 uncompressed data size was not set");
                     }
+
                     writer.Write(_bz2UncompressedSize);
                 }
+
                 writer.Write(_data);
                 break;
             default:
@@ -810,38 +905,39 @@ public class GMImage
     /// </summary>
     public MagickImage GetMagickImage()
     {
+        if (SkiaConfig.UseSkiaSharp()) throw new NotImplementedException();
         switch (Format)
         {
             case ImageFormat.Png:
+            {
+                // Parse the PNG data
+                MagickReadSettings settings = new()
                 {
-                    // Parse the PNG data
-                    MagickReadSettings settings = new()
-                    {
-                        ColorSpace = ColorSpace.sRGB,
-                        Format = MagickFormat.Png
-                    };
-                    MagickImage image = new(_data, settings);
-                    image.Alpha(AlphaOption.Set);
-                    image.Format = MagickFormat.Bgra;
-                    image.Depth = 8;
-                    image.SetCompression(CompressionMethod.NoCompression);
-                    return image;
-                }
+                    ColorSpace = ColorSpace.sRGB,
+                    Format = MagickFormat.Png
+                };
+                MagickImage image = new(_data, settings);
+                image.Alpha(AlphaOption.Set);
+                image.Format = MagickFormat.Bgra;
+                image.Depth = 8;
+                image.SetCompression(CompressionMethod.NoCompression);
+                return image;
+            }
             case ImageFormat.RawBgra:
+            {
+                // Parse the raw data
+                MagickReadSettings settings = new()
                 {
-                    // Parse the raw data
-                    MagickReadSettings settings = new()
-                    {
-                        Width = (uint)Width,
-                        Height = (uint)Height,
-                        Format = MagickFormat.Bgra,
-                        Depth = 8,
-                        Compression = CompressionMethod.NoCompression
-                    };
-                    MagickImage image = new(_data, settings);
-                    image.Alpha(AlphaOption.Set);
-                    return image;
-                }
+                    Width = (uint)Width,
+                    Height = (uint)Height,
+                    Format = MagickFormat.Bgra,
+                    Depth = 8,
+                    Compression = CompressionMethod.NoCompression
+                };
+                MagickImage image = new(_data, settings);
+                image.Alpha(AlphaOption.Set);
+                return image;
+            }
             case ImageFormat.Qoi:
             case ImageFormat.Bz2Qoi:
                 // Convert to raw data, then parse that
@@ -859,9 +955,90 @@ public class GMImage
     /// </remarks>
     public static GMImage FromMagickImage(IMagickImage<byte> image)
     {
+        if (SkiaConfig.UseSkiaSharp()) throw new NotImplementedException();
         image.Format = MagickFormat.Bgra;
         image.Depth = 8;
         image.SetCompression(CompressionMethod.NoCompression);
         return new GMImage(ImageFormat.RawBgra, (int)image.Width, (int)image.Height, image.ToByteArray());
+    }
+
+    public SKImage GetSkiaImage()
+    {
+        // 如果配置要求用 Magick.NET，仍然抛异常（保持原逻辑）
+        if (!SkiaConfig.UseSkiaSharp())
+            throw new NotImplementedException();
+
+        switch (Format)
+        {
+            case ImageFormat.Png:
+            {
+                // PNG → SKImage（Skia 自带解码器）
+                using var data = SKData.CreateCopy(_data);
+                using var codec = SKCodec.Create(data);
+                if (codec == null)
+                    throw new InvalidOperationException("Invalid PNG data.");
+
+                var info = new SKImageInfo(codec.Info.Width, codec.Info.Height,
+                    SKColorType.Bgra8888,
+                    SKAlphaType.Premul);
+
+                using var bmp = new SKBitmap(info);
+
+                return SKImage.FromBitmap(bmp); // 深拷贝，返回后 bmp 可以释放
+            }
+
+            case ImageFormat.RawBgra:
+            {
+                // 原始 BGRA 数据
+                var info = new SKImageInfo(Width, Height,
+                    SKColorType.Bgra8888,
+                    SKAlphaType.Unpremul);
+
+                using var data = SKData.CreateCopy(_data);
+                return SKImage.FromPixels(info, data, info.RowBytes);
+            }
+
+            case ImageFormat.Qoi:
+            case ImageFormat.Bz2Qoi:
+                // 保持原递归逻辑：先转 RawBgra，再调自己
+                return ConvertToRawBgra().GetSkiaImage();
+
+            default:
+                throw new InvalidOperationException($"Unknown format {Format}");
+        }
+    }
+
+    /// <summary>
+    /// 把 SKImage 转回 RawBgra 的 GMImage
+    /// </summary>
+    public static GMImage FromSkiaImage(SKImage image)
+    {
+        if (!SkiaConfig.UseSkiaSharp())
+            throw new NotImplementedException();
+
+        // 强制转成 8bit BGRA，无压缩
+        var info = new SKImageInfo(image.Width, image.Height,
+            SKColorType.Bgra8888,
+            SKAlphaType.Unpremul);
+
+        using var pixmap = image.PeekPixels() ?? image.ToRasterImage(true).PeekPixels();
+        if (pixmap == null)
+            throw new InvalidOperationException("Cannot access image pixels.");
+
+        // 如果像素格式已经是 BGRA 且连续，直接拷贝；否则做转换
+        byte[] bytes;
+        if (pixmap.ColorType == SKColorType.Bgra8888 && pixmap.RowBytes == info.RowBytes)
+        {
+            bytes = pixmap.GetPixelSpan().ToArray();
+        }
+        else
+        {
+            using var bmp = new SKBitmap(info);
+            if (!pixmap.ReadPixels(bmp.Info, bmp.GetPixels(), bmp.RowBytes, 0, 0))
+                throw new InvalidOperationException("Failed to convert pixel format.");
+            bytes = bmp.Bytes;
+        }
+
+        return new GMImage(ImageFormat.RawBgra, info.Width, info.Height, bytes);
     }
 }
