@@ -5034,4 +5034,19 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Msg_ImportFromFileError" xml:space="preserve">
     <value>从文件导入出错：{0}</value>
   </data>
+  <data name="Editor_WordWrap" xml:space="preserve">
+    <value>自动换行</value>
+  </data>
+  <data name="Editor_ShowWhitespace" xml:space="preserve">
+    <value>显示空白字符</value>
+  </data>
+  <data name="Editor_ShowHoverInfo" xml:space="preserve">
+    <value>悬浮信息</value>
+  </data>
+  <data name="Editor_BuiltinFunction" xml:space="preserve">
+    <value>内置函数</value>
+  </data>
+  <data name="Editor_BuiltinVariable" xml:space="preserve">
+    <value>内置变量</value>
+  </data>
 </root>

@@ -29,6 +29,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
 
@@ -47,7 +48,19 @@
         <TextBlock Grid.Row="4" Grid.Column="0" Margin="3" Visibility="{Binding ParentEntry, Converter={StaticResource VisibleIfNotNull}}" Text="{loc:Loc Editor_ParentEntry}"/>
         <local:UndertaleObjectReference Grid.Row="4" Grid.Column="1" Margin="3" Visibility="{Binding ParentEntry, Converter={StaticResource VisibleIfNotNull}}" ObjectReference="{Binding ParentEntry}" ObjectType="{x:Type undertale:UndertaleCode}" CanRemove="False" CanChange="False"/>
 
-        <TabControl x:Name="CodeModeTabs" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" SelectionChanged="TabControl_SelectionChanged">
+        <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="3,1,3,1">
+            <CheckBox x:Name="WordWrapCheck" Margin="3,0,12,0" VerticalAlignment="Center"
+                      Content="{loc:Loc Editor_WordWrap}" IsChecked="True"
+                      Checked="WordWrapCheck_Changed" Unchecked="WordWrapCheck_Changed"/>
+            <CheckBox x:Name="ShowWhitespaceCheck" Margin="3,0,12,0" VerticalAlignment="Center"
+                      Content="{loc:Loc Editor_ShowWhitespace}" IsChecked="False"
+                      Checked="ShowWhitespaceCheck_Changed" Unchecked="ShowWhitespaceCheck_Changed"/>
+            <CheckBox x:Name="ShowHoverInfoCheck" Margin="3,0,12,0" VerticalAlignment="Center"
+                      Content="{loc:Loc Editor_ShowHoverInfo}" IsChecked="True"
+                      Checked="ShowHoverInfoCheck_Changed" Unchecked="ShowHoverInfoCheck_Changed"/>
+        </StackPanel>
+
+        <TabControl x:Name="CodeModeTabs" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" SelectionChanged="TabControl_SelectionChanged">
             <TabItem Header="{loc:Loc Editor_Decompiled}" Name="DecompiledTab">
                 <Grid PreviewMouseWheel="Grid_PreviewMouseWheel" PreviewKeyDown="Grid_PreviewKeyDown">
                     <avalonEdit:TextEditor

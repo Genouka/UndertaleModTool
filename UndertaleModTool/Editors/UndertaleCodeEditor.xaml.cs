@@ -87,9 +87,19 @@ namespace UndertaleModTool
         }
         public static CodeEditorTab EditorTab { get; set; } = CodeEditorTab.Unknown;
 
+        private System.Windows.Threading.DispatcherTimer _hoverTimer;
+        private Popup _hoverPopup;
+        private TextArea _hoverTextArea;
+        private int _hoverSectionStart = -1;
+        private int _hoverSectionLength = 0;
+        private int _lastHoverOffset = -1;
+        private const int HoverDelayMs = 250;
+
         public UndertaleCodeEditor()
         {
             InitializeComponent();
+
+            ApplySettingsToEditors();
 
             // Decompiled editor styling and functionality
             DecompiledSearchPanel = SearchPanel.Install(DecompiledEditor.TextArea);
@@ -202,6 +212,494 @@ namespace UndertaleModTool
             textArea.SelectionForeground = null;
             textArea.SelectionBorder = null;
             textArea.SelectionCornerRadius = 0;
+
+            InitializeHoverPopup();
+        }
+
+        private void ApplySettingsToEditors()
+        {
+            var settings = Settings.Instance;
+            if (settings == null) return;
+
+            WordWrapCheck.IsChecked = settings.CodeEditorWordWrap;
+            ShowWhitespaceCheck.IsChecked = settings.CodeEditorShowWhitespace;
+            ShowHoverInfoCheck.IsChecked = settings.CodeEditorShowHoverInfo;
+
+            DecompiledEditor.WordWrap = settings.CodeEditorWordWrap;
+            DisassemblyEditor.WordWrap = settings.CodeEditorWordWrap;
+
+            DecompiledEditor.Options.ShowSpaces = settings.CodeEditorShowWhitespace;
+            DecompiledEditor.Options.ShowTabs = settings.CodeEditorShowWhitespace;
+            DisassemblyEditor.Options.ShowSpaces = settings.CodeEditorShowWhitespace;
+            DisassemblyEditor.Options.ShowTabs = settings.CodeEditorShowWhitespace;
+        }
+
+        private void WordWrapCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            if (DecompiledEditor == null) return;
+            bool value = WordWrapCheck.IsChecked ?? true;
+            DecompiledEditor.WordWrap = value;
+            DisassemblyEditor.WordWrap = value;
+            if (Settings.Instance != null)
+            {
+                Settings.Instance.CodeEditorWordWrap = value;
+                Settings.Save();
+            }
+        }
+
+        private void ShowWhitespaceCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            if (DecompiledEditor == null) return;
+            bool value = ShowWhitespaceCheck.IsChecked ?? false;
+            DecompiledEditor.Options.ShowSpaces = value;
+            DecompiledEditor.Options.ShowTabs = value;
+            DisassemblyEditor.Options.ShowSpaces = value;
+            DisassemblyEditor.Options.ShowTabs = value;
+            if (Settings.Instance != null)
+            {
+                Settings.Instance.CodeEditorShowWhitespace = value;
+                Settings.Save();
+            }
+        }
+
+        private void ShowHoverInfoCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            if (Settings.Instance == null) return;
+            bool value = ShowHoverInfoCheck.IsChecked ?? true;
+            Settings.Instance.CodeEditorShowHoverInfo = value;
+            Settings.Save();
+            if (!value)
+                CloseHoverPopup();
+        }
+
+        private void InitializeHoverPopup()
+        {
+            _hoverPopup = new Popup
+            {
+                StaysOpen = true,
+                AllowsTransparency = true,
+                Placement = PlacementMode.Mouse,
+                PopupAnimation = PopupAnimation.None
+            };
+
+            _hoverTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(HoverDelayMs)
+            };
+            _hoverTimer.Tick += HoverTimer_Tick;
+
+            DecompiledEditor.TextArea.MouseMove += TextArea_MouseMove;
+            DecompiledEditor.TextArea.MouseLeave += TextArea_MouseLeave;
+            DisassemblyEditor.TextArea.MouseMove += TextArea_MouseMove;
+            DisassemblyEditor.TextArea.MouseLeave += TextArea_MouseLeave;
+
+            DecompiledEditor.TextArea.TextView.ScrollOffsetChanged += TextView_ScrollOffsetChanged;
+            DisassemblyEditor.TextArea.TextView.ScrollOffsetChanged += TextView_ScrollOffsetChanged;
+        }
+
+        private void TextView_ScrollOffsetChanged(object sender, EventArgs e)
+        {
+            _hoverTimer.Stop();
+            CloseHoverPopup();
+        }
+
+        private void TextArea_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!Settings.Instance.CodeEditorShowHoverInfo)
+            {
+                CloseHoverPopup();
+                return;
+            }
+
+            _hoverTextArea = sender as TextArea;
+
+            int currentOffset = GetOffsetFromMousePosition(_hoverTextArea);
+
+            if (_hoverPopup.IsOpen && _hoverSectionStart >= 0 && currentOffset >= 0)
+            {
+                if (currentOffset >= _hoverSectionStart && currentOffset < _hoverSectionStart + _hoverSectionLength)
+                    return;
+            }
+
+            if (currentOffset == _lastHoverOffset && _hoverTimer.IsEnabled)
+                return;
+
+            _lastHoverOffset = currentOffset;
+            _hoverTimer.Stop();
+            CloseHoverPopup();
+            _hoverTimer.Start();
+        }
+
+        private void TextArea_MouseLeave(object sender, MouseEventArgs e)
+        {
+            _hoverTextArea = null;
+            _lastHoverOffset = -1;
+            _hoverTimer.Stop();
+            CloseHoverPopup();
+        }
+
+        private int GetOffsetFromMousePosition(TextArea textArea)
+        {
+            Point pos = Mouse.GetPosition(textArea.TextView);
+            pos.X += textArea.TextView.ScrollOffset.X;
+            pos.Y += textArea.TextView.ScrollOffset.Y;
+
+            TextViewPosition? textViewPos = textArea.TextView.GetPosition(pos);
+            if (textViewPos == null) return -1;
+
+            int line = textViewPos.Value.Line;
+            int column = textViewPos.Value.Column;
+
+            if (line < 1 || line > textArea.Document.LineCount) return -1;
+
+            var docLine = textArea.Document.GetLineByNumber(line);
+            return docLine.Offset + Math.Min(column - 1, docLine.Length);
+        }
+
+        private void HoverTimer_Tick(object sender, EventArgs e)
+        {
+            _hoverTimer.Stop();
+
+            if (_hoverPopup.IsOpen)
+                return;
+
+            TextArea textArea = _hoverTextArea;
+            if (textArea == null) return;
+
+            UndertaleData data = mainWindow.Data;
+            if (data == null) return;
+
+            int offset = GetOffsetFromMousePosition(textArea);
+            if (offset < 0 || offset >= textArea.Document.TextLength) return;
+
+            int sectionStart = -1, sectionLength = 0;
+            var hoverContent = BuildHoverContent(textArea, offset, data, ref sectionStart, ref sectionLength);
+            if (hoverContent == null) return;
+
+            _hoverSectionStart = sectionStart;
+            _hoverSectionLength = sectionLength;
+            _hoverPopup.Child = hoverContent;
+            _hoverPopup.IsOpen = true;
+        }
+
+        private void CloseHoverPopup()
+        {
+            if (_hoverPopup != null && _hoverPopup.IsOpen)
+                _hoverPopup.IsOpen = false;
+            _hoverSectionStart = -1;
+            _hoverSectionLength = 0;
+            _lastHoverOffset = -1;
+        }
+
+        private Border BuildHoverContent(TextArea textArea, int offset, UndertaleData data, ref int sectionStart, ref int sectionLength)
+        {
+            IHighlighter highlighter = textArea.GetService(typeof(IHighlighter)) as IHighlighter;
+            if (highlighter == null)
+            {
+                TextEditor editor = textArea == DecompiledEditor.TextArea ? DecompiledEditor : DisassemblyEditor;
+                highlighter = editor.TextArea.GetService(typeof(IHighlighter)) as IHighlighter;
+            }
+            if (highlighter == null) return null;
+
+            int lineNum = textArea.Document.GetLineByOffset(offset).LineNumber;
+            HighlightedLine highlighted;
+            try
+            {
+                highlighted = highlighter.HighlightLine(lineNum);
+            }
+            catch
+            {
+                return null;
+            }
+
+            var docLine = textArea.Document.GetLineByNumber(lineNum);
+            int lineStartOffset = docLine.Offset;
+            int lineEndOffset = docLine.EndOffset;
+
+            foreach (var section in highlighted.Sections)
+            {
+                if (section.Offset < lineStartOffset || section.Offset > lineEndOffset)
+                    continue;
+
+                if (offset < section.Offset || offset >= section.Offset + section.Length)
+                    continue;
+
+                string sectionText = textArea.Document.GetText(section.Offset, section.Length);
+
+                if (section.Color.Name == "Number")
+                {
+                    sectionStart = section.Offset;
+                    sectionLength = section.Length;
+                    return BuildNumberHoverContent(sectionText, data);
+                }
+
+                if (section.Color.Name == "Identifier" || section.Color.Name == "Function")
+                {
+                    sectionStart = section.Offset;
+                    sectionLength = section.Length;
+                    return BuildNameHoverContent(sectionText, data, section.Color.Name == "Function");
+                }
+            }
+
+            return null;
+        }
+
+        private Border BuildNumberHoverContent(string numText, UndertaleData data)
+        {
+            if (!int.TryParse(numText, out int id))
+                return null;
+
+            List<UndertaleObject> possibleObjects = new();
+            if (id >= 0)
+            {
+                if (id < data.Sprites.Count && data.Sprites[id] != null) possibleObjects.Add(data.Sprites[id]);
+                if (id < data.Rooms.Count && data.Rooms[id] != null) possibleObjects.Add(data.Rooms[id]);
+                if (id < data.GameObjects.Count && data.GameObjects[id] != null) possibleObjects.Add(data.GameObjects[id]);
+                if (id < data.Backgrounds.Count && data.Backgrounds[id] != null) possibleObjects.Add(data.Backgrounds[id]);
+                if (id < data.Scripts.Count && data.Scripts[id] != null) possibleObjects.Add(data.Scripts[id]);
+                if (id < data.Paths.Count && data.Paths[id] != null) possibleObjects.Add(data.Paths[id]);
+                if (id < data.Fonts.Count && data.Fonts[id] != null) possibleObjects.Add(data.Fonts[id]);
+                if (id < data.Sounds.Count && data.Sounds[id] != null) possibleObjects.Add(data.Sounds[id]);
+                if (id < data.Shaders.Count && data.Shaders[id] != null) possibleObjects.Add(data.Shaders[id]);
+                if (id < data.Timelines.Count && data.Timelines[id] != null) possibleObjects.Add(data.Timelines[id]);
+                if (id < (data.AnimationCurves?.Count ?? 0) && data.AnimationCurves[id] != null) possibleObjects.Add(data.AnimationCurves[id]);
+                if (id < (data.Sequences?.Count ?? 0) && data.Sequences[id] != null) possibleObjects.Add(data.Sequences[id]);
+                if (id < (data.ParticleSystems?.Count ?? 0) && data.ParticleSystems[id] != null) possibleObjects.Add(data.ParticleSystems[id]);
+            }
+
+            StackPanel panel = new() { MaxWidth = 320 };
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
+            Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+
+            if (possibleObjects.Count > 0)
+            {
+                foreach (UndertaleObject obj in possibleObjects)
+                {
+                    DockPanel row = new();
+
+                    if (obj is UndertaleSprite sprite && sprite.Textures.Count > 0)
+                    {
+                        var textureEntry = sprite.Textures[0];
+                        if (textureEntry?.Texture != null)
+                        {
+                            try
+                            {
+                                var loader = new UndertaleCachedImageLoader();
+                                ImageSource imgSrc = loader.Convert(textureEntry.Texture, null, null, null) as ImageSource;
+                                if (imgSrc != null)
+                                {
+                                    Image img = new()
+                                    {
+                                        Source = imgSrc,
+                                        MaxWidth = 64,
+                                        MaxHeight = 64,
+                                        Stretch = Stretch.Uniform,
+                                        Margin = new Thickness(0, 2, 8, 2),
+                                        VerticalAlignment = VerticalAlignment.Center
+                                    };
+                                    RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.NearestNeighbor);
+                                    DockPanel.SetDock(img, Dock.Left);
+                                    row.Children.Add(img);
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+
+                    TextBlock text = new()
+                    {
+                        Text = obj.ToString().Replace("_", "__"),
+                        Foreground = textBrush,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    row.Children.Add(text);
+                    panel.Children.Add(row);
+                }
+            }
+
+            if (id > 0x00050000)
+            {
+                DockPanel colorRow = new();
+                System.Windows.Shapes.Rectangle colorRect = new()
+                {
+                    Width = 16,
+                    Height = 16,
+                    Fill = new SolidColorBrush(Color.FromRgb((byte)((id >> 16) & 0xFF), (byte)((id >> 8) & 0xFF), (byte)(id & 0xFF))),
+                    Stroke = isDarkMode ? Brushes.Gray : Brushes.DarkGray,
+                    StrokeThickness = 1,
+                    Margin = new Thickness(0, 2, 8, 2),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                DockPanel.SetDock(colorRect, Dock.Left);
+                colorRow.Children.Add(colorRect);
+
+                TextBlock colorText = new()
+                {
+                    Text = string.Format(LocalizationSource.GetString("Editor_Color"), "0x" + id.ToString("X6")),
+                    Foreground = textBrush,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                colorRow.Children.Add(colorText);
+                panel.Children.Add(colorRow);
+            }
+
+            BuiltinList list = data.BuiltinList;
+            var constKey = list.Constants.FirstOrDefault(x => x.Value == (double)id).Key;
+            if (constKey != null)
+            {
+                TextBlock constText = new()
+                {
+                    Text = string.Format(LocalizationSource.GetString("Editor_ConstantLabel"), constKey),
+                    Foreground = textBrush
+                };
+                panel.Children.Add(constText);
+            }
+
+            TextBlock numLabel = new()
+            {
+                Text = string.Format(LocalizationSource.GetString("Editor_NumberLabel"), id),
+                Foreground = subTextBrush
+            };
+            panel.Children.Add(numLabel);
+
+            if (panel.Children.Count == 1 && panel.Children[0] == numLabel)
+                return null;
+
+            return CreateHoverBorder(panel);
+        }
+
+        private Border BuildNameHoverContent(string nameText, UndertaleData data, bool isFunc)
+        {
+            UndertaleNamedResource val = null;
+
+            if (isFunc)
+            {
+                if (!data.IsVersionAtLeast(2, 3))
+                    ScriptsDict.TryGetValue(nameText, out val);
+                if (val == null)
+                {
+                    FunctionsDict.TryGetValue(nameText, out val);
+                    if (data.IsVersionAtLeast(2, 3) && val != null)
+                    {
+                        if (CodeDict.TryGetValue(val.Name.Content, out _))
+                            val = null;
+                    }
+                }
+                if (val == null)
+                {
+                    if (data.BuiltinList.Functions.ContainsKey(nameText))
+                    {
+                        return CreateHoverBorder(new TextBlock
+                        {
+                            Text = nameText + " - " + LocalizationSource.GetString("Editor_BuiltinFunction"),
+                            Foreground = Settings.Instance.EnableDarkMode ? Brushes.White : Brushes.Black
+                        });
+                    }
+                }
+            }
+            else
+            {
+                NamedObjDict.TryGetValue(nameText, out val);
+                if (data.IsVersionAtLeast(2, 3) && val is UndertaleScript)
+                    val = null;
+            }
+
+            if (val == null)
+            {
+                if (data.BuiltinList.Constants.ContainsKey(nameText))
+                {
+                    return CreateHoverBorder(new TextBlock
+                    {
+                        Text = string.Format(LocalizationSource.GetString("Editor_ConstantLabel"), nameText),
+                        Foreground = Settings.Instance.EnableDarkMode ? Brushes.White : Brushes.Black
+                    });
+                }
+
+                if (data.BuiltinList.GlobalVars.ContainsKey(nameText) ||
+                    data.BuiltinList.InstanceVars.ContainsKey(nameText) ||
+                    data.BuiltinList.GlobalArrayVars.ContainsKey(nameText))
+                {
+                    return CreateHoverBorder(new TextBlock
+                    {
+                        Text = nameText + " - " + LocalizationSource.GetString("Editor_BuiltinVariable"),
+                        Foreground = Settings.Instance.EnableDarkMode ? Brushes.White : Brushes.Black
+                    });
+                }
+
+                return null;
+            }
+
+            StackPanel panel = new() { MaxWidth = 320 };
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
+            Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+
+            if (val is UndertaleSprite sprite && sprite.Textures.Count > 0)
+            {
+                var textureEntry = sprite.Textures[0];
+                if (textureEntry?.Texture != null)
+                {
+                    try
+                    {
+                        var loader = new UndertaleCachedImageLoader();
+                        ImageSource imgSrc = loader.Convert(textureEntry.Texture, null, null, null) as ImageSource;
+                        if (imgSrc != null)
+                        {
+                            Image img = new()
+                            {
+                                Source = imgSrc,
+                                MaxWidth = 128,
+                                MaxHeight = 128,
+                                Stretch = Stretch.Uniform,
+                                Margin = new Thickness(0, 2, 0, 4)
+                            };
+                            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.NearestNeighbor);
+                            panel.Children.Add(img);
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            TextBlock nameBlock = new()
+            {
+                Text = val.ToString().Replace("_", "__"),
+                Foreground = textBrush,
+                FontWeight = FontWeights.Bold
+            };
+            panel.Children.Add(nameBlock);
+
+            TextBlock typeBlock = new()
+            {
+                Text = val.GetType().Name,
+                Foreground = subTextBrush,
+                FontSize = 11
+            };
+            panel.Children.Add(typeBlock);
+
+            return CreateHoverBorder(panel);
+        }
+
+        private Border CreateHoverBorder(UIElement content)
+        {
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            Brush bgBrush = isDarkMode
+                ? new SolidColorBrush(Color.FromRgb(45, 45, 48))
+                : new SolidColorBrush(Color.FromRgb(240, 240, 240));
+            Brush borderBrush = isDarkMode
+                ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
+                : new SolidColorBrush(Color.FromRgb(180, 180, 180));
+
+            return new Border
+            {
+                Background = bgBrush,
+                BorderBrush = borderBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(8, 6, 8, 6),
+                Child = content
+            };
         }
 
         private void UndertaleCodeEditor_Unloaded(object sender, RoutedEventArgs e)

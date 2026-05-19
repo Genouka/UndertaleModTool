@@ -5032,4 +5032,19 @@ It's highly recommended to restart the application.</value>
   <data name="Msg_ImportFromFileError" xml:space="preserve">
     <value>Import from file error: {0}</value>
   </data>
+  <data name="Editor_WordWrap" xml:space="preserve">
+    <value>Word Wrap</value>
+  </data>
+  <data name="Editor_ShowWhitespace" xml:space="preserve">
+    <value>Show Whitespace</value>
+  </data>
+  <data name="Editor_ShowHoverInfo" xml:space="preserve">
+    <value>Hover Info</value>
+  </data>
+  <data name="Editor_BuiltinFunction" xml:space="preserve">
+    <value>Built-in function</value>
+  </data>
+  <data name="Editor_BuiltinVariable" xml:space="preserve">
+    <value>Built-in variable</value>
+  </data>
 </root>

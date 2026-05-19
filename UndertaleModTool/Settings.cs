@@ -58,6 +58,10 @@ namespace UndertaleModTool
 
         public bool RecompileAllCodeSourcesOnProjectSave { get; set; } = false;
 
+        public bool CodeEditorWordWrap { get; set; } = true;
+        public bool CodeEditorShowWhitespace { get; set; } = false;
+        public bool CodeEditorShowHoverInfo { get; set; } = true;
+
         public string Language { get; set; } = "en";
 
         public static Settings Instance { get; private set; }
