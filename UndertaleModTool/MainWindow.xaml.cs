@@ -908,6 +908,17 @@ namespace UndertaleModTool
                 ClearRecentFiles();
             };
             item.Items.Add(clearItem);
+
+            item.UpdateLayout();
+            Popup popup = FindVisualChild<Popup>(item);
+            var content = popup?.Child as Border;
+            if (content is not null)
+            {
+                if (Settings.Instance.EnableDarkMode)
+                    content.Background = appDarkStyle[SystemColors.MenuBrushKey] as SolidColorBrush;
+                else
+                    content.Background = SystemColors.MenuBrush;
+            }
         }
 
         private async void RecentFile_Click(object sender, RoutedEventArgs e)
