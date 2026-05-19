@@ -1,5 +1,13 @@
 # UndertaleModTool
 
+**This is an unofficial fork of UndertaleModTool!**
+
+## What do I change?
+- Add the support of multi-language and localization.
+- Add the function to import resources from other datafiles.
+
+---
+
 [![Underminers Discord](https://img.shields.io/discord/566861759210586112?label=Discord&logo=discord&logoColor=white)](https://discord.gg/hnyMDypMbN) [![GitHub](https://img.shields.io/github/license/UnderminersTeam/UndertaleModTool?logo=github)](https://github.com/UnderminersTeam/UndertaleModTool/blob/master/LICENSE.txt)
 
 The most complete tool for modding, decompiling and unpacking Undertale (and other GameMaker games!)
