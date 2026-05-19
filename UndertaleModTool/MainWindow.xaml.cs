@@ -845,6 +845,96 @@ namespace UndertaleModTool
             _ = DoOpenDialog();
         }
 
+        private const int MaxRecentFiles = 10;
+
+        public static void AddRecentFile(string filePath)
+        {
+            var recentFiles = Settings.Instance.RecentFiles;
+            recentFiles.Remove(filePath);
+            recentFiles.Insert(0, filePath);
+            if (recentFiles.Count > MaxRecentFiles)
+                recentFiles.RemoveRange(MaxRecentFiles, recentFiles.Count - MaxRecentFiles);
+            Settings.Save();
+        }
+
+        public static void RemoveRecentFile(string filePath)
+        {
+            Settings.Instance.RecentFiles.Remove(filePath);
+            Settings.Save();
+        }
+
+        public static void ClearRecentFiles()
+        {
+            Settings.Instance.RecentFiles.Clear();
+            Settings.Save();
+        }
+
+        private void RecentFilesItem_SubmenuOpened(object sender, RoutedEventArgs e)
+        {
+            var item = sender as MenuItemDark;
+            item.Items.Clear();
+
+            var recentFiles = Settings.Instance.RecentFiles;
+            if (recentFiles is null || recentFiles.Count == 0)
+            {
+                var emptyItem = new MenuItem
+                {
+                    Header = LocalizationSource.GetString("Menu_File_RecentFiles_None"),
+                    IsEnabled = false
+                };
+                item.Items.Add(emptyItem);
+                return;
+            }
+
+            for (int i = 0; i < recentFiles.Count; i++)
+            {
+                string path = recentFiles[i];
+                var menuItem = new MenuItem
+                {
+                    Header = $"_{i + 1} {path}",
+                    Tag = path
+                };
+                menuItem.Click += RecentFile_Click;
+                item.Items.Add(menuItem);
+            }
+
+            item.Items.Add(new Separator());
+            var clearItem = new MenuItem
+            {
+                Header = LocalizationSource.GetString("Menu_File_RecentFiles_Clear")
+            };
+            clearItem.Click += (s, args) =>
+            {
+                ClearRecentFiles();
+            };
+            item.Items.Add(clearItem);
+        }
+
+        private async void RecentFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem menuItem)
+                return;
+
+            string filePath = menuItem.Tag as string;
+            if (filePath is null)
+                return;
+
+            if (!File.Exists(filePath))
+            {
+                this.ShowWarning(string.Format(LocalizationSource.GetString("Msg_RecentFileNotFound"), filePath));
+                RemoveRecentFile(filePath);
+                return;
+            }
+
+            if (Project is not null)
+            {
+                if (this.ShowQuestionWithCancel(LocalizationSource.GetString("Msg_ProjectOpenOpenDataFile"), MessageBoxImage.Warning, LocalizationSource.GetString("Msg_ProjectCurrentlyOpen")) != MessageBoxResult.Yes)
+                    return;
+            }
+
+            await LoadFile(filePath, true);
+        }
+
         private async void Command_Save(object sender, ExecutedRoutedEventArgs e)
         {
             if (CanSave)
@@ -1156,6 +1246,7 @@ namespace UndertaleModTool
                         Data.ToolInfo.DecompilerSettings = SettingsWindow.DecompilerSettings;
                         Data.ToolInfo.InstanceIdPrefix = () => SettingsWindow.InstanceIdPrefix;
                         FilePath = filename;
+                        AddRecentFile(filename);
                         OnPropertyChanged("Data");
                         OnPropertyChanged("FilePath");
                         OnPropertyChanged("IsGMS2");

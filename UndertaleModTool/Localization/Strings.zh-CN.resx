@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -264,6 +264,15 @@
   <data name="Menu_File_Open" xml:space="preserve">
     <value>打开(_O)</value>
   </data>
+  <data name="Menu_File_RecentFiles" xml:space="preserve">
+    <value>最近打开(_F)</value>
+  </data>
+  <data name="Menu_File_RecentFiles_None" xml:space="preserve">
+    <value>无最近打开的文件</value>
+  </data>
+  <data name="Menu_File_RecentFiles_Clear" xml:space="preserve">
+    <value>清除最近打开记录</value>
+  </data>
   <data name="Menu_File_Save" xml:space="preserve">
     <value>保存(_S)</value>
   </data>
@@ -521,6 +530,15 @@
   </data>
   <data name="Settings_OpenAppDataFolder" xml:space="preserve">
     <value>打开应用程序数据文件夹</value>
+  </data>
+  <data name="Settings_ClearRecentFiles" xml:space="preserve">
+    <value>清除最近打开记录</value>
+  </data>
+  <data name="Settings_ClearRecentFiles_None" xml:space="preserve">
+    <value>没有可清除的最近打开记录。</value>
+  </data>
+  <data name="Settings_ClearRecentFiles_Confirm" xml:space="preserve">
+    <value>确定要清除所有最近打开记录吗？</value>
   </data>
   <data name="Settings_UpdateApp" xml:space="preserve">
     <value>更新应用至最新提交</value>
@@ -1571,6 +1589,11 @@
   <data name="Msg_LoadError" xml:space="preserve">
     <value>尝试加载时发生错误：
 {0}</value>
+  </data>
+  <data name="Msg_RecentFileNotFound" xml:space="preserve">
+    <value>找不到最近打开的文件：
+{0}
+该文件将从最近打开列表中移除。</value>
   </data>
   <data name="Msg_SaveError" xml:space="preserve">
     <value>尝试保存时发生错误：
