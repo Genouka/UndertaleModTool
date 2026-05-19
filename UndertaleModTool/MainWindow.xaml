@@ -81,6 +81,9 @@
                 <local:MenuItemDark Header="{loc:Loc Menu_File}">
                     <MenuItem Header="{loc:Loc Menu_File_New}" Command="New" InputGestureText="Ctrl+N"/>
                     <MenuItem Header="{loc:Loc Menu_File_Open}" Command="Open" InputGestureText="Ctrl+O"/>
+                    <local:MenuItemDark x:Name="RecentFilesItem" Header="{loc:Loc Menu_File_RecentFiles}" SubmenuOpened="RecentFilesItem_SubmenuOpened">
+                        <MenuItem Header="{loc:Loc Menu_File_RecentFiles_None}" IsEnabled="False"/>
+                    </local:MenuItemDark>
                     <MenuItem Header="{loc:Loc Menu_File_Save}" Command="Save" InputGestureText="Ctrl+S">
                         <MenuItem.Style>
                             <Style TargetType="{x:Type MenuItem}">

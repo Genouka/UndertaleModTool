@@ -58,6 +58,8 @@ namespace UndertaleModTool
 
         public bool RecompileAllCodeSourcesOnProjectSave { get; set; } = false;
 
+        public List<string> RecentFiles { get; set; } = new();
+
         public string Language { get; set; } = "en";
 
         public static Settings Instance { get; private set; }

@@ -173,7 +173,16 @@
                     </Grid.ColumnDefinitions>
 
                     <local:ButtonDark Grid.Column="0" Click="AppDataButton_Click" Padding="8,2,8,2" HorizontalAlignment="Left" Content="{loc:Loc Settings_OpenAppDataFolder}"/>
-                    <local:ButtonDark Grid.Column="1" Click="UpdateAppButton_Click" Padding="8,2,8,2" HorizontalAlignment="Right" x:Name="UpdateAppButton" Visibility="{Binding UpdaterButtonVisibility}" Content="{loc:Loc Settings_UpdateApp}"/>
+                    <local:ButtonDark Grid.Column="1" Click="ClearRecentFilesButton_Click" Padding="8,2,8,2" HorizontalAlignment="Right" Content="{loc:Loc Settings_ClearRecentFiles}"/>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <local:ButtonDark Grid.Column="0" Click="UpdateAppButton_Click" Padding="8,2,8,2" HorizontalAlignment="Left" x:Name="UpdateAppButton" Visibility="{Binding UpdaterButtonVisibility}" Content="{loc:Loc Settings_UpdateApp}"/>
                 </Grid>
             </StackPanel>
         </Grid>

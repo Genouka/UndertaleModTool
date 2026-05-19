@@ -320,6 +320,20 @@ namespace UndertaleModTool
             MainWindow.OpenFolder(Settings.AppDataFolder);
         }
 
+        private void ClearRecentFilesButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Settings.Instance.RecentFiles is null || Settings.Instance.RecentFiles.Count == 0)
+            {
+                mainWindow.ShowWarning(LocalizationSource.GetString("Settings_ClearRecentFiles_None"));
+                return;
+            }
+
+            if (mainWindow.ShowQuestion(LocalizationSource.GetString("Settings_ClearRecentFiles_Confirm"), MessageBoxImage.Question, LocalizationSource.GetString("Settings_ClearRecentFiles")) == MessageBoxResult.Yes)
+            {
+                MainWindow.ClearRecentFiles();
+            }
+        }
+
         private void UpdateAppButton_Click(object sender, RoutedEventArgs e)
         {
             ((MainWindow)Owner).UpdateApp(this);
