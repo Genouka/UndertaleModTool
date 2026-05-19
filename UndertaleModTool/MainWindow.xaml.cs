@@ -3291,6 +3291,31 @@ namespace UndertaleModTool
             }
         }
 
+        private void MenuItem_ImportFromFile_Click(object sender, RoutedEventArgs e)
+        {
+            if (Data is null)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_NoDataWinLoaded"));
+                return;
+            }
+
+            ImportFromFileDialog dialog = null;
+            try
+            {
+                dialog = new(Data);
+                dialog.Owner = this;
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_ImportFromFileError"), ex.Message));
+            }
+            finally
+            {
+                dialog?.Close();
+            }
+        }
+
         private async void MenuItem_OffsetMap_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog();

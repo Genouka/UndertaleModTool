@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -17,7 +17,7 @@ namespace UndertaleModLib.Project;
 /// <summary>
 /// Represents a context around a specific (mod) project, as exists on disk.
 /// </summary>
-public sealed partial class ProjectContext
+public partial class ProjectContext
 {
     /// <summary>
     /// Name of the project.
@@ -160,6 +160,22 @@ public sealed partial class ProjectContext
         SaveDirectory = Path.GetFullPath(saveDirectory);
         MainFilePath = mainFilePath;
         MainDirectory = Path.GetFullPath(Path.GetDirectoryName(MainFilePath));
+    }
+
+    /// <summary>
+    /// Initializes a project context for cross-file import operations.
+    /// </summary>
+    protected ProjectContext(UndertaleData targetData, UndertaleData sourceData, Action<Action> mainThreadAction)
+    {
+        Data = targetData;
+        LoadDirectory = string.Empty;
+        SaveDirectory = string.Empty;
+        MainFilePath = string.Empty;
+        MainDirectory = string.Empty;
+        if (mainThreadAction is not null)
+        {
+            MainThreadAction = mainThreadAction;
+        }
     }
 
     /// <summary>

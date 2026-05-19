@@ -1,0 +1,92 @@
+<Window x:Class="UndertaleModTool.Windows.ImportFromFileDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UndertaleModTool"
+        xmlns:loc="clr-namespace:UndertaleModTool.Localization"
+        mc:Ignorable="d"
+        Title="{loc:Loc Dialog_ImportFromFile}" Height="650" Width="700"
+        IsVisibleChanged="Window_IsVisibleChanged" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Label Grid.Row="0" Content="{loc:Loc ImportFile_SourceFile}" FontSize="16" Margin="10,8,0,2"/>
+        <DockPanel Grid.Row="1" Margin="10,0,10,5">
+            <local:ButtonDark x:Name="BrowseButton" Content="{loc:Loc ImportFile_Browse}" Click="BrowseButton_Click" Width="80" DockPanel.Dock="Right"/>
+            <local:TextBoxDark x:Name="SourceFilePathTextBox" IsReadOnly="True" Margin="0,0,5,0" VerticalContentAlignment="Center"/>
+        </DockPanel>
+
+        <Label Grid.Row="2" Content="{loc:Loc ImportFile_ConflictResolution}" FontSize="14" Margin="10,4,0,2"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="10,0,10,5">
+            <RadioButton Name="SkipRadio" Content="{loc:Loc ImportFile_Skip}" IsChecked="True" Margin="0,0,15,0" FontSize="13"/>
+            <RadioButton Name="OverwriteRadio" Content="{loc:Loc ImportFile_Overwrite}" Margin="0,0,15,0" FontSize="13"/>
+            <RadioButton Name="RenameRadio" Content="{loc:Loc ImportFile_Rename}" FontSize="13"/>
+        </StackPanel>
+
+        <CheckBox Name="ImportDependenciesCheck" Grid.Row="4" Content="{loc:Loc ImportFile_IncludeDependencies}"
+                 IsChecked="True" Margin="10,3,10,0" FontSize="13"/>
+
+        <Grid Grid.Row="5" Margin="10,5,10,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="200"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*" MinWidth="200"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Label Content="{loc:Loc ImportFile_AvailableResources}" FontWeight="Bold" FontSize="13"/>
+                <ListBox Name="AvailableList" Grid.Row="1" SelectionMode="Extended" Margin="0,2,0,2">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayName}" ToolTip="{Binding FullName}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0">
+                    <local:ButtonDark Content="{loc:Loc ImportFile_SelectAll}" Click="SelectAllButton_Click" Width="70" Height="24" FontSize="11"/>
+                    <local:ButtonDark Content="{loc:Loc ImportFile_DeselectAll}" Click="DeselectAllButton_Click" Width="75" Height="24" FontSize="11" Margin="5,0,0,0"/>
+                </StackPanel>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="Transparent"/>
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Label Content="{loc:Loc ImportFile_SelectedForImport}" FontWeight="Bold" FontSize="13"/>
+                <ListBox Name="SelectedList" Grid.Row="1" AllowDrop="True" Drop="SelectedList_Drop"
+                         DragOver="SelectedList_DragOver" Margin="0,2,0,0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayName}" ToolTip="{Binding FullName}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Grid>
+
+        <Rectangle Grid.Row="6" Margin="10,8,20,0" Height="2" Fill="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+
+        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,12">
+            <local:ButtonDark x:Name="ImportButton" Content="{loc:Loc ImportFile_Import}" FontSize="16" Width="100" Height="36" Click="ImportButton_Click"/>
+            <local:ButtonDark Content="{loc:Loc Common_Cancel}" FontSize="16" Width="100" Height="36" Margin="15,0,0,0" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

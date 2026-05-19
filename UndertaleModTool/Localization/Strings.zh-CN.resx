@@ -4950,4 +4950,88 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Settings_Language_Note1" xml:space="preserve">
     <value>已打开的标签页的语言在重启应用程序后才会生效。</value>
   </data>
+  <data name="Menu_File_ImportFromFile" xml:space="preserve">
+    <value>从文件导入(_I)...</value>
+  </data>
+  <data name="Dialog_ImportFromFile" xml:space="preserve">
+    <value>从文件导入资源</value>
+  </data>
+  <data name="ImportFile_SourceFile" xml:space="preserve">
+    <value>源数据文件：</value>
+  </data>
+  <data name="ImportFile_Browse" xml:space="preserve">
+    <value>浏览...</value>
+  </data>
+  <data name="ImportFile_ConflictResolution" xml:space="preserve">
+    <value>名称冲突处理：</value>
+  </data>
+  <data name="ImportFile_Skip" xml:space="preserve">
+    <value>跳过已存在的</value>
+  </data>
+  <data name="ImportFile_Overwrite" xml:space="preserve">
+    <value>覆盖已存在的</value>
+  </data>
+  <data name="ImportFile_Rename" xml:space="preserve">
+    <value>重命名导入的</value>
+  </data>
+  <data name="ImportFile_IncludeDependencies" xml:space="preserve">
+    <value>自动包含依赖项</value>
+  </data>
+  <data name="ImportFile_AvailableResources" xml:space="preserve">
+    <value>可用资源：</value>
+  </data>
+  <data name="ImportFile_SelectedForImport" xml:space="preserve">
+    <value>已选择导入：</value>
+  </data>
+  <data name="ImportFile_SelectAll" xml:space="preserve">
+    <value>全选</value>
+  </data>
+  <data name="ImportFile_DeselectAll" xml:space="preserve">
+    <value>取消全选</value>
+  </data>
+  <data name="ImportFile_Import" xml:space="preserve">
+    <value>导入</value>
+  </data>
+  <data name="ImportFile_Loading" xml:space="preserve">
+    <value>加载中</value>
+  </data>
+  <data name="ImportFile_LoadingPleaseWait" xml:space="preserve">
+    <value>正在加载源数据文件，请稍候...</value>
+  </data>
+  <data name="ImportFile_Importing" xml:space="preserve">
+    <value>导入中</value>
+  </data>
+  <data name="ImportFile_ImportingPleaseWait" xml:space="preserve">
+    <value>正在导入资源，请稍候...</value>
+  </data>
+  <data name="ImportFile_FileFilter" xml:space="preserve">
+    <value>游戏数据文件</value>
+  </data>
+  <data name="ImportFile_LoadError" xml:space="preserve">
+    <value>加载源数据文件失败：{0}</value>
+  </data>
+  <data name="ImportFile_EnumerateError" xml:space="preserve">
+    <value>枚举资源失败：{0}</value>
+  </data>
+  <data name="ImportFile_ImportError" xml:space="preserve">
+    <value>导入失败：{0}</value>
+  </data>
+  <data name="ImportFile_Summary" xml:space="preserve">
+    <value>导入完成：{0} 个已导入，{1} 个已跳过，{2} 个已覆盖</value>
+  </data>
+  <data name="ImportFile_Warnings" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="ImportFile_Errors" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="ImportFile_AndMore" xml:space="preserve">
+    <value>...还有 {0} 条</value>
+  </data>
+  <data name="ImportFile_ExistsInTarget" xml:space="preserve">
+    <value>目标文件中已存在</value>
+  </data>
+  <data name="Msg_ImportFromFileError" xml:space="preserve">
+    <value>从文件导入出错：{0}</value>
+  </data>
 </root>

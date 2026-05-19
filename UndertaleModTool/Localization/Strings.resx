@@ -4948,4 +4948,88 @@ It's highly recommended to restart the application.</value>
   <data name="Settings_Language_Note1" xml:space="preserve">
     <value>The language of open tabs will only take effect after restarting the application.</value>
   </data>
+  <data name="Menu_File_ImportFromFile" xml:space="preserve">
+    <value>_Import from file...</value>
+  </data>
+  <data name="Dialog_ImportFromFile" xml:space="preserve">
+    <value>Import Resources from File</value>
+  </data>
+  <data name="ImportFile_SourceFile" xml:space="preserve">
+    <value>Source data file:</value>
+  </data>
+  <data name="ImportFile_Browse" xml:space="preserve">
+    <value>Browse...</value>
+  </data>
+  <data name="ImportFile_ConflictResolution" xml:space="preserve">
+    <value>Name conflict resolution:</value>
+  </data>
+  <data name="ImportFile_Skip" xml:space="preserve">
+    <value>Skip existing</value>
+  </data>
+  <data name="ImportFile_Overwrite" xml:space="preserve">
+    <value>Overwrite existing</value>
+  </data>
+  <data name="ImportFile_Rename" xml:space="preserve">
+    <value>Rename imported</value>
+  </data>
+  <data name="ImportFile_IncludeDependencies" xml:space="preserve">
+    <value>Automatically include dependencies</value>
+  </data>
+  <data name="ImportFile_AvailableResources" xml:space="preserve">
+    <value>Available resources:</value>
+  </data>
+  <data name="ImportFile_SelectedForImport" xml:space="preserve">
+    <value>Selected for import:</value>
+  </data>
+  <data name="ImportFile_SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="ImportFile_DeselectAll" xml:space="preserve">
+    <value>Deselect All</value>
+  </data>
+  <data name="ImportFile_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="ImportFile_Loading" xml:space="preserve">
+    <value>Loading</value>
+  </data>
+  <data name="ImportFile_LoadingPleaseWait" xml:space="preserve">
+    <value>Loading source data file, please wait...</value>
+  </data>
+  <data name="ImportFile_Importing" xml:space="preserve">
+    <value>Importing</value>
+  </data>
+  <data name="ImportFile_ImportingPleaseWait" xml:space="preserve">
+    <value>Importing resources, please wait...</value>
+  </data>
+  <data name="ImportFile_FileFilter" xml:space="preserve">
+    <value>Game data files</value>
+  </data>
+  <data name="ImportFile_LoadError" xml:space="preserve">
+    <value>Failed to load source data file: {0}</value>
+  </data>
+  <data name="ImportFile_EnumerateError" xml:space="preserve">
+    <value>Failed to enumerate resources: {0}</value>
+  </data>
+  <data name="ImportFile_ImportError" xml:space="preserve">
+    <value>Import failed: {0}</value>
+  </data>
+  <data name="ImportFile_Summary" xml:space="preserve">
+    <value>Import complete: {0} imported, {1} skipped, {2} overwritten</value>
+  </data>
+  <data name="ImportFile_Warnings" xml:space="preserve">
+    <value>Warnings</value>
+  </data>
+  <data name="ImportFile_Errors" xml:space="preserve">
+    <value>Errors</value>
+  </data>
+  <data name="ImportFile_AndMore" xml:space="preserve">
+    <value>...and {0} more</value>
+  </data>
+  <data name="ImportFile_ExistsInTarget" xml:space="preserve">
+    <value>already exists in target</value>
+  </data>
+  <data name="Msg_ImportFromFileError" xml:space="preserve">
+    <value>Import from file error: {0}</value>
+  </data>
 </root>
