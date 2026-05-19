@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
+using ImageMagick;
+using Underanalyzer.Decompiler;
 using UndertaleModLib.Compiler;
+using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project.SerializableAssets;
 using UndertaleModLib.Util;
@@ -140,9 +142,10 @@ public sealed class CrossFileImporter : IDisposable
             CollectDependencies(selectedResources, allResourcesToImport, result.Warnings);
         }
 
-        List<ISerializableProjectAsset> serializableAssets = new(allResourcesToImport.Count);
-        List<SerializableCode> codeAssets = new(32);
-        List<ISerializableTextureProjectAsset> textureAssets = new(32);
+        List<ResourceInfo> codeResources = new();
+        List<ResourceInfo> textureResources = new();
+        List<ResourceInfo> otherResources = new();
+        List<ISerializableProjectAsset> serializableAssets = new();
 
         CrossFileImportContext sourceContext = new(SourceData, _mainThreadAction);
 
@@ -175,9 +178,25 @@ public sealed class CrossFileImporter : IDisposable
                 }
             }
 
+            if (resInfo.AssetType == SerializableAssetType.Code)
+            {
+                codeResources.Add(resInfo);
+                continue;
+            }
+
+            if (resInfo.SourceObject is UndertaleSprite or UndertaleBackground or UndertaleFont)
+            {
+                textureResources.Add(resInfo);
+            }
+
+            otherResources.Add(resInfo);
+        }
+
+        foreach (ResourceInfo resInfo in otherResources)
+        {
             try
             {
-                ISerializableProjectAsset serializable = projectAsset.GenerateSerializableProjectAsset(sourceContext);
+                ISerializableProjectAsset serializable = ((IProjectAsset)resInfo.SourceObject).GenerateSerializableProjectAsset(sourceContext);
 
                 if (conflictResolution == NameConflictResolution.Rename && resInfo.ExistsInTarget)
                 {
@@ -186,11 +205,6 @@ public sealed class CrossFileImporter : IDisposable
                 }
 
                 serializableAssets.Add(serializable);
-
-                if (serializable is SerializableCode codeAsset)
-                    codeAssets.Add(codeAsset);
-                else if (serializable is ISerializableTextureProjectAsset textureAsset)
-                    textureAssets.Add(textureAsset);
             }
             catch (Exception ex)
             {
@@ -198,12 +212,10 @@ public sealed class CrossFileImporter : IDisposable
             }
         }
 
-        if (serializableAssets.Count == 0)
+        if (serializableAssets.Count == 0 && codeResources.Count == 0 && textureResources.Count == 0)
             return result;
 
         serializableAssets.Sort(CompareSerializableAssets);
-        codeAssets.Sort(CompareSerializableAssets);
-        textureAssets.Sort(CompareSerializableAssets);
 
         CrossFileImportContext targetContext = new(TargetData, _mainThreadAction);
 
@@ -222,51 +234,9 @@ public sealed class CrossFileImporter : IDisposable
             }
         });
 
-        if (codeAssets.Count > 0)
-        {
-            CodeImportGroup importGroup = new(TargetData)
-            {
-                AutoCreateAssets = false,
-                MainThreadAction = _mainThreadAction
-            };
-            foreach (SerializableCode asset in codeAssets)
-            {
-                try
-                {
-                    asset.ImportCode(targetContext, importGroup);
-                }
-                catch (Exception ex)
-                {
-                    result.Errors.Add($"Code import preparation failed for \"{asset.DataName}\": {ex.Message}");
-                }
-            }
-            try
-            {
-                importGroup.Import(true);
-            }
-            catch (Exception ex)
-            {
-                result.Errors.Add($"Code compilation failed: {ex.Message}");
-            }
-        }
+        ImportCodeResources(codeResources, targetContext, conflictResolution, result);
 
-        if (textureAssets.Count > 0)
-        {
-            TextureGroupPacker packer = new();
-            foreach (ISerializableTextureProjectAsset asset in textureAssets)
-            {
-                try
-                {
-                    asset.ImportTextures(targetContext, packer);
-                }
-                catch (Exception ex)
-                {
-                    result.Errors.Add($"Texture import failed for \"{asset.DataName}\": {ex.Message}");
-                }
-            }
-            packer.PackPages();
-            packer.ImportToData(TargetData);
-        }
+        ImportTextureResources(textureResources, targetContext, conflictResolution, result);
 
         _mainThreadAction(() =>
         {
@@ -285,6 +255,217 @@ public sealed class CrossFileImporter : IDisposable
         });
 
         return result;
+    }
+
+    private void ImportCodeResources(
+        List<ResourceInfo> codeResources,
+        CrossFileImportContext targetContext,
+        NameConflictResolution conflictResolution,
+        CrossFileImportResult result)
+    {
+        if (codeResources.Count == 0) return;
+
+        GlobalDecompileContext decompileContext = new(SourceData);
+
+        CodeImportGroup importGroup = new(TargetData)
+        {
+            AutoCreateAssets = false,
+            MainThreadAction = _mainThreadAction
+        };
+
+        foreach (ResourceInfo resInfo in codeResources)
+        {
+            if (resInfo.SourceObject is not UndertaleCode sourceCode) continue;
+
+            UndertaleCode targetCode = TargetData.Code.ByName(resInfo.Name) as UndertaleCode;
+
+            if (targetCode is not null)
+            {
+                switch (conflictResolution)
+                {
+                    case NameConflictResolution.Skip:
+                        result.SkippedCount++;
+                        continue;
+                    case NameConflictResolution.Overwrite:
+                        result.OverwrittenCount++;
+                        break;
+                    case NameConflictResolution.Rename:
+                        string newName = GenerateUniqueName(resInfo.Name, SerializableAssetType.Code);
+                        targetCode = new UndertaleCode()
+                        {
+                            Name = TargetData.Strings.MakeString(newName)
+                        };
+                        _mainThreadAction(() => TargetData.Code.Add(targetCode));
+                        if (TargetData.CodeLocals is not null)
+                        {
+                            UndertaleCodeLocals.CreateEmptyEntry(TargetData, targetCode.Name);
+                        }
+                        break;
+                }
+            }
+            else
+            {
+                targetCode = new UndertaleCode()
+                {
+                    Name = TargetData.Strings.MakeString(resInfo.Name)
+                };
+                _mainThreadAction(() => TargetData.Code.Add(targetCode));
+                if (TargetData.CodeLocals is not null)
+                {
+                    UndertaleCodeLocals.CreateEmptyEntry(TargetData, targetCode.Name);
+                }
+            }
+
+            try
+            {
+                string source;
+                try
+                {
+                    source = new DecompileContext(decompileContext, sourceCode, SourceData.ToolInfo.DecompilerSettings).DecompileToString();
+                }
+                catch
+                {
+                    source = sourceCode.Disassemble(SourceData.Variables, SourceData.CodeLocals?.For(sourceCode));
+                }
+
+                importGroup.QueueReplace(targetCode, source);
+
+                const string globalScriptPrefix = "gml_GlobalScript_";
+                if (targetCode.Name.Content.StartsWith(globalScriptPrefix, StringComparison.Ordinal))
+                {
+                    bool alreadyExists = TargetData.GlobalInitScripts.Any(gi => gi.Code == targetCode);
+                    if (!alreadyExists)
+                    {
+                        _mainThreadAction(() => TargetData.GlobalInitScripts.Add(new UndertaleGlobalInit()
+                        {
+                            Code = targetCode
+                        }));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Errors.Add($"Failed to decompile code \"{resInfo.Name}\": {ex.Message}");
+            }
+        }
+
+        try
+        {
+            importGroup.Import(true);
+            result.ImportedCount += codeResources.Count;
+        }
+        catch (Exception ex)
+        {
+            result.Errors.Add($"Code compilation failed: {ex.Message}");
+        }
+    }
+
+    private void ImportTextureResources(
+        List<ResourceInfo> textureResources,
+        CrossFileImportContext targetContext,
+        NameConflictResolution conflictResolution,
+        CrossFileImportResult result)
+    {
+        if (textureResources.Count == 0) return;
+
+        TextureGroupPacker packer = new();
+        using TextureWorker textureWorker = new();
+
+        foreach (ResourceInfo resInfo in textureResources)
+        {
+            try
+            {
+                if (resInfo.SourceObject is UndertaleSprite sourceSprite)
+                {
+                    ImportSpriteTextures(sourceSprite, packer, textureWorker, conflictResolution, result);
+                }
+                else if (resInfo.SourceObject is UndertaleBackground sourceBg)
+                {
+                    ImportBackgroundTextures(sourceBg, packer, textureWorker, conflictResolution, result);
+                }
+                else if (resInfo.SourceObject is UndertaleFont sourceFont)
+                {
+                    ImportFontTextures(sourceFont, packer, textureWorker, conflictResolution, result);
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Errors.Add($"Texture import failed for \"{resInfo.Name}\": {ex.Message}");
+            }
+        }
+
+        packer.PackPages();
+        packer.ImportToData(TargetData);
+    }
+
+    private void ImportSpriteTextures(UndertaleSprite sourceSprite, TextureGroupPacker packer, TextureWorker textureWorker, NameConflictResolution conflictResolution, CrossFileImportResult result)
+    {
+        UndertaleSprite targetSprite = TargetData.Sprites.ByName(sourceSprite.Name.Content) as UndertaleSprite;
+        if (targetSprite is null) return;
+
+        targetSprite.Textures.Clear();
+        foreach (var texEntry in sourceSprite.Textures)
+        {
+            if (texEntry.Texture is null) continue;
+
+            UndertaleTexturePageItem newItem = CopyTexturePageItem(texEntry.Texture, packer, textureWorker);
+            if (newItem is not null)
+            {
+                targetSprite.Textures.Add(new UndertaleSprite.TextureEntry()
+                {
+                    Texture = newItem
+                });
+            }
+        }
+
+        targetSprite.CollisionMasks.Clear();
+        foreach (var mask in sourceSprite.CollisionMasks)
+        {
+            targetSprite.CollisionMasks.Add(mask);
+        }
+    }
+
+    private void ImportBackgroundTextures(UndertaleBackground sourceBg, TextureGroupPacker packer, TextureWorker textureWorker, NameConflictResolution conflictResolution, CrossFileImportResult result)
+    {
+        UndertaleBackground targetBg = TargetData.Backgrounds.ByName(sourceBg.Name.Content) as UndertaleBackground;
+        if (targetBg is null) return;
+
+        if (sourceBg.Texture is not null)
+        {
+            UndertaleTexturePageItem newItem = CopyTexturePageItem(sourceBg.Texture, packer, textureWorker);
+            if (newItem is not null)
+            {
+                targetBg.Texture = newItem;
+            }
+        }
+    }
+
+    private void ImportFontTextures(UndertaleFont sourceFont, TextureGroupPacker packer, TextureWorker textureWorker, NameConflictResolution conflictResolution, CrossFileImportResult result)
+    {
+        result.Warnings.Add($"Font \"{sourceFont.Name.Content}\" texture was not imported. Font textures require manual setup.");
+    }
+
+    private UndertaleTexturePageItem CopyTexturePageItem(UndertaleTexturePageItem sourceItem, TextureGroupPacker packer, TextureWorker textureWorker)
+    {
+        if (sourceItem is null || sourceItem.TexturePage is null) return null;
+
+        try
+        {
+            IMagickImage<byte> image = textureWorker.GetTextureFor(sourceItem, sourceItem.ToString());
+            if (image is null) return null;
+
+            MagickImage magickImage;
+            if (image is MagickImage mi)
+                magickImage = mi;
+            else
+                magickImage = new MagickImage(image);
+
+            return packer.AddImage(magickImage, TextureGroupPacker.BorderFlags.Enabled);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void CollectDependencies(
