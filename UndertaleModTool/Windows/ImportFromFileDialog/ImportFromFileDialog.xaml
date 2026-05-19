@@ -14,8 +14,8 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -50,7 +50,12 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Label Content="{loc:Loc ImportFile_AvailableResources}" FontWeight="Bold" FontSize="13"/>
-                <ListBox Name="AvailableList" Grid.Row="1" SelectionMode="Extended" Margin="0,2,0,2">
+                <ListBox Name="AvailableList" Grid.Row="1" SelectionMode="Extended"
+                         MouseDoubleClick="AvailableList_MouseDoubleClick" 
+                         Margin="0,2,0,2">
+                    <ListBox.Background>
+                        <DynamicResource ResourceKey="{x:Static SystemColors.ControlLightBrushKey}"/>
+                    </ListBox.Background>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplayName}" ToolTip="{Binding FullName}"/>
@@ -72,7 +77,10 @@
                 </Grid.RowDefinitions>
                 <Label Content="{loc:Loc ImportFile_SelectedForImport}" FontWeight="Bold" FontSize="13"/>
                 <ListBox Name="SelectedList" Grid.Row="1" AllowDrop="True" Drop="SelectedList_Drop"
-                         DragOver="SelectedList_DragOver" Margin="0,2,0,0">
+                         DragOver="SelectedList_DragOver" MouseDoubleClick="SelectedList_MouseDoubleClick" Margin="0,2,0,0">
+                    <ListBox.Background>
+                        <DynamicResource ResourceKey="{x:Static SystemColors.ControlLightBrushKey}"/>
+                    </ListBox.Background>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplayName}" ToolTip="{Binding FullName}"/>

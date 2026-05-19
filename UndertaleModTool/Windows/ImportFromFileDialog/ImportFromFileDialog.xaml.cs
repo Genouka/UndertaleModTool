@@ -1,3 +1,4 @@
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -6,9 +7,9 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using Microsoft.Win32;
 using UndertaleModLib.Project;
 using UndertaleModTool.Localization;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace UndertaleModTool.Windows
 {
@@ -80,9 +81,16 @@ namespace UndertaleModTool.Windows
                         loadError = ex;
                     }
                 });
-
-                loader.ShowDialog();
+                //try
+                //{
+                //    _ = Dispatcher.BeginInvoke(new Action(() => { if (!loader.IsClosed) loader.TryShowDialog(); }));
+                //}
+                //catch
+                //{
+                //    // This is still a problem in rare cases for some unknown reason
+                //}//FIXME
                 await loadTask;
+                
 
                 if (!loadSuccess)
                 {
@@ -216,7 +224,7 @@ namespace UndertaleModTool.Windows
                 }
             });
 
-            loader.ShowDialog();
+            //loader.ShowDialog();
             await importTask;
 
             if (importError is not null)
