@@ -33,6 +33,8 @@ namespace UndertaleModTool
 
         private static readonly MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
 
+        public IWindowHost Host { get; set; }
+
         /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -49,9 +51,8 @@ namespace UndertaleModTool
                 _currentObject = value;
 
                 SetTabTitleBinding(value, prevObj);
-
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CurrentObject)));
-                mainWindow.RaiseOnSelectedChanged();
+                (Host ?? mainWindow)?.RaiseOnSelectedChanged();
             }
         }
 
@@ -82,8 +83,11 @@ namespace UndertaleModTool
         /// <param name="obj">The object that should be open.</param>
         /// <param name="tabIndex">The tab index.</param>
         /// <param name="tabTitle">The tab title.</param>
-        public Tab(object obj, int tabIndex, string tabTitle = null)
+        public Tab(object obj, int tabIndex, string tabTitle = null) : this(obj, tabIndex, null, tabTitle) { }
+
+        public Tab(object obj, int tabIndex, IWindowHost host, string tabTitle = null)
         {
+            Host = host;
             CurrentObject = obj;
             TabIndex = tabIndex;
             AutoClose = obj is DescriptionView;
@@ -222,10 +226,21 @@ namespace UndertaleModTool
         /// <param name="textBlock">A reference to the <see cref="TextBlock"/> that displays the title.</param>
         public static void SetTabTitleBinding(object obj, object prevObj, TextBlock textBlock = null)
         {
+            SetTabTitleBinding(obj, prevObj, null, textBlock);
+        }
+
+        public void SetTabTitleBinding(object obj, object prevObj)
+        {
+            SetTabTitleBinding(obj, prevObj, Host, null);
+        }
+
+        private static void SetTabTitleBinding(object obj, object prevObj, IWindowHost host, TextBlock textBlock)
+        {
             if (textBlock is null)
             {
-                var cont = mainWindow.TabController.ItemContainerGenerator.ContainerFromIndex(mainWindow.CurrentTabIndex);
-                textBlock = MainWindow.FindVisualChild<TextBlock>(cont);
+                host ??= mainWindow as IWindowHost;
+                var cont = host.TabController.ItemContainerGenerator.ContainerFromIndex(host.CurrentTabIndex);
+                textBlock = VisualTreeUtil.FindVisualChild<TextBlock>(cont);
             }
             else
                 obj = (textBlock.DataContext as Tab)?.CurrentObject;
@@ -275,7 +290,8 @@ namespace UndertaleModTool
             if (!overwrite && LastContentState is not null)
                 return;
 
-            ContentControl dataEditor = mainWindow.DataEditor;
+            var host = Host ?? mainWindow as IWindowHost;
+            ContentControl dataEditor = host.DataEditor;
             if (dataEditor is null
                 || dataEditor.Content is null
                 || dataEditor.Content is DescriptionView)
@@ -289,11 +305,11 @@ namespace UndertaleModTool
             }
             catch
             {
-                mainWindow.ShowWarning(LocalizationSource.GetString("Msg_TabContentStateSaveFail"));
+                host.Window.ShowWarning(LocalizationSource.GetString("Msg_TabContentStateSaveFail"));
                 return;
             }
 
-            double mainScrollPos = MainWindow.GetNearestParent<ScrollViewer>(dataEditor)?.VerticalOffset ?? 0;
+            double mainScrollPos = VisualTreeUtil.GetNearestParent<ScrollViewer>(dataEditor)?.VerticalOffset ?? 0;
 
             switch (editor)
             {
@@ -380,7 +396,7 @@ namespace UndertaleModTool
                         roomEditor.TileItems.IsExpanded,
                         roomEditor.LayerItems.IsExpanded
                     };
-                    ScrollViewer treeObjViewer = MainWindow.FindVisualChild<ScrollViewer>(roomEditor.RoomObjectsTree);
+                    ScrollViewer treeObjViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(roomEditor.RoomObjectsTree);
                     (double Left, double Top) treeScrollPos = (treeObjViewer.HorizontalOffset, treeObjViewer.VerticalOffset);
                     object selectedObj = roomEditor.RoomObjectsTree.SelectedItem;
                     if (selectedObj is TreeViewItem item)
@@ -408,7 +424,7 @@ namespace UndertaleModTool
                         }
                     }
                     
-                    ScrollViewer glyphsViewer = MainWindow.FindVisualChild<ScrollViewer>(fontEditor.GlyphsGrid);
+                    ScrollViewer glyphsViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(fontEditor.GlyphsGrid);
                     if (glyphsViewer is null)
                     {
                         Debug.WriteLine("Can't save the scroll position of the font editor glyphs - \"ScrollViewer\" is not found.");
@@ -430,7 +446,7 @@ namespace UndertaleModTool
                     {
                         room = genInfoEditor.RoomListGrid.SelectedItem;
 
-                        ScrollViewer roomListViewer = MainWindow.FindVisualChild<ScrollViewer>(genInfoEditor.RoomListGrid);
+                        ScrollViewer roomListViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(genInfoEditor.RoomListGrid);
                         if (roomListViewer is null)
                         {
                             Debug.WriteLine("Can't save the scroll position of the global info editor room list - \"ScrollViewer\" is not found.");
@@ -452,7 +468,7 @@ namespace UndertaleModTool
                 case UndertaleGlobalInitEditor globalInitEditor:
                     object script = globalInitEditor.ScriptsGrid.SelectedItem;
 
-                    ScrollViewer scriptsViewer = MainWindow.FindVisualChild<ScrollViewer>(globalInitEditor.ScriptsGrid);
+                    ScrollViewer scriptsViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(globalInitEditor.ScriptsGrid);
                     if (scriptsViewer is null)
                     {
                         Debug.WriteLine("Can't save the scroll position of the font editor glyphs - \"ScrollViewer\" is not found.");
@@ -470,7 +486,7 @@ namespace UndertaleModTool
                 case UndertaleSpriteEditor spriteEditor:
                     object texture = spriteEditor.TextureList.SelectedItem;
 
-                    ScrollViewer texturesViewer = MainWindow.FindVisualChild<ScrollViewer>(spriteEditor.TextureList);
+                    ScrollViewer texturesViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(spriteEditor.TextureList);
                     if (texturesViewer is null)
                     {
                         Debug.WriteLine("Can't save the scroll position of the sprite editor textures - \"ScrollViewer\" is not found.");
@@ -479,7 +495,7 @@ namespace UndertaleModTool
 
                     object mask = spriteEditor.MaskList.SelectedItem;
 
-                    ScrollViewer masksViewer = MainWindow.FindVisualChild<ScrollViewer>(spriteEditor.MaskList);
+                    ScrollViewer masksViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(spriteEditor.MaskList);
                     if (masksViewer is null)
                     {
                         Debug.WriteLine("Can't save the scroll position of the sprite editor masks - \"ScrollViewer\" is not found.");
@@ -500,11 +516,11 @@ namespace UndertaleModTool
                     object tile = null;
                     double scrollPos = -1;
 
-                    if (mainWindow.IsGMS2 == Visibility.Visible)
+                    if ((Host ?? mainWindow).Window is MainWindow mw && mw.IsGMS2 == Visibility.Visible)
                     {
                         tile = backgroundEditor.TileIdList.SelectedItem;
 
-                        ScrollViewer tilesViewer = MainWindow.FindVisualChild<ScrollViewer>(backgroundEditor.TileIdList);
+                        ScrollViewer tilesViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(backgroundEditor.TileIdList);
                         if (tilesViewer is null)
                         {
                             Debug.WriteLine("Can't save the scroll position of the tile set editor tiles - \"ScrollViewer\" is not found.");
@@ -540,7 +556,7 @@ namespace UndertaleModTool
                             stateList[i].IsExpanded = list.Item1.IsExpanded;
                             stateList[i].SelectedItem = list.Item2.SelectedItem;
 
-                            ScrollViewer viewer = MainWindow.FindVisualChild<ScrollViewer>(list.Item2);
+                            ScrollViewer viewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(list.Item2);
                             if (viewer is null)
                             {
                                 Debug.WriteLine("Can't save the scroll positions of the texture group info editor room lists - \"ScrollViewer\" is not found.");
@@ -582,7 +598,8 @@ namespace UndertaleModTool
         /// <summary>Restores the last tab content state.</summary>
         public void RestoreTabContentState()
         {
-            ContentControl dataEditor = mainWindow.DataEditor;
+            var host = Host ?? mainWindow as IWindowHost;
+            ContentControl dataEditor = host.DataEditor;
 
             if (dataEditor is null
                 || dataEditor.Content is null
@@ -593,7 +610,6 @@ namespace UndertaleModTool
             UserControl editor;
             try
             {
-                // Wait until the new editor layout will be loaded
                 dataEditor.UpdateLayout();
 
                 var contPres = VisualTreeHelper.GetChild(dataEditor, 0);
@@ -601,14 +617,14 @@ namespace UndertaleModTool
             }
             catch
             {
-                mainWindow.ShowWarning(LocalizationSource.GetString("Msg_TabContentStateRestoreFail"));
+                host.Window.ShowWarning(LocalizationSource.GetString("Msg_TabContentStateRestoreFail"));
                 return;
             }
 
-            ScrollViewer mainScrollViewer = MainWindow.GetNearestParent<ScrollViewer>(dataEditor);
+            ScrollViewer mainScrollViewer = VisualTreeUtil.GetNearestParent<ScrollViewer>(dataEditor);
             if (mainScrollViewer is null)
             {
-                mainWindow.ShowWarning(LocalizationSource.GetString("Msg_TabContentStateRestoreFailScrollViewer"));
+                host.Window.ShowWarning(LocalizationSource.GetString("Msg_TabContentStateRestoreFailScrollViewer"));
                 return;
             }
             mainScrollViewer.ScrollToVerticalOffset(LastContentState.MainScrollPosition);
@@ -763,7 +779,7 @@ namespace UndertaleModTool
 
                     if (!fromReferencesResults)
                     {
-                        ScrollViewer treeObjViewer = MainWindow.FindVisualChild<ScrollViewer>(roomEditor.RoomObjectsTree);
+                        ScrollViewer treeObjViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(roomEditor.RoomObjectsTree);
                         treeObjViewer.ScrollToHorizontalOffset(roomTabState.ObjectsTreeScrollPosition.Left);
                         treeObjViewer.ScrollToVerticalOffset(roomTabState.ObjectsTreeScrollPosition.Top);
                         treeObjViewer.UpdateLayout();
@@ -773,7 +789,7 @@ namespace UndertaleModTool
                 case FontTabState fontTabState:
                     var fontEditor = editor as UndertaleFontEditor;
 
-                    ScrollViewer glyphsViewer = MainWindow.FindVisualChild<ScrollViewer>(fontEditor.GlyphsGrid);
+                    ScrollViewer glyphsViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(fontEditor.GlyphsGrid);
                     if (glyphsViewer is null)
                     {
                         Debug.WriteLine("Can't restore the scroll position of the font editor glyphs - \"ScrollViewer\" is not found.");
@@ -791,7 +807,7 @@ namespace UndertaleModTool
                     genInfoEditor.UpdateLayout();
                     if (genInfoTabState.IsRoomListExpanded)
                     {
-                        ScrollViewer roomListViewer = MainWindow.FindVisualChild<ScrollViewer>(genInfoEditor.RoomListGrid);
+                        ScrollViewer roomListViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(genInfoEditor.RoomListGrid);
                         if (roomListViewer is null)
                         {
                             Debug.WriteLine("Can't restore the scroll position of the general info editor room list - \"ScrollViewer\" is not found.");
@@ -806,7 +822,7 @@ namespace UndertaleModTool
                 case GlobalInitTabState globalInitTabState:
                     var globalInitEditor = editor as UndertaleGlobalInitEditor;
 
-                    ScrollViewer scriptsViewer = MainWindow.FindVisualChild<ScrollViewer>(globalInitEditor.ScriptsGrid);
+                    ScrollViewer scriptsViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(globalInitEditor.ScriptsGrid);
                     if (scriptsViewer is null)
                     {
                         Debug.WriteLine("Can't restore the scroll position of the global init editor scripts - \"ScrollViewer\" is not found.");
@@ -820,7 +836,7 @@ namespace UndertaleModTool
                 case SpriteTabState spriteTabState:
                     var spriteEditor = editor as UndertaleSpriteEditor;
 
-                    ScrollViewer texturesViewer = MainWindow.FindVisualChild<ScrollViewer>(spriteEditor.TextureList);
+                    ScrollViewer texturesViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(spriteEditor.TextureList);
                     if (texturesViewer is null)
                     {
                         Debug.WriteLine("Can't restore the scroll position of the sprite editor textures - \"ScrollViewer\" is not found.");
@@ -830,7 +846,7 @@ namespace UndertaleModTool
 
                     spriteEditor.TextureList.SelectedItem = spriteTabState.SelectedTexture;
 
-                    ScrollViewer masksViewer = MainWindow.FindVisualChild<ScrollViewer>(spriteEditor.MaskList);
+                    ScrollViewer masksViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(spriteEditor.MaskList);
                     if (masksViewer is null)
                     {
                         Debug.WriteLine("Can't restore the scroll position of the sprite editor masks - \"ScrollViewer\" is not found.");
@@ -846,7 +862,7 @@ namespace UndertaleModTool
 
                     if (tileSetTabState.TileListScrollPosition != -1)
                     {
-                        ScrollViewer tilesViewer = MainWindow.FindVisualChild<ScrollViewer>(backgroundEditor.TileIdList);
+                        ScrollViewer tilesViewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(backgroundEditor.TileIdList);
                         if (tilesViewer is null)
                         {
                             Debug.WriteLine("Can't restore the scroll position of the tile set editor tiles - \"ScrollViewer\" is not found.");
@@ -880,7 +896,7 @@ namespace UndertaleModTool
                         list.Item1.UpdateLayout();
                         if (isExpanded)
                         {
-                            ScrollViewer viewer = MainWindow.FindVisualChild<ScrollViewer>(list.Item2);
+                            ScrollViewer viewer = VisualTreeUtil.FindVisualChild<ScrollViewer>(list.Item2);
                             if (viewer is null)
                             {
                                 Debug.WriteLine("Can't restore the scroll position of the tile set editor tiles - \"ScrollViewer\" is not found.");

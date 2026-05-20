@@ -55,7 +55,7 @@ using UndertaleModLib.Project;
 
 namespace UndertaleModTool
 {
-    public partial class MainWindow : Window, INotifyPropertyChanged, IScriptInterface
+    public partial class MainWindow : Window, INotifyPropertyChanged, IScriptInterface, IWindowHost
     {
         /// Note for those who don't know what is "PropertyChanged.Fody" -
         /// it automatically adds "OnPropertyChanged()" to every property (or modify existing) of the class that implements INotifyPropertyChanged.
@@ -118,6 +118,7 @@ namespace UndertaleModTool
         public Visibility IsExtProductIDEligible => (((Data?.GeneralInfo?.Major ?? 0) >= 2) || (((Data?.GeneralInfo?.Major ?? 0) == 1) && (((Data?.GeneralInfo?.Build ?? 0) >= 1773) || ((Data?.GeneralInfo?.Build ?? 0) == 1539)))) ? Visibility.Visible : Visibility.Collapsed;
 
         public List<Tab> ClosedTabsHistory { get; } = new();
+        IList<Tab> IWindowHost.ClosedTabsHistory => ClosedTabsHistory;
 
         private List<(GMImage, WeakReference<BitmapSource>)> _bitmapSourceLookup { get; } = new();
         private object _bitmapSourceLookupLock = new();
@@ -196,6 +197,10 @@ namespace UndertaleModTool
         {
             OnPropertyChanged("Selected");
         }
+
+        Window IWindowHost.Window => this;
+        ContentControl IWindowHost.DataEditor => DataEditor;
+        TabControlDark IWindowHost.TabController => TabController;
 
         // For delivering messages to LoaderDialogs
         public delegate void FileMessageEventHandler(string message);
@@ -1654,47 +1659,15 @@ namespace UndertaleModTool
         }
         public static T GetNearestParent<T>(DependencyObject item) where T : class
         {
-            DependencyObject parent = VisualTreeHelper.GetParent(item);
-            while (parent is not T)
-            {
-                parent = VisualTreeHelper.GetParent(parent);
-            }
-
-            return parent as T;
+            return VisualTreeUtil.GetNearestParent<T>(item);
         }
         public static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
         {
-            if (depObj != null)
-            {
-                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
-                {
-                    DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
-                    if (child != null && child is T t)
-                    {
-                        yield return t;
-                    }
-
-                    foreach (T childOfChild in FindVisualChildren<T>(child))
-                    {
-                        yield return childOfChild;
-                    }
-                }
-            }
+            return VisualTreeUtil.FindVisualChildren<T>(depObj);
         }
         public static childItem FindVisualChild<childItem>(DependencyObject obj, string name = null) where childItem : FrameworkElement
         {
-            foreach (childItem child in FindVisualChildren<childItem>(obj))
-            {
-                if (!String.IsNullOrEmpty(name))
-                {
-                    if (child.Name == name)
-                        return child;
-                }
-                else
-                    return child;
-            }
-
-            return null;
+            return VisualTreeUtil.FindVisualChild<childItem>(obj, name);
         }
 
         private TreeViewItem GetTreeViewItemFor(UndertaleObject obj)
@@ -3469,7 +3442,7 @@ namespace UndertaleModTool
             }
         }
 
-        internal void OpenInTab(object obj, bool isNewTab = false, string tabTitle = null)
+        public void OpenInTab(object obj, bool isNewTab = false, string tabTitle = null)
         {
             if (obj is null)
                 return;
@@ -3484,7 +3457,7 @@ namespace UndertaleModTool
             if (isNewTab || Tabs.Count == 0)
             {
                 int newIndex = Tabs.Count;
-                Tab newTab = new(obj, newIndex, tabTitle);
+                Tab newTab = new(obj, newIndex, this, tabTitle);
 
                 Tabs.Add(newTab);
                 CurrentTabIndex = newIndex;
@@ -3613,7 +3586,11 @@ namespace UndertaleModTool
         {
             if (obj is not null)
             {
-                int tabIndex = Tabs.FirstOrDefault(x => x.CurrentObject == obj)?.TabIndex ?? -1;
+                int tabIndex = -1;
+                if (obj is Tab tabObj)
+                    tabIndex = Tabs.IndexOf(tabObj);
+                if (tabIndex == -1)
+                    tabIndex = Tabs.FirstOrDefault(x => x.CurrentObject == obj)?.TabIndex ?? -1;
                 if (tabIndex != -1)
                 {
                     CloseTab(tabIndex, addDefaultTab);
@@ -3790,7 +3767,9 @@ namespace UndertaleModTool
         }
 
         private Point initTabContPos;
-        // source - https://stackoverflow.com/a/10738247/12136394
+#pragma warning disable CS0414
+        private bool _isDraggingTab;
+#pragma warning restore CS0414
         private void TabItem_PreviewMouseMove(object sender, MouseEventArgs e)
         {
             if (e.Source is not TabItemDark tabItem || e.OriginalSource is Button)
@@ -3798,39 +3777,151 @@ namespace UndertaleModTool
 
             if (Mouse.PrimaryDevice.LeftButton == MouseButtonState.Pressed)
             {
-                // Filter false mouse move events, because it sometimes
-                // triggers even on a mouse click
                 Point currPos = e.GetPosition(TabScrollViewer);
                 if (Math.Abs(Point.Subtract(currPos, initTabContPos).X) < 2)
                     return;
 
                 CurrentTabIndex = tabItem.TabIndex;
+                _isDraggingTab = true;
                 try
                 {
-                    DragDrop.DoDragDrop(tabItem, tabItem, DragDropEffects.All);
+                    var tab = tabItem.DataContext as Tab;
+                    if (tab is not null)
+                    {
+                        var data = new DataObject();
+                        data.SetData(typeof(TabItemDark), tabItem);
+                        data.SetData(typeof(Tab), tab);
+                        DragDrop.DoDragDrop(tabItem, data, DragDropEffects.All);
+                    }
+                    else
+                    {
+                        DragDrop.DoDragDrop(tabItem, tabItem, DragDropEffects.All);
+                    }
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"Error on handling \"TabItem\" drag&drop:\n{ex}");
                 }
+                finally
+                {
+                    _isDraggingTab = false;
+                }
+
+                if (Tabs.Count > 0 && CurrentTabIndex >= 0 && CurrentTabIndex < Tabs.Count)
+                {
+                    var tabUnderMouse = Tabs[CurrentTabIndex];
+                    if (tabUnderMouse is not null && tabUnderMouse == tabItem.DataContext as Tab
+                        && tabUnderMouse.Host is MainWindow or null)
+                    {
+                        Point screenPos = PointToScreen(e.GetPosition(this));
+                        var tabRect = new Rect(PointToScreen(new Point(0, 0)),
+                                               new Size(ActualWidth, TabScrollViewer.ActualHeight + TabController.ActualHeight));
+                        if (!tabRect.Contains(screenPos))
+                        {
+                            TearOutTab(tabUnderMouse, screenPos);
+                        }
+                    }
+                }
             }
+        }
+
+        internal void ReceiveTabFromWindow(Tab tab)
+        {
+            tab.Host = this;
+
+            TabController.SelectionChanged -= TabController_SelectionChanged;
+
+            int newIndex = Tabs.Count;
+            tab.TabIndex = newIndex;
+            Tabs.Add(tab);
+            CurrentTabIndex = newIndex;
+
+            TabController.SelectionChanged += TabController_SelectionChanged;
+
+            CurrentTab = tab;
+            UpdateObjectLabel(tab.CurrentObject);
+            tab.RestoreTabContentState();
+        }
+
+        private void TearOutTab(Tab tab, Point screenPos)
+        {
+            if (!Tabs.Contains(tab))
+                return;
+
+            if (Tabs.Count <= 1 && tab.AutoClose)
+                return;
+
+            tab.SaveTabContentState();
+
+            TabController.SelectionChanged -= TabController_SelectionChanged;
+            int removeIndex = Tabs.IndexOf(tab);
+            Tabs.RemoveAt(removeIndex);
+            for (int i = removeIndex; i < Tabs.Count; i++)
+                Tabs[i].TabIndex = i;
+
+            if (Tabs.Count == 0)
+            {
+                OpenInTab(new DescriptionView(LocalizationSource.GetString("Main_WelcomeHeading"),
+                                              LocalizationSource.GetString("Main_WelcomeDescription")));
+            }
+            else
+            {
+                CurrentTabIndex = Math.Min(removeIndex, Tabs.Count - 1);
+            }
+            TabController.SelectionChanged += TabController_SelectionChanged;
+
+            CurrentTab = Tabs.Count > 0 ? Tabs[CurrentTabIndex] : null;
+            if (CurrentTab is not null)
+            {
+                UpdateObjectLabel(CurrentTab.CurrentObject);
+                CurrentTab.RestoreTabContentState();
+            }
+
+            var tabWindow = new TabWindow(this, tab);
+            tabWindow.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            tabWindow.Show();
         }
         private void TabItem_Drop(object sender, DragEventArgs e)
         {
-            if (e.Source is TabItemDark tabItemTarget &&
-                e.Data.GetData(typeof(TabItemDark)) is TabItemDark tabItemSource &&
-                !tabItemTarget.Equals(tabItemSource))
+            if (e.Source is not TabItemDark tabItemTarget)
+                return;
+
+            int targetIndex = tabItemTarget.TabIndex;
+            var sourceTab = e.Data.GetData(typeof(Tab)) as Tab;
+
+            if (sourceTab is not null && sourceTab.Host is TabWindow sourceWindow)
             {
-                int sourceIndex = tabItemSource.TabIndex;
-                int targetIndex = tabItemTarget.TabIndex;
-                Tab sourceTab = tabItemSource.DataContext as Tab;
-                if (sourceTab is null)
+                sourceWindow.RemoveTab(sourceTab);
+                sourceTab.Host = this;
+
+                TabController.SelectionChanged -= TabController_SelectionChanged;
+
+                Tabs.Insert(targetIndex, sourceTab);
+                for (int i = 0; i < Tabs.Count; i++)
+                    Tabs[i].TabIndex = i;
+                CurrentTabIndex = targetIndex;
+
+                TabController.SelectionChanged += TabController_SelectionChanged;
+
+                CurrentTab = sourceTab;
+                UpdateObjectLabel(sourceTab.CurrentObject);
+                sourceTab.RestoreTabContentState();
+                e.Handled = true;
+                return;
+            }
+
+            var sourceTabItem = e.Data.GetData(typeof(TabItemDark)) as TabItemDark;
+            if (sourceTabItem is not null && !sourceTabItem.Equals(tabItemTarget))
+            {
+                int sourceIndex = sourceTabItem.TabIndex;
+                Tab localSourceTab = sourceTabItem.DataContext as Tab;
+                if (localSourceTab is null)
                     return;
 
                 TabController.SelectionChanged -= TabController_SelectionChanged;
 
                 Tabs.RemoveAt(sourceIndex);
-                Tabs.Insert(targetIndex, sourceTab);
+                Tabs.Insert(targetIndex, localSourceTab);
 
                 for (int i = 0; i < Tabs.Count; i++)
                     Tabs[i].TabIndex = i;
@@ -3838,6 +3929,35 @@ namespace UndertaleModTool
                 CurrentTabIndex = targetIndex;
 
                 TabController.SelectionChanged += TabController_SelectionChanged;
+                e.Handled = true;
+            }
+        }
+
+        private void TabController_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(Tab)))
+            {
+                e.Effects = DragDropEffects.Move;
+                e.Handled = true;
+            }
+        }
+
+        private void TabController_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(Tab)))
+            {
+                var tab = e.Data.GetData(typeof(Tab)) as Tab;
+                if (tab is null)
+                    return;
+
+                var sourceHost = tab.Host;
+                if (sourceHost is TabWindow sourceWindow)
+                {
+                    sourceWindow.RemoveTab(tab);
+                    ReceiveTabFromWindow(tab);
+                    Activate();
+                    e.Handled = true;
+                }
             }
         }
 
@@ -3866,6 +3986,16 @@ namespace UndertaleModTool
             tab.TabIndex = 0;
             Tabs = new() { tab };
             CurrentTabIndex = 0;
+        }
+
+        private void DetachTabMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Tab tab = (sender as MenuItem)?.DataContext as Tab;
+            if (tab is null || tab.AutoClose)
+                return;
+
+            Point screenPos = PointToScreen(Mouse.GetPosition(this));
+            TearOutTab(tab, screenPos);
         }
 
         private void TabTitleText_Initialized(object sender, EventArgs e)

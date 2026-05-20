@@ -435,6 +435,9 @@
   <data name="Tab_CloseAllTabs" xml:space="preserve">
     <value>关闭所有标签页</value>
   </data>
+  <data name="Tab_DetachToNewWindow" xml:space="preserve">
+    <value>分离到新窗口</value>
+  </data>
   <data name="Settings_Title" xml:space="preserve">
     <value>设置</value>
   </data>
