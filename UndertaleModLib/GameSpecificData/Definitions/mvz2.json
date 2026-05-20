@@ -1,0 +1,10 @@
+{
+  "LoadOrder": 1,
+  "Conditions": [
+    {
+      "ConditionKind": "DisplayName.Regex",
+      "Value": "(?i)^Minecraft"
+    }
+  ],
+  "UnderanalyzerFilename": "mvz2.json"
+}

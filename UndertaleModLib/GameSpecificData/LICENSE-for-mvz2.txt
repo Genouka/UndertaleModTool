@@ -1,0 +1,2 @@
+Definitions/mvz2.json and Underanalyzer/mvz2.json are provided by Github: @Genouka
+They are licensed under MPL2.0 (https://www.mozilla.org/en-US/MPL/2.0/).

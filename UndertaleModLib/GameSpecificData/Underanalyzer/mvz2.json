@@ -1,0 +1,317 @@
+{
+  "Types": {
+    "Enums": {
+    },
+    "Constants": {
+    },
+    "General": {
+      "Mvz2.Asset.ZeroOrSprite": {
+        "MacroType": "Union",
+        "Macros": [
+          {
+            "MacroType": "Intersect",
+            "Macros": [
+              {
+                "MacroType": "MatchNot",
+                "ConditionalType": "Integer",
+                "ConditionalValue": "0"
+              },
+              "Asset.Sprite"
+            ]
+          },
+          {
+            "MacroType": "Match",
+            "ConditionalType": "Integer",
+            "ConditionalValue": "0"
+          }
+        ]
+      },
+      "Mvz2.Asset.ZeroOrRoom": {
+        "MacroType": "Union",
+        "Macros": [
+          {
+            "MacroType": "Intersect",
+            "Macros": [
+              {
+                "MacroType": "MatchNot",
+                "ConditionalType": "Integer",
+                "ConditionalValue": "0"
+              },
+              "Asset.Room"
+            ]
+          },
+          {
+            "MacroType": "Match",
+            "ConditionalType": "Integer",
+            "ConditionalValue": "0"
+          }
+        ]
+      },
+      "Mvz2.Asset.OneOrSprite": {
+        "MacroType": "Union",
+        "Macros": [
+          {
+            "MacroType": "Intersect",
+            "Macros": [
+              {
+                "MacroType": "MatchNot",
+                "ConditionalType": "Integer",
+                "ConditionalValue": "1"
+              },
+              "Asset.Sprite"
+            ]
+          },
+          {
+            "MacroType": "Match",
+            "ConditionalType": "Integer",
+            "ConditionalValue": "1"
+          }
+        ]
+      },
+      "Mvz2.Asset.ZeroOneOrSprite": {
+        "MacroType": "Union",
+        "Macros": [
+          {
+            "MacroType": "Intersect",
+            "Macros": [
+              {
+                "MacroType": "Intersect",
+                "Macros": [
+                  {
+                    "MacroType": "MatchNot",
+                    "ConditionalType": "Integer",
+                    "ConditionalValue": "0"
+                  },
+                  {
+                    "MacroType": "MatchNot",
+                    "ConditionalType": "Integer",
+                    "ConditionalValue": "1"
+                  }
+                ]
+              },
+              "Asset.Sprite"
+            ]
+          },
+          {
+            "MacroType": "Union",
+            "Macros": [
+              {
+                "MacroType": "Match",
+                "ConditionalType": "Integer",
+                "ConditionalValue": "0"
+              },
+              {
+                "MacroType": "Match",
+                "ConditionalType": "Integer",
+                "ConditionalValue": "1"
+              }
+            ]
+          }
+        ]
+      },
+      "Mvz2.Asset.ZeroOrObject": {
+        "MacroType": "Union",
+        "Macros": [
+          {
+            "MacroType": "Intersect",
+            "Macros": [
+              {
+                "MacroType": "MatchNot",
+                "ConditionalType": "Integer",
+                "ConditionalValue": "0"
+              },
+              "Asset.Object"
+            ]
+          },
+          {
+            "MacroType": "Match",
+            "ConditionalType": "Integer",
+            "ConditionalValue": "0"
+          }
+        ]
+      },
+      "Mvz2.Asset.ZeroOneOrObject": {
+        "MacroType": "Union",
+        "Macros": [
+          {
+            "MacroType": "Intersect",
+            "Macros": [
+              {
+                "MacroType": "Intersect",
+                "Macros": [
+                  {
+                    "MacroType": "MatchNot",
+                    "ConditionalType": "Integer",
+                    "ConditionalValue": "0"
+                  },
+                  {
+                    "MacroType": "MatchNot",
+                    "ConditionalType": "Integer",
+                    "ConditionalValue": "1"
+                  }
+                ]
+              },
+              "Asset.Object"
+            ]
+          },
+          {
+            "MacroType": "Union",
+            "Macros": [
+              {
+                "MacroType": "Match",
+                "ConditionalType": "Integer",
+                "ConditionalValue": "0"
+              },
+              {
+                "MacroType": "Match",
+                "ConditionalType": "Integer",
+                "ConditionalValue": "1"
+              }
+            ]
+          }
+        ]
+      },
+      "Mvz2.Id.ZeroOrInstanceOrObject": {
+        "MacroType": "Union",
+        "Macros": [
+          {
+            "MacroType": "Intersect",
+            "Macros": [
+              {
+                "MacroType": "Intersect",
+                "Macros": [
+                  {
+                    "MacroType": "MatchNot",
+                    "ConditionalType": "Integer",
+                    "ConditionalValue": "0"
+                  }
+                ]
+              },
+              "Id.InstanceOrObject"
+            ]
+          },
+          {
+            "MacroType": "Union",
+            "Macros": [
+              {
+                "MacroType": "Match",
+                "ConditionalType": "Integer",
+                "ConditionalValue": "0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "GlobalNames": {
+    "Variables": {
+      "currentroom": "Asset.Room",
+      "dsprite": "Asset.Sprite",
+      "usprite": "Asset.Sprite",
+      "lsprite": "Asset.Sprite",
+      "rsprite": "Asset.Sprite",
+      "dtsprite": "Asset.Sprite",
+      "utsprite": "Asset.Sprite",
+      "ltsprite": "Asset.Sprite",
+      "rtsprite": "Asset.Sprite",
+      "normalsprite": "Asset.Sprite",
+      "hurtsprite": "Asset.Sprite",
+      "hurtsound": "Asset.Sound",
+      "color": "Constant.Color",
+      "batmusic": "Asset.Sound",
+      "dummy": "Asset.Object",
+      "sm": "Asset.Object",
+      "king": "Asset.Object",
+      "hand1pic": "Asset.Sprite",
+      "hand2pic": "Asset.Sprite",
+      "headpic": "Asset.Sprite",
+      "bodypic": "Asset.Sprite",
+      "do_room_goto": "Bool",
+      "do_room_goto_target": "Asset.Room",
+      "myroom": "Asset.Room",
+      "myfont": "Asset.Font",
+      "newfont": "Asset.Font",
+      "button0": "Constant.GamepadButton",
+      "button1": "Constant.GamepadButton",
+      "button2": "Constant.GamepadButton",
+      "sound0": "Asset.Sound",
+      "sound1": "Asset.Sound",
+      "sound2": "Asset.Sound",
+      "asprite": "Asset.Sprite",
+      "bsprite": "Asset.Sprite",
+      "tailobj": "Asset.Object",
+      "heart": "Asset.Object",
+      "room_id": "Asset.Room",
+      "overlay": {
+        "MacroType": "Union",
+        "Macros": [ "Asset.Sprite", "Id.Instance" ]
+      },
+      "overlay1": "Asset.Sprite",
+      "os_type": "Constant.OperatingSystem",
+      "onionsprite": "Asset.Sprite",
+      "headsprite": "Asset.Sprite",
+      "breaksprite": "Asset.Sprite",
+      "foodimg": "Asset.Sprite",
+      "facespr": "Asset.Sprite",
+      "bombsprite": "Asset.Sprite",
+      "mysprite": "Asset.Sprite",
+      "arms": "Asset.Sprite",
+      "levelpic": "Asset.Sprite",
+      "image": "Asset.Sprite",
+      "thischara": "Asset.Object",
+      "tspr1": "Asset.Sprite",
+      "tspr2": "Asset.Sprite",
+      "tspr3": "Asset.Sprite",
+      "tspr4": "Asset.Sprite",
+      "tspr5": "Asset.Sprite",
+      "snapper": "Asset.Object",
+      "subject": "Asset.Object",
+      "clip": "Asset.Object",
+      "obj": "Asset.Object",
+      "pausing": "Bool",
+      "stop": "Bool",
+      "returnRoom": "Asset.Room",
+      "text_color": "Constant.Color",
+      "text_col": "Constant.Color",
+      "allow": "Bool",
+      "allow2": "Bool"
+    },
+    "FunctionArguments": {
+      "button_create": {
+        "MacroType": "Union",
+        "Macros": [
+          [ null, null, "Asset.Object", "Id.InstanceOrObject", null, null,null,"Mvz2.Asset.ZeroOrRoom","Bool" ]
+        ]
+      },
+      "part_type_color1": {
+        "MacroType": "Union",
+        "Macros": [
+          [ null, "Constant.Color"]
+        ]
+      },
+      "character_set_color": {
+        "MacroType": "Union",
+        "Macros": [
+          [ "Constant.Color"]
+        ]
+      },
+      "color_screen_set_color": {
+        "MacroType": "Union",
+        "Macros": [
+          [ null, "Constant.Color"]
+        ]
+      }
+    },
+    "FunctionReturn": {
+      "gml_Script_map_to_room": "Asset.Room"
+    }
+  },
+  "CodeEntryNames": {
+    "gml_Script_room_to_map": {
+      "Variables": {
+        "argument0": "Asset.Room"
+      }
+    }
+  }
+}
