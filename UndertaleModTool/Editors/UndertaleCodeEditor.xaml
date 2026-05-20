@@ -11,9 +11,13 @@
                        DataContextChanged="UserControl_DataContextChanged" Loaded="UndertaleCodeEditor_Loaded" Unloaded="UndertaleCodeEditor_Unloaded">
     <UserControl.CommandBindings>
         <CommandBinding Command="{x:Static local:UndertaleCodeEditor.Compile}" Executed="Command_Compile" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.OpenFindCommand}" Executed="Command_OpenFind" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.OpenReplaceCommand}" Executed="Command_OpenReplace" />
     </UserControl.CommandBindings>
     <UserControl.InputBindings>
         <KeyBinding Modifiers="Control" Key="K" Command="{x:Static local:UndertaleCodeEditor.Compile}"/>
+        <KeyBinding Modifiers="Control" Key="F" Command="{x:Static local:UndertaleCodeEditor.OpenFindCommand}"/>
+        <KeyBinding Modifiers="Control" Key="H" Command="{x:Static local:UndertaleCodeEditor.OpenReplaceCommand}"/>
     </UserControl.InputBindings>
     <UserControl.Resources>
         <local:NullToVisibilityConverter x:Key="VisibleIfNotNull" nullValue="Collapsed" notNullValue="Visible"/>
@@ -77,6 +81,7 @@
                         WordWrap="True"
                         FontSize="10pt"
                         Padding="4"/>
+                    <local:EditorSearchReplacePanel x:Name="DecompiledSearchReplacePanel" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                 </Grid>
             </TabItem>
             <TabItem Header="{loc:Loc Editor_Disassembly}" Name="DisassemblyTab">
@@ -93,6 +98,7 @@
                         WordWrap="True"
                         FontSize="10pt"
                         Padding="4"/>
+                    <local:EditorSearchReplacePanel x:Name="DisassemblySearchReplacePanel" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                 </Grid>
             </TabItem>
         </TabControl>

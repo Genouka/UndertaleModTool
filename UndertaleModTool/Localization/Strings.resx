@@ -2072,6 +2072,30 @@ Note that the code often references objects by ID, so this operation is likely t
   <data name="Dialog_Replacing" xml:space="preserve">
     <value>Replacing...</value>
   </data>
+  <data name="EditorSearch_ToggleReplace" xml:space="preserve">
+    <value>Toggle Replace</value>
+  </data>
+  <data name="EditorSearch_FindNext" xml:space="preserve">
+    <value>Find Next</value>
+  </data>
+  <data name="EditorSearch_FindPrevious" xml:space="preserve">
+    <value>Find Previous</value>
+  </data>
+  <data name="EditorSearch_MatchCase" xml:space="preserve">
+    <value>Match Case</value>
+  </data>
+  <data name="EditorSearch_WholeWord" xml:space="preserve">
+    <value>Match Whole Word</value>
+  </data>
+  <data name="EditorSearch_UseRegex" xml:space="preserve">
+    <value>Use Regular Expression</value>
+  </data>
+  <data name="EditorSearch_Replace" xml:space="preserve">
+    <value>Replace</value>
+  </data>
+  <data name="EditorSearch_ReplaceAll" xml:space="preserve">
+    <value>Replace All</value>
+  </data>
   <data name="ClickableOutput_WindowTitle" xml:space="preserve">
     <value>ClickableTextOutput</value>
   </data>

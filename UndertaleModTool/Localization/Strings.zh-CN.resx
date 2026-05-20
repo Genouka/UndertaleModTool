@@ -2075,6 +2075,30 @@ UndertaleModTool的32位（x86）版本已过时。
   <data name="Dialog_Replacing" xml:space="preserve">
     <value>正在替换...</value>
   </data>
+  <data name="EditorSearch_ToggleReplace" xml:space="preserve">
+    <value>切换替换</value>
+  </data>
+  <data name="EditorSearch_FindNext" xml:space="preserve">
+    <value>查找下一个</value>
+  </data>
+  <data name="EditorSearch_FindPrevious" xml:space="preserve">
+    <value>查找上一个</value>
+  </data>
+  <data name="EditorSearch_MatchCase" xml:space="preserve">
+    <value>区分大小写</value>
+  </data>
+  <data name="EditorSearch_WholeWord" xml:space="preserve">
+    <value>全字匹配</value>
+  </data>
+  <data name="EditorSearch_UseRegex" xml:space="preserve">
+    <value>使用正则表达式</value>
+  </data>
+  <data name="EditorSearch_Replace" xml:space="preserve">
+    <value>替换</value>
+  </data>
+  <data name="EditorSearch_ReplaceAll" xml:space="preserve">
+    <value>全部替换</value>
+  </data>
   <data name="ClickableOutput_WindowTitle" xml:space="preserve">
     <value>可点击文本输出</value>
   </data>

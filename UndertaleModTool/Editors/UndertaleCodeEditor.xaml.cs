@@ -58,17 +58,17 @@ namespace UndertaleModTool
         public bool DecompiledChanged = false;
         public bool DecompiledYet = false;
         public bool DecompiledSkipped = false;
-        public SearchPanel DecompiledSearchPanel;
         public static (int Line, int Column, double ScrollPos) OverriddenDecompPos { get; set; }
 
         public bool DisassemblyFocused = false;
         public bool DisassemblyChanged = false;
         public bool DisassembledYet = false;
         public bool DisassemblySkipped = false;
-        public SearchPanel DisassemblySearchPanel;
         public static (int Line, int Column, double ScrollPos) OverriddenDisasmPos { get; set; }
 
         public static RoutedUICommand Compile = new RoutedUICommand("Compile code", "Compile", typeof(UndertaleCodeEditor));
+        public static RoutedUICommand OpenFindCommand = new RoutedUICommand("Open find", "OpenFind", typeof(UndertaleCodeEditor));
+        public static RoutedUICommand OpenReplaceCommand = new RoutedUICommand("Open replace", "OpenReplace", typeof(UndertaleCodeEditor));
 
         private static readonly Dictionary<string, UndertaleNamedResource> NamedObjDict = new();
         private static readonly Dictionary<string, UndertaleNamedResource> ScriptsDict = new();
@@ -102,10 +102,7 @@ namespace UndertaleModTool
             ApplySettingsToEditors();
 
             // Decompiled editor styling and functionality
-            DecompiledSearchPanel = SearchPanel.Install(DecompiledEditor.TextArea);
-            DecompiledSearchPanel.LostFocus += SearchPanel_LostFocus;
-            DecompiledSearchPanel.MarkerBrush = new SolidColorBrush(Color.FromRgb(90, 90, 90));
-            DecompiledSearchPanel.FontSize = 14;
+            DecompiledSearchReplacePanel.Initialize(DecompiledEditor.TextArea);
             DecompiledEditor.FontSize = ZoomFontSize;
 
             using (Stream stream = this.GetType().Assembly.GetManifestResourceStream("UndertaleModTool.Resources.GML.xshd"))
@@ -185,10 +182,7 @@ namespace UndertaleModTool
             textArea.SelectionCornerRadius = 0;
 
             // Disassembly editor styling and functionality
-            DisassemblySearchPanel = SearchPanel.Install(DisassemblyEditor.TextArea);
-            DisassemblySearchPanel.LostFocus += SearchPanel_LostFocus;
-            DisassemblySearchPanel.MarkerBrush = new SolidColorBrush(Color.FromRgb(90, 90, 90));
-            DisassemblySearchPanel.FontSize = 14;
+            DisassemblySearchReplacePanel.Initialize(DisassemblyEditor.TextArea);
             DisassemblyEditor.FontSize = ZoomFontSize;
 
             using (Stream stream = this.GetType().Assembly.GetManifestResourceStream("UndertaleModTool.Resources.VMASM.xshd"))
@@ -965,27 +959,6 @@ namespace UndertaleModTool
             OverriddenZoomFontSize = 0;
         }
 
-        private void SearchPanel_LostFocus(object sender, RoutedEventArgs e)
-        {
-            SearchPanel panel = sender as SearchPanel;
-            BindingFlags flags = BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.Instance;
-            FieldInfo toolTipField = typeof(SearchPanel).GetField("messageView", flags);
-            if (toolTipField is null)
-            {
-                Debug.WriteLine("The source code of \"AvalonEdit.Search.SearchPanel\" was changed - can't find \"messageView\" field.");
-                return;
-            }
-
-            ToolTip noMatchesTT = toolTipField.GetValue(panel) as ToolTip;
-            if (noMatchesTT is null)
-            {
-                Debug.WriteLine("Can't get an instance of the \"SearchPanel.messageView\" popup.");
-                return;
-            }
-
-            noMatchesTT.IsOpen = false;
-        }
-
         private void UndertaleCodeEditor_Loaded(object sender, RoutedEventArgs e)
         {
             FillInCodeViewer();
@@ -1026,8 +999,8 @@ namespace UndertaleModTool
             if (code == null)
                 return;
 
-            DecompiledSearchPanel.Close();
-            DisassemblySearchPanel.Close();
+            DecompiledSearchReplacePanel.ClosePanel();
+            DisassemblySearchReplacePanel.ClosePanel();
 
             await DecompiledLostFocusBody(sender, null);
             DisassemblyEditor_LostFocus(sender, null);
@@ -1143,6 +1116,22 @@ namespace UndertaleModTool
         private void Command_Compile(object sender, EventArgs e)
         {
             _ = CompileCommandBody(sender, e);
+        }
+
+        private void Command_OpenFind(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (DecompiledTab.IsSelected)
+                DecompiledSearchReplacePanel.Open(false);
+            else
+                DisassemblySearchReplacePanel.Open(false);
+        }
+
+        private void Command_OpenReplace(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (DecompiledTab.IsSelected)
+                DecompiledSearchReplacePanel.Open(true);
+            else
+                DisassemblySearchReplacePanel.Open(true);
         }
         public async Task SaveChanges()
         {
