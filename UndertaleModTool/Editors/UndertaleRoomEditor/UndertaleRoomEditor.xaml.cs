@@ -369,6 +369,61 @@ namespace UndertaleModTool
         private UndertaleObject movingObj;
         private double hotpointX, hotpointY;
 
+        private DispatcherTimer _dragUpdateTimer;
+        private int _pendingX, _pendingY;
+        private float _pendingScaleX, _pendingScaleY;
+        private bool _hasPendingPosition, _hasPendingScale;
+        private const int DragUpdateIntervalMs = 16;
+
+        private void EnsureDragTimer()
+        {
+            if (_dragUpdateTimer is null)
+            {
+                _dragUpdateTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(DragUpdateIntervalMs) };
+                _dragUpdateTimer.Tick += DragUpdateTimer_Tick;
+            }
+        }
+
+        private void DragUpdateTimer_Tick(object sender, EventArgs e)
+        {
+            if (movingObj is null)
+            {
+                _dragUpdateTimer.Stop();
+                return;
+            }
+
+            if (_hasPendingPosition)
+            {
+                switch (movingObj)
+                {
+                    case GameObject gameObj:
+                        gameObj.X = _pendingX;
+                        gameObj.Y = _pendingY;
+                        break;
+                    case Tile tile:
+                        tile.X = _pendingX;
+                        tile.Y = _pendingY;
+                        break;
+                    case SpriteInstance spr:
+                        spr.X = _pendingX;
+                        spr.Y = _pendingY;
+                        break;
+                    case ParticleSystemInstance partSys:
+                        partSys.X = _pendingX;
+                        partSys.Y = _pendingY;
+                        break;
+                }
+                _hasPendingPosition = false;
+            }
+
+            if (_hasPendingScale && movingObj is GameObject go)
+            {
+                go.ScaleX = _pendingScaleX;
+                go.ScaleY = _pendingScaleY;
+                _hasPendingScale = false;
+            }
+        }
+
         private Point GetGridMouseCoordinates(Point mousePos, UndertaleRoom room)
         {
             int gridWidth = Math.Max(Convert.ToInt32(room.GridWidth), 1);
@@ -591,6 +646,12 @@ namespace UndertaleModTool
             }
             
             movingObj = null;
+
+            if (_dragUpdateTimer is not null && _dragUpdateTimer.IsEnabled)
+            {
+                _dragUpdateTimer.Stop();
+                DragUpdateTimer_Tick(_dragUpdateTimer, EventArgs.Empty);
+            }
         }
 
         bool placingTiles = false;
@@ -830,6 +891,12 @@ namespace UndertaleModTool
             }
             
             movingObj = null;
+
+            if (_dragUpdateTimer is not null && _dragUpdateTimer.IsEnabled)
+            {
+                _dragUpdateTimer.Stop();
+                DragUpdateTimer_Tick(_dragUpdateTimer, EventArgs.Empty);
+            }
         }
 
         private void RectangleBackground_MouseMove(object sender, MouseEventArgs e)
@@ -881,11 +948,12 @@ namespace UndertaleModTool
                 if (gridHeight > 0)
                     tgtY = ((tgtY + gridHeight / 2) / gridHeight) * gridHeight;
 
+                EnsureDragTimer();
+
                 if (movingObj is GameObject gameObj)
                 {
                     if (roomCanvas.leftDrag || roomCanvas.rightDrag || roomCanvas.topDrag || roomCanvas.bottomDrag)
                     {
-                        // Dragging is enabled, so do that rather than move
                         Point objOrigin = roomCanvas.dragObjectOrigin;
                         float spriteWidth = gameObj.ObjectDefinition.Sprite.Width;
                         float spriteHeight = gameObj.ObjectDefinition.Sprite.Height;
@@ -893,73 +961,87 @@ namespace UndertaleModTool
                         float offsetY = -gameObj.SpriteYOffset;
                         if (roomCanvas.leftDrag)
                         {
-                            // Dragging started from the left side
                             double newXScale = Math.Ceiling(((objOrigin.X - mousePos.X) / spriteWidth) * modifierValue) / modifierValue;
                             double newXPos = objOrigin.X - (newXScale * (-offsetX + spriteWidth));
                             if (newXScale != 0 && !double.IsNaN(newXScale) && !double.IsInfinity(newXScale) &&
                                                   !double.IsNaN(newXPos) && !double.IsInfinity(newXPos))
                             {
-                                gameObj.ScaleX = (float)newXScale;
-                                gameObj.X = (int)newXPos;
+                                _pendingScaleX = (float)newXScale;
+                                _pendingX = (int)newXPos;
+                                _hasPendingScale = true;
+                                _hasPendingPosition = true;
                             }
                         }
                         else if (roomCanvas.rightDrag)
                         {
-                            // Dragging started from the right side
                             double newXScale = Math.Ceiling(((mousePos.X - objOrigin.X) / spriteWidth) * modifierValue) / modifierValue;
                             double newXPos = objOrigin.X + (newXScale * offsetX);
                             if (newXScale != 0 && !double.IsNaN(newXScale) && !double.IsInfinity(newXScale) && 
                                                   !double.IsNaN(newXPos) && !double.IsInfinity(newXPos))
                             {
-                                gameObj.ScaleX = (float)newXScale;
-                                gameObj.X = (int)newXPos;
+                                _pendingScaleX = (float)newXScale;
+                                _pendingX = (int)newXPos;
+                                _hasPendingScale = true;
+                                _hasPendingPosition = true;
                             }
                         }
                         if (roomCanvas.topDrag)
                         {
-                            // Dragging started from the top side
                             double newYScale = Math.Ceiling(((objOrigin.Y - mousePos.Y) / spriteHeight) * modifierValue) / modifierValue;
                             double newYPos = objOrigin.Y - (newYScale * (-offsetY + spriteHeight));
                             if (newYScale != 0 && !double.IsNaN(newYScale) && !double.IsInfinity(newYScale) &&
                                                   !double.IsNaN(newYPos) && !double.IsInfinity(newYPos))
                             {
-                                gameObj.ScaleY = (float)newYScale;
-                                gameObj.Y = (int)newYPos;
+                                _pendingScaleY = (float)newYScale;
+                                _pendingY = (int)newYPos;
+                                _hasPendingScale = true;
+                                _hasPendingPosition = true;
                             }
                         }
                         else if (roomCanvas.bottomDrag)
                         {
-                            // Dragging started from the bottom side
                             double newYScale = Math.Ceiling(((mousePos.Y - objOrigin.Y) / spriteHeight) * modifierValue) / modifierValue;
                             double newYPos = objOrigin.Y + (newYScale * offsetY);
                             if (newYScale != 0 && !double.IsNaN(newYScale) && !double.IsInfinity(newYScale) &&
                                                   !double.IsNaN(newYPos) && !double.IsInfinity(newYPos))
                             {
-                                gameObj.ScaleY = (float)newYScale;
-                                gameObj.Y = (int)newYPos;
+                                _pendingScaleY = (float)newYScale;
+                                _pendingY = (int)newYPos;
+                                _hasPendingScale = true;
+                                _hasPendingPosition = true;
                             }
                         }
+
+                        if (!_dragUpdateTimer.IsEnabled)
+                            _dragUpdateTimer.Start();
                         return;
                     }
 
-                    gameObj.X = tgtX;
-                    gameObj.Y = tgtY;
+                    _pendingX = tgtX;
+                    _pendingY = tgtY;
+                    _hasPendingPosition = true;
                 }
                 else if (movingObj is Tile tile)
                 {
-                    tile.X = tgtX;
-                    tile.Y = tgtY;
+                    _pendingX = tgtX;
+                    _pendingY = tgtY;
+                    _hasPendingPosition = true;
                 }
                 else if (movingObj is SpriteInstance spr)
                 {
-                    spr.X = tgtX;
-                    spr.Y = tgtY;
+                    _pendingX = tgtX;
+                    _pendingY = tgtY;
+                    _hasPendingPosition = true;
                 }
                 else if (movingObj is ParticleSystemInstance partSys)
                 {
-                    partSys.X = tgtX;
-                    partSys.Y = tgtY;
+                    _pendingX = tgtX;
+                    _pendingY = tgtY;
+                    _hasPendingPosition = true;
                 }
+
+                if (!_dragUpdateTimer.IsEnabled)
+                    _dragUpdateTimer.Start();
             }
             if (roomCanvas.isMoving)
             {
@@ -1128,9 +1210,7 @@ namespace UndertaleModTool
                     case Tile tile:
                         if (room.Flags.HasFlag(RoomEntryFlags.IsGMS2) || room.Flags.HasFlag(RoomEntryFlags.IsGM2024_13))
                         {
-                            resLayer = room.Layers.AsParallel()
-                                                  .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-                                                  .FirstOrDefault(l => l.LayerType is LayerType.Assets
+                            resLayer = room.Layers.FirstOrDefault(l => l.LayerType is LayerType.Assets
                                                       && (l.AssetsData.LegacyTiles?.Any(x => x.InstanceID == tile.InstanceID) ?? false));
                             resList = resLayer.AssetsData.LegacyTiles;
                             resListView = LayerItems.ItemContainerGenerator.ContainerFromItem(resLayer) as TreeViewItem;
@@ -1151,18 +1231,14 @@ namespace UndertaleModTool
                         break;
 
                     case SpriteInstance spr:
-                        resLayer = room.Layers.AsParallel()
-                                              .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-                                              .FirstOrDefault(l => l.LayerType is LayerType.Assets
+                        resLayer = room.Layers.FirstOrDefault(l => l.LayerType is LayerType.Assets
                                                   && (l.AssetsData.Sprites?.Any(x => x.Name == spr.Name) ?? false));
                         resList = resLayer.AssetsData.Sprites;
                         resListView = LayerItems.ItemContainerGenerator.ContainerFromItem(resLayer) as TreeViewItem;
                         break;
 
                     case ParticleSystemInstance partSys:
-                        resLayer = room.Layers.AsParallel()
-                                              .WithExecutionMode(ParallelExecutionMode.ForceParallelism)
-                                              .FirstOrDefault(l => l.LayerType is LayerType.Assets
+                        resLayer = room.Layers.FirstOrDefault(l => l.LayerType is LayerType.Assets
                                                   && (l.AssetsData.ParticleSystems?.Any(x => x.Name == partSys.Name) ?? false));
                         resList = resLayer.AssetsData.ParticleSystems;
                         resListView = LayerItems.ItemContainerGenerator.ContainerFromItem(resLayer) as TreeViewItem;
@@ -1174,33 +1250,43 @@ namespace UndertaleModTool
 
                 resListView.IsExpanded = true;
                 resListView.BringIntoView();
-                resListView.UpdateLayout();
 
-                StackPanel resPanel = MainWindow.FindVisualChild<StackPanel>(resListView);
-                (resPanel.Children[0] as TreeViewItem).BringIntoView();
-                mainTreeViewer.UpdateLayout();
-
-                double firstElemOffset = mainTreeViewer.VerticalOffset + (resPanel.Children[0] as TreeViewItem).TransformToAncestor(mainTreeViewer).Transform(new Point(0, 0)).Y;
-
-                mainTreeViewer.ScrollToVerticalOffset(firstElemOffset + ((resList.IndexOf(obj) + 1) * 16) - (mainTreeViewer.ViewportHeight / 2));
-                mainTreeViewer.UpdateLayout();
-
-                UndertaleObject obj1;
-                obj1 = obj switch
+                Dispatcher.BeginInvoke(() =>
                 {
-                    Layer.LayerBackgroundData bgData => bgData.ParentLayer,
-                    Layer.LayerTilesData tileData => tileData.ParentLayer,
-                    _ => obj
-                };
-                if (resListView.ItemContainerGenerator.ContainerFromItem(obj1) is TreeViewItem resItem)
-                {
-                    resItem.IsSelected = true;
-                    if (focus)
-                        resItem.Focus();
+                    try
+                    {
+                        ScrollViewer mainTreeViewer = MainWindow.FindVisualChild<ScrollViewer>(RoomObjectsTree);
+                        if (mainTreeViewer is null)
+                            return;
 
-                    mainTreeViewer.UpdateLayout();
-                    mainTreeViewer.ScrollToHorizontalOffset(0);
-                }
+                        StackPanel resPanel = MainWindow.FindVisualChild<StackPanel>(resListView);
+                        if (resPanel?.Children[0] is TreeViewItem firstChild)
+                            firstChild.BringIntoView();
+
+                        double firstElemOffset = mainTreeViewer.VerticalOffset + (resPanel?.Children[0] as TreeViewItem)?.TransformToAncestor(mainTreeViewer).Transform(new Point(0, 0)).Y ?? 0;
+
+                        mainTreeViewer.ScrollToVerticalOffset(firstElemOffset + ((resList.IndexOf(obj) + 1) * 16) - (mainTreeViewer.ViewportHeight / 2));
+
+                        UndertaleObject obj1 = obj switch
+                        {
+                            Layer.LayerBackgroundData bgData => bgData.ParentLayer,
+                            Layer.LayerTilesData tileData => tileData.ParentLayer,
+                            _ => obj
+                        };
+                        if (resListView.ItemContainerGenerator.ContainerFromItem(obj1) is TreeViewItem resItem)
+                        {
+                            resItem.IsSelected = true;
+                            if (focus)
+                                resItem.Focus();
+
+                            mainTreeViewer.ScrollToHorizontalOffset(0);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine("SelectObject() deferred error - " + ex.Message);
+                    }
+                }, DispatcherPriority.Loaded);
             }
             catch (Exception ex)
             {
@@ -2989,7 +3075,7 @@ namespace UndertaleModTool
 
             string name;
             if (ForcedMode == 0)
-                name = count > 1000 ? "TileLayerImage" : "TileLayerRectangles";
+                name = count > 200 ? "TileLayerImage" : "TileLayerRectangles";
             else
                 name = ForcedMode == 1 ? "TileLayerImage" : "TileLayerRectangles";
 
