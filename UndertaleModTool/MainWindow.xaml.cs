@@ -258,7 +258,7 @@ namespace UndertaleModTool
             Highlighted = new DescriptionView(LocalizationSource.GetString("Main_WelcomeHeading"), LocalizationSource.GetString("Main_WelcomeDescription"));
             OpenInTab(Highlighted);
 
-            TitleMain = LocalizationSource.GetString("Common_UndertaleModTool") + " by krzys_h v:" + Version;
+            TitleMain = LocalizationSource.GetString("Common_UndertaleModTool") + " by krzys_h by GenOuka v:" + Version;
 
             CanSave = false;
             CanSafelySave = false;
@@ -2662,7 +2662,7 @@ namespace UndertaleModTool
 
         private void MenuItem_About_Click(object sender, RoutedEventArgs e)
         {
-            this.ShowMessage(LocalizationSource.GetString("Common_UndertaleModTool") + " by krzys_h and the Underminers team\nVersion " + Version, LocalizationSource.GetString("Main_About"));
+            this.ShowMessage(LocalizationSource.GetString("Common_UndertaleModTool") + " by krzys_h and the Underminers team\nBy GenOuka\nVersion " + Version, LocalizationSource.GetString("Main_About"));
         }
 
         /// From https://github.com/AvaloniaUI/Avalonia/blob/master/src/Avalonia.Dialogs/AboutAvaloniaDialog.xaml.cs
