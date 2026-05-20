@@ -62,8 +62,11 @@ namespace UndertaleModTool
 
             Title = Tab.GetTitleForObject(tab.CurrentObject) ?? "UndertaleModTool";
 
-            if (Settings.Instance.EnableDarkMode)
-                MainWindow.SetDarkTitleBarForWindow(this, true, false);
+            SourceInitialized += (s, e) =>
+            {
+                if (Settings.Instance.EnableDarkMode)
+                    MainWindow.SetDarkTitleBarForWindow(this, true, false);
+            };
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
