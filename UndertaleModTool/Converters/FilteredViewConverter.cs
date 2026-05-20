@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using UndertaleModLib;
@@ -30,15 +25,23 @@ namespace UndertaleModTool
         {
             return (obj) =>
             {
-                if (String.IsNullOrEmpty(Filter))
+                var filter = Filter;
+                if (String.IsNullOrEmpty(filter))
                     return true;
-                if (obj is ISearchable)
-                    return (obj as ISearchable)?.SearchMatches(Filter) ?? false;
-                if (obj is UndertaleNamedResource)
-                    return ((obj as UndertaleNamedResource)?.Name?.Content?.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0;
+                if (obj is ISearchable searchable)
+                    return searchable.SearchMatches(filter);
+                if (obj is UndertaleNamedResource namedRes)
+                    return (namedRes.Name?.Content?.IndexOf(filter, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0;
                 if (obj is object[] links)
-                    return links.Select(x => x is UndertaleNamedResource res ? res.Name?.Content : x.ToString())
-                                .Any(x => (x?.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) ?? -1) >= 0);
+                {
+                    foreach (var x in links)
+                    {
+                        var str = x is UndertaleNamedResource res ? res.Name?.Content : x.ToString();
+                        if (str?.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                            return true;
+                    }
+                    return false;
+                }
                 return true;
             };
         }

@@ -31,6 +31,7 @@ namespace UndertaleModTool.Windows
         private object highlighted;
         private string sourceObjName;
         private readonly UndertaleData data;
+        private System.Windows.Threading.DispatcherTimer _searchRefreshTimer;
 
         private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -46,6 +47,14 @@ namespace UndertaleModTool.Windows
             InitializeComponent();
 
             this.data = data;
+
+            _searchRefreshTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            _searchRefreshTimer.Tick += (s, e) =>
+            {
+                _searchRefreshTimer.Stop();
+                foreach (var child in ResultsTree.Items)
+                    ((child as TreeViewItem)?.ItemsSource as ICollectionView)?.Refresh();
+            };
 
             string sourceObjName;
             if (sourceObj is UndertaleNamedResource namedObj)
@@ -92,8 +101,17 @@ namespace UndertaleModTool.Windows
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            foreach (var child in ResultsTree.Items)
-                ((child as TreeViewItem)?.ItemsSource as ICollectionView)?.Refresh();
+            if (String.IsNullOrEmpty(SearchBox.Text))
+            {
+                _searchRefreshTimer.Stop();
+                foreach (var child in ResultsTree.Items)
+                    ((child as TreeViewItem)?.ItemsSource as ICollectionView)?.Refresh();
+            }
+            else
+            {
+                _searchRefreshTimer.Stop();
+                _searchRefreshTimer.Start();
+            }
         }
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)

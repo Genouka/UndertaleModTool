@@ -12,7 +12,7 @@ namespace UndertaleModTool
             Predicate<object> baseFilter = base.CreateFilter();
             return (obj) =>
             {
-                if (!Settings.Instance.ShowNullEntriesInResourceTree && obj is null)
+                if (obj is null && Settings.Instance is not null && !Settings.Instance.ShowNullEntriesInResourceTree)
                     return false;
                 return baseFilter(obj);
             };

@@ -126,6 +126,7 @@ namespace UndertaleModTool
 
         public ChangeTracker ChangeTracker { get; } = new();
         private DispatcherTimer _treeRefreshTimer;
+        private DispatcherTimer _searchRefreshTimer;
 
         public bool CanSave { get; set; }
         public bool CanSafelySave = false;
@@ -279,6 +280,13 @@ namespace UndertaleModTool
             _treeRefreshTimer.Tick += (s, e) =>
             {
                 _treeRefreshTimer.Stop();
+                UpdateTree();
+            };
+
+            _searchRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            _searchRefreshTimer.Tick += (s, e) =>
+            {
+                _searchRefreshTimer.Stop();
                 UpdateTree();
             };
 
@@ -3167,7 +3175,16 @@ namespace UndertaleModTool
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            UpdateTree();
+            if (String.IsNullOrEmpty(SearchBox.Text))
+            {
+                _searchRefreshTimer.Stop();
+                UpdateTree();
+            }
+            else
+            {
+                _searchRefreshTimer.Stop();
+                _searchRefreshTimer.Start();
+            }
         }
 
         public void UpdateObjectLabel(object obj)
