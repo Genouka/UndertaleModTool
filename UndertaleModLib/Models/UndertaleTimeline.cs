@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace UndertaleModLib.Models;
@@ -124,7 +125,6 @@ public class UndertaleTimeline : UndertaleNamedResource, IDisposable
 
         int momentCount = reader.ReadInt32();
 
-        // Read the time points for each moment
         uint[] timePoints = new uint[momentCount];
         int[] unnecessaryPointers = new int[momentCount];
         for (int i = 0; i < momentCount; i++)
@@ -133,16 +133,17 @@ public class UndertaleTimeline : UndertaleNamedResource, IDisposable
             unnecessaryPointers[i] = reader.ReadInt32();
         }
 
-        // Read the actions for each moment
+        var moments = new List<UndertaleTimelineMoment>(momentCount);
         for (int i = 0; i < momentCount; i++)
         {
             if (reader.AbsPosition != unnecessaryPointers[i])
                 throw new UndertaleSerializationException("Invalid action list pointer");
 
-            // Read action list and assign time point (put into list)
             var timeEvent = reader.ReadUndertaleObject<UndertalePointerList<UndertaleGameObject.EventAction>>();
-            Moments.Add(new UndertaleTimelineMoment(timePoints[i], timeEvent));
+            moments.Add(new UndertaleTimelineMoment(timePoints[i], timeEvent));
         }
+
+        Moments = new ObservableCollection<UndertaleTimelineMoment>(moments);
     }
 
     /// <inheritdoc cref="UndertaleObject.UnserializeChildObjectCount(UndertaleReader)"/>

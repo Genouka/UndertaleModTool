@@ -21,8 +21,18 @@
         <TextBlock Grid.Row="0" Grid.Column="0" Margin="3" Text="{loc:Loc Common_Name}"/>
         <local:UndertaleStringReference Grid.Row="0" Grid.Column="1" Margin="3" ObjectReference="{Binding Name}"/>
 
-        <TextBlock Grid.Row="3" Grid.Column="0" Margin="3" Text="{loc:Loc Editor_Moments}"/>
-        <local:DataGridDark Grid.Row="3" Grid.Column="1" Margin="3" ItemsSource="{Binding Moments}" AutoGenerateColumns="False" CanUserAddRows="True" CanUserDeleteRows="True" HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray" HeadersVisibility="Column" SelectionMode="Single" SelectionUnit="FullRow" AddingNewItem="DataGrid_AddingNewItem">
+        <TextBlock Grid.Row="1" Grid.Column="0" Margin="3" Text="{loc:Loc Editor_Moments}"/>
+        <local:DataGridDark Grid.Row="1" Grid.Column="1" Margin="3"
+                ItemsSource="{Binding Moments}"
+                AutoGenerateColumns="False"
+                CanUserAddRows="True" CanUserDeleteRows="True"
+                HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray"
+                HeadersVisibility="Column" SelectionMode="Single" SelectionUnit="FullRow"
+                AddingNewItem="DataGrid_AddingNewItem"
+                EnableRowVirtualization="True" EnableColumnVirtualization="True"
+                VirtualizingStackPanel.IsVirtualizing="True"
+                VirtualizingStackPanel.VirtualizationMode="Recycling"
+                MaxHeight="500">
             <DataGrid.Resources>
                 <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#FF26A0DA"/>
                 <Style TargetType="{x:Type DataGridCell}">
