@@ -4567,6 +4567,12 @@ It can't be displayed.</value>
   <data name="Settings_RecompileOnSaveToolTip" xml:space="preserve">
     <value>Whether to recompile all GML code sources when saving a project data file.</value>
   </data>
+  <data name="Settings_ChangeTracking" xml:space="preserve">
+    <value>Track code changes</value>
+  </data>
+  <data name="Settings_ChangeTrackingToolTip" xml:space="preserve">
+    <value>Whether to track and highlight modified code entries in the resource tree and code editor.</value>
+  </data>
   <data name="TabTitle_AnimationCurve" xml:space="preserve">
     <value>Animation Curve</value>
   </data>

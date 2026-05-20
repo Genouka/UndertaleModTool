@@ -23,6 +23,7 @@
     </Window.Title>
     <Window.Resources>
         <local:ImplementsInterfaceConverter x:Key="ImplementsInterfaceConverter"/>
+        <local:IsModifiedConverter x:Key="IsModifiedConverter"/>
         <local:ResourceTreeFilteredViewConverter x:Key="FilteredViewConverter" Filter="{Binding Text, Source={x:Reference SearchBox}, UpdateSourceTrigger=PropertyChanged}"/>
         <local:NullToVisibilityConverter x:Key="VisibleIfNotNull"  nullValue="Collapsed" notNullValue="Visible"/>
         <local:CompareNumbersConverter x:Key="CompareNumbersConverter"/>
@@ -480,6 +481,9 @@
                                                     <DynamicResource ResourceKey="{x:Static SystemColors.ControlTextBrushKey}"/>
                                                 </Setter.Value>
                                             </Setter>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding ., Converter={StaticResource IsModifiedConverter}}" Value="True">
+                                            <Setter Property="Foreground" Value="#FF9800"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

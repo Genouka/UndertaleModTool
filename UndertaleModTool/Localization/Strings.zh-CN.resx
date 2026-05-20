@@ -4569,6 +4569,12 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Settings_RecompileOnSaveToolTip" xml:space="preserve">
     <value>保存项目数据文件时是否重新编译所有 GML 代码源。</value>
   </data>
+  <data name="Settings_ChangeTracking" xml:space="preserve">
+    <value>追踪代码更改</value>
+  </data>
+  <data name="Settings_ChangeTrackingToolTip" xml:space="preserve">
+    <value>是否在资源树和代码编辑器中追踪并高亮显示已修改的代码条目。</value>
+  </data>
   <data name="TabTitle_AnimationCurve" xml:space="preserve">
     <value>动画曲线</value>
   </data>

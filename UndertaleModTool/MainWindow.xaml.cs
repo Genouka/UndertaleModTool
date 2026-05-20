@@ -125,6 +125,9 @@ namespace UndertaleModTool
 
         private ProjectAssetsWindow _projectAssetsWindow = null;
 
+        public ChangeTracker ChangeTracker { get; } = new();
+        private DispatcherTimer _treeRefreshTimer;
+
         public bool CanSave { get; set; }
         public bool CanSafelySave = false;
         public bool WasWarnedAboutTempRun = false;
@@ -272,6 +275,19 @@ namespace UndertaleModTool
             resources["CustomTextBrush"] = SystemColors.ControlTextBrush;
             resources[SystemColors.GrayTextBrushKey] = grayTextBrush;
             resources[SystemColors.InactiveSelectionHighlightBrushKey] = inactiveSelectionBrush;
+
+            _treeRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _treeRefreshTimer.Tick += (s, e) =>
+            {
+                _treeRefreshTimer.Stop();
+                UpdateTree();
+            };
+
+            ChangeTracker.ModifiedChanged += (s, e) =>
+            {
+                if (!_treeRefreshTimer.IsEnabled)
+                    _treeRefreshTimer.Start();
+            };
         }
 
         /// <summary>
@@ -716,6 +732,7 @@ namespace UndertaleModTool
             Data.ToolInfo.DecompilerSettings = SettingsWindow.DecompilerSettings;
             Data.ToolInfo.InstanceIdPrefix = () => SettingsWindow.InstanceIdPrefix;
             CloseChildFiles();
+            ChangeTracker.Initialize(Data);
             OnPropertyChanged("Data");
             OnPropertyChanged("FilePath");
             OnPropertyChanged("IsGMS2");
@@ -1126,6 +1143,8 @@ namespace UndertaleModTool
 
         private void DisposeGameData()
         {
+            ChangeTracker.Initialize(null);
+
             if (Data is not null)
             {
                 // This also clears all their game object references
@@ -1263,6 +1282,7 @@ namespace UndertaleModTool
                         Data.ToolInfo.InstanceIdPrefix = () => SettingsWindow.InstanceIdPrefix;
                         FilePath = filename;
                         AddRecentFile(filename);
+                        ChangeTracker.Initialize(Data);
                         OnPropertyChanged("Data");
                         OnPropertyChanged("FilePath");
                         OnPropertyChanged("IsGMS2");
@@ -1479,6 +1499,14 @@ namespace UndertaleModTool
 
                 UndertaleCodeEditor.gettextJSON = null;
 
+                if (saveSucceeded)
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        ChangeTracker.ClearAll();
+                    });
+                }
+
                 Dispatcher.Invoke(() =>
                 {
                     dialog.TryClose();
@@ -1691,6 +1719,13 @@ namespace UndertaleModTool
             {
                 // Remove object from list
                 list.Remove(obj);
+
+                // Mark remaining items in the list as modified (deletion affects indices)
+                foreach (var item in list)
+                {
+                    if (item is UndertaleResource res)
+                        ChangeTracker.MarkModified(res);
+                }
 
                 // If we're in a project, and this asset is marked for export, unmark it
                 if (Project is not null && obj is IProjectAsset projectAsset)

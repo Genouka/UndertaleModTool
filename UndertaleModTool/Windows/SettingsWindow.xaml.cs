@@ -249,6 +249,23 @@ namespace UndertaleModTool
             }
         }
 
+        public static bool ChangeTrackingEnabled
+        {
+            get => Settings.Instance.ChangeTrackingEnabled;
+            set
+            {
+                Settings.Instance.ChangeTrackingEnabled = value;
+                Settings.Save();
+
+                if (!value)
+                {
+                    var mainWindow = Application.Current.MainWindow as MainWindow;
+                    mainWindow?.ChangeTracker?.ClearAll();
+                    mainWindow?.UpdateTree();
+                }
+            }
+        }
+
         public static DecompilerSettings DecompilerSettings => Settings.Instance.DecompilerSettings;
 
         public static string InstanceIdPrefix
