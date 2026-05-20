@@ -588,13 +588,9 @@ namespace UndertaleModTool
                 }
                 if (val == null)
                 {
-                    if (data.BuiltinList.Functions.ContainsKey(nameText))
+                    if (data.BuiltinList.Functions.ContainsKey(nameText) || GmlSpecLoader.GetFunction(nameText) != null)
                     {
-                        return CreateHoverBorder(new TextBlock
-                        {
-                            Text = nameText + " - " + LocalizationSource.GetString("Editor_BuiltinFunction"),
-                            Foreground = Settings.Instance.EnableDarkMode ? Brushes.White : Brushes.Black
-                        });
+                        return BuildBuiltinFunctionHover(nameText);
                     }
                 }
             }
@@ -607,27 +603,40 @@ namespace UndertaleModTool
 
             if (val == null)
             {
-                if (data.BuiltinList.Constants.ContainsKey(nameText))
+                if (data.BuiltinList.Constants.ContainsKey(nameText) || GmlSpecLoader.GetConstant(nameText) != null)
                 {
-                    return CreateHoverBorder(new TextBlock
-                    {
-                        Text = string.Format(LocalizationSource.GetString("Editor_ConstantLabel"), nameText),
-                        Foreground = Settings.Instance.EnableDarkMode ? Brushes.White : Brushes.Black
-                    });
+                    return BuildBuiltinConstantHover(nameText);
                 }
 
                 if (data.BuiltinList.GlobalVars.ContainsKey(nameText) ||
                     data.BuiltinList.InstanceVars.ContainsKey(nameText) ||
-                    data.BuiltinList.GlobalArrayVars.ContainsKey(nameText))
+                    data.BuiltinList.GlobalArrayVars.ContainsKey(nameText) ||
+                    GmlSpecLoader.GetVariable(nameText) != null)
                 {
-                    return CreateHoverBorder(new TextBlock
-                    {
-                        Text = nameText + " - " + LocalizationSource.GetString("Editor_BuiltinVariable"),
-                        Foreground = Settings.Instance.EnableDarkMode ? Brushes.White : Brushes.Black
-                    });
+                    return BuildBuiltinVariableHover(nameText);
+                }
+
+                if (!isFunc && GmlSpecLoader.GetFunction(nameText) != null)
+                {
+                    return BuildBuiltinFunctionHover(nameText);
                 }
 
                 return null;
+            }
+
+            if (val is UndertaleFunction && GmlSpecLoader.GetFunction(nameText) != null)
+            {
+                return BuildBuiltinFunctionHover(nameText);
+            }
+
+            if (GmlSpecLoader.GetConstant(nameText) != null)
+            {
+                return BuildBuiltinConstantHover(nameText);
+            }
+
+            if (GmlSpecLoader.GetVariable(nameText) != null)
+            {
+                return BuildBuiltinVariableHover(nameText);
             }
 
             StackPanel panel = new() { MaxWidth = 320 };
@@ -700,6 +709,248 @@ namespace UndertaleModTool
                 Padding = new Thickness(8, 6, 8, 6),
                 Child = content
             };
+        }
+
+        private Border BuildBuiltinFunctionHover(string nameText)
+        {
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
+            Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+            Brush paramBrush = isDarkMode
+                ? new SolidColorBrush(Color.FromRgb(86, 156, 214))
+                : new SolidColorBrush(Color.FromRgb(0, 0, 200));
+            Brush typeBrush = isDarkMode
+                ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
+                : new SolidColorBrush(Color.FromRgb(0, 128, 0));
+
+            var specFunc = GmlSpecLoader.GetFunction(nameText);
+
+            StackPanel panel = new() { MaxWidth = 400 };
+
+            TextBlock sigBlock = new() { TextWrapping = TextWrapping.Wrap };
+            sigBlock.Inlines.Add(new Run { Text = nameText, Foreground = textBrush, FontWeight = FontWeights.Bold });
+            sigBlock.Inlines.Add(new Run { Text = "(", Foreground = textBrush });
+
+            if (specFunc != null)
+            {
+                for (int i = 0; i < specFunc.Parameters.Count; i++)
+                {
+                    var p = specFunc.Parameters[i];
+                    if (i > 0)
+                        sigBlock.Inlines.Add(new Run { Text = ", ", Foreground = textBrush });
+
+                    if (p.Optional)
+                        sigBlock.Inlines.Add(new Run { Text = "[", Foreground = subTextBrush });
+
+                    sigBlock.Inlines.Add(new Run { Text = p.Name, Foreground = paramBrush });
+                    sigBlock.Inlines.Add(new Run { Text = ": ", Foreground = subTextBrush });
+                    sigBlock.Inlines.Add(new Run { Text = p.Type, Foreground = typeBrush });
+
+                    if (p.Optional)
+                        sigBlock.Inlines.Add(new Run { Text = "]", Foreground = subTextBrush });
+                }
+            }
+
+            sigBlock.Inlines.Add(new Run { Text = ")", Foreground = textBrush });
+
+            if (specFunc != null && !string.IsNullOrEmpty(specFunc.ReturnType) && specFunc.ReturnType != "Undefined")
+            {
+                sigBlock.Inlines.Add(new Run { Text = " → ", Foreground = subTextBrush });
+                sigBlock.Inlines.Add(new Run { Text = specFunc.ReturnType, Foreground = typeBrush });
+            }
+
+            panel.Children.Add(sigBlock);
+
+            if (specFunc != null && !string.IsNullOrEmpty(specFunc.Description))
+            {
+                panel.Children.Add(new Separator
+                {
+                    Margin = new Thickness(0, 4, 0, 4),
+                    Background = isDarkMode
+                        ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
+                        : new SolidColorBrush(Color.FromRgb(180, 180, 180))
+                });
+
+                TextBlock descBlock = new()
+                {
+                    Text = specFunc.Description,
+                    Foreground = subTextBrush,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 11
+                };
+                panel.Children.Add(descBlock);
+
+                if (specFunc.Parameters.Count > 0)
+                {
+                    bool hasParamDesc = specFunc.Parameters.Any(p => !string.IsNullOrEmpty(p.Description));
+                    if (hasParamDesc)
+                    {
+                        panel.Children.Add(new Separator
+                        {
+                            Margin = new Thickness(0, 4, 0, 2),
+                            Background = isDarkMode
+                                ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
+                                : new SolidColorBrush(Color.FromRgb(180, 180, 180))
+                        });
+
+                        foreach (var p in specFunc.Parameters)
+                        {
+                            if (string.IsNullOrEmpty(p.Description)) continue;
+
+                            TextBlock paramBlock = new()
+                            {
+                                TextWrapping = TextWrapping.Wrap,
+                                FontSize = 11
+                            };
+                            paramBlock.Inlines.Add(new Run { Text = p.Name, Foreground = paramBrush, FontWeight = FontWeights.Medium });
+                            paramBlock.Inlines.Add(new Run { Text = ": " + p.Type, Foreground = typeBrush });
+                            paramBlock.Inlines.Add(new Run { Text = " — " + p.Description, Foreground = subTextBrush });
+                            panel.Children.Add(paramBlock);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                TextBlock labelBlock = new()
+                {
+                    Text = LocalizationSource.GetString("Editor_BuiltinFunction"),
+                    Foreground = subTextBrush,
+                    FontSize = 11
+                };
+                panel.Children.Add(labelBlock);
+            }
+
+            return CreateHoverBorder(panel);
+        }
+
+        private Border BuildBuiltinVariableHover(string nameText)
+        {
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
+            Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+            Brush typeBrush = isDarkMode
+                ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
+                : new SolidColorBrush(Color.FromRgb(0, 128, 0));
+
+            var specVar = GmlSpecLoader.GetVariable(nameText);
+
+            StackPanel panel = new() { MaxWidth = 400 };
+
+            TextBlock sigBlock = new() { TextWrapping = TextWrapping.Wrap };
+            sigBlock.Inlines.Add(new Run { Text = nameText, Foreground = textBrush, FontWeight = FontWeights.Bold });
+
+            if (specVar != null && !string.IsNullOrEmpty(specVar.Type))
+            {
+                sigBlock.Inlines.Add(new Run { Text = ": ", Foreground = subTextBrush });
+                sigBlock.Inlines.Add(new Run { Text = specVar.Type, Foreground = typeBrush });
+            }
+
+            if (specVar != null)
+            {
+                string access = "";
+                if (specVar.CanGet && specVar.CanSet) access = " { get; set; }";
+                else if (specVar.CanGet) access = " { get; }";
+                else if (specVar.CanSet) access = " { set; }";
+                if (!string.IsNullOrEmpty(access))
+                    sigBlock.Inlines.Add(new Run { Text = access, Foreground = subTextBrush });
+            }
+
+            panel.Children.Add(sigBlock);
+
+            if (specVar != null && !string.IsNullOrEmpty(specVar.Description))
+            {
+                panel.Children.Add(new Separator
+                {
+                    Margin = new Thickness(0, 4, 0, 4),
+                    Background = isDarkMode
+                        ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
+                        : new SolidColorBrush(Color.FromRgb(180, 180, 180))
+                });
+
+                TextBlock descBlock = new()
+                {
+                    Text = specVar.Description,
+                    Foreground = subTextBrush,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 11
+                };
+                panel.Children.Add(descBlock);
+            }
+            else
+            {
+                TextBlock labelBlock = new()
+                {
+                    Text = LocalizationSource.GetString("Editor_BuiltinVariable"),
+                    Foreground = subTextBrush,
+                    FontSize = 11
+                };
+                panel.Children.Add(labelBlock);
+            }
+
+            return CreateHoverBorder(panel);
+        }
+
+        private Border BuildBuiltinConstantHover(string nameText)
+        {
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
+            Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+            Brush typeBrush = isDarkMode
+                ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
+                : new SolidColorBrush(Color.FromRgb(0, 128, 0));
+
+            var specConst = GmlSpecLoader.GetConstant(nameText);
+
+            StackPanel panel = new() { MaxWidth = 400 };
+
+            TextBlock sigBlock = new() { TextWrapping = TextWrapping.Wrap };
+            sigBlock.Inlines.Add(new Run { Text = nameText, Foreground = textBrush, FontWeight = FontWeights.Bold });
+
+            if (specConst != null && !string.IsNullOrEmpty(specConst.Type))
+            {
+                sigBlock.Inlines.Add(new Run { Text = ": ", Foreground = subTextBrush });
+                sigBlock.Inlines.Add(new Run { Text = specConst.Type, Foreground = typeBrush });
+            }
+
+            if (specConst != null && !string.IsNullOrEmpty(specConst.Class))
+            {
+                sigBlock.Inlines.Add(new Run { Text = " (" + specConst.Class + ")", Foreground = subTextBrush });
+            }
+
+            panel.Children.Add(sigBlock);
+
+            if (specConst != null && !string.IsNullOrEmpty(specConst.Description))
+            {
+                panel.Children.Add(new Separator
+                {
+                    Margin = new Thickness(0, 4, 0, 4),
+                    Background = isDarkMode
+                        ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
+                        : new SolidColorBrush(Color.FromRgb(180, 180, 180))
+                });
+
+                TextBlock descBlock = new()
+                {
+                    Text = specConst.Description,
+                    Foreground = subTextBrush,
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 11
+                };
+                panel.Children.Add(descBlock);
+            }
+            else
+            {
+                TextBlock labelBlock = new()
+                {
+                    Text = string.Format(LocalizationSource.GetString("Editor_ConstantLabel"), nameText),
+                    Foreground = subTextBrush,
+                    FontSize = 11
+                };
+                panel.Children.Add(labelBlock);
+            }
+
+            return CreateHoverBorder(panel);
         }
 
         private void UndertaleCodeEditor_Unloaded(object sender, RoutedEventArgs e)

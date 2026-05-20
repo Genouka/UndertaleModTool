@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net10.0-windows</TargetFramework>
         <RollForward>LatestMajor</RollForward>
@@ -30,6 +30,12 @@
     <ItemGroup>
         <EmbeddedResource Include="Resources\GML.xshd" />
         <EmbeddedResource Include="Resources\VMASM.xshd" />
+        <EmbeddedResource Include="Resources\GmlSpecEnglish.gmlspec">
+            <LogicalName>UndertaleModTool.Resources.GmlSpecEnglish</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="Resources\GmlSpecChinese.gmlspec">
+            <LogicalName>UndertaleModTool.Resources.GmlSpecChinese</LogicalName>
+        </EmbeddedResource>
         <Resource Include="Resources\tabs_left_button.png" />
         <Resource Include="Resources\tabs_right_button.png" />
         <Resource Include="Resources\X.png" />
