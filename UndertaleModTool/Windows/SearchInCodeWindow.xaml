@@ -29,17 +29,27 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <UndertaleModTool:TextBoxDark x:Name="SearchTextBox" Grid.Row="0" TextWrapping="Wrap" AcceptsReturn="True" Height="36" VerticalScrollBarVisibility="Auto" PreviewKeyDown="SearchTextBox_PreviewKeyDown"/>
-            <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,5,0,0">
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{loc:Loc SearchInCode_ReplaceWith}" VerticalAlignment="Top" HorizontalAlignment="Left" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                <UndertaleModTool:TextBoxDark x:Name="ReplaceTextBox" Grid.Column="1" TextWrapping="Wrap" AcceptsReturn="True" Height="36" VerticalScrollBarVisibility="Auto" PreviewKeyDown="ReplaceTextBox_PreviewKeyDown"/>
+            </Grid>
+            <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,5,0,0">
                 <CheckBox Name="CaseSensitiveCheckBox" Content="{loc:Loc SearchInCode_CaseSensitive}" Height="15" Margin="0,0,5,0"/>
+                <CheckBox Name="WholeWordCheckBox" Content="{loc:Loc SearchInCode_WholeWord}" Height="15" Margin="0,0,5,0"/>
                 <CheckBox Name="RegexSearchCheckBox" Content="{loc:Loc SearchInCode_RegexSearch}" Height="15" Margin="0,0,5,0"/>
                 <CheckBox Name="MultilineRegexCheckBox" Content="{loc:Loc SearchInCode_MultilineRegex}" Height="15" Margin="0,0,5,0"
                           Visibility="{Binding IsChecked, ElementName=RegexSearchCheckBox, Converter={StaticResource BoolToVisConverter}}"/>
                 <CheckBox Name="InAssemblyCheckBox" Content="{loc:Loc SearchInCode_InAssembly}" Height="15" Margin="0,0,12,0"/>
             </StackPanel>
-            <Expander Name="FilterByNameExpander" Grid.Row="2" Margin="0,0,0,6" Header="{loc:Loc SearchInCode_FilterByCodeName}" IsExpanded="False">
+            <Expander Name="FilterByNameExpander" Grid.Row="3" Margin="0,0,0,6" Header="{loc:Loc SearchInCode_FilterByCodeName}" IsExpanded="False">
                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                     <UndertaleModTool:TextBoxDark x:Name="NameFilterTextBox" AcceptsReturn="False" Height="18" Width="280" HorizontalAlignment="Left" Margin="0,0,10,0"
                                                   IsEnabled="{Binding IsExpanded, ElementName=FilterByNameExpander}"/>
@@ -48,10 +58,16 @@
                 </StackPanel>
             </Expander>
 
-            <UndertaleModTool:ButtonDark x:Name="SearchButton" Grid.Row="1" Content="{loc:Loc Common_Search}" Width="68" Margin="0,5,0,0" FontSize="14"
-                                         Click="SearchButton_Click" HorizontalAlignment="Right" IsDefault="True"/>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
+                <UndertaleModTool:ButtonDark x:Name="ReplaceButton" Content="{loc:Loc SearchInCode_Replace}" Width="68" Margin="0,0,5,0" FontSize="14"
+                                             Click="ReplaceButton_Click" IsEnabled="False"/>
+                <UndertaleModTool:ButtonDark x:Name="ReplaceAllButton" Content="{loc:Loc SearchInCode_ReplaceAll}" Width="80" Margin="0,0,5,0" FontSize="14"
+                                             Click="ReplaceAllButton_Click" IsEnabled="False"/>
+                <UndertaleModTool:ButtonDark x:Name="SearchButton" Content="{loc:Loc Common_Search}" Width="68" FontSize="14"
+                                             Click="SearchButton_Click" IsDefault="True"/>
+            </StackPanel>
 
-            <ListView ItemsSource="{Binding Results}" Name="ResultsListView" Grid.Row="3" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
+            <ListView ItemsSource="{Binding Results}" Name="ResultsListView" Grid.Row="4" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" SelectionChanged="ResultsListView_SelectionChanged">
                 <ListView.CommandBindings>
                     <CommandBinding Command="Copy" Executed="CopyCommand_Executed"/>
                 </ListView.CommandBindings>

@@ -2039,6 +2039,42 @@ UndertaleModTool的32位（x86）版本已过时。
   <data name="SearchInCode_TextColumn" xml:space="preserve">
     <value>文本</value>
   </data>
+  <data name="SearchInCode_WholeWord" xml:space="preserve">
+    <value>全字匹配</value>
+  </data>
+  <data name="SearchInCode_ReplaceWith" xml:space="preserve">
+    <value>替换为</value>
+  </data>
+  <data name="SearchInCode_Replace" xml:space="preserve">
+    <value>替换</value>
+  </data>
+  <data name="SearchInCode_ReplaceAll" xml:space="preserve">
+    <value>全部替换</value>
+  </data>
+  <data name="Msg_CantReplaceInAssembly" xml:space="preserve">
+    <value>汇编模式下不支持替换操作。</value>
+  </data>
+  <data name="Msg_NoResultSelected" xml:space="preserve">
+    <value>请选择一个搜索结果进行替换。</value>
+  </data>
+  <data name="Msg_NoResultsToReplace" xml:space="preserve">
+    <value>没有可替换的搜索结果。</value>
+  </data>
+  <data name="Msg_ConfirmReplace" xml:space="preserve">
+    <value>确定要在"{0}"中进行替换吗？</value>
+  </data>
+  <data name="Msg_ConfirmReplaceAll" xml:space="preserve">
+    <value>确定要在 {0} 个代码条目中替换所有匹配项吗？</value>
+  </data>
+  <data name="Msg_ReplaceComplete" xml:space="preserve">
+    <value>已在 {0} 个代码条目中完成替换。</value>
+  </data>
+  <data name="Msg_ReplaceError" xml:space="preserve">
+    <value>替换过程中出错：{0}</value>
+  </data>
+  <data name="Dialog_Replacing" xml:space="preserve">
+    <value>正在替换...</value>
+  </data>
   <data name="ClickableOutput_WindowTitle" xml:space="preserve">
     <value>可点击文本输出</value>
   </data>

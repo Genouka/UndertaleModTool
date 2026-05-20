@@ -2036,6 +2036,42 @@ Note that the code often references objects by ID, so this operation is likely t
   <data name="SearchInCode_TextColumn" xml:space="preserve">
     <value>Text</value>
   </data>
+  <data name="SearchInCode_WholeWord" xml:space="preserve">
+    <value>Match whole word</value>
+  </data>
+  <data name="SearchInCode_ReplaceWith" xml:space="preserve">
+    <value>Replace with</value>
+  </data>
+  <data name="SearchInCode_Replace" xml:space="preserve">
+    <value>Replace</value>
+  </data>
+  <data name="SearchInCode_ReplaceAll" xml:space="preserve">
+    <value>Replace All</value>
+  </data>
+  <data name="Msg_CantReplaceInAssembly" xml:space="preserve">
+    <value>Replace is not supported in assembly mode.</value>
+  </data>
+  <data name="Msg_NoResultSelected" xml:space="preserve">
+    <value>Please select a search result to replace.</value>
+  </data>
+  <data name="Msg_NoResultsToReplace" xml:space="preserve">
+    <value>There are no search results to replace.</value>
+  </data>
+  <data name="Msg_ConfirmReplace" xml:space="preserve">
+    <value>Are you sure you want to replace in "{0}"?</value>
+  </data>
+  <data name="Msg_ConfirmReplaceAll" xml:space="preserve">
+    <value>Are you sure you want to replace all matches in {0} code entries?</value>
+  </data>
+  <data name="Msg_ReplaceComplete" xml:space="preserve">
+    <value>Replaced in {0} code entries.</value>
+  </data>
+  <data name="Msg_ReplaceError" xml:space="preserve">
+    <value>Error during replacement: {0}</value>
+  </data>
+  <data name="Dialog_Replacing" xml:space="preserve">
+    <value>Replacing...</value>
+  </data>
   <data name="ClickableOutput_WindowTitle" xml:space="preserve">
     <value>ClickableTextOutput</value>
   </data>

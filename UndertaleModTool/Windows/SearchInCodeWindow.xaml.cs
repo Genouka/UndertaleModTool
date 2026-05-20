@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using UndertaleModLib;
+using UndertaleModLib.Compiler;
 using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
 using UndertaleModTool.Localization;
@@ -29,15 +30,15 @@ namespace UndertaleModTool.Windows
 
         private static bool isSearchInProgress = false;
 
-        private bool isCaseSensitive, isRegexSearch, isMultilineRegex, isInAssembly;
+        private bool isCaseSensitive, isRegexSearch, isMultilineRegex, isInAssembly, isWholeWord;
         private string text;
 
         private int progressCount = 0;
         private int resultCount = 0;
 
-        private ConcurrentDictionary<string, List<(int, string)>> resultsDict;
+        private ConcurrentDictionary<string, List<(int LineNumber, string LineText, int MatchIndex, int MatchLength)>> resultsDict;
         private ConcurrentBag<string> failedList;
-        private IEnumerable<KeyValuePair<string, List<(int, string)>>> resultsDictSorted;
+        private IEnumerable<KeyValuePair<string, List<(int LineNumber, string LineText, int MatchIndex, int MatchLength)>>> resultsDictSorted;
         private IEnumerable<string> failedListSorted;
 
         private Regex keywordRegex, nameRegex;
@@ -45,7 +46,7 @@ namespace UndertaleModTool.Windows
         private LoaderDialog loaderDialog;
         private UndertaleCodeEditor.CodeEditorTab editorTab;
 
-        public readonly record struct Result(string Code, int LineNumber, string LineText);
+        public readonly record struct Result(string Code, int LineNumber, string LineText, int MatchIndex, int MatchLength);
 
         public ObservableCollection<Result> Results { get; set; } = new();
 
@@ -53,10 +54,12 @@ namespace UndertaleModTool.Windows
         {
             InitializeComponent();
 
+            Results.CollectionChanged += Results_CollectionChanged;
+
             if (query is not null)
             {
                 if (query.Length > 256 || query.Count(x => x == '\n') > 16)
-                    return; // Ignore if the query is longer than 256 characters or 16 lines.
+                    return;
 
                 SearchTextBox.Text = query;
                 SearchTextBox.SelectAll();
@@ -101,6 +104,7 @@ namespace UndertaleModTool.Windows
             isRegexSearch = RegexSearchCheckBox.IsChecked ?? false;
             isMultilineRegex = MultilineRegexCheckBox.IsChecked ?? false;
             isInAssembly = InAssemblyCheckBox.IsChecked ?? false;
+            isWholeWord = WholeWordCheckBox.IsChecked ?? false;
 
             bool filterByName = FilterByNameExpander.IsExpanded;
             bool nameIsCaseSensitive, nameIsRegex;
@@ -252,14 +256,16 @@ namespace UndertaleModTool.Windows
 
         private void SearchInCodeText(string codeName, string codeText)
         {
-            List<int> results = new();
+            List<(int Index, int Length)> results = new();
 
             if (isRegexSearch)
             {
                 MatchCollection matches = keywordRegex.Matches(codeText);
                 foreach (Match match in matches)
                 {
-                    results.Add(match.Index);
+                    if (isWholeWord && !IsWholeWordMatch(codeText, match.Index, match.Length))
+                        continue;
+                    results.Add((match.Index, match.Length));
                 }
             }
             else
@@ -269,7 +275,12 @@ namespace UndertaleModTool.Windows
                 int index = 0;
                 while ((index = codeText.IndexOf(text, index, comparisonType)) != -1)
                 {
-                    results.Add(index);
+                    if (isWholeWord && !IsWholeWordMatch(codeText, index, text.Length))
+                    {
+                        index += text.Length;
+                        continue;
+                    }
+                    results.Add((index, text.Length));
                     index += text.Length;
                 }
             }
@@ -279,10 +290,9 @@ namespace UndertaleModTool.Windows
             int lineNumber = 0;
             int lineStartIndex = 0;
 
-            foreach (int index in results)
+            foreach (var (matchIndex, matchLength) in results)
             {
-                // Continue from previous line count since results are in order
-                for (int i = lineStartIndex; i < index; ++i)
+                for (int i = lineStartIndex; i < matchIndex; ++i)
                 {
                     if (codeText[i] == '\n')
                     {
@@ -291,13 +301,11 @@ namespace UndertaleModTool.Windows
                     }
                 }
 
-                // Start at match.Index so it's only one line in case the search was multiline
-                int lineEndIndex = codeText.IndexOf('\n', index);
+                int lineEndIndex = codeText.IndexOf('\n', matchIndex);
                 lineEndIndex = lineEndIndex == -1 ? codeText.Length : lineEndIndex;
 
                 string lineText;
 
-                // Limit the displayed line length to 128
                 if (lineEndIndex - lineStartIndex > 128)
                 {
                     lineEndIndex = lineStartIndex + 128;
@@ -310,10 +318,10 @@ namespace UndertaleModTool.Windows
 
                 if (nameWritten == false)
                 {
-                    resultsDict[codeName] = new List<(int, string)>();
+                    resultsDict[codeName] = new List<(int, string, int, int)>();
                     nameWritten = true;
                 }
-                resultsDict[codeName].Add((lineNumber + 1, lineText));
+                resultsDict[codeName].Add((lineNumber + 1, lineText, matchIndex, matchLength));
 
                 Interlocked.Increment(ref resultCount);
             }
@@ -325,6 +333,179 @@ namespace UndertaleModTool.Windows
 
             resultsDictSorted = resultsDict.OrderBy(c => Array.IndexOf(codeNames, c.Key));
             failedListSorted = failedList.OrderBy(c => Array.IndexOf(codeNames, c));
+        }
+
+        private static bool IsWordChar(char c)
+        {
+            return char.IsLetterOrDigit(c) || c == '_';
+        }
+
+        private static bool IsWholeWordMatch(string text, int index, int length)
+        {
+            if (index > 0 && IsWordChar(text[index - 1]))
+                return false;
+            if (index + length < text.Length && IsWordChar(text[index + length]))
+                return false;
+            return true;
+        }
+
+        private string BuildWholeWordRegexPattern(string searchText)
+        {
+            return @"\b" + Regex.Escape(searchText) + @"\b";
+        }
+
+        private async Task Replace(bool replaceAll)
+        {
+            if (mainWindow.Data == null)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_NoDataWinLoaded"));
+                return;
+            }
+
+            if (mainWindow.Data.IsYYC())
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_CantSearchYYC"));
+                return;
+            }
+
+            if (isSearchInProgress)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_CantSearchWhileInProgress"));
+                return;
+            }
+
+            if (isInAssembly)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_CantReplaceInAssembly"));
+                return;
+            }
+
+            string searchText = SearchTextBox.Text.Replace("\r\n", "\n");
+            string replacement = ReplaceTextBox.Text.Replace("\r\n", "\n");
+
+            if (String.IsNullOrEmpty(searchText))
+                return;
+
+            bool caseSensitive = CaseSensitiveCheckBox.IsChecked ?? false;
+            bool regexSearch = RegexSearchCheckBox.IsChecked ?? false;
+            bool wholeWord = WholeWordCheckBox.IsChecked ?? false;
+
+            if (!replaceAll && ResultsListView.SelectedItem is not Result)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_NoResultSelected"));
+                return;
+            }
+
+            Result selectedResult = replaceAll ? default : (Result)ResultsListView.SelectedItem;
+
+            string confirmMsg;
+            if (replaceAll)
+            {
+                int codeEntryCount = resultsDictSorted?.Select(r => r.Key).Count()
+                                    ?? Results.Select(r => r.Code).Distinct().Count();
+                confirmMsg = string.Format(LocalizationSource.GetString("Msg_ConfirmReplaceAll"), codeEntryCount);
+            }
+            else
+            {
+                confirmMsg = string.Format(LocalizationSource.GetString("Msg_ConfirmReplace"), selectedResult.Code);
+            }
+
+            if (this.ShowQuestion(confirmMsg) != MessageBoxResult.Yes)
+                return;
+
+            mainWindow.IsEnabled = false;
+            this.IsEnabled = false;
+
+            isSearchInProgress = true;
+
+            loaderDialog = new(LocalizationSource.GetString("Dialog_Replacing"), null);
+            loaderDialog.Owner = this;
+            loaderDialog.PreventClose = true;
+            loaderDialog.Show();
+
+            int replacedCount = 0;
+            List<string> failedNames = new();
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    CodeImportGroup importGroup = new(mainWindow.Data, null, mainWindow.Data.ToolInfo.DecompilerSettings)
+                    {
+                        MainThreadAction = mainWindow.MainThreadAction
+                    };
+
+                    if (replaceAll)
+                    {
+                        HashSet<string> codeNamesToReplace = resultsDictSorted?.Select(r => r.Key).ToHashSet()
+                                                            ?? Results.Select(r => r.Code).ToHashSet();
+
+                        foreach (string codeName in codeNamesToReplace)
+                        {
+                            UndertaleCode code = mainWindow.Data.Code.ByName(codeName);
+                            if (code is null || code.ParentEntry is not null)
+                                continue;
+
+                            if (regexSearch || wholeWord)
+                            {
+                                string pattern = wholeWord ? BuildWholeWordRegexPattern(searchText) : searchText;
+                                importGroup.QueueRegexFindReplace(code, pattern, replacement, caseSensitive);
+                            }
+                            else
+                            {
+                                importGroup.QueueFindReplace(code, searchText, replacement, caseSensitive);
+                            }
+                        }
+                        replacedCount = codeNamesToReplace.Count;
+                    }
+                    else
+                    {
+                        UndertaleCode code = mainWindow.Data.Code.ByName(selectedResult.Code);
+                        if (code is not null && code.ParentEntry is null)
+                        {
+                            string codeText = GetCodeString(code);
+
+                            if (selectedResult.MatchIndex >= 0
+                                && selectedResult.MatchIndex + selectedResult.MatchLength <= codeText.Length)
+                            {
+                                string modifiedCode = string.Concat(
+                                    codeText.AsSpan(0, selectedResult.MatchIndex),
+                                    replacement.AsSpan(),
+                                    codeText.AsSpan(selectedResult.MatchIndex + selectedResult.MatchLength));
+                                importGroup.QueueReplace(code, modifiedCode);
+                                replacedCount = 1;
+                            }
+                        }
+                    }
+
+                    importGroup.Import();
+                }
+                catch (Exception ex)
+                {
+                    failedNames.Add(ex.Message);
+                }
+            });
+
+            loaderDialog.PreventClose = false;
+            loaderDialog.Close();
+            loaderDialog = null;
+
+            if (failedNames.Count > 0)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_ReplaceError"), string.Join("\n", failedNames)));
+            }
+            else
+            {
+                string msg = string.Format(LocalizationSource.GetString("Msg_ReplaceComplete"), replacedCount);
+                StatusBarTextBlock.Text = msg;
+            }
+
+            mainWindow.IsEnabled = true;
+            this.IsEnabled = true;
+
+            isSearchInProgress = false;
+
+            await Search();
         }
 
         public void ShowResults()
@@ -342,9 +523,9 @@ namespace UndertaleModTool.Windows
             foreach (var result in resultsSorted)
             {
                 var code = result.Key;
-                foreach (var (lineText, lineNumber) in result.Value)
+                foreach (var (lineNumber, lineText, matchIndex, matchLength) in result.Value)
                 {
-                    Results.Add(new(code, lineText, lineNumber));
+                    Results.Add(new(code, lineNumber, lineText, matchIndex, matchLength));
                 }
             }
 
@@ -354,6 +535,8 @@ namespace UndertaleModTool.Windows
                 str += " " + string.Format(LocalizationSource.GetString("Msg_SearchResultsErrorCount"), failedSorted.Length, GetWordEnding(failedSorted.Length, false));
             }
             StatusBarTextBlock.Text = str;
+
+            ReplaceAllButton.IsEnabled = Results.Count > 0;
         }
 
         private void OpenSelectedListViewItem(bool inNewTab = false, Result resultToOpen = default)
@@ -410,6 +593,25 @@ namespace UndertaleModTool.Windows
             }
         }
 
+        private async void ReplaceTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                e.Handled = true;
+                await Replace(replaceAll: true);
+            }
+        }
+
+        private async void ReplaceButton_Click(object sender, RoutedEventArgs e)
+        {
+            await Replace(replaceAll: false);
+        }
+
+        private async void ReplaceAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            await Replace(replaceAll: true);
+        }
+
         private void ListViewItem_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ButtonState == MouseButtonState.Pressed
@@ -455,6 +657,16 @@ namespace UndertaleModTool.Windows
         private void CopyCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             CopyListViewItems(ResultsListView.SelectedItems.Cast<Result>().OrderBy(item => ResultsListView.Items.IndexOf(item)));
+        }
+
+        private void ResultsListView_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            ReplaceButton.IsEnabled = ResultsListView.SelectedItem is Result;
+        }
+
+        private void Results_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            ReplaceAllButton.IsEnabled = Results.Count > 0;
         }
 
         private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
