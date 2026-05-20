@@ -68,6 +68,137 @@ namespace UndertaleModTool
         public SearchPanel DisassemblySearchPanel;
         public static (int Line, int Column, double ScrollPos) OverriddenDisasmPos { get; set; }
 
+        private readonly ModifiedLinesBackgroundRenderer _decompiledModifiedRenderer = new();
+        private readonly ModifiedLinesBackgroundRenderer _disassemblyModifiedRenderer = new();
+        private bool _isLoadingCode;
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<UndertaleCode, List<UndertaleInstruction>> _originalBytecodeSnapshots = new();
+
+        private static void SaveOriginalBytecodeSnapshot(UndertaleCode code)
+        {
+            if (!(Settings.Instance?.ChangeTrackingEnabled ?? true))
+                return;
+
+            if (code?.Instructions == null)
+                return;
+
+            if (!_originalBytecodeSnapshots.TryGetValue(code, out _))
+                _originalBytecodeSnapshots.Add(code, new List<UndertaleInstruction>(code.Instructions));
+        }
+
+        private static List<UndertaleInstruction> GetOriginalBytecodeSnapshot(UndertaleCode code)
+        {
+            if (code == null)
+                return null;
+
+            _originalBytecodeSnapshots.TryGetValue(code, out var snapshot);
+            return snapshot;
+        }
+
+        private static bool BytecodeEquals(List<UndertaleInstruction> snapshot, UndertaleCode code)
+        {
+            if (snapshot == null || code?.Instructions == null)
+                return snapshot == null && code?.Instructions == null;
+
+            if (snapshot.Count != code.Instructions.Count)
+                return false;
+
+            for (int i = 0; i < snapshot.Count; i++)
+            {
+                if (!InstructionEquals(snapshot[i], code.Instructions[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool InstructionEquals(UndertaleInstruction a, UndertaleInstruction b)
+        {
+            if (ReferenceEquals(a, b))
+                return true;
+            if (a == null || b == null)
+                return false;
+
+            if (a.Kind != b.Kind || a.Type1 != b.Type1 || a.Type2 != b.Type2)
+                return false;
+
+            var type = UndertaleInstruction.GetInstructionType(a.Kind);
+
+            if (type == UndertaleInstruction.InstructionType.ComparisonInstruction)
+            {
+                if (a.ComparisonKind != b.ComparisonKind)
+                    return false;
+            }
+            else if (type == UndertaleInstruction.InstructionType.GotoInstruction)
+            {
+                if (a.JumpOffset != b.JumpOffset)
+                    return false;
+            }
+            else if (type == UndertaleInstruction.InstructionType.PopInstruction || type == UndertaleInstruction.InstructionType.PushInstruction)
+            {
+                if (a.TypeInst != b.TypeInst)
+                    return false;
+            }
+            else if (type == UndertaleInstruction.InstructionType.CallInstruction)
+            {
+                if (a.ArgumentsCount != b.ArgumentsCount)
+                    return false;
+            }
+            else if (a.Kind == UndertaleInstruction.Opcode.Dup)
+            {
+                if (a.Extra != b.Extra)
+                    return false;
+            }
+
+            if (a.ValueVariable != null || b.ValueVariable != null)
+            {
+                if (!ReferenceEquals(a.ValueVariable, b.ValueVariable))
+                    return false;
+            }
+            else if (a.ValueFunction != null || b.ValueFunction != null)
+            {
+                if (!ReferenceEquals(a.ValueFunction, b.ValueFunction))
+                    return false;
+            }
+            else if (a.ValueString != null || b.ValueString != null)
+            {
+                if (!ReferenceEquals(a.ValueString?.Resource, b.ValueString?.Resource))
+                    return false;
+            }
+            else
+            {
+                if (type == UndertaleInstruction.InstructionType.PushInstruction)
+                {
+                    if (a.Kind == UndertaleInstruction.Opcode.PushI)
+                    {
+                        if (a.ValueShort != b.ValueShort)
+                            return false;
+                    }
+                    else if (a.Type1 == UndertaleInstruction.DataType.Int64)
+                    {
+                        if (a.ValueLong != b.ValueLong)
+                            return false;
+                    }
+                    else if (a.Type1 == UndertaleInstruction.DataType.Double)
+                    {
+                        if (a.ValueDouble != b.ValueDouble)
+                            return false;
+                    }
+                    else if (a.Type1 == UndertaleInstruction.DataType.Int32)
+                    {
+                        if (a.ValueInt != b.ValueInt)
+                            return false;
+                    }
+                }
+                else if (type == UndertaleInstruction.InstructionType.BreakInstruction)
+                {
+                    if (a.Type1 == UndertaleInstruction.DataType.Int32 && a.ValueInt != b.ValueInt)
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
         public static RoutedUICommand Compile = new RoutedUICommand("Compile code", "Compile", typeof(UndertaleCodeEditor));
 
         private static readonly Dictionary<string, UndertaleNamedResource> NamedObjDict = new();
@@ -168,6 +299,8 @@ namespace UndertaleModTool
             TextArea textArea = DecompiledEditor.TextArea;
             textArea.TextView.ElementGenerators.Add(new NumberGenerator(this, textArea));
             textArea.TextView.ElementGenerators.Add(new NameGenerator(this, textArea));
+            if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+                textArea.TextView.BackgroundRenderers.Add(_decompiledModifiedRenderer);
 
             textArea.TextView.Options.HighlightCurrentLine = true;
             textArea.TextView.CurrentLineBackground = new SolidColorBrush(Color.FromRgb(60, 60, 60));
@@ -175,8 +308,12 @@ namespace UndertaleModTool
 
             DecompiledEditor.Document.TextChanged += (s, e) =>
             {
+                if (_isLoadingCode)
+                    return;
                 DecompiledFocused = true;
                 DecompiledChanged = true;
+                if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+                    _decompiledModifiedRenderer.MarkDirty();
             };
 
             textArea.SelectionBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100));
@@ -201,12 +338,21 @@ namespace UndertaleModTool
 
             textArea = DisassemblyEditor.TextArea;
             textArea.TextView.ElementGenerators.Add(new NameGenerator(this, textArea));
+            if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+                textArea.TextView.BackgroundRenderers.Add(_disassemblyModifiedRenderer);
 
             textArea.TextView.Options.HighlightCurrentLine = true;
             textArea.TextView.CurrentLineBackground = new SolidColorBrush(Color.FromRgb(60, 60, 60));
             textArea.TextView.CurrentLineBorder = new Pen() { Thickness = 0 };
 
-            DisassemblyEditor.Document.TextChanged += (s, e) => DisassemblyChanged = true;
+            DisassemblyEditor.Document.TextChanged += (s, e) =>
+            {
+                if (_isLoadingCode)
+                    return;
+                DisassemblyChanged = true;
+                if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+                    _disassemblyModifiedRenderer.MarkDirty();
+            };
 
             textArea.SelectionBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100));
             textArea.SelectionForeground = null;
@@ -1345,7 +1491,15 @@ namespace UndertaleModTool
             }
 
             DisassemblyEditor.Document.BeginUpdate();
-            DisassemblyEditor.Document.Text = text;
+            _isLoadingCode = true;
+            try
+            {
+                DisassemblyEditor.Document.Text = text;
+            }
+            finally
+            {
+                _isLoadingCode = false;
+            }
 
             DisassemblyEditor.FontSize = ZoomFontSize;
             if (!DisassemblyEditor.IsReadOnly)
@@ -1358,6 +1512,9 @@ namespace UndertaleModTool
 
             CurrentDisassembled = code;
             DisassemblyChanged = false;
+            if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+                _disassemblyModifiedRenderer.SetOriginalText(DisassemblyEditor.Text, DisassemblyEditor.Document);
+            SaveOriginalBytecodeSnapshot(code);
         }
 
         public static Dictionary<string, string> gettext = null;
@@ -1481,9 +1638,20 @@ namespace UndertaleModTool
 
             if (code.ParentEntry != null)
             {
-                DecompiledEditor.Text = "// " + string.Format(LocalizationSource.GetString("Msg_CodeEntryReference"), code.ParentEntry.Name.Content);
+                _isLoadingCode = true;
+                try
+                {
+                    DecompiledEditor.Text = "// " + string.Format(LocalizationSource.GetString("Msg_CodeEntryReference"), code.ParentEntry.Name.Content);
+                }
+                finally
+                {
+                    _isLoadingCode = false;
+                }
                 DecompiledChanged = false;
                 CurrentDecompiled = code;
+                if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+                    _decompiledModifiedRenderer.SetOriginalText(DecompiledEditor.Text, DecompiledEditor.Document);
+                SaveOriginalBytecodeSnapshot(code);
                 existingDialog?.TryClose();
             }
             else
@@ -1617,33 +1785,44 @@ namespace UndertaleModTool
                     Dispatcher.Invoke(() =>
                     {
                         if (DataContext != code)
-                            return; // Switched to another code entry or otherwise
+                            return;
 
-                        DecompiledEditor.Document.BeginUpdate();
-                        if (e != null)
-                            DecompiledEditor.Document.Text = "/* EXCEPTION!\n   " + e.ToString() + "\n*/";
-                        else if (decompiled != null)
+                        _isLoadingCode = true;
+                        try
                         {
-                            DecompiledEditor.Document.Text = decompiled;
-                            PopulateCurrentLocals(dataa, code);
-
-                            DecompiledEditor.FontSize = ZoomFontSize;
-                            RestoreCaretPosition(DecompiledEditor, currLine, currColumn, scrollPos);
-
-                            if (existingDialog is not null)                      //if code was edited (and compiles after it)
+                            DecompiledEditor.Document.BeginUpdate();
+                            if (e != null)
+                                DecompiledEditor.Document.Text = "/* EXCEPTION!\n   " + e.ToString() + "\n*/";
+                            else if (decompiled != null)
                             {
-                                openSaveDialog = mainWindow.IsSaving;
+                                DecompiledEditor.Document.Text = decompiled;
+                                PopulateCurrentLocals(dataa, code);
+
+                                DecompiledEditor.FontSize = ZoomFontSize;
+                                RestoreCaretPosition(DecompiledEditor, currLine, currColumn, scrollPos);
+
+                                if (existingDialog is not null)
+                                {
+                                    openSaveDialog = mainWindow.IsSaving;
+                                }
                             }
+
+                            DecompiledEditor.Document.EndUpdate();
+                            DecompiledEditor.IsReadOnly = false;
+                            if (first)
+                                DecompiledEditor.Document.UndoStack.ClearAll();
+
+                            DecompiledChanged = false;
+
+                            CurrentDecompiled = code;
+                            if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+                                _decompiledModifiedRenderer.SetOriginalText(DecompiledEditor.Text, DecompiledEditor.Document);
+                            SaveOriginalBytecodeSnapshot(code);
                         }
-
-                        DecompiledEditor.Document.EndUpdate();
-                        DecompiledEditor.IsReadOnly = false;
-                        if (first)
-                            DecompiledEditor.Document.UndoStack.ClearAll();
-
-                        DecompiledChanged = false;
-
-                        CurrentDecompiled = code;
+                        finally
+                        {
+                            _isLoadingCode = false;
+                        }
                         dialog.TryClose();
                     });
                 });
@@ -1751,6 +1930,7 @@ namespace UndertaleModTool
 
             CompileResult compileResult = new();
             string rootException = null;
+            var originalSnapshot = GetOriginalBytecodeSnapshot(code);
             var dispatcher = Dispatcher;
             Task t = Task.Run(() =>
             {
@@ -1783,6 +1963,17 @@ namespace UndertaleModTool
                 mainWindow.ShowError(Truncate(compileResult.PrintAllErrors(false), 512), LocalizationSource.GetString("Dialog_CompilerError"));
                 return;
             }
+
+            if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+            {
+                if (!BytecodeEquals(originalSnapshot, code))
+                    mainWindow.ChangeTracker.MarkModified(code);
+                else
+                    mainWindow.ChangeTracker.UnmarkModified(code);
+            }
+
+            _decompiledModifiedRenderer.ClearModifiedLines();
+            DecompiledChanged = false;
 
             // Invalidate gettext if necessary
             if (code.Name.Content == "gml_Script_textdata_en")
@@ -1851,6 +2042,7 @@ namespace UndertaleModTool
             }
 
             UndertaleData data = mainWindow.Data;
+            var originalSnapshot = GetOriginalBytecodeSnapshot(code);
             try
             {
                 var instructions = Assembler.Assemble(DisassemblyEditor.Text, data);
@@ -1861,6 +2053,17 @@ namespace UndertaleModTool
                 mainWindow.ShowError(ex.ToString(), LocalizationSource.GetString("Dialog_AssemblerError"));
                 return;
             }
+
+            if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+            {
+                if (!BytecodeEquals(originalSnapshot, code))
+                    mainWindow.ChangeTracker.MarkModified(code);
+                else
+                    mainWindow.ChangeTracker.UnmarkModified(code);
+            }
+
+            _disassemblyModifiedRenderer.ClearModifiedLines();
+            DisassemblyChanged = false;
 
             // Get rid of old code
             CurrentDisassembled = null;

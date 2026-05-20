@@ -14,6 +14,7 @@
         </DataTemplate>
 
         <local:ImplementsInterfaceConverter x:Key="ImplementsInterfaceConverter"/>
+        <local:IsModifiedConverter x:Key="IsModifiedConverter"/>
 
         <local:ContextMenuDark x:Key="UndertaleResourceMenu" Opened="MenuItem_ContextMenuOpened">
             <MenuItem Header="{loc:Loc Common_OpenInNewTab}" Click="MenuItem_OpenInNewTab_Click"/>
@@ -34,6 +35,9 @@
                 <DataTrigger Binding="{Binding .}" Value="{x:Null}">
                     <Setter Property="Foreground" Value="Gray"/>
                     <Setter Property="ContextMenu" Value="{StaticResource NullItemReplaceMenu}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ., Converter={StaticResource IsModifiedConverter}}" Value="True">
+                    <Setter Property="Foreground" Value="#FF9800"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>

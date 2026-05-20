@@ -58,6 +58,8 @@ namespace UndertaleModTool
 
         public bool RecompileAllCodeSourcesOnProjectSave { get; set; } = false;
 
+        public bool ChangeTrackingEnabled { get; set; } = true;
+
         public List<string> RecentFiles { get; set; } = new();
 
         public bool CodeEditorWordWrap { get; set; } = true;

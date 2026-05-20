@@ -97,6 +97,7 @@
                         <CheckBox IsChecked="{Binding TempRunMessageShow}" Content="{loc:Loc Settings_WarnTempRun}" ToolTip="{loc:Loc Settings_WarnTempRunToolTip}"/>
                         <CheckBox IsChecked="{Binding ShowNullEntriesInResourceTree}" Content="{loc:Loc Settings_ShowNullEntries}" ToolTip="{loc:Loc Settings_ShowNullEntriesToolTip}"/>
                         <CheckBox IsChecked="{Binding RecompileAllCodeSourcesOnProjectSave}" Content="{loc:Loc Settings_RecompileOnSave}" ToolTip="{loc:Loc Settings_RecompileOnSaveToolTip}"/>
+                        <CheckBox IsChecked="{Binding ChangeTrackingEnabled}" Content="{loc:Loc Settings_ChangeTracking}" ToolTip="{loc:Loc Settings_ChangeTrackingToolTip}"/>
                     </StackPanel>
                 </Grid>
 
