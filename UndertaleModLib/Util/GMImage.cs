@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers.Binary;
 using System.IO;
 using ICSharpCode.SharpZipLib.BZip2;
@@ -966,6 +966,25 @@ public class GMImage
         }
 
         return _data.AsSpan();
+    }
+
+    /// <summary>
+    /// Returns the raw BGRA32 pixel data of this image as a <see cref="byte"/> array.
+    /// Unlike <see cref="GetRawImageData"/>, this returns the internal array directly
+    /// without creating a copy. The caller should not modify the returned array.
+    /// </summary>
+    /// <remarks>
+    /// Only works if the image format is <see cref="ImageFormat.RawBgra"/>; otherwise, you must first convert to that format using <see cref="ConvertToRawBgra"/>.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">Image format is not <see cref="ImageFormat.RawBgra"/>.</exception>
+    public byte[] GetRawImageDataArray()
+    {
+        if (Format != ImageFormat.RawBgra)
+        {
+            throw new InvalidOperationException("Image is not in raw format");
+        }
+
+        return _data;
     }
 
     /// <summary>

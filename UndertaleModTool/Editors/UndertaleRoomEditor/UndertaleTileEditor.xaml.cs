@@ -1,4 +1,4 @@
-﻿#pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CA1416 // Validate platform compatibility
 
 using System;
 using System.Collections.Generic;
@@ -275,6 +275,11 @@ namespace UndertaleModTool
         private void Window_Closed(object sender, EventArgs e)
         {
             PaletteTilesData.Dispose();
+            TileCache?.Clear();
+            TileCache = null;
+            TilesBitmap = null;
+            RoomPreview = null;
+            emptyTile = null;
             if (apply)
             {
                 EditingLayer.TilesData.TileDataUpdated();

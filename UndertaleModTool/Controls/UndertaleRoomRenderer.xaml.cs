@@ -114,6 +114,7 @@ namespace UndertaleModTool
                 PngBitmapEncoder encoder = new() { Interlace = PngInterlaceOption.Off };
                 encoder.Frames.Add(BitmapFrame.Create(target));
                 encoder.Save(outfile);
+                encoder.Frames.Clear();
 
                 if (!displayGrid && last)
                 {

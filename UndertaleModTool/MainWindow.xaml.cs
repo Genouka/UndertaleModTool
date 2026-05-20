@@ -120,7 +120,7 @@ namespace UndertaleModTool
         public List<Tab> ClosedTabsHistory { get; } = new();
         IList<Tab> IWindowHost.ClosedTabsHistory => ClosedTabsHistory;
 
-        private ConditionalWeakTable<GMImage, BitmapSource> _bitmapSourceLookup { get; } = new();
+        private ConditionalWeakTable<GMImage, BitmapSource> _bitmapSourceLookup { get; set; } = new();
 
         private ProjectAssetsWindow _projectAssetsWindow = null;
 
@@ -314,10 +314,24 @@ namespace UndertaleModTool
                 srcImage = new GMImage(1, 1);
             }
 
-            byte[] pixelData = srcImage.ConvertToRawBgra().ToSpan().ToArray();
-            BitmapSource bitmap = BitmapSource.Create(srcImage.Width, srcImage.Height, 96, 96, PixelFormats.Bgra32, null, pixelData, srcImage.Width * 4);
+            GMImage rawImage = srcImage.ConvertToRawBgra();
+            int stride = rawImage.Width * 4;
+            byte[] pixelData = (rawImage == srcImage)
+                ? rawImage.GetRawImageData().ToArray()
+                : rawImage.GetRawImageDataArray();
+            BitmapSource bitmap = BitmapSource.Create(rawImage.Width, rawImage.Height, 96, 96, PixelFormats.Bgra32, null, pixelData, stride);
             bitmap.Freeze();
-            _bitmapSourceLookup.Add(image, bitmap);
+
+            try
+            {
+                _bitmapSourceLookup.Add(image, bitmap);
+            }
+            catch (ArgumentException)
+            {
+                if (_bitmapSourceLookup.TryGetValue(image, out BitmapSource existing))
+                    return existing;
+            }
+
             return bitmap;
         }
 
@@ -1259,6 +1273,7 @@ namespace UndertaleModTool
 
                         UndertaleCachedImageLoader.Reset();
                         CachedTileDataLoader.Reset();
+                        _bitmapSourceLookup = new();
 
                         Data.ToolInfo.DecompilerSettings = SettingsWindow.DecompilerSettings;
                         Data.ToolInfo.InstanceIdPrefix = () => SettingsWindow.InstanceIdPrefix;

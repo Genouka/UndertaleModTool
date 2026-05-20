@@ -130,6 +130,7 @@ namespace UndertaleModTool
             PngBitmapEncoder encoder = new() { Interlace = PngInterlaceOption.Off };
             encoder.Frames.Add(BitmapFrame.Create(target));
             encoder.Save(outfile);
+            encoder.Frames.Clear();
 
             visualOffProp.SetValue(roomCanvas, prevOffset);
         }
@@ -3147,8 +3148,15 @@ namespace UndertaleModTool
                         Tuple<string, uint> tileKey = new(tilesBG.Texture.Name.Content, id);
 
                         IntPtr bmpPtr = CachedTileDataLoader.TileCache[tileKey].GetHbitmap();
-                        ImageSource spriteSrc = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(bmpPtr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                        DeleteObject(bmpPtr);
+                        ImageSource spriteSrc;
+                        try
+                        {
+                            spriteSrc = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(bmpPtr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                        }
+                        finally
+                        {
+                            DeleteObject(bmpPtr);
+                        }
                         spriteSrc.Freeze(); // allow UI thread access
 
                         TileCache.TryAdd(tileKey, spriteSrc);

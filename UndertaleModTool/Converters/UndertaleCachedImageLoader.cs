@@ -214,8 +214,14 @@ namespace UndertaleModTool
             using (Bitmap spriteBitmap = CreateSpriteBitmap(rect, in texture, diffW, diffH))
             {
                 IntPtr bmpPtr = spriteBitmap.GetHbitmap();
-                spriteSrc = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(bmpPtr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                DeleteObject(bmpPtr);
+                try
+                {
+                    spriteSrc = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(bmpPtr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                }
+                finally
+                {
+                    DeleteObject(bmpPtr);
+                }
             }
             spriteSrc.Freeze(); // allow UI thread access
 
@@ -287,8 +293,15 @@ namespace UndertaleModTool
                 ArrayPool<byte>.Shared.Return(bufferRes);
 
                 IntPtr bmpPtr = tileBMP.GetHbitmap();
-                ImageSource spriteSrc = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(bmpPtr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                DeleteObject(bmpPtr);
+                ImageSource spriteSrc;
+                try
+                {
+                    spriteSrc = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(bmpPtr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                }
+                finally
+                {
+                    DeleteObject(bmpPtr);
+                }
                 tileBMP.Dispose();
 
                 spriteSrc.Freeze(); // allow UI thread access
@@ -563,8 +576,15 @@ namespace UndertaleModTool
             }
 
             IntPtr bmpPtr = layerBMP.GetHbitmap();
-            ImageSource spriteSrc = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(bmpPtr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-            DeleteObject(bmpPtr);
+            ImageSource spriteSrc;
+            try
+            {
+                spriteSrc = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(bmpPtr, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            }
+            finally
+            {
+                DeleteObject(bmpPtr);
+            }
             layerBMP.Dispose();
 
             return spriteSrc;

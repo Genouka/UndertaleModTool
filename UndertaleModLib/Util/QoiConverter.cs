@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Buffers;
 using System.IO;
 
 namespace UndertaleModLib.Util
@@ -35,6 +36,8 @@ namespace UndertaleModLib.Util
             Span<byte> header = stackalloc byte[12];
             s.ReadExactly(header);
             int length = header[8] + (header[9] << 8) + (header[10] << 16) + (header[11] << 24);
+            if (length < 0 || length > s.Length - 12)
+                throw new InvalidDataException($"QOI data length {length} is invalid or exceeds stream size");
             byte[] bytes = new byte[12 + length];
             s.Position -= 12;
             s.ReadExactly(bytes, 0, bytes.Length);
@@ -63,6 +66,9 @@ namespace UndertaleModLib.Util
             int width = header[4] + (header[5] << 8);
             int height = header[6] + (header[7] << 8);
             length = header[8] + (header[9] << 8) + (header[10] << 16) + (header[11] << 24);
+
+            if (length < 0 || length > bytes.Length - 12)
+                throw new InvalidDataException($"QOI data length {length} is invalid or exceeds available data");
 
             ReadOnlySpan<byte> pixelData = bytes.Slice(12, length);
 
@@ -160,22 +166,34 @@ namespace UndertaleModLib.Util
         /// <param name="img">The <see cref="GMImage"/> to create the QOI image from.</param>
         /// <returns>A QOI Image as a byte array.</returns>
         /// <exception cref="Exception">If there was an error with stride width.</exception>
-        public static byte[] GetArrayFromImage(GMImage img) => GetSpanFromImage(img).ToArray();
+        public static byte[] GetArrayFromImage(GMImage img)
+        {
+            ArgumentNullException.ThrowIfNull(img);
 
-        /// <summary>
-        /// Creates a QOI image as a <see cref="Span{TKey}"/> from a <see cref="GMImage"/>.
-        /// </summary>
-        /// <param name="img">The <see cref="GMImage"/> to create the QOI image from.</param>
-        /// <returns>A QOI image as a byte array.</returns>
+            int requiredSize = (img.Width * img.Height * MaxChunkSize) + HeaderSize;
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(requiredSize);
+            try
+            {
+                Span<byte> encoded = EncodeQoi(img, buffer);
+                return encoded.ToArray();
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+        }
+
         public static Span<byte> GetSpanFromImage(GMImage img)
         {
             ArgumentNullException.ThrowIfNull(img);
 
-            // Prepare buffer
             int requiredSize = (img.Width * img.Height * MaxChunkSize) + HeaderSize;
             byte[] buffer = new byte[requiredSize];
+            return EncodeQoi(img, buffer);
+        }
 
-            // Little-endian QOIF image magic
+        private static Span<byte> EncodeQoi(GMImage img, byte[] buffer)
+        {
             buffer[0] = (byte)'f';
             buffer[1] = (byte)'i';
             buffer[2] = (byte)'o';
@@ -185,7 +203,6 @@ namespace UndertaleModLib.Util
             buffer[6] = (byte)(img.Height & 0xff);
             buffer[7] = (byte)((img.Height >> 8) & 0xff);
 
-            // Get raw image data, and encode the compressed data as per custom GameMaker format
             GMImage rawImage = img.ConvertToRawBgra();
             Span<byte> rawData = rawImage.GetRawImageData();
             int rawDataLength = rawData.Length;
@@ -280,7 +297,6 @@ namespace UndertaleModLib.Util
                 vPrev = v;
             }
 
-            // Write final length
             int length = resPos - HeaderSize;
             buffer[8] = (byte)(length & 0xff);
             buffer[9] = (byte)((length >> 8) & 0xff);
