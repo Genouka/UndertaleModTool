@@ -5,21 +5,54 @@
 ## What do I change?/我做了什么修改？
 
 - Add the support of multi-language and localization. 添加多语言和本地化支持
+  
   ![Preview](images/preview/image-2.png)
+
 - Allow to import resources from other datafiles. 允许从其它数据文件导入资源
+  
   ![Preview](images/preview/image-3.png)
+
   ![Preview](images/preview/image-4.png)
+
 - Add floating information panel documentation for built-in functions, constants, and variables. 添加悬浮信息面板可以显示内置的函数、变量、常量的简易文档
+  
   ![Preview](images/preview/image.png)
+
   ![Preview](images/preview/image-1.png)
+
 - Add floating information panel documents for sprites, numbers, etc. 添加悬浮面板快速预览所悬停内容（如精灵图、数字字面量）的信息
+  
   ![Preview](images/preview/image-5.png)
+  
   ![Preview](images/preview/image-6.png)
+
 - Add control options for automatic line wrapping and displaying whitespace characters to the code editor. They can also be configured with default values from the settings. 为代码编辑器添加自动换行和显示空白字符的控制选项，也可以从设置窗口配置默认值。
+  
   ![Preview](images/preview/image-7.png)
+
   ![Preview](images/preview/image-8.png)
+
 - Support displaying recently opened files (automatically excluding invalid files). 支持显示最近打开的文件（自动排除无效文件）
+  
   ![Preview](images/preview/image-9.png)
+  
+- Better search-and-replace panel in code editor (Ctrl+F or Ctrl+H). 更好的代码编辑器搜索替换面板(Ctrl+F 或 Ctrl+H)。
+
+  ![Preview](images/preview/image-10.png)
+
+- Added full word matching, replacement, and global replacement functions to the search code panel. 为搜索代码的面板添加了全字匹配功能、替换和全局替换功能。
+
+  ![Preview](images/preview/image-11.png)
+
+- Support separating tabs into sub windows (drag and drop tab titles outside the window, or right-click on tab titles and click 'Separate to New Window') 支持将标签页分离为子窗口(直接拖拽标签页标题到窗口外，或者右键标签页标题点击分离到新窗口)
+  
+  ![Preview](images/preview/image-12.png)
+
+- Data modification tracking. 数据修改跟踪
+  
+  ![Preview](images/preview/image-13.png)
+
+- Support to use as a MCP Server for AI calling. See [this](MCP.md) for detail. 支持作为MCP服务器使用，点[这里](MCP.md)查看文档。
 
 ---
 
