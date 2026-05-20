@@ -291,28 +291,32 @@ public sealed class CrossFileImporter : IDisposable
                         break;
                     case NameConflictResolution.Rename:
                         string newName = GenerateUniqueName(resInfo.Name, SerializableAssetType.Code);
+                        UndertaleString renameStr = null;
+                        _mainThreadAction(() => renameStr = TargetData.Strings.MakeString(newName));
                         targetCode = new UndertaleCode()
                         {
-                            Name = TargetData.Strings.MakeString(newName)
+                            Name = renameStr
                         };
                         _mainThreadAction(() => TargetData.Code.Add(targetCode));
                         if (TargetData.CodeLocals is not null)
                         {
-                            UndertaleCodeLocals.CreateEmptyEntry(TargetData, targetCode.Name);
+                            _mainThreadAction(() => UndertaleCodeLocals.CreateEmptyEntry(TargetData, targetCode.Name));
                         }
                         break;
                 }
             }
             else
             {
+                UndertaleString newStr = null;
+                _mainThreadAction(() => newStr = TargetData.Strings.MakeString(resInfo.Name));
                 targetCode = new UndertaleCode()
                 {
-                    Name = TargetData.Strings.MakeString(resInfo.Name)
+                    Name = newStr
                 };
                 _mainThreadAction(() => TargetData.Code.Add(targetCode));
                 if (TargetData.CodeLocals is not null)
                 {
-                    UndertaleCodeLocals.CreateEmptyEntry(TargetData, targetCode.Name);
+                    _mainThreadAction(() => UndertaleCodeLocals.CreateEmptyEntry(TargetData, targetCode.Name));
                 }
             }
 
@@ -395,7 +399,7 @@ public sealed class CrossFileImporter : IDisposable
         }
 
         packer.PackPages();
-        packer.ImportToData(TargetData);
+        _mainThreadAction(() => packer.ImportToData(TargetData));
     }
 
     private void ImportSpriteTextures(UndertaleSprite sourceSprite, TextureGroupPacker packer, TextureWorker textureWorker, NameConflictResolution conflictResolution, CrossFileImportResult result)
@@ -403,7 +407,7 @@ public sealed class CrossFileImporter : IDisposable
         UndertaleSprite targetSprite = TargetData.Sprites.ByName(sourceSprite.Name.Content) as UndertaleSprite;
         if (targetSprite is null) return;
 
-        targetSprite.Textures.Clear();
+        List<UndertaleSprite.TextureEntry> newTextureEntries = new(sourceSprite.Textures.Count);
         foreach (var texEntry in sourceSprite.Textures)
         {
             if (texEntry.Texture is null) continue;
@@ -411,18 +415,24 @@ public sealed class CrossFileImporter : IDisposable
             UndertaleTexturePageItem newItem = CopyTexturePageItem(texEntry.Texture, packer, textureWorker);
             if (newItem is not null)
             {
-                targetSprite.Textures.Add(new UndertaleSprite.TextureEntry()
+                newTextureEntries.Add(new UndertaleSprite.TextureEntry()
                 {
                     Texture = newItem
                 });
             }
         }
 
-        targetSprite.CollisionMasks.Clear();
-        foreach (var mask in sourceSprite.CollisionMasks)
+        List<UndertaleSprite.MaskEntry> newMasks = new(sourceSprite.CollisionMasks);
+        _mainThreadAction(() =>
         {
-            targetSprite.CollisionMasks.Add(mask);
-        }
+            targetSprite.Textures.Clear();
+            foreach (var entry in newTextureEntries)
+                targetSprite.Textures.Add(entry);
+
+            targetSprite.CollisionMasks.Clear();
+            foreach (var mask in newMasks)
+                targetSprite.CollisionMasks.Add(mask);
+        });
     }
 
     private void ImportBackgroundTextures(UndertaleBackground sourceBg, TextureGroupPacker packer, TextureWorker textureWorker, NameConflictResolution conflictResolution, CrossFileImportResult result)
