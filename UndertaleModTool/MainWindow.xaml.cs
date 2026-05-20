@@ -120,8 +120,7 @@ namespace UndertaleModTool
         public List<Tab> ClosedTabsHistory { get; } = new();
         IList<Tab> IWindowHost.ClosedTabsHistory => ClosedTabsHistory;
 
-        private List<(GMImage, WeakReference<BitmapSource>)> _bitmapSourceLookup { get; } = new();
-        private object _bitmapSourceLookupLock = new();
+        private ConditionalWeakTable<GMImage, BitmapSource> _bitmapSourceLookup { get; } = new();
 
         private ProjectAssetsWindow _projectAssetsWindow = null;
 
@@ -296,44 +295,22 @@ namespace UndertaleModTool
         /// </summary>
         public BitmapSource GetBitmapSourceForImage(GMImage image)
         {
-            lock (_bitmapSourceLookupLock)
+            if (_bitmapSourceLookup.TryGetValue(image, out BitmapSource foundSource))
             {
-                // Look through entire list, clearing out old weak references, and potentially finding our desired source
-                BitmapSource foundSource = null;
-                for (int i = _bitmapSourceLookup.Count - 1; i >= 0; i--)
-                {
-                    (GMImage imageKey, WeakReference<BitmapSource> referenceVal) = _bitmapSourceLookup[i];
-                    if (!referenceVal.TryGetTarget(out BitmapSource source))
-                    {
-                        // Clear out old weak reference
-                        _bitmapSourceLookup.RemoveAt(i);
-                    }
-                    else if (imageKey == image)
-                    {
-                        // Found our source, store it to return later
-                        foundSource = source;
-                    }
-                }
-
-                // If we found our source, return it
-                if (foundSource is not null)
-                {
-                    return foundSource;
-                }
-
-                // If the image is of unknown format, it cannot be displayed. Use a placeholder texture...
-                if (image.Format == GMImage.ImageFormat.Unknown)
-                {
-                    image = new GMImage(1, 1);
-                }
-
-                // If no source was found, then create a new one
-                byte[] pixelData = image.ConvertToRawBgra().ToSpan().ToArray();
-                BitmapSource bitmap = BitmapSource.Create(image.Width, image.Height, 96, 96, PixelFormats.Bgra32, null, pixelData, image.Width * 4);
-                bitmap.Freeze();
-                _bitmapSourceLookup.Add((image, new WeakReference<BitmapSource>(bitmap)));
-                return bitmap;
+                return foundSource;
             }
+
+            GMImage srcImage = image;
+            if (image.Format == GMImage.ImageFormat.Unknown)
+            {
+                srcImage = new GMImage(1, 1);
+            }
+
+            byte[] pixelData = srcImage.ConvertToRawBgra().ToSpan().ToArray();
+            BitmapSource bitmap = BitmapSource.Create(srcImage.Width, srcImage.Height, 96, 96, PixelFormats.Bgra32, null, pixelData, srcImage.Width * 4);
+            bitmap.Freeze();
+            _bitmapSourceLookup.Add(image, bitmap);
+            return bitmap;
         }
 
         // "attr" is actually "DwmWindowAttribute", but I only need the one value from it
@@ -720,7 +697,7 @@ namespace UndertaleModTool
                 if (this.ShowQuestion(LocalizationSource.GetString("Msg_ProjectOpenNewConfirm")) == MessageBoxResult.No)
                     return false;
             }
-            this.Dispatcher.Invoke(() =>
+            _ = this.Dispatcher.BeginInvoke(() =>
             {
                 CommandBox.Text = "";
             });
@@ -1155,22 +1132,19 @@ namespace UndertaleModTool
                 // Get rid of project
                 UnloadProject();
 
-                // Update GUI and wait for all background processes to finish
-                UpdateLayout();
-                Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+                _ = Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
 
                 Data.Dispose();
                 Data = null;
 
                 GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-                GC.Collect();
             }
         }
         private async Task LoadFile(string filename, bool preventClose = false, bool onlyGeneralInfo = false)
         {
             LoaderDialog dialog = new LoaderDialog(LocalizationSource.GetString("Main_Loading"), LocalizationSource.GetString("Main_LoadingPleaseWait"));
             dialog.PreventClose = preventClose;
-            this.Dispatcher.Invoke(() =>
+            _ = this.Dispatcher.BeginInvoke(() =>
             {
                 CommandBox.Text = "";
             });
@@ -1213,7 +1187,7 @@ namespace UndertaleModTool
 
                 if (onlyGeneralInfo)
                 {
-                    Dispatcher.Invoke(() =>
+                    _ = Dispatcher.BeginInvoke(() =>
                     {
                         dialog.TryClose();
                         Data = data;
@@ -1299,10 +1273,8 @@ namespace UndertaleModTool
             dialog.ShowDialog();
             await t;
 
-            // Clear "GC holes" left in the memory in process of data unserializing
             // https://docs.microsoft.com/en-us/dotnet/api/system.runtime.gcsettings.largeobjectheapcompactionmode?view=net-6.0
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-            GC.Collect();
         }
 
         private async Task<bool> SaveFile(string filename, bool suppressDebug = false)
@@ -1462,7 +1434,7 @@ namespace UndertaleModTool
                 }
                 catch (Exception e)
                 {
-                    Dispatcher.Invoke(() =>
+                    _ = Dispatcher.BeginInvoke(() =>
                     {
                         this.ShowError(string.Format(LocalizationSource.GetString("Msg_SaveErrorDetail"), e.Message), LocalizationSource.GetString("Msg_SaveError"));
                     });
@@ -1489,7 +1461,7 @@ namespace UndertaleModTool
                 }
                 catch (Exception exc)
                 {
-                    Dispatcher.Invoke(() =>
+                    _ = Dispatcher.BeginInvoke(() =>
                     {
                         this.ShowError(string.Format(LocalizationSource.GetString("Msg_SaveErrorDetail"), exc.Message), LocalizationSource.GetString("Msg_SaveError"));
                     });
@@ -1501,13 +1473,13 @@ namespace UndertaleModTool
 
                 if (saveSucceeded)
                 {
-                    Dispatcher.Invoke(() =>
+                    _ = Dispatcher.BeginInvoke(() =>
                     {
                         ChangeTracker.ClearAll();
                     });
                 }
 
-                Dispatcher.Invoke(() =>
+                _ = Dispatcher.BeginInvoke(() =>
                 {
                     dialog.TryClose();
                 });
@@ -1518,7 +1490,6 @@ namespace UndertaleModTool
             bool succeeded = await t;
 
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-            GC.Collect();
 
             return succeeded;
         }
@@ -1845,14 +1816,13 @@ namespace UndertaleModTool
                 }
                 if (FinishedMessageEnabled)
                 {
-                    Dispatcher.Invoke(() => CommandBox.Text = result != null ? result.ToString() : "");
+                    _ = Dispatcher.BeginInvoke(() => CommandBox.Text = result != null ? result.ToString() : "");
                 }
                 else
                 {
                     FinishedMessageEnabled = true;
                 }
 
-                GC.Collect();
                 CommandBox.IsEnabled = true;
             }
         }
@@ -2423,7 +2393,7 @@ namespace UndertaleModTool
         {
             string scriptText = $"#line 1 \"{path}\"\n" + File.ReadAllText(path, Encoding.UTF8);
 
-            Dispatcher.Invoke(() => CommandBox.Text = string.Format(LocalizationSource.GetString("Main_RunningScript"), Path.GetFileName(path)) + " ...");
+            _ = Dispatcher.BeginInvoke(() => CommandBox.Text = string.Format(LocalizationSource.GetString("Main_RunningScript"), Path.GetFileName(path)) + " ...");
             try
             {
                 if (!scriptSetupTask.IsCompleted)
@@ -2437,7 +2407,7 @@ namespace UndertaleModTool
 
                 if (FinishedMessageEnabled)
                 {
-                    Dispatcher.Invoke(() => CommandBox.Text = result != null ? result.ToString() : string.Format(LocalizationSource.GetString("Main_ScriptFinished"), Path.GetFileName(path)));
+                    _ = Dispatcher.BeginInvoke(() => CommandBox.Text = result != null ? result.ToString() : string.Format(LocalizationSource.GetString("Main_ScriptFinished"), Path.GetFileName(path)));
                 }
                 else
                 {
@@ -2447,7 +2417,7 @@ namespace UndertaleModTool
             catch (CompilationErrorException exc)
             {
                 Console.WriteLine(exc.ToString());
-                Dispatcher.Invoke(() => CommandBox.Text = exc.Message);
+                _ = Dispatcher.BeginInvoke(() => CommandBox.Text = exc.Message);
                 this.ShowError(exc.Message, LocalizationSource.GetString("Msg_ScriptCompileError"));
                 ScriptExecutionSuccess = false;
                 ScriptErrorMessage = exc.Message;
@@ -2458,14 +2428,13 @@ namespace UndertaleModTool
                 await StopProgressBarUpdater();
 
                 Console.WriteLine(exc.ToString());
-                Dispatcher.Invoke(() => CommandBox.Text = exc.Message);
+                _ = Dispatcher.BeginInvoke(() => CommandBox.Text = exc.Message);
                 this.ShowError(ScriptingUtil.PrettifyException(in exc), LocalizationSource.GetString("Msg_ScriptError"));
                 ScriptExecutionSuccess = false;
                 ScriptErrorMessage = exc.Message;
                 ScriptErrorType = "Exception";
             }
 
-            GC.Collect();
             scriptText = null;
         }
 
@@ -2566,14 +2535,14 @@ namespace UndertaleModTool
 
         public void SetUMTConsoleText(string message)
         {
-            this.Dispatcher.Invoke(() =>
+            _ = this.Dispatcher.BeginInvoke(() =>
             {
                 CommandBox.Text = message;
             });
         }
         public void SetFinishedMessage(bool isFinishedMessageEnabled)
         {
-            this.Dispatcher.Invoke(() =>
+            _ = this.Dispatcher.BeginInvoke(() =>
             {
                 FinishedMessageEnabled = isFinishedMessageEnabled;
             });
@@ -2958,14 +2927,12 @@ namespace UndertaleModTool
                     }
                     finally
                     {
-                        // If we return early or not, always update button status
-                        Dispatcher.Invoke(() =>
+                        _ = Dispatcher.BeginInvoke(() =>
                         {
                             window.UpdateButtonEnabled = !extractedSuccessfully;
                         });
                     }
 
-                    // Move back to UI thread to perform final actions
                     Dispatcher.Invoke(() =>
                     {
                         this.ShowMessage(LocalizationSource.GetString("Msg_WillCloseToUpdate"));
@@ -3466,7 +3433,7 @@ namespace UndertaleModTool
                             this.ShowError(string.Format(LocalizationSource.GetString("Msg_LoadErrorDetail"), ex.Message), LocalizationSource.GetString("Msg_LoadError"));
                         }
 
-                        Dispatcher.Invoke(() =>
+                        _ = Dispatcher.BeginInvoke(() =>
                         {
                             dialog.TryClose();
                         });
