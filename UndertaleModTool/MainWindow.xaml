@@ -126,6 +126,17 @@
                             </Style>
                         </MenuItem.Style>
                     </MenuItem>
+                    <MenuItem Header="{loc:Loc Menu_File_ImportGraphics}" Click="MenuItem_ImportGraphics_Click">
+                        <MenuItem.Style>
+                            <Style TargetType="{x:Type MenuItem}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Data, Mode=OneWay}" Value="{x:Null}">
+                                        <Setter Property="IsEnabled" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </MenuItem.Style>
+                    </MenuItem>
                     <Separator/>
                     <MenuItem Header="{loc:Loc Menu_File_GenerateOffsetMap}" Click="MenuItem_OffsetMap_Click"/>
                     <Separator/>

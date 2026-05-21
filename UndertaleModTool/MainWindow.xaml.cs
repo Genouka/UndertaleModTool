@@ -3425,6 +3425,80 @@ namespace UndertaleModTool
             }
         }
 
+        private async void MenuItem_ImportGraphics_Click(object sender, RoutedEventArgs e)
+        {
+            if (Data is null)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_NoDataWinLoaded"));
+                return;
+            }
+
+            ImportGraphicsDialog dialog = new(Data);
+            dialog.Owner = this;
+            if (dialog.ShowDialog() != true)
+                return;
+
+            var entries = dialog.SelectedEntries;
+            if (entries == null || entries.Count == 0)
+                return;
+
+            int texturePageSize = dialog.SelectedTexturePageSize;
+
+            LoaderDialog loader = new(LocalizationSource.GetString("ImportGraphics_WindowTitle"),
+                                       LocalizationSource.GetString("ImportGraphics_Importing"));
+            loader.Owner = this;
+            loader.PreventClose = true;
+
+            bool success = false;
+            Exception error = null;
+
+            var progress = new Progress<(int current, int total, string message)>(p =>
+            {
+                if (p.total > 0)
+                {
+                    loader.Maximum = p.total;
+                    loader.ReportProgress(p.message, p.current);
+                }
+                else
+                {
+                    loader.ReportProgress(p.message);
+                }
+            });
+
+            Task importTask = Task.Run(async () =>
+            {
+                try
+                {
+                    await GraphicsImporter.ImportFromEntriesAsync(Data, entries, texturePageSize, progress, Project);
+                    success = true;
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+            });
+
+            _ = importTask.ContinueWith(_ =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    loader.PreventClose = false;
+                    loader.TryClose();
+                });
+            });
+
+            loader.ShowDialog();
+
+            if (success)
+            {
+                this.ShowMessage(LocalizationSource.GetString("ImportGraphics_ImportComplete"));
+            }
+            else if (error != null)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("ImportGraphics_ImportError"), error.Message));
+            }
+        }
+
         private async void MenuItem_OffsetMap_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog dlg = new OpenFileDialog();

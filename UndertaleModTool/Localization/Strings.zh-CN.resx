@@ -5141,4 +5141,157 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Editor_BuiltinVariable" xml:space="preserve">
     <value>内置变量</value>
   </data>
+  <data name="Menu_File_ImportGraphics" xml:space="preserve">
+    <value>导入图像(_G)...</value>
+  </data>
+  <data name="ImportGraphics_WindowTitle" xml:space="preserve">
+    <value>导入图像</value>
+  </data>
+  <data name="ImportGraphics_ImportFolder" xml:space="preserve">
+    <value>导入文件夹：</value>
+  </data>
+  <data name="ImportGraphics_Browse" xml:space="preserve">
+    <value>浏览...</value>
+  </data>
+  <data name="ImportGraphics_ImportMode" xml:space="preserve">
+    <value>导入模式：</value>
+  </data>
+  <data name="ImportGraphics_ReplaceInPlace" xml:space="preserve">
+    <value>原位替换</value>
+  </data>
+  <data name="ImportGraphics_NewTexturePages" xml:space="preserve">
+    <value>新建纹理页</value>
+  </data>
+  <data name="ImportGraphics_KeepOriginalTexturePage" xml:space="preserve">
+    <value>保持原纹理页</value>
+  </data>
+  <data name="ImportGraphics_ReplaceInPlaceTip" xml:space="preserve">
+    <value>直接替换现有纹理页项。要求替换图像与原始图像的尺寸完全匹配。仅适用于已存在的精灵。</value>
+  </data>
+  <data name="ImportGraphics_NewTexturePagesTip" xml:space="preserve">
+    <value>使用纹理打包器创建新的纹理页。支持任意尺寸、新精灵、背景、GIF和精灵条。</value>
+  </data>
+  <data name="ImportGraphics_KeepOriginalTexturePageTip" xml:space="preserve">
+    <value>将图像保持在原纹理页上。尺寸匹配时原位替换；新图较小时其他项位置不变；新图较大时重新排列该纹理页。仅适用于已存在的精灵。</value>
+  </data>
+  <data name="ImportGraphics_ImportUnknownAsSprite" xml:space="preserve">
+    <value>将未知类型的图像作为精灵导入</value>
+  </data>
+  <data name="ImportGraphics_SpriteProperties" xml:space="preserve">
+    <value>精灵属性</value>
+  </data>
+  <data name="ImportGraphics_OriginPosition" xml:space="preserve">
+    <value>原点位置：</value>
+  </data>
+  <data name="ImportGraphics_AnimationSpeed" xml:space="preserve">
+    <value>动画速度：</value>
+  </data>
+  <data name="ImportGraphics_PlaybackType" xml:space="preserve">
+    <value>播放类型：</value>
+  </data>
+  <data name="ImportGraphics_IsSpecialType" xml:space="preserve">
+    <value>特殊类型</value>
+  </data>
+  <data name="ImportGraphics_SpecialVersion" xml:space="preserve">
+    <value>特殊版本：</value>
+  </data>
+  <data name="ImportGraphics_TexturePageSize" xml:space="preserve">
+    <value>纹理页大小：</value>
+  </data>
+  <data name="ImportGraphics_OK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="ImportGraphics_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="ImportGraphics_NoFolderSelected" xml:space="preserve">
+    <value>请选择导入文件夹。</value>
+  </data>
+  <data name="ImportGraphics_FolderNotExist" xml:space="preserve">
+    <value>所选文件夹不存在。</value>
+  </data>
+  <data name="ImportGraphics_InvalidAnimationSpeed" xml:space="preserve">
+    <value>请输入有效的动画速度数值。</value>
+  </data>
+  <data name="ImportGraphics_InvalidSpecialVersion" xml:space="preserve">
+    <value>请输入有效的特殊版本数值。</value>
+  </data>
+  <data name="ImportGraphics_InvalidTexturePageSize" xml:space="preserve">
+    <value>请选择有效的纹理页大小。</value>
+  </data>
+  <data name="ImportGraphics_Importing" xml:space="preserve">
+    <value>正在导入图像...</value>
+  </data>
+  <data name="ImportGraphics_ImportComplete" xml:space="preserve">
+    <value>导入完成！</value>
+  </data>
+  <data name="ImportGraphics_ImportError" xml:space="preserve">
+    <value>导入错误：{0}</value>
+  </data>
+  <data name="ImportGraphics_Scan" xml:space="preserve">
+    <value>扫描</value>
+  </data>
+  <data name="ImportGraphics_GlobalSettings" xml:space="preserve">
+    <value>全局设置（应用于选中的图像）</value>
+  </data>
+  <data name="ImportGraphics_DefaultImportMode" xml:space="preserve">
+    <value>默认导入模式：</value>
+  </data>
+  <data name="ImportGraphics_ApplyDefaults" xml:space="preserve">
+    <value>应用到选中项</value>
+  </data>
+  <data name="ImportGraphics_ImageList" xml:space="preserve">
+    <value>图像列表：</value>
+  </data>
+  <data name="ImportGraphics_SelectAll" xml:space="preserve">
+    <value>全选</value>
+  </data>
+  <data name="ImportGraphics_DeselectAll" xml:space="preserve">
+    <value>取消全选</value>
+  </data>
+  <data name="ImportGraphics_SetSelectedMode" xml:space="preserve">
+    <value>设置模式</value>
+  </data>
+  <data name="ImportGraphics_ColumnFileName" xml:space="preserve">
+    <value>文件</value>
+  </data>
+  <data name="ImportGraphics_ColumnType" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="ImportGraphics_ColumnSpriteName" xml:space="preserve">
+    <value>精灵</value>
+  </data>
+  <data name="ImportGraphics_ColumnFrame" xml:space="preserve">
+    <value>帧</value>
+  </data>
+  <data name="ImportGraphics_ColumnDimensions" xml:space="preserve">
+    <value>尺寸</value>
+  </data>
+  <data name="ImportGraphics_ColumnStatus" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="ImportGraphics_ColumnMode" xml:space="preserve">
+    <value>模式</value>
+  </data>
+  <data name="ImportGraphics_NoImagesFound" xml:space="preserve">
+    <value>在所选文件夹中未找到图像。选择文件夹后请点击"扫描"。</value>
+  </data>
+  <data name="ImportGraphics_NoImagesSelected" xml:space="preserve">
+    <value>未选择要导入的图像。</value>
+  </data>
+  <data name="ImportGraphics_TypeSprite" xml:space="preserve">
+    <value>精灵</value>
+  </data>
+  <data name="ImportGraphics_TypeBackground" xml:space="preserve">
+    <value>背景</value>
+  </data>
+  <data name="ImportGraphics_TypeFont" xml:space="preserve">
+    <value>字体</value>
+  </data>
+  <data name="ImportGraphics_TypeUnknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="ImportGraphics_ColumnTexturePage" xml:space="preserve">
+    <value>纹理页</value>
+  </data>
 </root>
