@@ -56,6 +56,17 @@
 
   ![Preview](images/preview/image-14.png)
 
+- Add the texture page migration tool. 添加纹理页迁移工具
+
+  ![Preview](images/preview/image-15.png)
+
+  ![Preview](images/preview/image-16.png)
+
+  ![Preview](images/preview/image-17.png)
+
+  ![Preview](images/preview/image-18.png)
+
+
 - Improved performance, reduced memory usage, optimized UI thread lag. 提高了性能，减少内存占用，优化了UI线程卡顿。
 
 - Support to use as a MCP Server for AI calling. See [this](MCP.md) for detail. 支持作为MCP服务器使用，点[这里](MCP.md)查看文档。
