@@ -16,7 +16,6 @@ using UndertaleModLib.Models;
 using UndertaleModLib.Util;
 using UndertaleModTool.Localization;
 using UndertaleModTool.Windows;
-
 namespace UndertaleModTool
 {
     /// <summary>
@@ -376,6 +375,20 @@ namespace UndertaleModTool
                 matrix.ScaleAtPrepend(scale, scale, mousePos.X, mousePos.Y);
             }
             TextureViewbox.LayoutTransform = new MatrixTransform(matrix);
+        }
+
+        private void MergeToOtherPage_Click(object sender, RoutedEventArgs e)
+        {
+            UndertaleEmbeddedTexture texture = DataContext as UndertaleEmbeddedTexture;
+            if (texture is null)
+                return;
+
+            var wizard = new MergeTexturePageWizard(texture);
+            wizard.Owner = mainWindow;
+            if (wizard.ShowDialog() == true)
+            {
+                UpdateImage(texture);
+            }
         }
     }
 

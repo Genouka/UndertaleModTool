@@ -1,0 +1,179 @@
+<Window x:Class="UndertaleModTool.Windows.MergeTexturePageWizard"
+        IsVisibleChanged="Window_IsVisibleChanged"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UndertaleModTool"
+        xmlns:loc="clr-namespace:UndertaleModTool.Localization"
+        mc:Ignorable="d"
+        Title="{loc:Loc MergeTP_Title}" Height="600" Width="900" MinHeight="500" MinWidth="750"
+        WindowStartupLocation="CenterOwner" DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <Window.Resources>
+        <ResourceDictionary>
+            <local:BooleanToVisibilityConverter x:Key="BoolToVis" local:trueValue="Visible" local:falseValue="Collapsed"/>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Controls/TransparencyGridBrush.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" x:Name="StepTitle" FontWeight="Bold" FontSize="14" Margin="0,0,0,6"/>
+
+        <Grid Grid.Row="1">
+            <Grid x:Name="Step1Panel">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Margin="0,0,4,0" BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible"
+                                      x:Name="Step1ScrollViewer" ScrollChanged="Step1Scroll_ScrollChanged">
+                            <ScrollViewer.Background>
+                                <DynamicResource ResourceKey="{x:Static SystemColors.MenuBrushKey}"/>
+                            </ScrollViewer.Background>
+                            <Viewbox x:Name="Step1Viewbox" Stretch="Uniform" StretchDirection="DownOnly"
+                                     SnapsToDevicePixels="True" RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                     MouseWheel="Step1Viewbox_MouseWheel" MouseDown="Step1Canvas_MouseDown" MouseMove="Step1Canvas_MouseMove">
+                                <Border Background="{DynamicResource TransparencyGridBrushBrush}">
+                                    <Grid>
+                                        <Image x:Name="Step1TextureImage"/>
+                                        <Canvas x:Name="Step1OverlayCanvas"/>
+                                    </Grid>
+                                </Border>
+                            </Viewbox>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Column="1" Margin="4,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" x:Name="SelectionCountText" Margin="0,0,0,4"/>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,4">
+                        <local:ButtonDark Content="{loc:Loc MergeTP_SelectAll}" Click="SelectAll_Click" Margin="0,0,4,0" Padding="6,2"/>
+                        <local:ButtonDark Content="{loc:Loc MergeTP_DeselectAll}" Click="DeselectAll_Click" Margin="0,0,4,0" Padding="6,2"/>
+                        <local:ButtonDark Content="{loc:Loc MergeTP_InvertSelection}" Click="InvertSelection_Click" Padding="6,2"/>
+                    </StackPanel>
+
+                    <ListBox Grid.Row="2" x:Name="EntryListBox" SelectionMode="Multiple"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
+                        <ListBox.Background>
+                            <DynamicResource ResourceKey="{x:Static SystemColors.ControlLightBrushKey}"/>
+                        </ListBox.Background>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="true">
+                                        <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="true">
+                                        <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Content="{Binding DisplayName}"
+                                          Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <TextBlock Grid.Row="3" x:Name="Step1HintText" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" FontStyle="Italic" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                </Grid>
+            </Grid>
+
+            <Grid x:Name="Step2Panel" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="3*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0" Margin="0,0,4,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="{loc:Loc MergeTP_TargetPage}" Margin="0,0,0,4"/>
+                    <local:ComboBoxDark Grid.Row="1" x:Name="TargetPageCombo" SelectionChanged="TargetPageCombo_SelectionChanged" Margin="0,0,0,4">
+                        <local:ComboBoxDark.ItemContainerStyle>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                            </Style>
+                        </local:ComboBoxDark.ItemContainerStyle>
+                    </local:ComboBoxDark>
+                    <Border Grid.Row="2" BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}" BorderThickness="1" Margin="0,0,0,4">
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                            <Border Background="{DynamicResource TransparencyGridBrushBrush}">
+                                <Image x:Name="TargetThumbnailImage" Stretch="Uniform" StretchDirection="DownOnly"
+                                       RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            </Border>
+                        </ScrollViewer>
+                    </Border>
+                    <TextBlock Grid.Row="3" x:Name="TargetInfoText" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                </Grid>
+
+                <Grid Grid.Column="1" Margin="4,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="{loc:Loc MergeTP_Preview}" Margin="0,0,0,4"/>
+                    <Border Grid.Row="1" BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}" BorderThickness="1">
+                        <ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible"
+                                      x:Name="PreviewScrollViewer" ScrollChanged="PreviewScroll_ScrollChanged">
+                            <Viewbox x:Name="PreviewViewbox" Stretch="Uniform" StretchDirection="DownOnly"
+                                     SnapsToDevicePixels="True" RenderOptions.BitmapScalingMode="NearestNeighbor"
+                                     MouseWheel="PreviewViewbox_MouseWheel">
+                                <Border Background="{DynamicResource TransparencyGridBrushBrush}">
+                                    <Image x:Name="PreviewImage"/>
+                                </Border>
+                            </Viewbox>
+                        </ScrollViewer>
+                    </Border>
+                    <TextBlock Grid.Row="2" x:Name="PreviewInfoText" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" Margin="0,4,0,0"/>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <local:ButtonDark x:Name="BackButton" Grid.Column="0" Content="{loc:Loc MergeTP_Back}" Click="Back_Click" Padding="12,4" Margin="0,0,8,0" Visibility="Collapsed"/>
+            <local:ButtonDark x:Name="NextButton" Grid.Column="2" Content="{loc:Loc MergeTP_Next}" Click="Next_Click" Padding="12,4" Margin="0,0,8,0"/>
+            <local:ButtonDark x:Name="ConfirmButton" Grid.Column="2" Content="{loc:Loc MergeTP_Confirm}" Click="Confirm_Click" Padding="12,4" Margin="0,0,8,0" Visibility="Collapsed"/>
+            <local:ButtonDark x:Name="CancelButton" Grid.Column="3" Content="{loc:Loc Common_Cancel}" Click="Cancel_Click" Padding="12,4"/>
+        </Grid>
+    </Grid>
+</Window>

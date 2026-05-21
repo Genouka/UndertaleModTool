@@ -94,6 +94,7 @@
             </ScrollViewer>
 
             <local:ButtonDark Grid.Row="2" Grid.Column="0" Margin="0,2" Content="{loc:Loc Common_Import}" Click="Import_Click"/>
+            <local:ButtonDark Grid.Row="2" Grid.Column="1" Margin="0,2" Content="{loc:Loc MergeTP_Button}" Click="MergeToOtherPage_Click"/>
             <local:ButtonDark Grid.Row="2" Grid.Column="3" Margin="0,2" Content="{loc:Loc Common_Export}" Click="Export_Click"/>
         </Grid>
     </Grid>

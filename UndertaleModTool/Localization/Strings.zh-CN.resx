@@ -5294,4 +5294,61 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="ImportGraphics_ColumnTexturePage" xml:space="preserve">
     <value>纹理页</value>
   </data>
+  <data name="MergeTP_Title" xml:space="preserve">
+    <value>合并到其它纹理页</value>
+  </data>
+  <data name="MergeTP_Step1Title" xml:space="preserve">
+    <value>第一步：选择要合并的条目</value>
+  </data>
+  <data name="MergeTP_Step2Title" xml:space="preserve">
+    <value>第二步：选择目标纹理页</value>
+  </data>
+  <data name="MergeTP_SelectAll" xml:space="preserve">
+    <value>全选</value>
+  </data>
+  <data name="MergeTP_DeselectAll" xml:space="preserve">
+    <value>取消全选</value>
+  </data>
+  <data name="MergeTP_InvertSelection" xml:space="preserve">
+    <value>反选</value>
+  </data>
+  <data name="MergeTP_SelectedCount" xml:space="preserve">
+    <value>已选 {0} / {1} 项</value>
+  </data>
+  <data name="MergeTP_TargetPage" xml:space="preserve">
+    <value>目标纹理页：</value>
+  </data>
+  <data name="MergeTP_NewPage" xml:space="preserve">
+    <value>&lt;新建纹理页&gt;</value>
+  </data>
+  <data name="MergeTP_Preview" xml:space="preserve">
+    <value>合并预览：</value>
+  </data>
+  <data name="MergeTP_Next" xml:space="preserve">
+    <value>下一步</value>
+  </data>
+  <data name="MergeTP_Back" xml:space="preserve">
+    <value>上一步</value>
+  </data>
+  <data name="MergeTP_Confirm" xml:space="preserve">
+    <value>确认</value>
+  </data>
+  <data name="MergeTP_NoSelection" xml:space="preserve">
+    <value>请至少选择一个条目。</value>
+  </data>
+  <data name="MergeTP_SamePage" xml:space="preserve">
+    <value>不能合并到同一个纹理页。</value>
+  </data>
+  <data name="MergeTP_PackFailed" xml:space="preserve">
+    <value>无法将所选条目打包到目标纹理页。</value>
+  </data>
+  <data name="MergeTP_Success" xml:space="preserve">
+    <value>成功将 {0} 个条目合并到"{1}"。</value>
+  </data>
+  <data name="MergeTP_Button" xml:space="preserve">
+    <value>转移到其它纹理页</value>
+  </data>
+  <data name="MergeTP_PreviewSize" xml:space="preserve">
+    <value>预览尺寸：{0}x{1}</value>
+  </data>
 </root>

@@ -5293,4 +5293,61 @@ It's highly recommended to restart the application.</value>
   <data name="ImportGraphics_ColumnTexturePage" xml:space="preserve">
     <value>Texture Page</value>
   </data>
+  <data name="MergeTP_Title" xml:space="preserve">
+    <value>Merge to Other Texture Page</value>
+  </data>
+  <data name="MergeTP_Step1Title" xml:space="preserve">
+    <value>Step 1: Select entries to merge</value>
+  </data>
+  <data name="MergeTP_Step2Title" xml:space="preserve">
+    <value>Step 2: Choose target texture page</value>
+  </data>
+  <data name="MergeTP_SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="MergeTP_DeselectAll" xml:space="preserve">
+    <value>Deselect All</value>
+  </data>
+  <data name="MergeTP_InvertSelection" xml:space="preserve">
+    <value>Invert Selection</value>
+  </data>
+  <data name="MergeTP_SelectedCount" xml:space="preserve">
+    <value>{0} of {1} selected</value>
+  </data>
+  <data name="MergeTP_TargetPage" xml:space="preserve">
+    <value>Target texture page:</value>
+  </data>
+  <data name="MergeTP_NewPage" xml:space="preserve">
+    <value>&lt;New texture page&gt;</value>
+  </data>
+  <data name="MergeTP_Preview" xml:space="preserve">
+    <value>Merge preview:</value>
+  </data>
+  <data name="MergeTP_Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="MergeTP_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="MergeTP_Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="MergeTP_NoSelection" xml:space="preserve">
+    <value>Please select at least one entry.</value>
+  </data>
+  <data name="MergeTP_SamePage" xml:space="preserve">
+    <value>Cannot merge to the same texture page.</value>
+  </data>
+  <data name="MergeTP_PackFailed" xml:space="preserve">
+    <value>Failed to pack selected entries into the target page.</value>
+  </data>
+  <data name="MergeTP_Success" xml:space="preserve">
+    <value>Successfully merged {0} entries to '{1}'.</value>
+  </data>
+  <data name="MergeTP_Button" xml:space="preserve">
+    <value>Move to other texture page</value>
+  </data>
+  <data name="MergeTP_PreviewSize" xml:space="preserve">
+    <value>Preview size: {0}x{1}</value>
+  </data>
 </root>
