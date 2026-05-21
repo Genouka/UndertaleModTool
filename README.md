@@ -52,6 +52,10 @@
   
   ![Preview](images/preview/image-13.png)
 
+- Add the built-in batch image import tool. 添加内置的图片批量导入工具
+
+  ![Preview](images/preview/image-14.png)
+
 - Improved performance, reduced memory usage, optimized UI thread lag. 提高了性能，减少内存占用，优化了UI线程卡顿。
 
 - Support to use as a MCP Server for AI calling. See [this](MCP.md) for detail. 支持作为MCP服务器使用，点[这里](MCP.md)查看文档。
