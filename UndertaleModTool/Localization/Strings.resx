@@ -2361,6 +2361,7 @@ Use one of the search scripts in the "Find" menu if necessary.</value>
   </data>
   <data name="Msg_IncludePadding" xml:space="preserve">
     <value>Include padding?</value>
+    <comment>Should the transparent pixel margins be removed from the exported images? (If you need to export them as-is, please select No.)</comment>
   </data>
   <data name="Msg_SpineSpriteWarning" xml:space="preserve">
     <value>This seems to be a Spine sprite, .json and .atlas files will be exported together with the frames. PLEASE EDIT THEM CAREFULLY! SOME MANUAL EDITING OF THE JSON MAY BE REQUIRED! THE DATA IS EXPORTED AS-IS.</value>
@@ -5160,17 +5161,11 @@ It's highly recommended to restart the application.</value>
   <data name="ImportGraphics_NewTexturePages" xml:space="preserve">
     <value>New texture pages</value>
   </data>
-  <data name="ImportGraphics_KeepOriginalTexturePage" xml:space="preserve">
-    <value>Keep original texture page</value>
-  </data>
   <data name="ImportGraphics_ReplaceInPlaceTip" xml:space="preserve">
     <value>Replaces existing texture page items directly. Requires replacement images to match the exact dimensions of the originals. Only works with existing sprites.</value>
   </data>
   <data name="ImportGraphics_NewTexturePagesTip" xml:space="preserve">
     <value>Creates new texture pages using a texture packer. Supports arbitrary dimensions, new sprites, backgrounds, GIF, and sprite strips.</value>
-  </data>
-  <data name="ImportGraphics_KeepOriginalTexturePageTip" xml:space="preserve">
-    <value>Keeps images on their original texture pages. If dimensions match, replaces in-place. If the new image is smaller, other items stay in place. If larger, the entire texture page is repacked. Only works with existing sprites.</value>
   </data>
   <data name="ImportGraphics_ImportUnknownAsSprite" xml:space="preserve">
     <value>Import unknown type images as sprites</value>
@@ -5288,6 +5283,12 @@ It's highly recommended to restart the application.</value>
   </data>
   <data name="ImportGraphics_TypeUnknown" xml:space="preserve">
     <value>Unknown</value>
+  </data>
+  <data name="ImportGraphics_KeepOriginalTexturePage" xml:space="preserve">
+    <value>Keep original texture page</value>
+  </data>
+  <data name="ImportGraphics_KeepOriginalTexturePageTip" xml:space="preserve">
+    <value>Keeps images on their original texture pages. If dimensions match, replaces in-place. If the new image is smaller, other items stay in place. If larger, the entire texture page is repacked. Only works with existing sprites.</value>
   </data>
   <data name="ImportGraphics_ColumnTexturePage" xml:space="preserve">
     <value>Texture Page</value>

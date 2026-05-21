@@ -2364,7 +2364,7 @@ UndertaleModTool的32位（x86）版本已过时。
     <value>没有可导出的帧</value>
   </data>
   <data name="Msg_IncludePadding" xml:space="preserve">
-    <value>包含内边距？</value>
+    <value>是否从导出的图片中剔除透明像素边距？（如果需要按原样导出请选择否）</value>
   </data>
   <data name="Msg_SpineSpriteWarning" xml:space="preserve">
     <value>这似乎是 Spine 精灵，.json 和 .atlas 文件将与帧一起导出。请谨慎编辑！可能需要手动编辑 JSON！数据按原样导出。</value>
@@ -5162,17 +5162,11 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="ImportGraphics_NewTexturePages" xml:space="preserve">
     <value>新建纹理页</value>
   </data>
-  <data name="ImportGraphics_KeepOriginalTexturePage" xml:space="preserve">
-    <value>保持原纹理页</value>
-  </data>
   <data name="ImportGraphics_ReplaceInPlaceTip" xml:space="preserve">
     <value>直接替换现有纹理页项。要求替换图像与原始图像的尺寸完全匹配。仅适用于已存在的精灵。</value>
   </data>
   <data name="ImportGraphics_NewTexturePagesTip" xml:space="preserve">
     <value>使用纹理打包器创建新的纹理页。支持任意尺寸、新精灵、背景、GIF和精灵条。</value>
-  </data>
-  <data name="ImportGraphics_KeepOriginalTexturePageTip" xml:space="preserve">
-    <value>将图像保持在原纹理页上。尺寸匹配时原位替换；新图较小时其他项位置不变；新图较大时重新排列该纹理页。仅适用于已存在的精灵。</value>
   </data>
   <data name="ImportGraphics_ImportUnknownAsSprite" xml:space="preserve">
     <value>将未知类型的图像作为精灵导入</value>
@@ -5290,6 +5284,12 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   </data>
   <data name="ImportGraphics_TypeUnknown" xml:space="preserve">
     <value>未知</value>
+  </data>
+  <data name="ImportGraphics_KeepOriginalTexturePage" xml:space="preserve">
+    <value>保持原纹理页</value>
+  </data>
+  <data name="ImportGraphics_KeepOriginalTexturePageTip" xml:space="preserve">
+    <value>将图像保持在原纹理页上。尺寸匹配时原位替换；新图较小时其他项位置不变；新图较大时重新排列该纹理页。仅适用于已存在的精灵。</value>
   </data>
   <data name="ImportGraphics_ColumnTexturePage" xml:space="preserve">
     <value>纹理页</value>
