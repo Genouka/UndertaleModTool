@@ -511,10 +511,16 @@ namespace UndertaleModTool.Windows
         private void UpdatePreview()
         {
             var selected = SelectedEntries;
+            bool allSelected = selected.Count == sourceItems.Length;
+
+            SourcePreviewPanel.Visibility = allSelected ? Visibility.Collapsed : Visibility.Visible;
+
             if (selected.Count == 0)
             {
                 PreviewImage.Source = null;
                 PreviewInfoText.Text = "";
+                SourcePreviewImage.Source = null;
+                SourcePreviewInfoText.Text = "";
                 return;
             }
 
@@ -528,6 +534,8 @@ namespace UndertaleModTool.Windows
                 var existingItemsOnTarget = new List<UndertaleTexturePageItem>();
                 var existingImages = new List<MagickImage>();
                 var selectedImages = new List<MagickImage>();
+                var remainingImages = new List<MagickImage>();
+
                 try
                 {
                     if (existingTarget != null)
@@ -539,6 +547,46 @@ namespace UndertaleModTool.Windows
                     }
 
                     selectedImages = ExtractImages(worker, selected.Select(e => e.Item));
+
+                    if (!allSelected)
+                    {
+                        var remainingItems = sourceItems
+                            .Where(si => !selected.Any(se => se.Item == si))
+                            .ToList();
+                        remainingImages = ExtractImages(worker, remainingItems);
+
+                        var remainingPack = TryFullRepack(remainingImages, new List<MagickImage>());
+                        if (remainingPack != null && remainingPack.SelectedPlacements.Count == 0)
+                        {
+                            using var srcPreviewImg = new MagickImage(MagickColors.Transparent,
+                                (uint)remainingPack.PageWidth, (uint)remainingPack.PageHeight);
+
+                            foreach (var p in remainingPack.ExistingPlacements)
+                            {
+                                if (p.Index < remainingImages.Count)
+                                {
+                                    using var clone = new MagickImage(remainingImages[p.Index]);
+                                    srcPreviewImg.Composite(clone, p.SrcX, p.SrcY, CompositeOperator.Copy);
+                                }
+                            }
+
+                            var srcGmImage = GMImage.FromMagickImage(srcPreviewImg);
+                            BitmapSource srcBitmap = mainWindow.GetBitmapSourceForImage(srcGmImage);
+                            SourcePreviewImage.Source = srcBitmap;
+                            SourcePreviewInfoText.Text = string.Format(LocalizationSource.GetString("MergeTP_PreviewSize"),
+                                remainingPack.PageWidth, remainingPack.PageHeight);
+                        }
+                        else
+                        {
+                            SourcePreviewImage.Source = null;
+                            SourcePreviewInfoText.Text = "";
+                        }
+                    }
+                    else
+                    {
+                        SourcePreviewImage.Source = null;
+                        SourcePreviewInfoText.Text = "";
+                    }
 
                     var existingRects = new List<(int X, int Y, int W, int H)>();
                     for (int i = 0; i < existingItemsOnTarget.Count; i++)
@@ -587,12 +635,15 @@ namespace UndertaleModTool.Windows
                 {
                     foreach (var img in existingImages) img.Dispose();
                     foreach (var img in selectedImages) img.Dispose();
+                    foreach (var img in remainingImages) img.Dispose();
                 }
             }
             catch
             {
                 PreviewImage.Source = null;
                 PreviewInfoText.Text = "";
+                SourcePreviewImage.Source = null;
+                SourcePreviewInfoText.Text = "";
             }
         }
 
@@ -907,11 +958,58 @@ namespace UndertaleModTool.Windows
                     entry.Item.TexturePage = targetPage;
                 }
 
-                using (MagickImage placeholder = new MagickImage(MagickColors.Transparent, 1, 1))
+                bool allSelected = selected.Count == sourceItems.Length;
+
+                if (allSelected)
                 {
-                    byte[] pngBytes = placeholder.ToByteArray(MagickFormat.Png);
-                    sourcePage.TextureData = new UndertaleEmbeddedTexture.TexData();
-                    sourcePage.TextureData.Image = GMImage.FromPng(pngBytes);
+                    using (MagickImage placeholder = new MagickImage(MagickColors.Transparent, 1, 1))
+                    {
+                        byte[] pngBytes = placeholder.ToByteArray(MagickFormat.Png);
+                        sourcePage.TextureData = new UndertaleEmbeddedTexture.TexData();
+                        sourcePage.TextureData.Image = GMImage.FromPng(pngBytes);
+                    }
+                }
+                else
+                {
+                    var remainingItems = sourceItems
+                        .Where(si => !selected.Any(se => se.Item == si))
+                        .ToList();
+
+                    var remainingImages = ExtractImages(worker, remainingItems);
+                    try
+                    {
+                        var remainingPack = TryFullRepack(remainingImages, new List<MagickImage>());
+
+                        if (remainingPack != null && remainingPack.SelectedPlacements.Count == 0)
+                        {
+                            using var repackedImg = new MagickImage(MagickColors.Transparent,
+                                (uint)remainingPack.PageWidth, (uint)remainingPack.PageHeight);
+
+                            for (int i = 0; i < remainingPack.ExistingPlacements.Count; i++)
+                            {
+                                var p = remainingPack.ExistingPlacements[i];
+                                if (p.Index < remainingItems.Count)
+                                {
+                                    remainingItems[p.Index].SourceX = p.SrcX;
+                                    remainingItems[p.Index].SourceY = p.SrcY;
+                                    remainingItems[p.Index].SourceWidth = p.SrcW;
+                                    remainingItems[p.Index].SourceHeight = p.SrcH;
+                                }
+                                if (p.Index < remainingImages.Count)
+                                {
+                                    using var clone = new MagickImage(remainingImages[p.Index]);
+                                    repackedImg.Composite(clone, p.SrcX, p.SrcY, CompositeOperator.Copy);
+                                }
+                            }
+
+                            sourcePage.TextureData.Image = GMImage.FromMagickImage(repackedImg)
+                                .ConvertToFormat(sourcePage.TextureData.Image?.Format ?? GMImage.ImageFormat.Png);
+                        }
+                    }
+                    finally
+                    {
+                        foreach (var img in remainingImages) img.Dispose();
+                    }
                 }
 
                 string targetName = targetPage.Name?.Content ?? targetPage.ToString();
