@@ -42,9 +42,18 @@ namespace UndertaleModTool
             };
 
             textArea.DocumentChanged += TextArea_DocumentChanged;
+            if (textArea.Document is not null)
+                textArea.Document.TextChanged += Document_TextChanged;
         }
 
         private void TextArea_DocumentChanged(object sender, EventArgs e)
+        {
+            if (_textArea.Document is not null)
+                _textArea.Document.TextChanged += Document_TextChanged;
+            DoSearch(false);
+        }
+
+        private void Document_TextChanged(object sender, EventArgs e)
         {
             DoSearch(false);
         }
@@ -212,10 +221,16 @@ namespace UndertaleModTool
                 return;
             }
 
-            int caretOffset = _textArea.Caret.Offset;
-            int idx = _results.FindIndex(r => r.StartOffset > caretOffset);
+            int docLength = _textArea.Document.TextLength;
+            int caretOffset = Math.Min(_textArea.Caret.Offset, docLength);
+            int idx = _results.FindIndex(r => r.StartOffset > caretOffset && r.EndOffset <= docLength);
             if (idx < 0)
-                idx = 0;
+                idx = _results.FindIndex(r => r.EndOffset <= docLength);
+            if (idx < 0)
+            {
+                DoSearch(true);
+                return;
+            }
 
             var next = _results[idx];
             SelectResult(next.StartOffset, next.EndOffset - next.StartOffset);
@@ -229,10 +244,16 @@ namespace UndertaleModTool
                 return;
             }
 
-            int caretOffset = _textArea.Caret.Offset;
-            int idx = _results.FindLastIndex(r => r.StartOffset < caretOffset);
+            int docLength = _textArea.Document.TextLength;
+            int caretOffset = Math.Min(_textArea.Caret.Offset, docLength);
+            int idx = _results.FindLastIndex(r => r.StartOffset < caretOffset && r.EndOffset <= docLength);
             if (idx < 0)
-                idx = _results.Count - 1;
+                idx = _results.FindLastIndex(r => r.EndOffset <= docLength);
+            if (idx < 0)
+            {
+                DoSearch(true);
+                return;
+            }
 
             var prev = _results[idx];
             SelectResult(prev.StartOffset, prev.EndOffset - prev.StartOffset);
@@ -240,6 +261,12 @@ namespace UndertaleModTool
 
         private void SelectResult(int startOffset, int length)
         {
+            int docLength = _textArea.Document.TextLength;
+            if (startOffset < 0 || startOffset > docLength)
+                startOffset = Math.Max(0, Math.Min(startOffset, docLength));
+            if (startOffset + length > docLength)
+                length = Math.Max(0, docLength - startOffset);
+
             _textArea.Caret.Offset = startOffset;
             _textArea.Selection = Selection.Create(_textArea, startOffset, startOffset + length);
             _textArea.Caret.BringCaretToView();
