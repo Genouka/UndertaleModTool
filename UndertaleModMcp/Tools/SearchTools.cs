@@ -25,7 +25,7 @@ public class SearchTools
     }
 
     [McpServerTool, Description("Search within decompiled code for text content across all code entries")]
-    public static List<CodeSearchResult> SearchCodeText(
+    public static List<CodeSearchResult> SearchTextInCode(
         [Description("The query string to search for in decompiled code")] string query,
         [Description("Maximum number of results to return")] int maxResults,
         GameDataSession session)

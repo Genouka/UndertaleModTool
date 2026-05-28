@@ -300,7 +300,7 @@ public class GameDataSession : IDisposable
                     {
                         if (lines[i].Contains(query, StringComparison.OrdinalIgnoreCase))
                         {
-                            results.Add(new CodeSearchResult(code.Name.Content, i + 1, lines[i].Trim()));
+                            results.Add(new CodeSearchResult(code.Name.Content, i + 1, lines[i].Trim(), string.Join("\n", lines.Skip(Math.Max(0, i - 2)).Take(5))));
                             if (results.Count >= maxResults) goto done;
                         }
                     }
@@ -444,4 +444,4 @@ public record RoomDetail(
 
 public record StringSearchResult(int Index, string Content);
 
-public record CodeSearchResult(string CodeEntryName, int LineNumber, string LineContent);
+public record CodeSearchResult(string CodeEntryName, int LineNumber, string LineContent,string ContextContent = "");
