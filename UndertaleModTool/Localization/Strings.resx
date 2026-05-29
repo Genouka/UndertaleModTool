@@ -5353,4 +5353,13 @@ It's highly recommended to restart the application.</value>
   <data name="MergeTP_SourcePreview" xml:space="preserve">
     <value>Source page after merge:</value>
   </data>
+  <data name="MergeTP_Processing" xml:space="preserve">
+    <value>Processing...</value>
+  </data>
+  <data name="MergeTP_PlacingItem" xml:space="preserve">
+    <value>Placing item {0} of {1}...</value>
+  </data>
+  <data name="MergeTP_FullRepacking" xml:space="preserve">
+    <value>Full repacking...</value>
+  </data>
 </root>

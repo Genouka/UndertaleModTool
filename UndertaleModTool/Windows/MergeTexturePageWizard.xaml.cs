@@ -9,6 +9,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using ImageMagick;
 using UndertaleModLib.Models;
 using UndertaleModLib.Util;
@@ -23,9 +26,26 @@ namespace UndertaleModTool.Windows
         private readonly UndertaleEmbeddedTexture sourcePage;
         private readonly UndertaleTexturePageItem[] sourceItems;
         private int currentStep = 1;
+        private CancellationTokenSource _previewCts;
+        private int _previewVersion;
+        private bool _isProcessing;
 
         public ObservableCollection<EntryItem> Entries { get; } = new();
         public List<EntryItem> SelectedEntries => Entries.Where(e => e.IsSelected).ToList();
+
+        public bool IsProcessing
+        {
+            get => _isProcessing;
+            set
+            {
+                if (_isProcessing != value)
+                {
+                    _isProcessing = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsProcessing)));
+                    UpdateButtonStates();
+                }
+            }
+        }
 
 #pragma warning disable CS0067
         public event PropertyChangedEventHandler PropertyChanged;
@@ -201,6 +221,7 @@ namespace UndertaleModTool.Windows
                 ConfirmButton.Visibility = Visibility.Visible;
                 CancelButton.Visibility = Visibility.Visible;
                 PopulateTargetPageCombo();
+                UpdateButtonStates();
             }
         }
 
@@ -228,10 +249,10 @@ namespace UndertaleModTool.Windows
                 TargetPageCombo.SelectedIndex = 0;
         }
 
-        private void TargetPageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void TargetPageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             UpdateTargetThumbnail();
-            UpdatePreview();
+            await StartPreviewUpdate();
         }
 
         private void UpdateTargetThumbnail()
@@ -508,7 +529,34 @@ namespace UndertaleModTool.Windows
             return images;
         }
 
-        private void UpdatePreview()
+        private void CancelPreviewProcessing()
+        {
+            _previewCts?.Cancel();
+            _previewCts?.Dispose();
+            _previewCts = null;
+        }
+
+        private void UpdateButtonStates()
+        {
+            if (currentStep == 2)
+            {
+                ConfirmButton.IsEnabled = !_isProcessing;
+                TargetPageCombo.IsEnabled = !_isProcessing;
+            }
+        }
+
+        private static BitmapSource CreateFrozenBitmapSource(MagickImage magickImage)
+        {
+            using var temp = new MagickImage(magickImage);
+            var gmImage = GMImage.FromMagickImage(temp);
+            int stride = gmImage.Width * 4;
+            byte[] pixelData = gmImage.GetRawImageDataArray();
+            var bitmap = BitmapSource.Create(gmImage.Width, gmImage.Height, 96, 96, PixelFormats.Bgra32, null, pixelData, stride);
+            bitmap.Freeze();
+            return bitmap;
+        }
+
+        private async Task StartPreviewUpdate()
         {
             var selected = SelectedEntries;
             bool allSelected = selected.Count == sourceItems.Length;
@@ -524,11 +572,51 @@ namespace UndertaleModTool.Windows
                 return;
             }
 
+            CancelPreviewProcessing();
+            _previewCts = new CancellationTokenSource();
+            var ct = _previewCts.Token;
+
+            var targetComboItem = TargetPageCombo.SelectedItem as ComboBoxItem;
+            var existingTarget = targetComboItem?.Tag as UndertaleEmbeddedTexture;
+
+            int version = ++_previewVersion;
+
+            IsProcessing = true;
+            PreviewInfoText.Text = LocalizationSource.GetString("MergeTP_Processing");
+
             try
             {
-                var targetComboItem = TargetPageCombo.SelectedItem as ComboBoxItem;
-                var existingTarget = targetComboItem?.Tag as UndertaleEmbeddedTexture;
+                await UpdatePreviewAsync(selected, allSelected, existingTarget, ct);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch
+            {
+                if (version == _previewVersion)
+                {
+                    PreviewImage.Source = null;
+                    PreviewInfoText.Text = "";
+                    SourcePreviewImage.Source = null;
+                    SourcePreviewInfoText.Text = "";
+                }
+            }
+            finally
+            {
+                if (version == _previewVersion)
+                {
+                    IsProcessing = false;
+                }
+            }
+        }
 
+        private async Task UpdatePreviewAsync(List<EntryItem> selected, bool allSelected,
+            UndertaleEmbeddedTexture existingTarget, CancellationToken ct)
+        {
+            var selectedItems = selected.Select(e => e.Item).ToList();
+
+            await Task.Run(() =>
+            {
                 using var worker = new TextureWorker();
 
                 var existingItemsOnTarget = new List<UndertaleTexturePageItem>();
@@ -545,13 +633,15 @@ namespace UndertaleModTool.Windows
                             .ToList();
                         existingImages = ExtractImages(worker, existingItemsOnTarget);
                     }
+                    ct.ThrowIfCancellationRequested();
 
-                    selectedImages = ExtractImages(worker, selected.Select(e => e.Item));
+                    selectedImages = ExtractImages(worker, selectedItems);
+                    ct.ThrowIfCancellationRequested();
 
                     if (!allSelected)
                     {
                         var remainingItems = sourceItems
-                            .Where(si => !selected.Any(se => se.Item == si))
+                            .Where(si => !selectedItems.Any(se => se == si))
                             .ToList();
                         remainingImages = ExtractImages(worker, remainingItems);
 
@@ -570,23 +660,37 @@ namespace UndertaleModTool.Windows
                                 }
                             }
 
-                            var srcGmImage = GMImage.FromMagickImage(srcPreviewImg);
-                            BitmapSource srcBitmap = mainWindow.GetBitmapSourceForImage(srcGmImage);
-                            SourcePreviewImage.Source = srcBitmap;
-                            SourcePreviewInfoText.Text = string.Format(LocalizationSource.GetString("MergeTP_PreviewSize"),
-                                remainingPack.PageWidth, remainingPack.PageHeight);
+                            var srcBitmap = CreateFrozenBitmapSource(srcPreviewImg);
+                            Dispatcher.InvokeAsync(() =>
+                            {
+                                if (!IsLoaded) return;
+                                SourcePreviewImage.Source = srcBitmap;
+                                SourcePreviewInfoText.Text = string.Format(
+                                    LocalizationSource.GetString("MergeTP_PreviewSize"),
+                                    remainingPack.PageWidth, remainingPack.PageHeight);
+                            });
                         }
                         else
                         {
-                            SourcePreviewImage.Source = null;
-                            SourcePreviewInfoText.Text = "";
+                            Dispatcher.InvokeAsync(() =>
+                            {
+                                if (!IsLoaded) return;
+                                SourcePreviewImage.Source = null;
+                                SourcePreviewInfoText.Text = "";
+                            });
                         }
                     }
                     else
                     {
-                        SourcePreviewImage.Source = null;
-                        SourcePreviewInfoText.Text = "";
+                        Dispatcher.InvokeAsync(() =>
+                        {
+                            if (!IsLoaded) return;
+                            SourcePreviewImage.Source = null;
+                            SourcePreviewInfoText.Text = "";
+                        });
                     }
+
+                    ct.ThrowIfCancellationRequested();
 
                     var existingRects = new List<(int X, int Y, int W, int H)>();
                     for (int i = 0; i < existingItemsOnTarget.Count; i++)
@@ -595,40 +699,61 @@ namespace UndertaleModTool.Windows
                         existingRects.Add((item.SourceX, item.SourceY, item.SourceWidth, item.SourceHeight));
                     }
 
-                    var packResult = FindBestPack(existingRects, existingImages, selectedImages);
+                    var packResult = TryAppendPackWithPreview(existingRects, existingImages, selectedImages, ct);
 
-                    if (packResult != null)
+                    if (packResult == null)
                     {
-                        using var previewImg = new MagickImage(MagickColors.Transparent, (uint)packResult.PageWidth, (uint)packResult.PageHeight);
-
-                        foreach (var p in packResult.ExistingPlacements)
+                        Dispatcher.InvokeAsync(() =>
                         {
-                            if (p.Index < existingImages.Count)
-                            {
-                                using var clone = new MagickImage(existingImages[p.Index]);
-                                previewImg.Composite(clone, p.SrcX, p.SrcY, CompositeOperator.Copy);
-                            }
-                        }
+                            if (!IsLoaded) return;
+                            PreviewInfoText.Text = LocalizationSource.GetString("MergeTP_FullRepacking");
+                        });
 
-                        foreach (var p in packResult.SelectedPlacements)
+                        packResult = TryFullRepack(existingImages, selectedImages);
+                        ct.ThrowIfCancellationRequested();
+
+                        if (packResult != null)
                         {
-                            if (p.Index < selectedImages.Count)
-                            {
-                                using var clone = new MagickImage(selectedImages[p.Index]);
-                                previewImg.Composite(clone, p.SrcX, p.SrcY, CompositeOperator.Copy);
-                            }
-                        }
+                            using var previewImg = new MagickImage(MagickColors.Transparent,
+                                (uint)packResult.PageWidth, (uint)packResult.PageHeight);
 
-                        var gmImage = GMImage.FromMagickImage(previewImg);
-                        BitmapSource bitmap = mainWindow.GetBitmapSourceForImage(gmImage);
-                        PreviewImage.Source = bitmap;
-                        PreviewInfoText.Text = string.Format(LocalizationSource.GetString("MergeTP_PreviewSize"),
-                            packResult.PageWidth, packResult.PageHeight);
-                    }
-                    else
-                    {
-                        PreviewImage.Source = null;
-                        PreviewInfoText.Text = "";
+                            foreach (var p in packResult.ExistingPlacements)
+                            {
+                                if (p.Index < existingImages.Count)
+                                {
+                                    using var clone = new MagickImage(existingImages[p.Index]);
+                                    previewImg.Composite(clone, p.SrcX, p.SrcY, CompositeOperator.Copy);
+                                }
+                            }
+
+                            foreach (var p in packResult.SelectedPlacements)
+                            {
+                                if (p.Index < selectedImages.Count)
+                                {
+                                    using var clone = new MagickImage(selectedImages[p.Index]);
+                                    previewImg.Composite(clone, p.SrcX, p.SrcY, CompositeOperator.Copy);
+                                }
+                            }
+
+                            var bitmap = CreateFrozenBitmapSource(previewImg);
+                            Dispatcher.InvokeAsync(() =>
+                            {
+                                if (!IsLoaded) return;
+                                PreviewImage.Source = bitmap;
+                                PreviewInfoText.Text = string.Format(
+                                    LocalizationSource.GetString("MergeTP_PreviewSize"),
+                                    packResult.PageWidth, packResult.PageHeight);
+                            });
+                        }
+                        else
+                        {
+                            Dispatcher.InvokeAsync(() =>
+                            {
+                                if (!IsLoaded) return;
+                                PreviewImage.Source = null;
+                                PreviewInfoText.Text = "";
+                            });
+                        }
                     }
                 }
                 finally
@@ -637,14 +762,126 @@ namespace UndertaleModTool.Windows
                     foreach (var img in selectedImages) img.Dispose();
                     foreach (var img in remainingImages) img.Dispose();
                 }
-            }
-            catch
+            }, ct);
+        }
+
+        private PackResult TryAppendPackWithPreview(
+            List<(int X, int Y, int W, int H)> existingRects,
+            List<MagickImage> existingImages,
+            List<MagickImage> selectedImages,
+            CancellationToken ct)
+        {
+            const int MaxSize = 4096;
+
+            var free = new List<FreeRect> { new(0, 0, MaxSize, MaxSize) };
+            foreach (var occ in existingRects)
+                SplitFreeList(free, occ.X, occ.Y, occ.W, occ.H);
+            PruneContained(free);
+
+            var sorted = selectedImages
+                .Select((img, i) => (Img: img, Index: i))
+                .OrderByDescending(x => (long)x.Img.Width * x.Img.Height)
+                .ThenByDescending(x => Math.Max(x.Img.Width, x.Img.Height))
+                .ToList();
+
+            var placements = new (int Index, ushort SrcX, ushort SrcY, ushort SrcW, ushort SrcH)[selectedImages.Count];
+            bool[] placed = new bool[selectedImages.Count];
+            int maxW = 0, maxH = 0;
+            foreach (var r in existingRects)
             {
-                PreviewImage.Source = null;
-                PreviewInfoText.Text = "";
-                SourcePreviewImage.Source = null;
-                SourcePreviewInfoText.Text = "";
+                maxW = Math.Max(maxW, r.X + r.W);
+                maxH = Math.Max(maxH, r.Y + r.H);
             }
+
+            using var previewCanvas = new MagickImage(MagickColors.Transparent, (uint)MaxSize, (uint)MaxSize);
+
+            for (int i = 0; i < existingRects.Count && i < existingImages.Count; i++)
+            {
+                using var clone = new MagickImage(existingImages[i]);
+                previewCanvas.Composite(clone, existingRects[i].X, existingRects[i].Y, CompositeOperator.Copy);
+            }
+
+            var initialBitmap = CreateFrozenBitmapSource(previewCanvas);
+            int totalToPlace = sorted.Count;
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (!IsLoaded) return;
+                PreviewImage.Source = initialBitmap;
+                PreviewInfoText.Text = string.Format(
+                    LocalizationSource.GetString("MergeTP_PlacingItem"), 0, totalToPlace);
+            });
+
+            var stopwatch = Stopwatch.StartNew();
+            int placedCount = 0;
+
+            foreach (var (img, origIdx) in sorted)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                int w = (int)img.Width;
+                int h = (int)img.Height;
+                if (!TryInsertBSSF(free, w, h, out int bx, out int by))
+                    return null;
+
+                SplitFreeList(free, bx, by, w, h);
+                if (free.Count > 128)
+                    PruneContained(free);
+
+                placements[origIdx] = (origIdx, (ushort)bx, (ushort)by, (ushort)w, (ushort)h);
+                placed[origIdx] = true;
+                placedCount++;
+                maxW = Math.Max(maxW, bx + w);
+                maxH = Math.Max(maxH, by + h);
+
+                using var itemClone = new MagickImage(img);
+                previewCanvas.Composite(itemClone, bx, by, CompositeOperator.Copy);
+
+                if (stopwatch.ElapsedMilliseconds >= 150)
+                {
+                    stopwatch.Restart();
+                    var bitmap = CreateFrozenBitmapSource(previewCanvas);
+                    int capturedCount = placedCount;
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        if (!IsLoaded) return;
+                        PreviewImage.Source = bitmap;
+                        PreviewInfoText.Text = string.Format(
+                            LocalizationSource.GetString("MergeTP_PlacingItem"), capturedCount, totalToPlace);
+                    });
+                }
+            }
+
+            ct.ThrowIfCancellationRequested();
+
+            int pw = NextPow2(maxW);
+            int ph = NextPow2(maxH);
+            if (pw > MaxSize || ph > MaxSize)
+                return null;
+
+            var result = new PackResult
+            {
+                PageWidth = pw,
+                PageHeight = ph,
+                PreservedExisting = true
+            };
+            for (int i = 0; i < existingRects.Count; i++)
+                result.ExistingPlacements.Add((i, (ushort)existingRects[i].X, (ushort)existingRects[i].Y, (ushort)existingRects[i].W, (ushort)existingRects[i].H));
+            for (int i = 0; i < placements.Length; i++)
+                if (placed[i])
+                    result.SelectedPlacements.Add(placements[i]);
+
+            using var finalImg = new MagickImage(MagickColors.Transparent, (uint)pw, (uint)ph);
+            finalImg.Composite(previewCanvas, 0, 0, CompositeOperator.Copy);
+            var finalBitmap = CreateFrozenBitmapSource(finalImg);
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (!IsLoaded) return;
+                PreviewImage.Source = finalBitmap;
+                PreviewInfoText.Text = string.Format(
+                    LocalizationSource.GetString("MergeTP_PreviewSize"), pw, ph);
+            });
+
+            return result;
         }
 
         private void Next_Click(object sender, RoutedEventArgs e)
@@ -665,6 +902,7 @@ namespace UndertaleModTool.Windows
         {
             if (currentStep == 2)
             {
+                CancelPreviewProcessing();
                 currentStep = 1;
                 UpdateStepUI();
             }
@@ -672,12 +910,14 @@ namespace UndertaleModTool.Windows
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
+            CancelPreviewProcessing();
             DialogResult = false;
             Close();
         }
 
         private void Confirm_Click(object sender, RoutedEventArgs e)
         {
+            if (_isProcessing) return;
             PerformMerge();
         }
 
@@ -715,6 +955,11 @@ namespace UndertaleModTool.Windows
 
             if (Settings.Instance.EnableDarkMode)
                 MainWindow.SetDarkTitleBarForWindow(this, true, false);
+        }
+
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+            CancelPreviewProcessing();
         }
 
         private void Step1Canvas_MouseDown(object sender, MouseButtonEventArgs e)
