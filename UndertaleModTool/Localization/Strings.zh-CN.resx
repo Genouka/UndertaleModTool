@@ -5351,4 +5351,16 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="MergeTP_PreviewSize" xml:space="preserve">
     <value>预览尺寸：{0}x{1}</value>
   </data>
+  <data name="MergeTP_SourcePreview" xml:space="preserve">
+    <value>原纹理页合并后预览：</value>
+  </data>
+  <data name="MergeTP_Processing" xml:space="preserve">
+    <value>处理中…</value>
+  </data>
+  <data name="MergeTP_PlacingItem" xml:space="preserve">
+    <value>正在放置第 {0}/{1} 个条目…</value>
+  </data>
+  <data name="MergeTP_FullRepacking" xml:space="preserve">
+    <value>完全重排中…</value>
+  </data>
 </root>
