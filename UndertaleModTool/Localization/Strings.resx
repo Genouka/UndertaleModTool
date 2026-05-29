@@ -2048,6 +2048,9 @@ Note that the code often references objects by ID, so this operation is likely t
   <data name="SearchInCode_ReplaceAll" xml:space="preserve">
     <value>Replace All</value>
   </data>
+  <data name="SearchInCode_PinWindow" xml:space="preserve">
+    <value>Keep window on top</value>
+  </data>
   <data name="Msg_CantReplaceInAssembly" xml:space="preserve">
     <value>Replace is not supported in assembly mode.</value>
   </data>

@@ -2051,6 +2051,9 @@ UndertaleModTool的32位（x86）版本已过时。
   <data name="SearchInCode_ReplaceAll" xml:space="preserve">
     <value>全部替换</value>
   </data>
+  <data name="SearchInCode_PinWindow" xml:space="preserve">
+    <value>窗口置顶</value>
+  </data>
   <data name="Msg_CantReplaceInAssembly" xml:space="preserve">
     <value>汇编模式下不支持替换操作。</value>
   </data>

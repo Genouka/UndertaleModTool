@@ -32,7 +32,20 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <UndertaleModTool:TextBoxDark x:Name="SearchTextBox" Grid.Row="0" TextWrapping="Wrap" AcceptsReturn="True" Height="36" VerticalScrollBarVisibility="Auto" PreviewKeyDown="SearchTextBox_PreviewKeyDown"/>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <UndertaleModTool:TextBoxDark x:Name="SearchTextBox" Grid.Column="0" TextWrapping="Wrap" AcceptsReturn="True" Height="36" VerticalScrollBarVisibility="Auto" PreviewKeyDown="SearchTextBox_PreviewKeyDown"/>
+                <ToggleButton x:Name="PinButton" Grid.Column="1" Width="28" Height="28" Margin="4,0,0,0"
+                              VerticalAlignment="Top" ToolTip="{loc:Loc SearchInCode_PinWindow}"
+                              Background="Transparent" BorderThickness="0" Checked="PinButton_Checked" Unchecked="PinButton_Unchecked">
+                    <Path x:Name="PinIcon" Data="M 9,2 L 13,6 L 12,7 L 8,3 Z M 8,3 L 2,9 L 1,14 L 6,13 L 12,7"
+                          Stroke="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" StrokeThickness="1.2"
+                          Fill="Transparent" Stretch="Uniform" Width="14" Height="14"/>
+                </ToggleButton>
+            </Grid>
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>

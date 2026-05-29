@@ -678,6 +678,18 @@ namespace UndertaleModTool.Windows
                 MainWindow.SetDarkTitleBarForWindow(this, true, false);
         }
 
+        private void PinButton_Checked(object sender, RoutedEventArgs e)
+        {
+            Topmost = true;
+            PinIcon.Fill = SystemColors.HighlightBrush;
+        }
+
+        private void PinButton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Topmost = false;
+            PinIcon.Fill = System.Windows.Media.Brushes.Transparent;
+        }
+
         private void Window_Closing(object sender, CancelEventArgs e)
         {
             e.Cancel = (loaderDialog is not null);
