@@ -10,15 +10,15 @@
         Closing="Window_Closing">
     <Grid>
         <DockPanel>
-            <Grid DockPanel.Dock="Top" Name="TabsGrid" Height="26">
+            <Grid DockPanel.Dock="Top" Name="TabsGrid">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <ScrollViewer Grid.Column="0" Name="TabScrollViewer" Height="26"
+                <ScrollViewer Grid.Column="0" Name="TabScrollViewer"
                               HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"
                               PreviewMouseWheel="TabScrollViewer_PreviewMouseWheel">
-                    <local:TabControlDark x:Name="TabController" Height="22" TabStripPlacement="Top"
+                    <local:TabControlDark x:Name="TabController" TabStripPlacement="Top"
                                           ItemsSource="{Binding Tabs, Mode=OneWay}"
                                           SelectedIndex="{Binding CurrentTabIndex}"
                                           SelectionChanged="TabController_SelectionChanged"
@@ -27,6 +27,7 @@
                             <Style TargetType="TabItem">
                                 <Setter Property="TabIndex" Value="{Binding TabIndex, Mode=OneWay}"/>
                                 <Setter Property="AllowDrop" Value="True"/>
+                                <Setter Property="Padding" Value="6,1,6,1"/>
                                 <EventSetter Event="MouseUp" Handler="TabItem_MouseUp"/>
                                 <EventSetter Event="PreviewMouseMove" Handler="TabItem_PreviewMouseMove"/>
                                 <EventSetter Event="Drop" Handler="TabItem_Drop"/>
@@ -35,10 +36,10 @@
                         <TabControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type local:Tab}">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Initialized="TabTitleText_Initialized"/>
-                                    <local:ButtonDark Background="Transparent" Width="16" Height="16" BorderThickness="0" Margin="12,0,0,0"
+                                    <TextBlock Initialized="TabTitleText_Initialized" FontSize="11" VerticalAlignment="Center"/>
+                                    <local:ButtonDark Background="Transparent" Width="14" Height="14" BorderThickness="0" Margin="6,0,0,0"
                                                       Click="TabCloseButton_OnClick" MouseEnter="TabCloseButton_MouseEnter" MouseLeave="TabCloseButton_MouseLeave">
-                                        <Image Source="/Resources/X.png"/>
+                                        <Image Source="/Resources/X.png" Width="10" Height="10"/>
                                     </local:ButtonDark>
                                 </StackPanel>
                             </DataTemplate>
@@ -48,6 +49,30 @@
                         </TabControl.ContentTemplate>
                     </local:TabControlDark>
                 </ScrollViewer>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,4,0">
+                    <StackPanel Name="TabScrollButtonsPanel" Orientation="Horizontal" RenderOptions.BitmapScalingMode="NearestNeighbor">
+                        <local:ButtonDark Width="16" Height="16" Click="TabsScrollLeftButton_Click">
+                            <Image Source="/Resources/tabs_left_button.png" Stretch="None"/>
+                        </local:ButtonDark>
+                        <local:ButtonDark Width="16" Height="16" Click="TabsScrollRightButton_Click">
+                            <Image Source="/Resources/tabs_right_button.png" Stretch="None"/>
+                        </local:ButtonDark>
+                    </StackPanel>
+                    <local:ButtonDark x:Name="TabListButton" Width="18" Height="18" BorderThickness="0"
+                                      Click="TabListButton_Click" ToolTip="Show all open tabs">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <Path Data="M3,3 L9,3 M3,6 L9,6 M3,9 L9,9" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" Fill="Transparent"/>
+                    </local:ButtonDark>
+                </StackPanel>
             </Grid>
             <ScrollViewer VerticalScrollBarVisibility="Auto" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
                 <ContentControl Margin="10" Content="{Binding Selected, Mode=OneWay}" Name="DataEditor">

@@ -1,16 +1,22 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace UndertaleModTool
 {
-    /// <summary>
-    /// A standard tab control which compatible with the dark mode.
-    /// </summary>
     public partial class TabControlDark : TabControl
     {
-        /// <summary>Initializes a new instance of the tab control.</summary>
+        public static readonly DependencyProperty IsTabMultiLineProperty =
+            DependencyProperty.Register(nameof(IsTabMultiLine), typeof(bool), typeof(TabControlDark),
+                new FrameworkPropertyMetadata(false));
+
+        public bool IsTabMultiLine
+        {
+            get => (bool)GetValue(IsTabMultiLineProperty);
+            set => SetValue(IsTabMultiLineProperty, value);
+        }
+
         public TabControlDark()
         {
             Loaded += TabControlDark_Loaded;
@@ -21,7 +27,6 @@ namespace UndertaleModTool
             SetDarkMode(Settings.Instance is not null ? Settings.Instance.EnableDarkMode : false);
         }
 
-        /// <inheritdoc/>
         protected override DependencyObject GetContainerForItemOverride()
         {
             return new TabItemDark();
@@ -34,9 +39,6 @@ namespace UndertaleModTool
         }
     }
 
-    /// <summary>
-    /// A standard tab item which compatible with the dark mode.
-    /// </summary>
     public partial class TabItemDark : TabItem
     {
         private static readonly SolidColorBrush itemHighlightDarkBrush = new(Color.FromArgb(255, 48, 48, 60));
@@ -56,7 +58,6 @@ namespace UndertaleModTool
                                                               );
         private Border border;
 
-        /// <summary>Initializes a new instance of the tab item.</summary>
         public TabItemDark()
         {
             SetResourceReference(ForegroundProperty, SystemColors.WindowTextBrushKey);
@@ -81,7 +82,6 @@ namespace UndertaleModTool
             Background = enable ? itemInactiveDarkBrush : itemInactiveBrush;
         }
 
-        /// <inheritdoc/>
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
         {
             if (e.Property == IsMouseOverProperty

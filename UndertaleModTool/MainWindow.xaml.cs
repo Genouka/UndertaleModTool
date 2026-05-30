@@ -542,6 +542,12 @@ namespace UndertaleModTool
             }
 
             RunGMSDebuggerItem.Visibility = ToVisibility(Settings.Instance.ShowDebuggerOption);
+
+            IsTabMultiLine = Settings.Instance.TabMultiLine;
+            UpdateTabLayout();
+
+            Tabs.CollectionChanged += (s, args) => Dispatcher.BeginInvoke(() => UpdateTabScrollButtonsVisibility());
+            TabsGrid.SizeChanged += (s, args) => UpdateTabScrollButtonsVisibility();
         }
 
         public Dictionary<string, NamedPipeServerStream> childFiles = new Dictionary<string, NamedPipeServerStream>();
@@ -623,6 +629,8 @@ namespace UndertaleModTool
                 foreach (var pair in appDarkStyle)
                     resources[pair.Key] = pair.Value;
 
+                resources["CustomTextBrush"] = new SolidColorBrush(whiteColor);
+
                 Windows.TextInput.BGColor = System.Drawing.Color.FromArgb(darkColor.R,
                                                                           darkColor.G,
                                                                           darkColor.B);
@@ -638,6 +646,7 @@ namespace UndertaleModTool
                 foreach (ResourceKey key in appDarkStyle.Keys)
                     resources.Remove(key);
 
+                resources["CustomTextBrush"] = SystemColors.ControlTextBrush;
                 resources[SystemColors.GrayTextBrushKey] = grayTextBrush;
                 resources[SystemColors.InactiveSelectionHighlightBrushKey] = inactiveSelectionBrush;
 
@@ -3828,7 +3837,12 @@ namespace UndertaleModTool
         }
         private void TabScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            ScrollTabs(e.Delta < 0 ? ScrollDirection.Right : ScrollDirection.Left);
+            bool multiLine = e.Delta < 0;
+            if (IsTabMultiLine != multiLine)
+            {
+                IsTabMultiLine = multiLine;
+                UpdateTabLayout();
+            }
             e.Handled = true;
         }
         private void TabScrollViewer_PreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -3875,6 +3889,90 @@ namespace UndertaleModTool
         }
 
         private Point initTabContPos;
+        private bool _isTabMultiLine = false;
+        public bool IsTabMultiLine
+        {
+            get => _isTabMultiLine;
+            set
+            {
+                _isTabMultiLine = value;
+                if (Settings.Instance is not null)
+                    Settings.Instance.TabMultiLine = value;
+            }
+        }
+
+        private void UpdateTabLayout()
+        {
+            TabController.IsTabMultiLine = IsTabMultiLine;
+
+            TabPanel tabPanel = FindVisualChild<TabPanel>(TabController);
+            if (tabPanel is not null)
+            {
+                var isMultiLineProp = tabPanel.GetType().GetProperty("IsMultiLine");
+                if (isMultiLineProp is not null)
+                {
+                    isMultiLineProp.SetValue(tabPanel, IsTabMultiLine);
+                    tabPanel.InvalidateMeasure();
+                    tabPanel.InvalidateArrange();
+                }
+            }
+
+            if (IsTabMultiLine)
+            {
+                TabScrollViewer.Height = Double.NaN;
+                TabScrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                TabScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                TabController.Height = Double.NaN;
+                TabScrollButtonsPanel.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                TabScrollViewer.Height = 24;
+                TabScrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
+                TabScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+                TabController.Height = 20;
+                UpdateTabScrollButtonsVisibility();
+            }
+        }
+
+        private void UpdateTabScrollButtonsVisibility()
+        {
+            if (IsTabMultiLine)
+            {
+                TabScrollButtonsPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            TabScrollViewer.UpdateLayout();
+            TabScrollButtonsPanel.Visibility = TabController.ActualWidth > TabsGrid.ActualWidth
+                ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void TabListButton_Click(object sender, RoutedEventArgs e)
+        {
+            var menu = new ContextMenuDark();
+
+            for (int i = 0; i < Tabs.Count; i++)
+            {
+                var tab = Tabs[i];
+                var menuItem = new MenuItem
+                {
+                    Header = tab.TabTitle,
+                    FontWeight = i == CurrentTabIndex ? FontWeights.Bold : FontWeights.Normal,
+                    Tag = i
+                };
+                int capturedIndex = i;
+                menuItem.Click += (s, args) =>
+                {
+                    CurrentTabIndex = capturedIndex;
+                };
+                menu.Items.Add(menuItem);
+            }
+
+            menu.PlacementTarget = sender as UIElement;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.IsOpen = true;
+        }
 #pragma warning disable CS0414
         private bool _isDraggingTab;
 #pragma warning restore CS0414

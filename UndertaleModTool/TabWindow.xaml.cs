@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -67,6 +68,12 @@ namespace UndertaleModTool
                 if (Settings.Instance.EnableDarkMode)
                     MainWindow.SetDarkTitleBarForWindow(this, true, false);
             };
+
+            IsTabMultiLine = Settings.Instance.TabMultiLine;
+            UpdateTabLayout();
+
+            Tabs.CollectionChanged += (s, args) => Dispatcher.BeginInvoke(() => UpdateTabScrollButtonsVisibility());
+            TabsGrid.SizeChanged += (s, args) => UpdateTabScrollButtonsVisibility();
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -546,12 +553,108 @@ namespace UndertaleModTool
 
         private void TabScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            ScrollViewer viewer = sender as ScrollViewer;
-            if (e.Delta > 0)
-                viewer.ScrollToHorizontalOffset(viewer.HorizontalOffset - 40);
-            else
-                viewer.ScrollToHorizontalOffset(viewer.HorizontalOffset + 40);
+            bool multiLine = e.Delta < 0;
+            if (IsTabMultiLine != multiLine)
+            {
+                IsTabMultiLine = multiLine;
+                UpdateTabLayout();
+            }
             e.Handled = true;
+        }
+
+        private bool _isTabMultiLine = false;
+        public bool IsTabMultiLine
+        {
+            get => _isTabMultiLine;
+            set
+            {
+                _isTabMultiLine = value;
+                if (Settings.Instance is not null)
+                    Settings.Instance.TabMultiLine = value;
+            }
+        }
+
+        private void UpdateTabLayout()
+        {
+            TabController.IsTabMultiLine = IsTabMultiLine;
+
+            var tabPanel = MainWindow.FindVisualChild<TabPanel>(TabController);
+            if (tabPanel is not null)
+            {
+                var isMultiLineProp = tabPanel.GetType().GetProperty("IsMultiLine");
+                if (isMultiLineProp is not null)
+                {
+                    isMultiLineProp.SetValue(tabPanel, IsTabMultiLine);
+                    tabPanel.InvalidateMeasure();
+                    tabPanel.InvalidateArrange();
+                }
+            }
+
+            if (IsTabMultiLine)
+            {
+                TabScrollViewer.Height = Double.NaN;
+                TabScrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                TabScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                TabController.Height = Double.NaN;
+                TabScrollButtonsPanel.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                TabScrollViewer.Height = 24;
+                TabScrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
+                TabScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+                TabController.Height = 20;
+                UpdateTabScrollButtonsVisibility();
+            }
+        }
+
+        private void UpdateTabScrollButtonsVisibility()
+        {
+            if (IsTabMultiLine)
+            {
+                TabScrollButtonsPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            TabScrollViewer.UpdateLayout();
+            TabScrollButtonsPanel.Visibility = TabController.ActualWidth > TabsGrid.ActualWidth
+                ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void TabsScrollLeftButton_Click(object sender, RoutedEventArgs e)
+        {
+            TabScrollViewer.ScrollToHorizontalOffset(TabScrollViewer.HorizontalOffset - 40);
+        }
+
+        private void TabsScrollRightButton_Click(object sender, RoutedEventArgs e)
+        {
+            TabScrollViewer.ScrollToHorizontalOffset(TabScrollViewer.HorizontalOffset + 40);
+        }
+
+        private void TabListButton_Click(object sender, RoutedEventArgs e)
+        {
+            var menu = new ContextMenuDark();
+
+            for (int i = 0; i < Tabs.Count; i++)
+            {
+                var tab = Tabs[i];
+                var menuItem = new MenuItem
+                {
+                    Header = tab.TabTitle,
+                    FontWeight = i == CurrentTabIndex ? FontWeights.Bold : FontWeights.Normal,
+                    Tag = i
+                };
+                int capturedIndex = i;
+                menuItem.Click += (s, args) =>
+                {
+                    CurrentTabIndex = capturedIndex;
+                };
+                menu.Items.Add(menuItem);
+            }
+
+            menu.PlacementTarget = sender as UIElement;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.IsOpen = true;
         }
 
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

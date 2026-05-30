@@ -46,6 +46,7 @@ namespace UndertaleModTool
         public string TransparencyGridColor2 { get; set; } = "#FF999999";
 
         public bool EnableDarkMode { get; set; } = false;
+        public bool TabMultiLine { get; set; } = false;
         public bool ShowDebuggerOption { get; set; } = false;
         public DecompilerSettings DecompilerSettings { get; set; }
         public const string DefaultInstanceIdPrefix = "inst_";
