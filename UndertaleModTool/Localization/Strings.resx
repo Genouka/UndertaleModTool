@@ -5365,4 +5365,7 @@ It's highly recommended to restart the application.</value>
   <data name="MergeTP_FullRepacking" xml:space="preserve">
     <value>Full repacking...</value>
   </data>
+  <data name="ErrorDialog_CopyAll" xml:space="preserve">
+    <value>Copy all</value>
+  </data>
 </root>

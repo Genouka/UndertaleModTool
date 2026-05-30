@@ -21,9 +21,6 @@ using UndertaleModTool.Localization;
 
 namespace UndertaleModTool
 {
-    /// <summary>
-    /// Logika interakcji dla klasy LoaderDialog.xaml
-    /// </summary>
     [PropertyChanged.AddINotifyPropertyChangedInterface]
     public partial class LoaderDialog : Window
     {
@@ -98,7 +95,6 @@ namespace UndertaleModTool
                 }
                 catch
                 {
-                    // Silently fail...
                 }
             });
         }
@@ -117,7 +113,6 @@ namespace UndertaleModTool
                 }
                 catch
                 {
-                    // Silently fail...
                 }
             });
         }
@@ -135,7 +130,6 @@ namespace UndertaleModTool
                 }
                 catch
                 {
-                    // Silently fail...
                 }
             });
         }
@@ -151,8 +145,10 @@ namespace UndertaleModTool
                 var format = !String.IsNullOrEmpty(SavedStatusText)
                     ? LocalizationSource.GetString("LoaderDialog_ProgressFormatWithStatus")
                     : LocalizationSource.GetString("LoaderDialog_ProgressFormat");
-                ReportProgress(string.Format(format, value, Maximum, SavedStatusText));
+                string progressStr = string.Format(format, value, Maximum, SavedStatusText);
+                ReportProgress(progressStr);
                 UpdateValue(value);
+                UpdateProgressText(value);
             }
             catch
             {
@@ -164,6 +160,19 @@ namespace UndertaleModTool
             TaskbarItemInfo.ProgressValue = value / ProgressBar.Maximum;
         }
 
+        private void UpdateProgressText(double value)
+        {
+            if (Maximum.HasValue && Maximum.Value > 0)
+            {
+                int pct = (int)(value / Maximum.Value * 100);
+                ProgressText.Text = $"{pct}%";
+            }
+            else
+            {
+                ProgressText.Text = string.Empty;
+            }
+        }
+
         public void ReportProgress(string status, double value)
         {
             Dispatcher.Invoke(() =>
@@ -173,8 +182,10 @@ namespace UndertaleModTool
                     var format = !String.IsNullOrEmpty(status)
                         ? LocalizationSource.GetString("LoaderDialog_ProgressFormatWithStatus")
                         : LocalizationSource.GetString("LoaderDialog_ProgressFormat");
-                    ReportProgress(string.Format(format, value, Maximum, status));
+                    string progressStr = string.Format(format, value, Maximum, status);
+                    ReportProgress(progressStr);
                     UpdateValue(value);
+                    UpdateProgressText(value);
                 }
                 catch
                 {

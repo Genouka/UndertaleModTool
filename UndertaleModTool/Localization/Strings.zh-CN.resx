@@ -5366,4 +5366,7 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="MergeTP_FullRepacking" xml:space="preserve">
     <value>完全重排中…</value>
   </data>
+  <data name="ErrorDialog_CopyAll" xml:space="preserve">
+    <value>全部复制</value>
+  </data>
 </root>

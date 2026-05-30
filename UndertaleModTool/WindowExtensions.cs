@@ -81,7 +81,18 @@ namespace UndertaleModTool
         public static MessageBoxResult ShowError(this Window window, string messageBoxText, string title = null)
         {
             title ??= LocalizationSource.GetString("Common_Error");
-            return ShowCore(window, messageBoxText, title, MessageBoxButton.OK, MessageBoxImage.Error);
+            return window.Dispatcher.Invoke(() =>
+            {
+#pragma warning disable CA1416
+                System.Media.SystemSounds.Hand.Play();
+#pragma warning restore CA1416
+                var dialog = new ErrorDialog(title, messageBoxText, messageBoxText)
+                {
+                    Owner = window
+                };
+                dialog.ShowDialog();
+                return MessageBoxResult.OK;
+            });
         }
 
         /// <summary>
