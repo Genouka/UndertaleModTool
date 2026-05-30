@@ -2684,6 +2684,22 @@ namespace UndertaleModTool
                     ZoomChange(false);
                 }
             }
+            else if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                e.Handled = true;
+                if (DecompiledTab.IsSelected)
+                    DecompiledSearchReplacePanel.Open(false);
+                else
+                    DisassemblySearchReplacePanel.Open(false);
+            }
+            else if (e.Key == Key.H && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                e.Handled = true;
+                if (DecompiledTab.IsSelected)
+                    DecompiledSearchReplacePanel.Open(true);
+                else
+                    DisassemblySearchReplacePanel.Open(true);
+            }
         }
     }
 }

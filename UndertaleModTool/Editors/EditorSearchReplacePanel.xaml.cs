@@ -70,8 +70,11 @@ namespace UndertaleModTool
                     SearchTextBox.Text = selected;
             }
 
-            SearchTextBox.Focus();
-            SearchTextBox.SelectAll();
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                SearchTextBox.Focus();
+                SearchTextBox.SelectAll();
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
 
             if (!string.IsNullOrEmpty(SearchTextBox.Text))
                 DoSearch(true);
