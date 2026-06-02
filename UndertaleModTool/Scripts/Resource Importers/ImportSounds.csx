@@ -197,6 +197,7 @@ await Task.Run(() =>
                 // Add the EmbeddedAudio entry to the audiogroup data.
                 MainThreadAction(() =>
                 {
+                    soundData.Name = new UndertaleString("EmbeddedSound " + audioGroupDat.EmbeddedAudio.Count.ToString());
                     audioGroupDat.EmbeddedAudio.Add(soundData);
                     if (existingSound is not null)
                     {
@@ -214,6 +215,7 @@ await Task.Run(() =>
                 // Update data file's embedded audio.
                 MainThreadAction(() =>
                 {
+                    soundData.Name = new UndertaleString("EmbeddedSound " + Data.EmbeddedAudio.Count.ToString());
                     Data.EmbeddedAudio.Add(soundData);
                     if (existingSound is not null)
                     {
