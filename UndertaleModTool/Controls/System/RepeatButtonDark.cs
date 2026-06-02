@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Media;
 
 namespace UndertaleModTool
@@ -17,6 +17,7 @@ namespace UndertaleModTool
         {
             // Even though this will be called again in "OnPropertyChanged()", it's required.
             SetResourceReference(ForegroundProperty, "CustomTextBrush");
+            SetResourceReference(BackgroundProperty, "CustomControlBrush");
         }
 
         /// <inheritdoc/>
@@ -25,9 +26,14 @@ namespace UndertaleModTool
             if (e.Property == IsEnabledProperty)
             {
                 if ((bool)e.NewValue)
+                {
                     SetResourceReference(ForegroundProperty, "CustomTextBrush");
+                    SetResourceReference(BackgroundProperty, "CustomControlBrush");
+                }
                 else
+                {
                     Foreground = disabledTextBrush;
+                }
             }
 
             base.OnPropertyChanged(e);

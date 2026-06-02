@@ -243,7 +243,11 @@ namespace UndertaleModTool
             { SystemColors.MenuTextBrushKey, new SolidColorBrush(whiteColor) },
             { SystemColors.MenuBrushKey, new SolidColorBrush(darkLightColor) },
             { SystemColors.GrayTextBrushKey, new SolidColorBrush(Color.FromArgb(255, 136, 136, 136)) },
-            { SystemColors.InactiveSelectionHighlightBrushKey, new SolidColorBrush(Color.FromArgb(255, 112, 112, 112)) }
+            { SystemColors.InactiveSelectionHighlightBrushKey, new SolidColorBrush(Color.FromArgb(255, 112, 112, 112)) },
+            { SystemColors.HighlightBrushKey, new SolidColorBrush(Color.FromArgb(255, 80, 80, 80)) },
+            { SystemColors.HighlightTextBrushKey, new SolidColorBrush(whiteColor) },
+            { SystemColors.ControlDarkBrushKey, new SolidColorBrush(Color.FromArgb(255, 70, 70, 70)) },
+            { SystemColors.ControlLightLightBrushKey, new SolidColorBrush(Color.FromArgb(255, 50, 50, 50)) }
         };
 
         // Filters for all data files, and for only main data files
@@ -273,6 +277,7 @@ namespace UndertaleModTool
 
             var resources = Application.Current.Resources;
             resources["CustomTextBrush"] = SystemColors.ControlTextBrush;
+            resources["CustomControlBrush"] = SystemColors.ControlBrush;
             resources[SystemColors.GrayTextBrushKey] = grayTextBrush;
             resources[SystemColors.InactiveSelectionHighlightBrushKey] = inactiveSelectionBrush;
 
@@ -630,6 +635,7 @@ namespace UndertaleModTool
                     resources[pair.Key] = pair.Value;
 
                 resources["CustomTextBrush"] = new SolidColorBrush(whiteColor);
+                resources["CustomControlBrush"] = new SolidColorBrush(darkLightColor);
 
                 Windows.TextInput.BGColor = System.Drawing.Color.FromArgb(darkColor.R,
                                                                           darkColor.G,
@@ -647,6 +653,7 @@ namespace UndertaleModTool
                     resources.Remove(key);
 
                 resources["CustomTextBrush"] = SystemColors.ControlTextBrush;
+                resources["CustomControlBrush"] = SystemColors.ControlBrush;
                 resources[SystemColors.GrayTextBrushKey] = grayTextBrush;
                 resources[SystemColors.InactiveSelectionHighlightBrushKey] = inactiveSelectionBrush;
 
