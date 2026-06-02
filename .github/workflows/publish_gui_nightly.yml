@@ -119,10 +119,10 @@ jobs:
       uses: softprops/action-gh-release@v3
       with:
         tag_name: nightly
-        name: Nightly (bleeding edge)
+        name: Nightly Build - ${{ github.sha }}
         prerelease: true
         fail_on_unmatched_files: true
         files: |
           */*
         body: | 
-          This is the latest version of UndertaleModTool. Also listed on this page are stable releases, but this is an automatically updating **bleeding edge** build. If you encounter any bugs, please make an issue on GitHub or join the Underminers Discord for help.
+          This is the latest version of unofficial fork of UndertaleModTool By Genouka. If you encounter any bugs, please make an issue on GitHub.
