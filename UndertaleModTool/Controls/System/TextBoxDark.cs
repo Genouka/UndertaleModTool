@@ -1,4 +1,4 @@
-﻿using System.Windows.Controls;
+using System.Windows.Controls;
 
 namespace UndertaleModTool
 {
@@ -11,6 +11,7 @@ namespace UndertaleModTool
         public TextBoxDark()
         {
             SetResourceReference(ContextMenuProperty, "textBoxContextMenu");
+            SetResourceReference(BackgroundProperty, "CustomTextBoxBrush");
         }
     }
 }

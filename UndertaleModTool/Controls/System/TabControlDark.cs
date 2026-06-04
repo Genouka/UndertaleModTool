@@ -37,6 +37,12 @@ namespace UndertaleModTool
             foreach (var item in MainWindow.FindVisualChildren<TabItemDark>(this))
                 item.SetDarkMode(enable);
         }
+
+        public void SetBackgroundTransparency(bool enable)
+        {
+            foreach (var item in MainWindow.FindVisualChildren<TabItemDark>(this))
+                item.SetBackgroundTransparency(enable);
+        }
     }
 
     public partial class TabItemDark : TabItem
@@ -56,7 +62,9 @@ namespace UndertaleModTool
                                                                     new GradientStop(Color.FromArgb(255, 26, 26, 26), 1)
                                                                 }, new(0, 0), new(1, 0)
                                                               );
+        private static readonly Brush transparentBrush = Brushes.Transparent;
         private Border border;
+        private bool isBgTransparent;
 
         public TabItemDark()
         {
@@ -79,7 +87,19 @@ namespace UndertaleModTool
 
         public void SetDarkMode(bool enable)
         {
-            Background = enable ? itemInactiveDarkBrush : itemInactiveBrush;
+            if (isBgTransparent)
+                Background = transparentBrush;
+            else
+                Background = enable ? itemInactiveDarkBrush : itemInactiveBrush;
+        }
+
+        public void SetBackgroundTransparency(bool enable)
+        {
+            isBgTransparent = enable;
+            if (enable)
+                Background = transparentBrush;
+            else
+                SetDarkMode(Settings.Instance.EnableDarkMode);
         }
 
         protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)

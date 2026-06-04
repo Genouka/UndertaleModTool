@@ -233,6 +233,25 @@ namespace UndertaleModTool
         private static readonly Color whiteColor = Color.FromArgb(255, 222, 222, 222);
         private static readonly SolidColorBrush grayTextBrush = new(Color.FromArgb(255, 179, 179, 179));
         private static readonly SolidColorBrush inactiveSelectionBrush = new(Color.FromArgb(255, 212, 212, 212));
+
+        // Semi-transparent colors for background image mode
+        // Two-tier transparency: decorative areas fully transparent, input controls semi-transparent
+        private const byte bgAreaAlpha = 0;       // Fully transparent for TreeView, panels, editor area, tabs
+        private const byte bgControlAlpha = 200;   // Semi-transparent for TextBox, Button, ComboBox (readability)
+        private static readonly Dictionary<ResourceKey, object> appBgTranspLightStyle = new()
+        {
+            { SystemColors.WindowBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, 255, 255, 255)) },
+            { SystemColors.ControlBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, 240, 240, 240)) },
+            { SystemColors.ControlLightBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, 224, 224, 224)) },
+            { SystemColors.MenuBrushKey, new SolidColorBrush(Color.FromArgb(bgControlAlpha, 240, 240, 240)) },
+        };
+        private static readonly Dictionary<ResourceKey, object> appBgTranspDarkStyle = new()
+        {
+            { SystemColors.WindowBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, darkColor.R, darkColor.G, darkColor.B)) },
+            { SystemColors.ControlBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, darkLightColor.R, darkLightColor.G, darkLightColor.B)) },
+            { SystemColors.ControlLightBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, 60, 60, 60)) },
+            { SystemColors.MenuBrushKey, new SolidColorBrush(Color.FromArgb(bgControlAlpha, darkLightColor.R, darkLightColor.G, darkLightColor.B)) },
+        };
         private static readonly Dictionary<ResourceKey, object> appDarkStyle = new()
         {
             { SystemColors.WindowTextBrushKey, new SolidColorBrush(whiteColor) },
@@ -278,6 +297,7 @@ namespace UndertaleModTool
             var resources = Application.Current.Resources;
             resources["CustomTextBrush"] = SystemColors.ControlTextBrush;
             resources["CustomControlBrush"] = SystemColors.ControlBrush;
+            resources["CustomTextBoxBrush"] = SystemColors.WindowBrush;
             resources[SystemColors.GrayTextBrushKey] = grayTextBrush;
             resources[SystemColors.InactiveSelectionHighlightBrushKey] = inactiveSelectionBrush;
 
@@ -638,6 +658,7 @@ namespace UndertaleModTool
 
                 resources["CustomTextBrush"] = new SolidColorBrush(whiteColor);
                 resources["CustomControlBrush"] = new SolidColorBrush(darkLightColor);
+                resources["CustomTextBoxBrush"] = new SolidColorBrush(darkColor);
 
                 Windows.TextInput.BGColor = System.Drawing.Color.FromArgb(darkColor.R,
                                                                           darkColor.G,
@@ -656,6 +677,7 @@ namespace UndertaleModTool
 
                 resources["CustomTextBrush"] = SystemColors.ControlTextBrush;
                 resources["CustomControlBrush"] = SystemColors.ControlBrush;
+                resources["CustomTextBoxBrush"] = SystemColors.WindowBrush;
                 resources[SystemColors.GrayTextBrushKey] = grayTextBrush;
                 resources[SystemColors.InactiveSelectionHighlightBrushKey] = inactiveSelectionBrush;
 
@@ -666,6 +688,10 @@ namespace UndertaleModTool
 
             if (!isStartup)
                 SetDarkTitleBarForWindows(enable);
+
+            // Re-apply background transparency if a background image is active
+            if (Settings.Instance is not null && !string.IsNullOrEmpty(Settings.Instance.BackgroundImagePath))
+                ApplyBackgroundTransparency(true);
         }
         private static void SetDarkTitleBarForWindows(bool enable)
         {
@@ -734,9 +760,12 @@ namespace UndertaleModTool
             var img = mainWindow.CustomBackgroundImage;
             var settings = Settings.Instance;
 
-            if (string.IsNullOrEmpty(settings.BackgroundImagePath) || !File.Exists(settings.BackgroundImagePath))
+            bool hasBackground = !string.IsNullOrEmpty(settings.BackgroundImagePath) && File.Exists(settings.BackgroundImagePath);
+
+            if (!hasBackground)
             {
                 img.Source = null;
+                ApplyBackgroundTransparency(false);
                 return;
             }
 
@@ -759,10 +788,68 @@ namespace UndertaleModTool
                     "Uniform" => Stretch.Uniform,
                     _ => Stretch.UniformToFill
                 };
+
+                ApplyBackgroundTransparency(true);
             }
             catch (Exception)
             {
                 img.Source = null;
+                ApplyBackgroundTransparency(false);
+            }
+        }
+
+        public static void ApplyBackgroundTransparency(bool enable)
+        {
+            var resources = Application.Current.Resources;
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            if (mainWindow == null) return;
+
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            var transpStyle = isDarkMode ? appBgTranspDarkStyle : appBgTranspLightStyle;
+
+            if (enable)
+            {
+                // Apply transparent/semi-transparent background brushes to system resources
+                foreach (var pair in transpStyle)
+                    resources[pair.Key] = pair.Value;
+
+                // Semi-transparent CustomControlBrush for ButtonDark, ComboBoxDark etc.
+                if (isDarkMode)
+                    resources["CustomControlBrush"] = new SolidColorBrush(Color.FromArgb(bgControlAlpha, darkLightColor.R, darkLightColor.G, darkLightColor.B));
+                else
+                    resources["CustomControlBrush"] = new SolidColorBrush(Color.FromArgb(bgControlAlpha, 240, 240, 240));
+
+                // Semi-transparent CustomTextBoxBrush for TextBoxDark
+                if (isDarkMode)
+                    resources["CustomTextBoxBrush"] = new SolidColorBrush(Color.FromArgb(bgControlAlpha, darkColor.R, darkColor.G, darkColor.B));
+                else
+                    resources["CustomTextBoxBrush"] = new SolidColorBrush(Color.FromArgb(bgControlAlpha, 255, 255, 255));
+
+                // Make tab items transparent
+                mainWindow.TabController.SetBackgroundTransparency(true);
+            }
+            else
+            {
+                // Remove transparency overrides - restore to dark mode or light mode defaults
+                foreach (ResourceKey key in transpStyle.Keys)
+                    resources.Remove(key);
+
+                if (isDarkMode)
+                {
+                    // Re-apply dark mode opaque brushes
+                    foreach (var pair in appDarkStyle)
+                        resources[pair.Key] = pair.Value;
+                    resources["CustomControlBrush"] = new SolidColorBrush(darkLightColor);
+                    resources["CustomTextBoxBrush"] = new SolidColorBrush(darkColor);
+                }
+                else
+                {
+                    resources["CustomControlBrush"] = SystemColors.ControlBrush;
+                    resources["CustomTextBoxBrush"] = SystemColors.WindowBrush;
+                }
+
+                // Restore tab items to normal
+                mainWindow.TabController.SetBackgroundTransparency(false);
             }
         }
 

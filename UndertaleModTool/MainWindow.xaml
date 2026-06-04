@@ -78,7 +78,7 @@
         <Image x:Name="CustomBackgroundImage" Stretch="UniformToFill" Opacity="0.3"
                IsHitTestVisible="False" RenderOptions.BitmapScalingMode="HighQuality"/>
         <DockPanel>
-            <Menu DockPanel.Dock="Top"
+            <Menu DockPanel.Dock="Top" x:Name="MainMenu"
                   Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"
                   Background="{DynamicResource {x:Static SystemColors.MenuBrushKey}}">
                 <local:MenuItemDark Header="{loc:Loc Menu_File}">
@@ -221,7 +221,7 @@
                     <MenuItem Header="{loc:Loc Menu_Help_About}" Click="MenuItem_About_Click"/>
                 </local:MenuItemDark>
             </Menu>
-            <Grid DockPanel.Dock="Bottom" Margin="5,5,5,5">
+            <Grid DockPanel.Dock="Bottom" Margin="5,5,5,5" x:Name="CommandPanel">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -245,7 +245,7 @@
                         ToolTipService.InitialShowDelay="200"
                         Content="{loc:Loc Common_None}" HorizontalAlignment="Right" VerticalAlignment="Top" VerticalContentAlignment="Top" Name="ObjectLabel"/>
             </Grid>
-            <Grid>
+            <Grid x:Name="MainContentGrid">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -255,7 +255,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="3*"/>
                 </Grid.ColumnDefinitions>
-                <Grid Grid.Column="0" Grid.Row="0" Margin="5,5,5,0">
+                <Grid Grid.Column="0" Grid.Row="0" Margin="5,5,5,0" x:Name="TreeSearchPanel">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -582,7 +582,7 @@
 
                 <GridSplitter Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Stretch" ShowsPreview="True" Width="3"/>
 
-                <Grid Grid.Column="2" Grid.RowSpan="2">
+                <Grid Grid.Column="2" Grid.RowSpan="2" x:Name="EditorPanel">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -685,7 +685,8 @@
                             </local:ButtonDark>
                         </StackPanel>
                     </Grid>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
+                                  x:Name="EditorScrollViewer">
                         <ContentControl Margin="10" Content="{Binding Selected, Mode=OneWay}" Name="DataEditor">
                             <ContentControl.Resources>
                                 <DataTemplate DataType="{x:Type local:DescriptionView}">
