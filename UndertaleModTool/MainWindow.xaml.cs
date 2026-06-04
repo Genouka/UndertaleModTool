@@ -395,6 +395,8 @@ namespace UndertaleModTool
                 SetTransparencyGridColors(Settings.Instance.TransparencyGridColor1, Settings.Instance.TransparencyGridColor2);
             }
             catch (FormatException) { }
+
+            ApplyCustomBackground();
         }
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -722,6 +724,46 @@ namespace UndertaleModTool
         {
             Application.Current.Resources["TransparencyGridColor1"] = new SolidColorBrush((Color)System.Windows.Media.ColorConverter.ConvertFromString(color1));
             Application.Current.Resources["TransparencyGridColor2"] = new SolidColorBrush((Color)System.Windows.Media.ColorConverter.ConvertFromString(color2));
+        }
+
+        public static void ApplyCustomBackground()
+        {
+            var mainWindow = Application.Current.MainWindow as MainWindow;
+            if (mainWindow == null) return;
+
+            var img = mainWindow.CustomBackgroundImage;
+            var settings = Settings.Instance;
+
+            if (string.IsNullOrEmpty(settings.BackgroundImagePath) || !File.Exists(settings.BackgroundImagePath))
+            {
+                img.Source = null;
+                return;
+            }
+
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.UriSource = new Uri(settings.BackgroundImagePath);
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                img.Source = bitmap;
+                img.Opacity = Math.Clamp(settings.BackgroundOpacity, 0.0, 1.0);
+
+                img.Stretch = settings.BackgroundStretchMode switch
+                {
+                    "None" => Stretch.None,
+                    "Fill" => Stretch.Fill,
+                    "Uniform" => Stretch.Uniform,
+                    _ => Stretch.UniformToFill
+                };
+            }
+            catch (Exception)
+            {
+                img.Source = null;
+            }
         }
 
         private void Command_New(object sender, ExecutedRoutedEventArgs e)

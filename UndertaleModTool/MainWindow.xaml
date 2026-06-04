@@ -75,6 +75,8 @@
         <KeyBinding Gesture="Ctrl+Shift+F" Command="{x:Static local:MainWindow.SearchInCodeCommand}" />
     </Window.InputBindings>
     <Grid>
+        <Image x:Name="CustomBackgroundImage" Stretch="UniformToFill" Opacity="0.3"
+               IsHitTestVisible="False" RenderOptions.BitmapScalingMode="HighQuality"/>
         <DockPanel>
             <Menu DockPanel.Dock="Top"
                   Foreground="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}"

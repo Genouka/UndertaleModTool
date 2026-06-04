@@ -127,7 +127,49 @@
                 <Separator/>
 
                 <Grid>
-                    <Grid Grid.IsSharedSizeScope="True">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Label Grid.Row="0" Grid.Column="0" Content="{loc:Loc Settings_BackgroundImage}" VerticalAlignment="Center"/>
+                    <Grid Grid.Row="0" Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <local:TextBoxDark x:Name="BackgroundPathBox" Text="{Binding BackgroundImagePath}" IsReadOnly="True"/>
+                        <local:ButtonDark Grid.Column="1" Content="{loc:Loc Settings_BackgroundBrowse}" Click="BackgroundBrowseButton_Click" Padding="8,2,8,2" Margin="3"/>
+                        <local:ButtonDark Grid.Column="2" Content="{loc:Loc Settings_BackgroundClear}" Click="BackgroundClearButton_Click" Padding="8,2,8,2" Margin="3"/>
+                    </Grid>
+                    <Label Grid.Row="1" Grid.Column="0" Content="{loc:Loc Settings_BackgroundOpacity}" VerticalAlignment="Center"/>
+                    <Grid Grid.Row="1" Grid.Column="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Slider x:Name="BackgroundOpacitySlider" Minimum="0" Maximum="1" Value="{Binding BackgroundOpacity}"
+                                TickFrequency="0.05" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="3"/>
+                        <local:TextBoxDark Grid.Column="1" Width="50" Text="{Binding BackgroundOpacity, StringFormat=F2}" Margin="3"/>
+                    </Grid>
+                    <Label Grid.Row="2" Grid.Column="0" Content="{loc:Loc Settings_BackgroundStretchMode}" VerticalAlignment="Center"/>
+                    <local:ComboBoxDark Grid.Row="2" Grid.Column="1" x:Name="BackgroundStretchComboBox"
+                                        SelectedValuePath="Content"
+                                        SelectedValue="{Binding BackgroundStretchMode}" Margin="3">
+                        <ComboBoxItem Content="UniformToFill"/>
+                        <ComboBoxItem Content="Fill"/>
+                        <ComboBoxItem Content="Uniform"/>
+                        <ComboBoxItem Content="None"/>
+                    </local:ComboBoxDark>
+                </Grid>
+
+                <Separator/>
+                <Grid Grid.IsSharedSizeScope="True">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
@@ -163,7 +205,6 @@
                             </Grid>
                         </StackPanel>
                     </Grid>
-                </Grid>
 
                 <Separator/>
 

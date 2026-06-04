@@ -465,6 +465,27 @@
   <data name="Settings_AutoFileAssociation_Tooltip" xml:space="preserve">
     <value>自动文件关联。默认启用。</value>
   </data>
+  <data name="Settings_BackgroundImage" xml:space="preserve">
+    <value>自定义背景图片：</value>
+  </data>
+  <data name="Settings_BackgroundOpacity" xml:space="preserve">
+    <value>背景透明度：</value>
+  </data>
+  <data name="Settings_BackgroundStretchMode" xml:space="preserve">
+    <value>拉伸模式：</value>
+  </data>
+  <data name="Settings_BackgroundBrowse" xml:space="preserve">
+    <value>浏览</value>
+  </data>
+  <data name="Settings_BackgroundClear" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="Settings_BackgroundSelectTitle" xml:space="preserve">
+    <value>选择背景图片</value>
+  </data>
+  <data name="Settings_BackgroundImageFilter" xml:space="preserve">
+    <value>图片文件 (*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff)|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff|所有文件 (*.*)|*.*</value>
+  </data>
   <data name="Settings_ShowDebuggerOption" xml:space="preserve">
     <value>显示"在 GMS 调试器下运行游戏"文件选项</value>
   </data>

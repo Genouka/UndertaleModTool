@@ -465,6 +465,27 @@
   <data name="Settings_AutoFileAssociation_Tooltip" xml:space="preserve">
     <value>Automatic file association. Enabled by default.</value>
   </data>
+  <data name="Settings_BackgroundImage" xml:space="preserve">
+    <value>Custom background image:</value>
+  </data>
+  <data name="Settings_BackgroundOpacity" xml:space="preserve">
+    <value>Background opacity:</value>
+  </data>
+  <data name="Settings_BackgroundStretchMode" xml:space="preserve">
+    <value>Stretch mode:</value>
+  </data>
+  <data name="Settings_BackgroundBrowse" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+  <data name="Settings_BackgroundClear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Settings_BackgroundSelectTitle" xml:space="preserve">
+    <value>Select background image</value>
+  </data>
+  <data name="Settings_BackgroundImageFilter" xml:space="preserve">
+    <value>Image files (*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff)|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff|All files (*.*)|*.*</value>
+  </data>
   <data name="Settings_ShowDebuggerOption" xml:space="preserve">
     <value>Show "Run game under GMS debugger" file option</value>
   </data>

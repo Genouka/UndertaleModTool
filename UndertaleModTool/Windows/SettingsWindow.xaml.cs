@@ -217,6 +217,39 @@ namespace UndertaleModTool
             }
         }
 
+        public static string BackgroundImagePath
+        {
+            get => Settings.Instance.BackgroundImagePath;
+            set
+            {
+                Settings.Instance.BackgroundImagePath = value;
+                Settings.Save();
+                MainWindow.ApplyCustomBackground();
+            }
+        }
+
+        public static double BackgroundOpacity
+        {
+            get => Settings.Instance.BackgroundOpacity;
+            set
+            {
+                Settings.Instance.BackgroundOpacity = value;
+                Settings.Save();
+                MainWindow.ApplyCustomBackground();
+            }
+        }
+
+        public static string BackgroundStretchMode
+        {
+            get => Settings.Instance.BackgroundStretchMode;
+            set
+            {
+                Settings.Instance.BackgroundStretchMode = value;
+                Settings.Save();
+                MainWindow.ApplyCustomBackground();
+            }
+        }
+
         public static bool ShowDebuggerOption
         {
             get => Settings.Instance.ShowDebuggerOption;
@@ -362,6 +395,31 @@ namespace UndertaleModTool
             settings.Owner = this;
             settings.ShowDialog();
             Settings.Save();
+        }
+
+        private void BackgroundBrowseButton_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = LocalizationSource.GetString("Settings_BackgroundSelectTitle"),
+                Filter = LocalizationSource.GetString("Settings_BackgroundImageFilter")
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                Settings.Instance.BackgroundImagePath = dialog.FileName;
+                Settings.Save();
+                MainWindow.ApplyCustomBackground();
+                BackgroundPathBox.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
+            }
+        }
+
+        private void BackgroundClearButton_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.Instance.BackgroundImagePath = "";
+            Settings.Save();
+            MainWindow.ApplyCustomBackground();
+            BackgroundPathBox.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
         }
     }
 }

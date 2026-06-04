@@ -45,6 +45,10 @@ namespace UndertaleModTool
         public string TransparencyGridColor1 { get; set; } = "#FF666666";
         public string TransparencyGridColor2 { get; set; } = "#FF999999";
 
+        public string BackgroundImagePath { get; set; } = "";
+        public double BackgroundOpacity { get; set; } = 0.3;
+        public string BackgroundStretchMode { get; set; } = "UniformToFill";
+
         public bool EnableDarkMode { get; set; } = false;
         public bool TabMultiLine { get; set; } = false;
         public bool ShowDebuggerOption { get; set; } = false;
