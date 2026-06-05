@@ -244,6 +244,12 @@ namespace UndertaleModTool
             { SystemColors.ControlBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, 240, 240, 240)) },
             { SystemColors.ControlLightBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, 224, 224, 224)) },
             { SystemColors.MenuBrushKey, new SolidColorBrush(Color.FromArgb(bgControlAlpha, 240, 240, 240)) },
+            // Ensure text colors are dark in light mode (in case dark mode keys weren't fully removed)
+            { SystemColors.WindowTextBrushKey, new SolidColorBrush(Colors.Black) },
+            { SystemColors.ControlTextBrushKey, new SolidColorBrush(Colors.Black) },
+            { SystemColors.MenuTextBrushKey, new SolidColorBrush(Colors.Black) },
+            { SystemColors.GrayTextBrushKey, new SolidColorBrush(Color.FromRgb(128, 128, 128)) },
+            { SystemColors.HighlightTextBrushKey, new SolidColorBrush(Colors.White) },
         };
         private static readonly Dictionary<ResourceKey, object> appBgTranspDarkStyle = new()
         {
@@ -251,6 +257,12 @@ namespace UndertaleModTool
             { SystemColors.ControlBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, darkLightColor.R, darkLightColor.G, darkLightColor.B)) },
             { SystemColors.ControlLightBrushKey, new SolidColorBrush(Color.FromArgb(bgAreaAlpha, 60, 60, 60)) },
             { SystemColors.MenuBrushKey, new SolidColorBrush(Color.FromArgb(bgControlAlpha, darkLightColor.R, darkLightColor.G, darkLightColor.B)) },
+            // Ensure text colors are white in dark mode
+            { SystemColors.WindowTextBrushKey, new SolidColorBrush(whiteColor) },
+            { SystemColors.ControlTextBrushKey, new SolidColorBrush(whiteColor) },
+            { SystemColors.MenuTextBrushKey, new SolidColorBrush(whiteColor) },
+            { SystemColors.GrayTextBrushKey, new SolidColorBrush(Color.FromArgb(255, 136, 136, 136)) },
+            { SystemColors.HighlightTextBrushKey, new SolidColorBrush(whiteColor) },
         };
         private static readonly Dictionary<ResourceKey, object> appDarkStyle = new()
         {
@@ -800,16 +812,19 @@ namespace UndertaleModTool
 
         public static void ApplyBackgroundTransparency(bool enable)
         {
-            var resources = Application.Current.Resources;
             var mainWindow = Application.Current.MainWindow as MainWindow;
             if (mainWindow == null) return;
+
+            // Use mainWindow.Resources instead of Application.Current.Resources
+            // so that sub-windows (Settings, Find, etc.) are not affected
+            var resources = mainWindow.Resources;
 
             bool isDarkMode = Settings.Instance.EnableDarkMode;
             var transpStyle = isDarkMode ? appBgTranspDarkStyle : appBgTranspLightStyle;
 
             if (enable)
             {
-                // Apply transparent/semi-transparent background brushes to system resources
+                // Apply transparent/semi-transparent background brushes at window level only
                 foreach (var pair in transpStyle)
                     resources[pair.Key] = pair.Value;
 
@@ -825,6 +840,11 @@ namespace UndertaleModTool
                 else
                     resources["CustomTextBoxBrush"] = new SolidColorBrush(Color.FromArgb(bgControlAlpha, 255, 255, 255));
 
+                // Ensure CustomTextBrush matches the mode
+                resources["CustomTextBrush"] = isDarkMode
+                    ? new SolidColorBrush(whiteColor)
+                    : new SolidColorBrush(Colors.Black);
+
                 // Make tab items transparent
                 mainWindow.TabController.SetBackgroundTransparency(true);
 
@@ -834,13 +854,13 @@ namespace UndertaleModTool
             }
             else
             {
-                // Remove transparency overrides - restore to dark mode or light mode defaults
+                // Remove transparency overrides from window-level resources
                 foreach (ResourceKey key in transpStyle.Keys)
                     resources.Remove(key);
 
                 if (isDarkMode)
                 {
-                    // Re-apply dark mode opaque brushes
+                    // Re-apply dark mode opaque brushes at window level
                     foreach (var pair in appDarkStyle)
                         resources[pair.Key] = pair.Value;
                     resources["CustomControlBrush"] = new SolidColorBrush(darkLightColor);

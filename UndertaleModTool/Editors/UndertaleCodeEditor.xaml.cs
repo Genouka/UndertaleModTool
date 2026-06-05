@@ -51,7 +51,8 @@ namespace UndertaleModTool
         private static readonly MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
 
         // Default opaque background for AvalonEdit editors
-        private static readonly Brush editorDefaultBg = new SolidColorBrush(Color.FromRgb(34, 34, 34));
+        private static readonly Brush editorDefaultDarkBg = new SolidColorBrush(Color.FromRgb(34, 34, 34));
+        private static readonly Brush editorDefaultLightBg = new SolidColorBrush(Colors.White);
 
         public UndertaleCode CurrentDisassembled = null;
         public UndertaleCode CurrentDecompiled = null;
@@ -1106,9 +1107,19 @@ namespace UndertaleModTool
 
         public void SetBackgroundTransparency(bool enable)
         {
-            Brush bg = enable
-                ? new SolidColorBrush(Color.FromArgb(200, 32, 32, 32))  // Semi-transparent dark
-                : editorDefaultBg;
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            Brush bg;
+            if (enable)
+            {
+                // Semi-transparent: dark mode = dark tint, light mode = white tint
+                bg = isDarkMode
+                    ? new SolidColorBrush(Color.FromArgb(200, 32, 32, 32))
+                    : new SolidColorBrush(Color.FromArgb(200, 255, 255, 255));
+            }
+            else
+            {
+                bg = isDarkMode ? editorDefaultDarkBg : editorDefaultLightBg;
+            }
 
             void ApplyToEditor(ICSharpCode.AvalonEdit.TextEditor editor)
             {

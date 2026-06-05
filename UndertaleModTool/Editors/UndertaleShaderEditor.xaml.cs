@@ -26,7 +26,8 @@ namespace UndertaleModTool
     {
         private static readonly MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
 
-        private static readonly Brush shaderEditorDefaultBg = new SolidColorBrush(Color.FromRgb(34, 34, 34));
+        private static readonly Brush shaderEditorDefaultDarkBg = new SolidColorBrush(Color.FromRgb(34, 34, 34));
+        private static readonly Brush shaderEditorDefaultLightBg = new SolidColorBrush(Colors.White);
 
         public UndertaleShaderEditor()
         {
@@ -45,7 +46,10 @@ namespace UndertaleModTool
             // Apply background transparency if custom background is active
             if (Settings.Instance is not null && !string.IsNullOrEmpty(Settings.Instance.BackgroundImagePath))
             {
-                var bg = new SolidColorBrush(Color.FromArgb(200, 32, 32, 32));
+                bool isDarkMode = Settings.Instance.EnableDarkMode;
+                var bg = isDarkMode
+                    ? new SolidColorBrush(Color.FromArgb(200, 32, 32, 32))
+                    : new SolidColorBrush(Color.FromArgb(200, 255, 255, 255));
                 editor.Background = bg;
                 editor.TextArea.Background = bg;
             }
