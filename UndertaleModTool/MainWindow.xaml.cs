@@ -827,6 +827,10 @@ namespace UndertaleModTool
 
                 // Make tab items transparent
                 mainWindow.TabController.SetBackgroundTransparency(true);
+
+                // Make code editor backgrounds semi-transparent
+                var codeEditor = FindVisualChild<UndertaleCodeEditor>(mainWindow.DataEditor);
+                codeEditor?.SetBackgroundTransparency(true);
             }
             else
             {
@@ -850,6 +854,10 @@ namespace UndertaleModTool
 
                 // Restore tab items to normal
                 mainWindow.TabController.SetBackgroundTransparency(false);
+
+                // Restore code editor backgrounds to opaque
+                var codeEditor = FindVisualChild<UndertaleCodeEditor>(mainWindow.DataEditor);
+                codeEditor?.SetBackgroundTransparency(false);
             }
         }
 

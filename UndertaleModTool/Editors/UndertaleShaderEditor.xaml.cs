@@ -1,4 +1,4 @@
-﻿#pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CA1416 // Validate platform compatibility
 
 using ICSharpCode.AvalonEdit;
 using System;
@@ -26,6 +26,8 @@ namespace UndertaleModTool
     {
         private static readonly MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
 
+        private static readonly Brush shaderEditorDefaultBg = new SolidColorBrush(Color.FromRgb(34, 34, 34));
+
         public UndertaleShaderEditor()
         {
             InitializeComponent();
@@ -38,6 +40,14 @@ namespace UndertaleModTool
             {
                 mainWindow.ShowError("Cannot load the code of one of the shader properties - the editor is not found?");
                 return;
+            }
+
+            // Apply background transparency if custom background is active
+            if (Settings.Instance is not null && !string.IsNullOrEmpty(Settings.Instance.BackgroundImagePath))
+            {
+                var bg = new SolidColorBrush(Color.FromArgb(200, 32, 32, 32));
+                editor.Background = bg;
+                editor.TextArea.Background = bg;
             }
 
             var srcString = editor.DataContext as UndertaleString;

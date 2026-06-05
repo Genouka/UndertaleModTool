@@ -64,15 +64,14 @@
                       Checked="ShowHoverInfoCheck_Changed" Unchecked="ShowHoverInfoCheck_Changed"/>
         </StackPanel>
 
-        <TabControl x:Name="CodeModeTabs" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" SelectionChanged="TabControl_SelectionChanged">
-            <TabItem Header="{loc:Loc Editor_Decompiled}" Name="DecompiledTab">
+        <local:TabControlDark x:Name="CodeModeTabs" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" SelectionChanged="TabControl_SelectionChanged">
+            <local:TabItemDark Header="{loc:Loc Editor_Decompiled}" x:Name="DecompiledTab">
                 <Grid PreviewMouseWheel="Grid_PreviewMouseWheel" PreviewKeyDown="Grid_PreviewKeyDown">
                     <avalonEdit:TextEditor
                         xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
                         FontFamily="Consolas"
                         Name="DecompiledEditor"
                         IsReadOnly="True"
-                        Background="#222222"
                         LineNumbersForeground="#DBDBDB"
                         Foreground="#C0C0C0"
                         ShowLineNumbers="True"
@@ -83,15 +82,14 @@
                         Padding="4"/>
                     <local:EditorSearchReplacePanel x:Name="DecompiledSearchReplacePanel" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                 </Grid>
-            </TabItem>
-            <TabItem Header="{loc:Loc Editor_Disassembly}" Name="DisassemblyTab">
+            </local:TabItemDark>
+            <local:TabItemDark Header="{loc:Loc Editor_Disassembly}" x:Name="DisassemblyTab">
                 <Grid PreviewMouseWheel="Grid_PreviewMouseWheel" PreviewKeyDown="Grid_PreviewKeyDown">
                     <avalonEdit:TextEditor
                         xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
                         FontFamily="Consolas"
                         Name="DisassemblyEditor"
                         IsReadOnly="True"
-                        Background="#222222"
                         Foreground="#C0C0C0"
                         GotFocus="DisassemblyEditor_GotFocus"
                         LostFocus="DisassemblyEditor_LostFocus"
@@ -100,7 +98,7 @@
                         Padding="4"/>
                     <local:EditorSearchReplacePanel x:Name="DisassemblySearchReplacePanel" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                 </Grid>
-            </TabItem>
-        </TabControl>
+            </local:TabItemDark>
+        </local:TabControlDark>
     </Grid>
 </local:DataUserControl>

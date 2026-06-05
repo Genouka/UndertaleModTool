@@ -50,6 +50,9 @@ namespace UndertaleModTool
     {
         private static readonly MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
 
+        // Default opaque background for AvalonEdit editors
+        private static readonly Brush editorDefaultBg = new SolidColorBrush(Color.FromRgb(34, 34, 34));
+
         public UndertaleCode CurrentDisassembled = null;
         public UndertaleCode CurrentDecompiled = null;
         public List<string> CurrentLocals = new();
@@ -232,6 +235,10 @@ namespace UndertaleModTool
 
             ApplySettingsToEditors();
 
+            // Apply background transparency if custom background is active
+            if (Settings.Instance is not null && !string.IsNullOrEmpty(Settings.Instance.BackgroundImagePath))
+                SetBackgroundTransparency(true);
+
             // Decompiled editor styling and functionality
             DecompiledSearchReplacePanel.Initialize(DecompiledEditor.TextArea);
             DecompiledEditor.FontSize = ZoomFontSize;
@@ -292,6 +299,10 @@ namespace UndertaleModTool
             }
 
             DecompiledEditor.Options.ConvertTabsToSpaces = true;
+
+            // Bind background to CustomTextBoxBrush resource (supports transparency for custom backgrounds)
+            // Note: SetResourceReference doesn't work reliably for AvalonEdit internal layers,
+            // so we also have SetBackgroundTransparency() that directly sets backgrounds.
 
             TextArea textArea = DecompiledEditor.TextArea;
             textArea.TextView.ElementGenerators.Add(new NumberGenerator(this, textArea));
@@ -1091,6 +1102,26 @@ namespace UndertaleModTool
             }
 
             return CreateHoverBorder(panel);
+        }
+
+        public void SetBackgroundTransparency(bool enable)
+        {
+            Brush bg = enable
+                ? new SolidColorBrush(Color.FromArgb(200, 32, 32, 32))  // Semi-transparent dark
+                : editorDefaultBg;
+
+            void ApplyToEditor(ICSharpCode.AvalonEdit.TextEditor editor)
+            {
+                editor.Background = bg;
+                if (editor.TextArea != null)
+                    editor.TextArea.Background = bg;
+            }
+
+            ApplyToEditor(DecompiledEditor);
+            ApplyToEditor(DisassemblyEditor);
+
+            // Make the TabControl content panel transparent so background image shows through
+            CodeModeTabs.SetBackgroundTransparency(enable);
         }
 
         private void UndertaleCodeEditor_Unloaded(object sender, RoutedEventArgs e)

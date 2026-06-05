@@ -17,6 +17,8 @@ namespace UndertaleModTool
             set => SetValue(IsTabMultiLineProperty, value);
         }
 
+        private Border contentPanel;
+
         public TabControlDark()
         {
             Loaded += TabControlDark_Loaded;
@@ -25,6 +27,13 @@ namespace UndertaleModTool
         private void TabControlDark_Loaded(object sender, RoutedEventArgs e)
         {
             SetDarkMode(Settings.Instance is not null ? Settings.Instance.EnableDarkMode : false);
+
+            // Find the ContentPanel Border from the template (named "ContentPanel" in default TabControl template)
+            contentPanel = Template?.FindName("ContentPanel", this) as Border;
+
+            // Apply background transparency if custom background is active
+            if (Settings.Instance is not null && !string.IsNullOrEmpty(Settings.Instance.BackgroundImagePath))
+                SetBackgroundTransparency(true);
         }
 
         protected override DependencyObject GetContainerForItemOverride()
@@ -42,6 +51,17 @@ namespace UndertaleModTool
         {
             foreach (var item in MainWindow.FindVisualChildren<TabItemDark>(this))
                 item.SetBackgroundTransparency(enable);
+
+            // The TabControl's content panel Border (named "ContentPanel" in the default template)
+            // uses {x:Static SystemColors.ControlBrush} which is a static reference that doesn't
+            // update with dynamic resource changes. We need to set it directly.
+            if (contentPanel != null)
+            {
+                if (enable)
+                    contentPanel.Background = Brushes.Transparent;
+                else
+                    contentPanel.SetResourceReference(BackgroundProperty, SystemColors.ControlBrushKey);
+            }
         }
     }
 
