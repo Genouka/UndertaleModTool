@@ -465,27 +465,6 @@
   <data name="Settings_AutoFileAssociation_Tooltip" xml:space="preserve">
     <value>自动文件关联。默认启用。</value>
   </data>
-  <data name="Settings_BackgroundImage" xml:space="preserve">
-    <value>自定义背景图片：</value>
-  </data>
-  <data name="Settings_BackgroundOpacity" xml:space="preserve">
-    <value>背景透明度：</value>
-  </data>
-  <data name="Settings_BackgroundStretchMode" xml:space="preserve">
-    <value>拉伸模式：</value>
-  </data>
-  <data name="Settings_BackgroundBrowse" xml:space="preserve">
-    <value>浏览</value>
-  </data>
-  <data name="Settings_BackgroundClear" xml:space="preserve">
-    <value>清除</value>
-  </data>
-  <data name="Settings_BackgroundSelectTitle" xml:space="preserve">
-    <value>选择背景图片</value>
-  </data>
-  <data name="Settings_BackgroundImageFilter" xml:space="preserve">
-    <value>图片文件 (*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff)|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff|所有文件 (*.*)|*.*</value>
-  </data>
   <data name="Settings_ShowDebuggerOption" xml:space="preserve">
     <value>显示"在 GMS 调试器下运行游戏"文件选项</value>
   </data>
@@ -4527,7 +4506,7 @@ UndertaleModTool的32位（x86）版本已过时。</value>
     <value>({0} 个错误)</value>
   </data>
   <data name="Msg_SearchResultsSummary" xml:space="preserve">
-    <value>在 {1} 个代码条目中找到 {0} 个结果。</value>
+    <value>在 {0} 个代码条目中找到 {2} 个结果。</value>
   </data>
   <data name="Msg_TilesetWrongParameters" xml:space="preserve">
     <value>"{0}"图块层的图块集参数错误（图块大小、输出边框等）。
@@ -5389,5 +5368,26 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   </data>
   <data name="ErrorDialog_CopyAll" xml:space="preserve">
     <value>全部复制</value>
+  </data>
+  <data name="Settings_BackgroundImage" xml:space="preserve">
+    <value>自定义背景图片：</value>
+  </data>
+  <data name="Settings_BackgroundOpacity" xml:space="preserve">
+    <value>背景透明度：</value>
+  </data>
+  <data name="Settings_BackgroundStretchMode" xml:space="preserve">
+    <value>拉伸模式：</value>
+  </data>
+  <data name="Settings_BackgroundBrowse" xml:space="preserve">
+    <value>浏览</value>
+  </data>
+  <data name="Settings_BackgroundClear" xml:space="preserve">
+    <value>清除</value>
+  </data>
+  <data name="Settings_BackgroundSelectTitle" xml:space="preserve">
+    <value>选择背景图片</value>
+  </data>
+  <data name="Settings_BackgroundImageFilter" xml:space="preserve">
+    <value>图片文件 (*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff)|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.tiff|所有文件 (*.*)|*.*</value>
   </data>
 </root>
