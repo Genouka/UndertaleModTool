@@ -1,6 +1,12 @@
 # UndertaleModTool
 
-**This is an unofficial fork of UndertaleModTool!**
+**This is an unofficial fork of UndertaleModTool!** 这是一个非官方的UndertaleModTool分支。
+
+Download the latest release of this fork from the [releases page](https://github.com/GenOuka/UndertaleModTool/releases). 在[releases页面](https://github.com/GenOuka/UndertaleModTool/releases)下载本fork项目的最新版本。
+
+[QQ群](https://qm.qq.com/q/V1LyuIu3IY) [哔哩哔哩](https://space.bilibili.com/3493116076100126)
+
+If you are finding Android version, please check out [this](https://github.com/QiumingOrg/QiuUTMTv4). 如果你在找Android版本，点[这里](https://github.com/QiumingOrg/QiuUTMTv4)查看。
 
 ## What do I change?/我做了什么修改？
 
@@ -72,6 +78,8 @@
 - Support to use as a MCP Server for AI calling. See [this](MCP.md) for detail. 支持作为MCP服务器使用，点[这里](MCP.md)查看文档。
 
 ---
+
+Below are README files of the official repositories of UndertaleModTool:
 
 [![Underminers Discord](https://img.shields.io/discord/566861759210586112?label=Discord&logo=discord&logoColor=white)](https://discord.gg/hnyMDypMbN) [![GitHub](https://img.shields.io/github/license/UnderminersTeam/UndertaleModTool?logo=github)](https://github.com/UnderminersTeam/UndertaleModTool/blob/master/LICENSE.txt)
 
