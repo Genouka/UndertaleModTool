@@ -4759,29 +4759,51 @@ namespace UndertaleModTool
                 return;
             }
 
-            // If necessary, ask for a source data file
-            string dataFilePathToLoad = null;
-            if (Data is null || FilePath is null)
+            // Check project-local.json
+            string mainFilePath = openProjectDialog.FileName;
+            string loadFilePath = null;
+            string saveFilePath = null;
+
+            try
             {
-                OpenFileDialog sourceDialog = new()
-                {
-                    DefaultExt = "win",
-                    Filter = DataFileFilter,
-                    Title = LocalizationSource.GetString("Msg_ChooseSourceDataFile")
-                };
-                if (sourceDialog.ShowDialog(this) != true)
-                {
-                    return;
-                }
-                dataFilePathToLoad = sourceDialog.FileName;
+                ProjectContext.LoadProjectLocalOptions(mainFilePath, out loadFilePath, out saveFilePath);
+            }
+            catch (ProjectException ex)
+            {
+                this.ShowError(ex.Message, LocalizationSource.GetString("Msg_FailedToLoadProject"));
+                return;
             }
 
-            // Ask for save file directory
-            string saveFilePath = ChooseProjectSaveFile(dataFilePathToLoad ?? FilePath);
+            string dataFilePathToLoad = loadFilePath;
+
+            // If necessary, ask for a source data file
+            if (loadFilePath is null)
+            {
+                if (Data is null || FilePath is null)
+                {
+                    OpenFileDialog sourceDialog = new()
+                    {
+                        DefaultExt = "win",
+                        Filter = DataFileFilter,
+                        Title = LocalizationSource.GetString("Msg_ChooseSourceDataFile")
+                    };
+                    if (sourceDialog.ShowDialog(this) != true)
+                    {
+                        return;
+                    }
+                    dataFilePathToLoad = sourceDialog.FileName;
+                }
+            }
+
+            // If necessary, ask for a destination data file
             if (saveFilePath is null)
             {
-                // Save file prompt failed or was cancelled
-                return;
+                saveFilePath = ChooseProjectSaveFile(dataFilePathToLoad ?? FilePath);
+                if (saveFilePath is null)
+                {
+                    // Save file prompt failed or was cancelled
+                    return;
+                }
             }
 
             // Load data file if needed
@@ -4794,10 +4816,11 @@ namespace UndertaleModTool
                 {
                     return;
                 }
+
+                loadFilePath = FilePath;
             }
 
             // Change main file path to the save data file path
-            string loadFilePath = FilePath;
             FilePath = saveFilePath;
 
             // Attempt loading project from the specific JSON
@@ -4807,7 +4830,7 @@ namespace UndertaleModTool
             {
                 try
                 {
-                    newProjectContext = ProjectContext.CreateWithDataFilePaths(loadFilePath, saveFilePath, openProjectDialog.FileName);
+                    newProjectContext = ProjectContext.CreateWithDataFilePaths(loadFilePath, saveFilePath, mainFilePath);
                     newProjectContext.Import(Data, null, (f) => Dispatcher.Invoke(f));
                 }
                 catch (ProjectException ex)
