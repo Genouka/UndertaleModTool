@@ -3124,6 +3124,8 @@ namespace UndertaleModTool
 
                 if (tilesBG is null)
                     return null;
+                if (tilesBG.Texture is null)
+                    return null;
 
                 if ((loader.Convert(new object[] { tilesData }, null, "cache", null) as string) == "Error")
                     return null;
@@ -3226,7 +3228,11 @@ namespace UndertaleModTool
                 catch (Exception ex)
                 {
                     Window mainWindow = Application.Current?.MainWindow;
-                    mainWindow.ShowError(string.Format(LocalizationSource.GetString("Msg_ErrorGeneratingTileRectangles"), tilesData.ParentLayer.LayerName, ex));
+                    try
+                    {
+                        mainWindow.Dispatcher.BeginInvoke(() => mainWindow.ShowError(string.Format(LocalizationSource.GetString("Msg_ErrorGeneratingTileRectangles"), tilesData.ParentLayer.LayerName, ex)));
+                    }
+                    catch { }
                     return null;
                 }
             }

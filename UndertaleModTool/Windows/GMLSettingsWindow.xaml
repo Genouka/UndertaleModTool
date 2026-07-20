@@ -169,6 +169,9 @@
                     <CheckBox Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_CleanupLocalVarDeclarations}"
                               ToolTip="{loc:Loc GML_CleanupLocalVarDeclarations_Tooltip}"
                               IsChecked="{Binding DecompilerSettings.CleanupLocalVarDeclarations}"/>
+                    <CheckBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="3" Content="Template strings" 
+                              ToolTip="If enabled, the decompiler will attempt to rewrite string()/@@string@@() as template strings." 
+                              IsChecked="{Binding DecompilerSettings.CleanupTemplateStrings}"/>
                 </Grid>
             </Grid>
             <Separator Margin="10,0,10,0"/>
