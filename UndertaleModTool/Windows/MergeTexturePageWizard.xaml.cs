@@ -30,6 +30,11 @@ namespace UndertaleModTool.Windows
         private int _previewVersion;
         private bool _isProcessing;
 
+        /// <summary>
+        /// Number of pixels of empty space reserved around every texture on a page.
+        /// </summary>
+        private const int PackBorder = 2;
+
         public ObservableCollection<EntryItem> Entries { get; } = new();
         public List<EntryItem> SelectedEntries => Entries.Where(e => e.IsSelected).ToList();
 
@@ -392,7 +397,7 @@ namespace UndertaleModTool.Windows
             var free = new List<FreeRect> { new(0, 0, MaxSize, MaxSize) };
 
             foreach (var occ in existingRects)
-                SplitFreeList(free, occ.X, occ.Y, occ.W, occ.H);
+                SplitFreeList(free, occ.X - PackBorder, occ.Y - PackBorder, occ.W + (PackBorder * 2), occ.H + (PackBorder * 2));
             PruneContained(free);
 
             var sorted = selectedImages
@@ -414,17 +419,17 @@ namespace UndertaleModTool.Windows
             {
                 int w = (int)img.Width;
                 int h = (int)img.Height;
-                if (!TryInsertBSSF(free, w, h, out int bx, out int by))
+                if (!TryInsertBSSF(free, w + (PackBorder * 2), h + (PackBorder * 2), out int bx, out int by))
                     return null;
 
-                SplitFreeList(free, bx, by, w, h);
+                SplitFreeList(free, bx, by, w + (PackBorder * 2), h + (PackBorder * 2));
                 if (free.Count > 128)
                     PruneContained(free);
 
-                placements[origIdx] = (origIdx, (ushort)bx, (ushort)by, (ushort)w, (ushort)h);
+                placements[origIdx] = (origIdx, (ushort)(bx + PackBorder), (ushort)(by + PackBorder), (ushort)w, (ushort)h);
                 placed[origIdx] = true;
-                maxW = Math.Max(maxW, bx + w);
-                maxH = Math.Max(maxH, by + h);
+                maxW = Math.Max(maxW, bx + w + (PackBorder * 2));
+                maxH = Math.Max(maxH, by + h + (PackBorder * 2));
             }
 
             int pw = NextPow2(maxW);
@@ -453,7 +458,7 @@ namespace UndertaleModTool.Windows
         {
             try
             {
-                var packer = new TextureGroupPacker(maxTextureSize: 4096, border: 2, allowCrop: false);
+                var packer = new TextureGroupPacker(maxTextureSize: 4096, border: PackBorder, allowCrop: false);
 
                 var existingPackerItems = new List<UndertaleTexturePageItem>();
                 foreach (var img in existingImages)
@@ -775,7 +780,7 @@ namespace UndertaleModTool.Windows
 
             var free = new List<FreeRect> { new(0, 0, MaxSize, MaxSize) };
             foreach (var occ in existingRects)
-                SplitFreeList(free, occ.X, occ.Y, occ.W, occ.H);
+                SplitFreeList(free, occ.X - PackBorder, occ.Y - PackBorder, occ.W + (PackBorder * 2), occ.H + (PackBorder * 2));
             PruneContained(free);
 
             var sorted = selectedImages
@@ -820,21 +825,21 @@ namespace UndertaleModTool.Windows
 
                 int w = (int)img.Width;
                 int h = (int)img.Height;
-                if (!TryInsertBSSF(free, w, h, out int bx, out int by))
+                if (!TryInsertBSSF(free, w + (PackBorder * 2), h + (PackBorder * 2), out int bx, out int by))
                     return null;
 
-                SplitFreeList(free, bx, by, w, h);
+                SplitFreeList(free, bx, by, w + (PackBorder * 2), h + (PackBorder * 2));
                 if (free.Count > 128)
                     PruneContained(free);
 
-                placements[origIdx] = (origIdx, (ushort)bx, (ushort)by, (ushort)w, (ushort)h);
+                placements[origIdx] = (origIdx, (ushort)(bx + PackBorder), (ushort)(by + PackBorder), (ushort)w, (ushort)h);
                 placed[origIdx] = true;
                 placedCount++;
-                maxW = Math.Max(maxW, bx + w);
-                maxH = Math.Max(maxH, by + h);
+                maxW = Math.Max(maxW, bx + w + (PackBorder * 2));
+                maxH = Math.Max(maxH, by + h + (PackBorder * 2));
 
                 using var itemClone = new MagickImage(img);
-                previewCanvas.Composite(itemClone, bx, by, CompositeOperator.Copy);
+                previewCanvas.Composite(itemClone, bx + PackBorder, by + PackBorder, CompositeOperator.Copy);
 
                 if (stopwatch.ElapsedMilliseconds >= 150)
                 {
