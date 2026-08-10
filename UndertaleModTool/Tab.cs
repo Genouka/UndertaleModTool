@@ -647,7 +647,11 @@ namespace UndertaleModTool
                     break;
 
                 case RoomTabState roomTabState:
-                    var roomEditor = editor as UndertaleRoomEditor;
+                    if (editor is not UndertaleRoomEditor roomEditor)
+                    {
+                        LastContentState = null;
+                        return;
+                    }
 
                     bool fromReferencesResults = true;
                     if (roomTabState.ObjectTreeItemsStates is not null)
