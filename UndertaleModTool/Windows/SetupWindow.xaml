@@ -1,0 +1,35 @@
+<Window x:Class="UndertaleModTool.Windows.SetupWindow"
+        IsVisibleChanged="Window_IsVisibleChanged"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UndertaleModTool"
+        xmlns:loc="clr-namespace:UndertaleModTool.Localization"
+        mc:Ignorable="d"
+        Title="{loc:Loc Setup_WindowTitle}" Height="Auto" Width="480" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterOwner" UseLayoutRounding="False">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc Setup_Welcome}" TextWrapping="Wrap" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,16" Grid.ColumnSpan="2"/>
+
+        <Label Grid.Row="1" Grid.Column="0" Content="{loc:Loc Setup_Language}" VerticalAlignment="Center"/>
+        <local:ComboBoxDark Grid.Row="1" Grid.Column="1" x:Name="LanguageComboBox" VerticalAlignment="Center" SelectionChanged="LanguageComboBox_SelectionChanged">
+            <ComboBoxItem Content="English" Tag="en"/>
+            <ComboBoxItem Content="简体中文" Tag="zh-CN"/>
+        </local:ComboBoxDark>
+
+        <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" x:Name="FileAssociationsCheckBox" Content="{loc:Loc Setup_FileAssociationsCheck}" Margin="0,16,0,0" VerticalAlignment="Center" IsChecked="True"/>
+
+        <local:ButtonDark Grid.Row="3" Grid.Column="1" Content="{loc:Loc Setup_Finish}" HorizontalAlignment="Right" Margin="0,16,0,0" Click="FinishButton_Click" IsDefault="True" Width="100"/>
+    </Grid>
+</Window>

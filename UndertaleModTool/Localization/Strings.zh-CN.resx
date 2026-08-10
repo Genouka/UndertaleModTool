@@ -2915,6 +2915,21 @@ UndertaleModTool可能会导致工作丢失。</value>
   <data name="Setup_FileAssociations" xml:space="preserve">
     <value>文件关联</value>
   </data>
+  <data name="Setup_FileAssociationsCheck" xml:space="preserve">
+    <value>将 GameMaker 数据文件（如 .win、.unx、.ios、.droid）与 UndertaleModTool 关联</value>
+  </data>
+  <data name="Setup_Finish" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="Setup_Language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="Setup_Welcome" xml:space="preserve">
+    <value>欢迎使用 UndertaleModTool！开始之前，请先配置您的偏好设置。</value>
+  </data>
+  <data name="Setup_WindowTitle" xml:space="preserve">
+    <value>首次设置</value>
+  </data>
   <data name="Settings_RemoveFileAssociations" xml:space="preserve">
     <value>是否移除当前的文件关联（如果存在）？</value>
   </data>

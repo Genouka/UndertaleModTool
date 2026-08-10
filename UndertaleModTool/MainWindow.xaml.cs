@@ -432,26 +432,33 @@ namespace UndertaleModTool
         }
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                // Load settings to see if we should run the first-time setup
+                if (Settings.Instance is null)
+                {
+                    Settings.Load();
+                }
+
+                // First-time setup: pick a language and whether to associate files
+                if (Settings.ShouldShowSetupWindow)
+                {
+                    new SetupWindow { Owner = this }.ShowDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 try
                 {
-                    // Load settings to see if we should associate files
-                    if (Settings.Instance is null)
-                    {
-                        Settings.Load();
-                    }
                     bool shouldAssociate = true;
                     if (File.Exists("dna.txt"))
                     {
                         shouldAssociate = false;
-                    }
-                    if (shouldAssociate && Settings.ShouldPromptForAssociations)
-                    {
-                        if (this.ShowQuestion(LocalizationSource.GetString("Setup_FileAssociationQuestion"), MessageBoxImage.Question, LocalizationSource.GetString("Setup_FileAssociations")) != MessageBoxResult.Yes)
-                        {
-                            shouldAssociate = false;
-                        }
                     }
                     if (!shouldAssociate)
                     {

@@ -19,9 +19,9 @@ namespace UndertaleModTool
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "UndertaleModTool");
 
         /// <summary>
-        /// Whether file associations settings should be prompted for on startup.
+        /// Whether the first-time setup window (language and file associations) should be shown on startup.
         /// </summary>
-        public static bool ShouldPromptForAssociations { get; set; } = false;
+        public static bool ShouldShowSetupWindow { get; set; } = false;
 
         public string Version { get; set; } = MainWindow.Version;
         public string GameMakerStudioPath { get; set; } = "%appdata%\\GameMaker-Studio";
@@ -102,7 +102,7 @@ namespace UndertaleModTool
                     Save();
 
                     // This is theoretically a first bootup, so prompt for file associations
-                    ShouldPromptForAssociations = true;
+                    ShouldShowSetupWindow = true;
                     return;
                 }
 

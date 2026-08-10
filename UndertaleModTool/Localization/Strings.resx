@@ -2913,6 +2913,21 @@ It can't be displayed.</value>
   <data name="Setup_FileAssociations" xml:space="preserve">
     <value>File associations</value>
   </data>
+  <data name="Setup_FileAssociationsCheck" xml:space="preserve">
+    <value>Associate GameMaker data files (such as .win, .unx, .ios, .droid) with UndertaleModTool</value>
+  </data>
+  <data name="Setup_Finish" xml:space="preserve">
+    <value>Finish</value>
+  </data>
+  <data name="Setup_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Setup_Welcome" xml:space="preserve">
+    <value>Welcome to UndertaleModTool! Configure your preferences before you start.</value>
+  </data>
+  <data name="Setup_WindowTitle" xml:space="preserve">
+    <value>First-time setup</value>
+  </data>
   <data name="Settings_RemoveFileAssociations" xml:space="preserve">
     <value>Remove current file associations, if they exist?</value>
   </data>
