@@ -135,4 +135,14 @@ jobs:
         files: |
           */*
         body: | 
-          This is the latest version of unofficial fork of UndertaleModTool By Genouka. If you encounter any bugs, please make an issue on GitHub.
+          This is the latest version of unofficial fork of UndertaleModTool By Genouka.
+          
+          If you encounter any bugs, please make an issue on GitHub.
+          
+          这是由 秋冥散雨_Genouka 开发的非官方版本的 UndertaleModTool。
+          
+          如果你遇到任何 Bug ，请在 Github 向此仓库提交 Issue 。
+
+          请注意：程序默认进入为英文，请在设置(菜单栏/File/Settings/Language 选择 简体中文，之后可能会简化一下）
+          
+          如果你不清楚该下载哪个，请下载`GUI-windows-latest-Debug-isBundled-true-isSingleFile-false.zip`
