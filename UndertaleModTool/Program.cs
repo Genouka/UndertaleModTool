@@ -39,8 +39,18 @@ namespace UndertaleModTool
             }
             catch (Exception e)
             {
-                File.WriteAllText(Path.Join(GetExecutableDirectory(), "crash.txt"), e.ToString());
+                var filePath = Path.Join(GetExecutableDirectory(), "crash.txt");
+                File.WriteAllText(filePath, e.ToString());
                 MessageBox.Show(string.Format(LocalizationSource.GetString("Msg_UnhandledException"), e.ToString()));
+                try
+                {
+                    var processStartInfo = new ProcessStartInfo
+                    {
+                        FileName = filePath,
+                        UseShellExecute = true
+                    };
+                    Process.Start(processStartInfo);
+                }catch(Exception ignored){}
             }
         }
         private static void GlobalUnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e)
@@ -49,7 +59,18 @@ namespace UndertaleModTool
             ex = (Exception)e.ExceptionObject;
             ILog log = LogManager.GetLogger(typeof(Program));
             log.Error(ex.Message + "\n" + ex.StackTrace);
-            File.WriteAllText(Path.Join(GetExecutableDirectory(), "crash2.txt"), (ex.ToString() + "\n" + ex.Message + "\n" + ex.StackTrace));
+            var filePath = Path.Join(GetExecutableDirectory(), "crash2.txt");
+            File.WriteAllText(filePath, (ex.ToString() + "\n" + ex.Message + "\n" + ex.StackTrace));
+            // Open crash2.txt
+            try
+            {
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                };
+                Process.Start(processStartInfo);
+            }catch(Exception ignored){}
         }
 
         private static void GlobalThreadExceptionHandler(object sender, System.Threading.ThreadExceptionEventArgs e)
@@ -58,7 +79,17 @@ namespace UndertaleModTool
             ex = e.Exception;
             ILog log = LogManager.GetLogger(typeof(Program)); //Log4NET
             log.Error(ex.Message + "\n" + ex.StackTrace);
-            File.WriteAllText(Path.Join(GetExecutableDirectory(), "crash3.txt"), (ex.Message + "\n" + ex.StackTrace));
+            var filePath = Path.Join(GetExecutableDirectory(), "crash3.txt");
+            File.WriteAllText(filePath, (ex.Message + "\n" + ex.StackTrace));
+            try
+            {
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = filePath,
+                    UseShellExecute = true
+                };
+                Process.Start(processStartInfo);
+            }catch(Exception ignored){}
         }
     }
 }
