@@ -479,6 +479,8 @@ namespace UndertaleModTool
                 }
             }
 
+            _ = CheckForUpdatesAutomatically();
+
             var args = Environment.GetCommandLineArgs();
             bool isLaunch = false;
             bool isSpecialLaunch = false;
@@ -2905,9 +2907,18 @@ namespace UndertaleModTool
                 return null;
             }
         }
-        public async void UpdateApp(SettingsWindow window)
+        public async void UpdateApp(SettingsWindow window = null)
         {
             //TODO: rewrite this slightly + comment this out so this is clearer on what this does.
+
+            window ??= new SettingsWindow
+            {
+                Owner = this,
+                ShowInTaskbar = false,
+                WindowStartupLocation = WindowStartupLocation.Manual,
+                Left = -20000,
+                Top = -20000
+            };
 
             window.UpdateButtonEnabled = false;
 
@@ -3165,6 +3176,63 @@ namespace UndertaleModTool
 
                 this.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"), errMsg));
                 window.UpdateButtonEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Automatically checks for new updates on startup (if enabled in settings),
+        /// and prompts the user to update when one is available.
+        /// </summary>
+        public async Task CheckForUpdatesAutomatically()
+        {
+            if (!Settings.Instance.CheckForUpdates)
+                return;
+
+            try
+            {
+                httpClient = new();
+                httpClient.DefaultRequestHeaders.Accept.Clear();
+                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+
+                Regex invalidChars = new(@"Git:|[ (),/:;<=>?@[\]{}]");
+                string version = invalidChars.Replace(Version, "");
+                httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("UndertaleModTool", version));
+
+                string baseUrl = "https://api.github.com/repos/genouka/UndertaleModTool/actions/";
+                string detectedActionName = "Publish continuous release of UndertaleModTool";
+
+                // Fetch the latest workflow run
+                var result = await HttpGetAsync(baseUrl + "runs?branch=master&status=success&per_page=20");
+                if (result?.IsSuccessStatusCode != true)
+                    return;
+
+                var actionInfo = JObject.Parse(await result.Content.ReadAsStringAsync());
+                var actionList = (JArray)actionInfo["workflow_runs"];
+                JObject action = null;
+
+                for (int index = 0; index < actionList.Count; index++)
+                {
+                    var currentAction = (JObject)actionList[index];
+                    if (currentAction["name"].ToString() == detectedActionName)
+                    {
+                        action = currentAction;
+                        break;
+                    }
+                }
+                if (action is null)
+                    return;
+
+                DateTime currDate = File.GetLastWriteTime(Path.Join(ExePath, "UndertaleModTool.exe"));
+                DateTime lastDate = (DateTime)action["updated_at"];
+                if (lastDate.Subtract(currDate).TotalMinutes <= 10)
+                    return;
+
+                if (this.ShowQuestion(LocalizationSource.GetString("Msg_UpdateAvailable")) == MessageBoxResult.Yes)
+                    UpdateApp();
+            }
+            catch
+            {
+                // Silently ignore any errors - this is just a convenience check
             }
         }
 

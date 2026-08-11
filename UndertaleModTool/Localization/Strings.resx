@@ -546,6 +546,15 @@
   <data name="Settings_UpdateApp" xml:space="preserve">
     <value>Update app to latest commit</value>
   </data>
+  <data name="Settings_CheckForUpdates" xml:space="preserve">
+    <value>Check for updates automatically on startup</value>
+  </data>
+  <data name="Settings_CheckForUpdatesToolTip" xml:space="preserve">
+    <value>Automatically checks for a new version of UndertaleModTool when the app starts.</value>
+  </data>
+  <data name="Msg_UpdateAvailable" xml:space="preserve">
+    <value>A new version of UndertaleModTool is available. Do you want to update now?</value>
+  </data>
   <data name="GML_Title" xml:space="preserve">
     <value>Settings - GML compiler/decompiler</value>
   </data>

@@ -88,6 +88,7 @@
                     <StackPanel Grid.Column="0">
                         <CheckBox IsChecked="{Binding AssetOrderSwappingEnabled}" Content="{loc:Loc Settings_AssetOrderSwapping}" ToolTip="{loc:Loc Settings_AssetOrderSwappingToolTip}"/>
                         <CheckBox IsChecked="{Binding AutomaticFileAssociation}" Content="{loc:Loc Settings_AutoFileAssociation}" ToolTip="{loc:Loc Settings_AutoFileAssociationToolTip}"/>
+                        <CheckBox IsChecked="{Binding CheckForUpdates}" Content="{loc:Loc Settings_CheckForUpdates}" ToolTip="{loc:Loc Settings_CheckForUpdatesToolTip}"/>
                         <CheckBox IsChecked="{Binding ShowDebuggerOption}" Content="{loc:Loc Settings_ShowDebuggerOption}" ToolTip="{loc:Loc Settings_ShowDebuggerOptionToolTip}"/>
                         <CheckBox IsChecked="{Binding RememberWindowPlacements}" Content="{loc:Loc Settings_RememberWindowPlacements}" ToolTip="{loc:Loc Settings_RememberWindowPlacementsToolTip}"/>
                     </StackPanel>

@@ -29,6 +29,7 @@ namespace UndertaleModTool
         public bool AssetOrderSwappingEnabled { get; set; } = false;
         public bool AutomaticFileAssociation { get; set; } = true;
         public bool TempRunMessageShow { get; set; } = true;
+        public bool CheckForUpdates { get; set; } = true;
 
         public bool WarnOnClose { get; set; } = true;
 

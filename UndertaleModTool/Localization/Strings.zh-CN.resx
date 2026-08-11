@@ -546,6 +546,15 @@
   <data name="Settings_UpdateApp" xml:space="preserve">
     <value>更新应用至最新提交</value>
   </data>
+  <data name="Settings_CheckForUpdates" xml:space="preserve">
+    <value>启动时自动检查更新</value>
+  </data>
+  <data name="Settings_CheckForUpdatesToolTip" xml:space="preserve">
+    <value>应用启动时自动检查是否有 UndertaleModTool 的新版本。</value>
+  </data>
+  <data name="Msg_UpdateAvailable" xml:space="preserve">
+    <value>UndertaleModTool 有新版本可用，是否现在更新？</value>
+  </data>
   <data name="GML_Title" xml:space="preserve">
     <value>设置 - GML 编译器/反编译器</value>
   </data>

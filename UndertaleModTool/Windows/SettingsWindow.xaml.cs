@@ -75,6 +75,16 @@ namespace UndertaleModTool
             }
         }
 
+        public static bool CheckForUpdates
+        {
+            get => Settings.Instance.CheckForUpdates;
+            set
+            {
+                Settings.Instance.CheckForUpdates = value;
+                Settings.Save();
+            }
+        }
+
         public static bool AutomaticFileAssociation
         {
             get => Settings.Instance.AutomaticFileAssociation;

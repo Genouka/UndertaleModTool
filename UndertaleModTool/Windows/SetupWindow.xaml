@@ -14,6 +14,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -30,6 +31,8 @@
 
         <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" x:Name="FileAssociationsCheckBox" Content="{loc:Loc Setup_FileAssociationsCheck}" Margin="0,16,0,0" VerticalAlignment="Center" IsChecked="True"/>
 
-        <local:ButtonDark Grid.Row="3" Grid.Column="1" Content="{loc:Loc Setup_Finish}" HorizontalAlignment="Right" Margin="0,16,0,0" Click="FinishButton_Click" IsDefault="True" Width="100"/>
+        <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:Name="CheckForUpdatesCheckBox" Content="{loc:Loc Settings_CheckForUpdates}" Margin="0,8,0,0" VerticalAlignment="Center" IsChecked="True"/>
+
+        <local:ButtonDark Grid.Row="4" Grid.Column="1" Content="{loc:Loc Setup_Finish}" HorizontalAlignment="Right" Margin="0,16,0,0" Click="FinishButton_Click" IsDefault="True" Width="100"/>
     </Grid>
 </Window>

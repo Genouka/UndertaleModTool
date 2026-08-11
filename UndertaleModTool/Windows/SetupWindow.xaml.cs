@@ -21,6 +21,7 @@ namespace UndertaleModTool.Windows
             }
 
             FileAssociationsCheckBox.IsChecked = Settings.Instance.AutomaticFileAssociation;
+            CheckForUpdatesCheckBox.IsChecked = Settings.Instance.CheckForUpdates;
         }
 
         private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -51,6 +52,7 @@ namespace UndertaleModTool.Windows
         private void FinishButton_Click(object sender, RoutedEventArgs e)
         {
             Settings.Instance.AutomaticFileAssociation = FileAssociationsCheckBox.IsChecked == true;
+            Settings.Instance.CheckForUpdates = CheckForUpdatesCheckBox.IsChecked == true;
             Settings.Save();
             Close();
         }
