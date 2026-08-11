@@ -10,6 +10,9 @@ namespace UndertaleModTool.Windows
         {
             InitializeComponent();
 
+            Settings.Instance.SetupWindowShown = true;
+            Settings.Save();
+
             string lang = Settings.Instance.Language ?? "en";
             for (int i = 0; i < LanguageComboBox.Items.Count; i++)
             {

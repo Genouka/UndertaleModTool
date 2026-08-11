@@ -23,6 +23,11 @@ namespace UndertaleModTool
         /// </summary>
         public static bool ShouldShowSetupWindow { get; set; } = false;
 
+        /// <summary>
+        /// Whether the first-time setup window has been shown at least once.
+        /// </summary>
+        public bool SetupWindowShown { get; set; } = false;
+
         public string Version { get; set; } = MainWindow.Version;
         public string GameMakerStudioPath { get; set; } = "%appdata%\\GameMaker-Studio";
         public string GameMakerStudio2RuntimesPath { get; set; } = "%ProgramData%\\GameMakerStudio2\\Cache\\runtimes";
@@ -116,6 +121,9 @@ namespace UndertaleModTool
                 if (Instance.Version != MainWindow.Version)
                 {
                     changed = true;
+                    // Upgraded from an older version: show the first-time setup window if it has never been shown before
+                    if (!Instance.SetupWindowShown)
+                        ShouldShowSetupWindow = true;
                     // TODO: When necessary, account for any version upgrades
                 }
 
