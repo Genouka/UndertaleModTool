@@ -2449,7 +2449,8 @@ namespace UndertaleModTool
                 if (docLine.Length != 0)
                 {
                     int line = docLine.LineNumber;
-                    var highlighter = highlighterInst;
+                    var highlighter = textEditorInst?.TextArea.GetService(typeof(IHighlighter)) as IHighlighter
+                                      ?? highlighterInst;
 
                     HighlightedLine highlighted;
                     try
