@@ -258,6 +258,24 @@
   <data name="Menu_File" xml:space="preserve">
     <value>文件(_F)</value>
   </data>
+  <data name="Menu_Edit" xml:space="preserve">
+    <value>编辑(_E)</value>
+  </data>
+  <data name="Menu_Edit_GoToDefinition" xml:space="preserve">
+    <value>转到定义(_G)</value>
+  </data>
+  <data name="Menu_Edit_FindReferences" xml:space="preserve">
+    <value>查找所有引用(_A)</value>
+  </data>
+  <data name="Menu_Edit_FindSymbol" xml:space="preserve">
+    <value>查找符号(_F)</value>
+  </data>
+  <data name="Menu_Edit_Find" xml:space="preserve">
+    <value>查找(_F)</value>
+  </data>
+  <data name="Menu_Edit_Replace" xml:space="preserve">
+    <value>替换(_R)</value>
+  </data>
   <data name="Menu_File_New" xml:space="preserve">
     <value>新建(_N)</value>
   </data>
@@ -3841,6 +3859,18 @@ UndertaleModTool 通过取平均值来表示。
   <data name="Editor_Top" xml:space="preserve">
     <value>上：</value>
   </data>
+  <data name="Editor_ErrorsFound" xml:space="preserve">
+    <value>编译错误（{0}）</value>
+  </data>
+  <data name="Editor_NoReferences" xml:space="preserve">
+    <value>未找到“{0}”的引用</value>
+  </data>
+  <data name="Editor_ReferencesFound" xml:space="preserve">
+    <value>“{0}”的引用（{1}）</value>
+  </data>
+  <data name="Editor_FindSymbol" xml:space="preserve">
+    <value>查找符号</value>
+  </data>
   <data name="Editor_Transparent" xml:space="preserve">
     <value>透明</value>
   </data>
@@ -5161,6 +5191,9 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   </data>
   <data name="Editor_ShowHoverInfo" xml:space="preserve">
     <value>悬浮信息</value>
+  </data>
+  <data name="Editor_ShowAutoDiagnostics" xml:space="preserve">
+    <value>自动检查错误</value>
   </data>
   <data name="Editor_BuiltinFunction" xml:space="preserve">
     <value>内置函数</value>

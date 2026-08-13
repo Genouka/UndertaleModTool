@@ -76,6 +76,7 @@ namespace UndertaleModTool
         public bool CodeEditorWordWrap { get; set; } = true;
         public bool CodeEditorShowWhitespace { get; set; } = false;
         public bool CodeEditorShowHoverInfo { get; set; } = true;
+        public bool CodeEditorAutoDiagnostics { get; set; } = true;
 
         public string Language { get; set; } = "en";
 

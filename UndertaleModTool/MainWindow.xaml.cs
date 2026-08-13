@@ -1331,6 +1331,83 @@ namespace UndertaleModTool
             searchInCodeWindow.Show();
         }
 
+        // Edit-menu commands for the code editor (Go to Definition / Find References / Find Symbol).
+        // They are only enabled while a code editor is the currently displayed page.
+
+        private void Command_CodeEditorNavigation_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = FindVisualChild<UndertaleCodeEditor>(DataEditor) is not null;
+        }
+
+        private void Command_GoToDefinition(object sender, ExecutedRoutedEventArgs e)
+        {
+            FindVisualChild<UndertaleCodeEditor>(DataEditor)?.ExecuteGoToDefinitionCommand();
+        }
+
+        private void Command_FindReferences(object sender, ExecutedRoutedEventArgs e)
+        {
+            FindVisualChild<UndertaleCodeEditor>(DataEditor)?.ExecuteFindReferencesCommand();
+        }
+
+        private void Command_FindSymbol(object sender, ExecutedRoutedEventArgs e)
+        {
+            FindVisualChild<UndertaleCodeEditor>(DataEditor)?.ExecuteFindSymbolCommand();
+        }
+
+        private void Command_CodeEditorFind(object sender, ExecutedRoutedEventArgs e)
+        {
+            FindVisualChild<UndertaleCodeEditor>(DataEditor)?.ExecuteOpenFindCommand();
+        }
+
+        private void Command_CodeEditorReplace(object sender, ExecutedRoutedEventArgs e)
+        {
+            FindVisualChild<UndertaleCodeEditor>(DataEditor)?.ExecuteOpenReplaceCommand();
+        }
+
+        // Edit menu: keep the code-editor option toggles in sync with the current settings,
+        // and disable them when no code editor page is shown.
+
+        private void EditMenu_SubmenuOpened(object sender, RoutedEventArgs e)
+        {
+            if (WordWrapMenuItem is null)
+                return;
+
+            bool enabled = FindVisualChild<UndertaleCodeEditor>(DataEditor) is not null;
+            WordWrapMenuItem.IsEnabled = enabled;
+            ShowWhitespaceMenuItem.IsEnabled = enabled;
+            ShowHoverInfoMenuItem.IsEnabled = enabled;
+            AutoDiagnosticsMenuItem.IsEnabled = enabled;
+
+            if (Settings.Instance is not null)
+            {
+                WordWrapMenuItem.IsChecked = Settings.Instance.CodeEditorWordWrap;
+                ShowWhitespaceMenuItem.IsChecked = Settings.Instance.CodeEditorShowWhitespace;
+                ShowHoverInfoMenuItem.IsChecked = Settings.Instance.CodeEditorShowHoverInfo;
+                AutoDiagnosticsMenuItem.IsChecked = Settings.Instance.CodeEditorAutoDiagnostics;
+            }
+        }
+
+        private void CodeEditorOptionMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem item || Settings.Instance is null)
+                return;
+
+            bool value = item.IsChecked;
+            if (item == WordWrapMenuItem)
+                Settings.Instance.CodeEditorWordWrap = value;
+            else if (item == ShowWhitespaceMenuItem)
+                Settings.Instance.CodeEditorShowWhitespace = value;
+            else if (item == ShowHoverInfoMenuItem)
+                Settings.Instance.CodeEditorShowHoverInfo = value;
+            else if (item == AutoDiagnosticsMenuItem)
+                Settings.Instance.CodeEditorAutoDiagnostics = value;
+            else
+                return;
+            Settings.Save();
+
+            FindVisualChild<UndertaleCodeEditor>(DataEditor)?.ApplyEditorOptionsFromSettings();
+        }
+
         private void DisposeGameData()
         {
             ChangeTracker.Initialize(null);

@@ -1,0 +1,63 @@
+<Window x:Class="UndertaleModTool.Windows.SymbolSearchWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:utmt="clr-namespace:UndertaleModTool"
+        xmlns:loc="clr-namespace:UndertaleModTool.Localization"
+        Title="{loc:Loc Editor_FindSymbol}" Height="520" Width="480"
+        WindowStartupLocation="CenterOwner"
+        IsVisibleChanged="Window_IsVisibleChanged">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <utmt:TextBoxDark x:Name="SearchBox" Grid.Row="0" Margin="10,10,10,5" FontSize="14"
+                          TextChanged="SearchBox_TextChanged" KeyDown="SearchBox_KeyDown">
+            <TextBox.Style>
+                <Style TargetType="TextBox">
+                    <Style.Resources>
+                        <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                            <VisualBrush.Visual>
+                                <Label Content="{loc:Loc Common_FilterByName}" Foreground="Gray" FontSize="14"/>
+                            </VisualBrush.Visual>
+                        </VisualBrush>
+                    </Style.Resources>
+                    <Style.Triggers>
+                        <Trigger Property="Text" Value="">
+                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}"/>
+                        </Trigger>
+                        <Trigger Property="Text" Value="{x:Null}">
+                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter Property="Background" Value="{x:Null}"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBox.Style>
+        </utmt:TextBoxDark>
+        <ListBox x:Name="ResultsList" Grid.Row="1" Margin="10,0" FontSize="14"
+                 MouseDoubleClick="ResultsList_MouseDoubleClick" KeyDown="ResultsList_KeyDown"
+                 VirtualizingStackPanel.IsVirtualizing="True"
+                 VirtualizingStackPanel.VirtualizationMode="Recycling">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding Kind}" Margin="0,0,8,0"
+                                   Foreground="Gray" FontSize="11" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+            <Button Content="{loc:Loc Common_OK}" Width="80" Margin="4" Click="OK_Click"/>
+            <Button Content="{loc:Loc Common_Cancel}" Width="80" Margin="4" Click="Cancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -240,5 +240,41 @@ namespace UndertaleModTool
             if (_constantsEn.TryGetValue(name, out var enConst)) return enConst;
             return null;
         }
+
+        public static IReadOnlyDictionary<string, GmlSpecFunction> GetAllFunctionsEn()
+        {
+            EnsureLoaded();
+            return _functionsEn;
+        }
+
+        public static IReadOnlyDictionary<string, GmlSpecFunction> GetAllFunctionsZh()
+        {
+            EnsureLoaded();
+            return _functionsZh;
+        }
+
+        public static IReadOnlyDictionary<string, GmlSpecVariable> GetAllVariablesEn()
+        {
+            EnsureLoaded();
+            return _variablesEn;
+        }
+
+        public static IReadOnlyDictionary<string, GmlSpecVariable> GetAllVariablesZh()
+        {
+            EnsureLoaded();
+            return _variablesZh;
+        }
+
+        public static IReadOnlyDictionary<string, GmlSpecConstant> GetAllConstantsEn()
+        {
+            EnsureLoaded();
+            return _constantsEn;
+        }
+
+        public static IReadOnlyDictionary<string, GmlSpecConstant> GetAllConstantsZh()
+        {
+            EnsureLoaded();
+            return _constantsZh;
+        }
     }
 }

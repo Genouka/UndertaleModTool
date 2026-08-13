@@ -13,11 +13,17 @@
         <CommandBinding Command="{x:Static local:UndertaleCodeEditor.Compile}" Executed="Command_Compile" />
         <CommandBinding Command="{x:Static local:UndertaleCodeEditor.OpenFindCommand}" Executed="Command_OpenFind" />
         <CommandBinding Command="{x:Static local:UndertaleCodeEditor.OpenReplaceCommand}" Executed="Command_OpenReplace" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.GoToDefinition}" Executed="Command_GoToDefinition" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.FindReferences}" Executed="Command_FindReferences" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.FindSymbol}" Executed="Command_FindSymbol" />
     </UserControl.CommandBindings>
     <UserControl.InputBindings>
         <KeyBinding Modifiers="Control" Key="K" Command="{x:Static local:UndertaleCodeEditor.Compile}"/>
         <KeyBinding Modifiers="Control" Key="F" Command="{x:Static local:UndertaleCodeEditor.OpenFindCommand}"/>
         <KeyBinding Modifiers="Control" Key="H" Command="{x:Static local:UndertaleCodeEditor.OpenReplaceCommand}"/>
+        <KeyBinding Key="F12" Command="{x:Static local:UndertaleCodeEditor.GoToDefinition}"/>
+        <KeyBinding Modifiers="Shift" Key="F12" Command="{x:Static local:UndertaleCodeEditor.FindReferences}"/>
+        <KeyBinding Modifiers="Control" Key="T" Command="{x:Static local:UndertaleCodeEditor.FindSymbol}"/>
     </UserControl.InputBindings>
     <UserControl.Resources>
         <local:NullToVisibilityConverter x:Key="VisibleIfNotNull" nullValue="Collapsed" notNullValue="Visible"/>
@@ -35,6 +41,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="1*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0" Margin="3" Text="{loc:Loc Common_Name}"/>
@@ -62,6 +69,9 @@
             <CheckBox x:Name="ShowHoverInfoCheck" Margin="3,0,12,0" VerticalAlignment="Center"
                       Content="{loc:Loc Editor_ShowHoverInfo}" IsChecked="True"
                       Checked="ShowHoverInfoCheck_Changed" Unchecked="ShowHoverInfoCheck_Changed"/>
+            <CheckBox x:Name="AutoDiagnosticsCheck" Margin="3,0,12,0" VerticalAlignment="Center"
+                      Content="{loc:Loc Editor_ShowAutoDiagnostics}" IsChecked="True"
+                      Checked="AutoDiagnosticsCheck_Changed" Unchecked="AutoDiagnosticsCheck_Changed"/>
         </StackPanel>
 
         <local:TabControlDark x:Name="CodeModeTabs" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" SelectionChanged="TabControl_SelectionChanged">
@@ -100,5 +110,36 @@
                 </Grid>
             </local:TabItemDark>
         </local:TabControlDark>
+        <Border x:Name="ResultsPanel" Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2"
+                Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                BorderThickness="0,1,0,0" Visibility="Collapsed" MaxHeight="180">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <DockPanel Grid.Row="0" Margin="4,2,4,0">
+                    <Button x:Name="ResultsCloseButton" DockPanel.Dock="Right" Content="✕" Width="20" Height="20"
+                            Margin="6,0,0,0" Click="ResultsCloseButton_Click"
+                            ToolTip="{loc:Loc Common_Close}" Focusable="False"/>
+                    <TextBlock x:Name="ResultsHeaderText" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                </DockPanel>
+                <ListBox x:Name="ResultsListBox" Grid.Row="1" Margin="4,2,4,4"
+                         Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                         Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"
+                         FontFamily="Consolas" FontSize="12"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         MouseDoubleClick="ResultsListBox_MouseDoubleClick"
+                         SelectionChanged="ResultsListBox_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
     </Grid>
 </local:DataUserControl>

@@ -1,4 +1,5 @@
 using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.CodeCompletion;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
 using ICSharpCode.AvalonEdit.Folding;
@@ -19,6 +20,7 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -37,7 +39,9 @@ using UndertaleModLib.Compiler;
 using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
+using UndertaleModTool.Editors;
 using UndertaleModTool.Localization;
+using UndertaleModTool.Windows;
 using Input = System.Windows.Input;
 
 namespace UndertaleModTool
@@ -253,6 +257,9 @@ namespace UndertaleModTool
         public static RoutedUICommand Compile = new RoutedUICommand("Compile code", "Compile", typeof(UndertaleCodeEditor));
         public static RoutedUICommand OpenFindCommand = new RoutedUICommand("Open find", "OpenFind", typeof(UndertaleCodeEditor));
         public static RoutedUICommand OpenReplaceCommand = new RoutedUICommand("Open replace", "OpenReplace", typeof(UndertaleCodeEditor));
+        public static RoutedUICommand GoToDefinition = new RoutedUICommand("Go to definition", "GoToDefinition", typeof(UndertaleCodeEditor));
+        public static RoutedUICommand FindReferences = new RoutedUICommand("Find all references", "FindReferences", typeof(UndertaleCodeEditor));
+        public static RoutedUICommand FindSymbol = new RoutedUICommand("Find symbol", "FindSymbol", typeof(UndertaleCodeEditor));
 
         private static readonly Dictionary<string, UndertaleNamedResource> NamedObjDict = new();
         private static readonly Dictionary<string, UndertaleNamedResource> ScriptsDict = new();
@@ -278,6 +285,17 @@ namespace UndertaleModTool
         private int _hoverSectionLength = 0;
         private int _lastHoverOffset = -1;
         private const int HoverDelayMs = 250;
+
+        // Intellisense state
+        private CompletionWindow _completionWindow;
+        private FoldingManager _foldingManager;
+        private readonly GmlFoldingStrategy _foldingStrategy = new();
+        private readonly System.Windows.Threading.DispatcherTimer _foldingTimer;
+        private readonly GmlDiagnosticsRenderer _diagnosticsRenderer;
+        private readonly System.Windows.Threading.DispatcherTimer _diagnosticsTimer;
+        private int _diagnosticsGeneration;
+        private readonly List<CodeEditorResultEntry> _resultEntries = new();
+        private CancellationTokenSource _diagnosticsCancellation;
 
         public UndertaleCodeEditor()
         {
@@ -345,7 +363,23 @@ namespace UndertaleModTool
 
             ApplyEditorTheme(Settings.Instance?.EnableDarkMode ?? false);
 
+            _foldingTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(350)
+            };
+            _foldingTimer.Tick += (s, e) => { _foldingTimer.Stop(); UpdateFolding(); };
+
+            _diagnosticsTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(600)
+            };
+            _diagnosticsTimer.Tick += (s, e) => { _diagnosticsTimer.Stop(); _ = RunDiagnosticsAsync(); };
+
+            _diagnosticsRenderer = new GmlDiagnosticsRenderer(DecompiledEditor.TextArea.TextView);
+
             InitializeHoverPopup();
+            InitializeIntellisense();
+            ApplyAutoDiagnosticsState();
         }
 
         private void LoadGMLHighlighting(bool isDark)
@@ -417,6 +451,21 @@ namespace UndertaleModTool
 
             _decompiledNameGenerator?.UpdateBrushTheme(isDark);
             _disassemblyNameGenerator?.UpdateBrushTheme(isDark);
+
+            // Theme the results (errors/references) panel
+            if (ResultsPanel is not null)
+            {
+                Color panelBg = isDark ? Color.FromRgb(45, 45, 48) : Color.FromRgb(240, 240, 240);
+                Color panelBorder = isDark ? Color.FromRgb(60, 60, 60) : Color.FromRgb(180, 180, 180);
+                Color panelText = isDark ? Colors.White : Colors.Black;
+                ResultsPanel.Background = new SolidColorBrush(panelBg);
+                ResultsPanel.BorderBrush = new SolidColorBrush(panelBorder);
+                ResultsHeaderText.Foreground = new SolidColorBrush(panelText);
+                ResultsListBox.Background = isDark
+                    ? new SolidColorBrush(Color.FromRgb(30, 30, 30))
+                    : new SolidColorBrush(Colors.White);
+                ResultsListBox.Foreground = new SolidColorBrush(panelText);
+            }
         }
 
         /// <summary>
@@ -437,6 +486,7 @@ namespace UndertaleModTool
             WordWrapCheck.IsChecked = settings.CodeEditorWordWrap;
             ShowWhitespaceCheck.IsChecked = settings.CodeEditorShowWhitespace;
             ShowHoverInfoCheck.IsChecked = settings.CodeEditorShowHoverInfo;
+            AutoDiagnosticsCheck.IsChecked = settings.CodeEditorAutoDiagnostics;
 
             DecompiledEditor.WordWrap = settings.CodeEditorWordWrap;
             DisassemblyEditor.WordWrap = settings.CodeEditorWordWrap;
@@ -445,6 +495,16 @@ namespace UndertaleModTool
             DecompiledEditor.Options.ShowTabs = settings.CodeEditorShowWhitespace;
             DisassemblyEditor.Options.ShowSpaces = settings.CodeEditorShowWhitespace;
             DisassemblyEditor.Options.ShowTabs = settings.CodeEditorShowWhitespace;
+        }
+
+        /// <summary>
+        /// Applies editor options from <see cref="Settings"/> to the current editor state
+        /// (word wrap, whitespace, hover, auto-diagnostics). Called from the Edit menu.
+        /// </summary>
+        public void ApplyEditorOptionsFromSettings()
+        {
+            ApplySettingsToEditors();
+            ApplyAutoDiagnosticsState();
         }
 
         private void WordWrapCheck_Changed(object sender, RoutedEventArgs e)
@@ -483,6 +543,42 @@ namespace UndertaleModTool
             Settings.Save();
             if (!value)
                 CloseHoverPopup();
+        }
+
+        private void AutoDiagnosticsCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            // The XAML default IsChecked="True" fires this event during InitializeComponent(),
+            // before the editor fields are ready, so guard against that.
+            if (DecompiledEditor == null)
+                return;
+            if (Settings.Instance == null) return;
+            bool value = AutoDiagnosticsCheck.IsChecked ?? true;
+            Settings.Instance.CodeEditorAutoDiagnostics = value;
+            Settings.Save();
+            ApplyAutoDiagnosticsState();
+        }
+
+        /// <summary>
+        /// Applies the "auto check errors" setting: when disabled, stops the background
+        /// parser and clears any shown diagnostics; when enabled, re-runs diagnostics.
+        /// </summary>
+        private void ApplyAutoDiagnosticsState()
+        {
+            bool enabled = Settings.Instance?.CodeEditorAutoDiagnostics ?? true;
+            if (!enabled)
+            {
+                _diagnosticsTimer?.Stop();
+                _diagnosticsCancellation?.Cancel();
+                _diagnosticsRenderer?.SetDiagnostics(Array.Empty<GmlDiagnostic>(), DecompiledEditor?.Document);
+                if (_lastResultMode == ResultMode.Errors)
+                    HideResultsPanel();
+                return;
+            }
+
+            if (DecompiledEditor is null || DecompiledEditor.IsReadOnly || !IsLoaded)
+                return;
+
+            _ = RunDiagnosticsAsync();
         }
 
         private void InitializeHoverPopup()
@@ -1196,12 +1292,494 @@ namespace UndertaleModTool
             CodeModeTabs.SetBackgroundTransparency(enable);
         }
 
+        private void InitializeIntellisense()
+        {
+            // Diagnostics renderer (red squiggles under parse errors)
+            DecompiledEditor.TextArea.TextView.BackgroundRenderers.Add(_diagnosticsRenderer);
+
+            // Real-time diagnostics on text changes (debounced)
+            DecompiledEditor.Document.TextChanged += (s, e) =>
+            {
+                if (_isLoadingCode)
+                    return;
+                if (!DecompiledTab.IsSelected)
+                    return;
+                if (DecompiledEditor.IsReadOnly)
+                    return;
+                if (!(Settings.Instance?.CodeEditorAutoDiagnostics ?? true))
+                    return;
+                _diagnosticsTimer.Stop();
+                _diagnosticsTimer.Start();
+            };
+
+            // Folding
+            // Note: FoldingManager.Install() adds its own FoldingMargin to the editor,
+            // so we must NOT add another one manually (that would show two fold markers).
+            _foldingManager = FoldingManager.Install(DecompiledEditor.TextArea);
+            DecompiledEditor.Document.TextChanged += (s, e) =>
+            {
+                if (_isLoadingCode)
+                    return;
+                _foldingTimer.Stop();
+                _foldingTimer.Start();
+            };
+
+            // Code completion
+            InstallCompletion(DecompiledEditor);
+        }
+
+        private void InstallCompletion(TextEditor editor)
+        {
+            editor.TextArea.TextEntered += OnEditorTextEntered;
+            editor.TextArea.TextEntering += OnEditorTextEntering;
+            editor.TextArea.TextView.ScrollOffsetChanged += (s, e) => CloseCompletionWindow();
+        }
+
+        private void CloseCompletionWindow()
+        {
+            _completionWindow?.Close();
+            _completionWindow = null;
+        }
+
+        private void OnEditorTextEntering(object sender, TextCompositionEventArgs e)
+        {
+            if (e.Text.Length > 0 && _completionWindow is not null)
+            {
+                // When an identifier char is typed, keep the window open so it can filter
+                if (char.IsLetterOrDigit(e.Text[0]) || e.Text[0] == '_')
+                    return;
+            }
+        }
+
+        private void OnEditorTextEntered(object sender, TextCompositionEventArgs e)
+        {
+            // The TextEntered event is raised on the TextArea, not on the TextEditor.
+            if (sender is not TextArea textArea)
+                return;
+            TextEditor editor = textArea.GetService(typeof(TextEditor)) as TextEditor;
+            if (editor is null)
+                return;
+
+            if (_completionWindow is not null && e.Text.Length > 0 && (char.IsLetterOrDigit(e.Text[0]) || e.Text[0] == '_'))
+            {
+                // Window already open; let it filter itself based on the caret text
+                return;
+            }
+
+            if (e.Text.Length <= 0)
+                return;
+
+            char typed = e.Text[0];
+            if (typed == '.')
+            {
+                OpenCompletionWindow(editor, true);
+                return;
+            }
+
+            if (!char.IsLetterOrDigit(typed) && typed != '_')
+            {
+                CloseCompletionWindow();
+                return;
+            }
+
+            // Don't complete inside line comments or strings
+            int caret = editor.CaretOffset;
+            if (caret > 0 && editor.Document is not null)
+            {
+                DocumentLine line = editor.Document.GetLineByOffset(Math.Min(caret, editor.Document.TextLength));
+                string lineText = editor.Document.GetText(line.Offset, Math.Max(0, caret - line.Offset));
+                if (lineText.Contains("//"))
+                {
+                    CloseCompletionWindow();
+                    return;
+                }
+            }
+
+            // Only start completing after the first identifier character has been typed
+            // (the word the user is typing must already exist before the caret)
+            string text = editor.Document?.Text;
+            if (text is null || caret <= 0)
+                return;
+            char prev = text[caret - 1];
+            if (!char.IsLetterOrDigit(prev) && prev != '_')
+                return;
+
+            OpenCompletionWindow(editor, false);
+        }
+
+        private void OpenCompletionWindow(TextEditor editor, bool memberAccess)
+        {
+            // Close the previous window before opening a new one
+            CloseCompletionWindow();
+            if (DecompiledEditor.IsReadOnly)
+                return;
+
+            UndertaleData data = mainWindow.Data;
+            if (data is null)
+                return;
+
+            string code = editor.Document?.Text;
+            if (code is null)
+                return;
+
+            int caret = editor.CaretOffset;
+            IList<string> locals = CurrentLocals ?? new List<string>();
+
+            List<GmlCompletionItem> items;
+            try
+            {
+                items = GmlLanguageService.GetCompletionItems(data, code, caret, locals).ToList();
+            }
+            catch
+            {
+                return;
+            }
+
+            if (items.Count == 0)
+                return;
+
+            List<ICompletionData> dataList = new List<ICompletionData>(items.Count);
+            foreach (GmlCompletionItem item in items)
+                dataList.Add(new GmlCompletionData(item));
+
+            CompletionWindow window = new(editor.TextArea)
+            {
+                MaxHeight = 320,
+                CloseAutomatically = true
+            };
+            window.CompletionList.IsFiltering = true;
+            foreach (ICompletionData completionData in dataList)
+                window.CompletionList.CompletionData.Add(completionData);
+
+            // Show the typed word in gray inside the completion box
+            int wordStart = caret;
+            string docText = code;
+            while (wordStart > 0 && wordStart - 1 < docText.Length && IsWordChar(docText[wordStart - 1]))
+                wordStart--;
+            window.StartOffset = wordStart;
+
+            _completionWindow = window;
+            window.Closed += (s2, e2) => _completionWindow = null;
+            window.Show();
+        }
+
+        private void UpdateFolding()
+        {
+            if (_foldingManager is null)
+                return;
+            try
+            {
+                _foldingStrategy.UpdateFoldings(_foldingManager, DecompiledEditor.Document);
+            }
+            catch
+            {
+                // Ignore folding errors
+            }
+        }
+
+        private async Task RunDiagnosticsAsync()
+        {
+            if (!(Settings.Instance?.CodeEditorAutoDiagnostics ?? true))
+            {
+                _diagnosticsRenderer.SetDiagnostics(Array.Empty<GmlDiagnostic>(), DecompiledEditor.Document);
+                return;
+            }
+
+            UndertaleCode code = DataContext as UndertaleCode;
+            if (code is null || code.ParentEntry is not null)
+            {
+                ApplyDiagnostics(Array.Empty<GmlDiagnostic>());
+                return;
+            }
+
+            string docText = DecompiledEditor.Text;
+            string codeName = code.Name?.Content;
+            UndertaleData data = mainWindow.Data;
+            if (data is null)
+            {
+                ApplyDiagnostics(Array.Empty<GmlDiagnostic>());
+                return;
+            }
+
+            // Warm up the shared parse context on the UI thread (creation builds asset lookups).
+            try
+            {
+                GmlLanguageService.GetParseContext(data);
+            }
+            catch
+            {
+                ApplyDiagnostics(Array.Empty<GmlDiagnostic>());
+                return;
+            }
+
+            // Cancel any earlier diagnostic run
+            _diagnosticsCancellation?.Cancel();
+            CancellationTokenSource cts = _diagnosticsCancellation = new CancellationTokenSource();
+            int generation = ++_diagnosticsGeneration;
+
+            IReadOnlyList<GmlDiagnostic> result;
+            try
+            {
+                result = await Task.Run(() => GmlLanguageService.ParseDiagnostics(data, docText, codeName), cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            catch
+            {
+                result = Array.Empty<GmlDiagnostic>();
+            }
+
+            if (generation != _diagnosticsGeneration || cts.IsCancellationRequested)
+                return;
+            if (_isLoadingCode)
+                return;
+            if (!IsLoaded)
+                return;
+
+            ApplyDiagnostics(result);
+        }
+
+        private void ApplyDiagnostics(IReadOnlyList<GmlDiagnostic> diagnostics)
+        {
+            if (DecompiledEditor.Document is null)
+                return;
+
+            _diagnosticsRenderer.SetDiagnostics(diagnostics, DecompiledEditor.Document);
+
+            if (diagnostics is null || diagnostics.Count == 0)
+            {
+                // Don't hide the panel while it's showing manual reference results,
+                // and don't re-open it if the user closed it manually.
+                if (_lastResultMode == ResultMode.References || _panelManuallyClosed)
+                    return;
+                HideResultsPanel();
+                return;
+            }
+
+            // If the user closed the results panel manually, keep it closed (only update squiggles).
+            if (_panelManuallyClosed)
+                return;
+
+            _resultEntries.Clear();
+            foreach (GmlDiagnostic diag in diagnostics)
+            {
+                _resultEntries.Add(new CodeEditorResultEntry
+                {
+                    Offset = diag.TextPosition,
+                    Line = diag.Line,
+                    Column = diag.Column,
+                    Display = $"{diag.Line},{diag.Column}: {diag.Message}",
+                    IsReference = false
+                });
+            }
+
+            ShowResultsPanel(string.Format(LocalizationSource.GetString("Editor_ErrorsFound"), diagnostics.Count), ResultMode.Errors);
+        }
+
+        private enum ResultMode
+        {
+            None,
+            Errors,
+            References
+        }
+        private ResultMode _lastResultMode = ResultMode.None;
+        private bool _panelManuallyClosed;
+
+        private void ShowResultsPanel(string header, ResultMode mode)
+        {
+            _lastResultMode = mode;
+            _panelManuallyClosed = false;
+            ResultsHeaderText.Text = header;
+            ResultsListBox.ItemsSource = null;
+            ResultsListBox.ItemsSource = _resultEntries;
+            ResultsPanel.Visibility = Visibility.Visible;
+        }
+
+        private void HideResultsPanel()
+        {
+            _lastResultMode = ResultMode.None;
+            _resultEntries.Clear();
+            ResultsListBox.ItemsSource = null;
+            ResultsPanel.Visibility = Visibility.Collapsed;
+        }
+
+        private void NavigateToEntry(int offset)
+        {
+            if (offset < 0 || offset > DecompiledEditor.Document.TextLength)
+                return;
+            DecompiledEditor.TextArea.Focus();
+            DecompiledEditor.CaretOffset = offset;
+            DecompiledEditor.ScrollToLine(DecompiledEditor.Document.GetLineByOffset(offset).LineNumber);
+        }
+
+        private void ResultsListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (ResultsListBox.SelectedItem is CodeEditorResultEntry entry)
+                NavigateToEntry(entry.Offset);
+        }
+
+        private void ResultsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ResultsListBox.SelectedItem is CodeEditorResultEntry entry)
+                ResultsListBox.ScrollIntoView(entry);
+        }
+
+        private void ResultsCloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            _panelManuallyClosed = true;
+            HideResultsPanel();
+        }
+
+        // Command handlers for F12 / Shift+F12 / Ctrl+T
+
+        private void Command_GoToDefinition(object sender, ExecutedRoutedEventArgs e)
+        {
+            HandleGoToDefinition();
+        }
+
+        private void Command_FindReferences(object sender, ExecutedRoutedEventArgs e)
+        {
+            HandleFindReferences();
+        }
+
+        private void Command_FindSymbol(object sender, ExecutedRoutedEventArgs e)
+        {
+            HandleFindSymbol();
+        }
+
+        // Public entry points so the main window's Edit menu can invoke the same logic.
+        public void ExecuteGoToDefinitionCommand() => HandleGoToDefinition();
+        public void ExecuteFindReferencesCommand() => HandleFindReferences();
+        public void ExecuteFindSymbolCommand() => HandleFindSymbol();
+        public void ExecuteOpenFindCommand() => Command_OpenFind(null, null);
+        public void ExecuteOpenReplaceCommand() => Command_OpenReplace(null, null);
+
+        private void HandleGoToDefinition()
+        {
+            if (!DecompiledTab.IsSelected)
+                return;
+            if (DecompiledEditor.IsReadOnly)
+                return;
+
+            UndertaleData data = mainWindow.Data;
+            if (data is null)
+                return;
+
+            FillObjectDicts();
+
+            string code = DecompiledEditor.Text;
+            int offset = DecompiledEditor.CaretOffset;
+            if (offset < 0 || offset > code.Length)
+                return;
+
+            UndertaleCode currentCode = DataContext as UndertaleCode;
+            GmlDefinition definition = GmlLanguageService.ResolveDefinition(
+                data, code, offset, CurrentLocals, currentCode, NamedObjDict, ScriptsDict, FunctionsDict, CodeDict);
+
+            switch (definition.Kind)
+            {
+                case GmlDefinition.DefinitionKind.Local:
+                {
+                    int declOffset = definition.LocalDeclarationOffset;
+                    if (declOffset < 0)
+                        break;
+                    // If the declaration doesn't exist any more, fall back to the current position
+                    if (declOffset < code.Length)
+                        NavigateToEntry(declOffset);
+                    break;
+                }
+                case GmlDefinition.DefinitionKind.Function:
+                {
+                    if (definition.LocalDeclarationOffset >= 0)
+                    {
+                        NavigateToEntry(definition.LocalDeclarationOffset);
+                        break;
+                    }
+                    if (definition.Resource is not null)
+                        mainWindow.ChangeSelection(definition.Resource);
+                    break;
+                }
+                case GmlDefinition.DefinitionKind.Resource:
+                {
+                    if (definition.Resource is not null)
+                        mainWindow.ChangeSelection(definition.Resource);
+                    break;
+                }
+                case GmlDefinition.DefinitionKind.Builtin:
+                {
+                    // Show hover-style info for builtins instead of navigating
+                    break;
+                }
+                case GmlDefinition.DefinitionKind.Constant:
+                {
+                    break;
+                }
+            }
+        }
+
+        private void HandleFindReferences()
+        {
+            if (!DecompiledTab.IsSelected)
+                return;
+
+            string code = DecompiledEditor.Text;
+            int offset = DecompiledEditor.CaretOffset;
+            if (offset < 0 || offset > code.Length)
+                return;
+
+            IReadOnlyList<GmlReference> references = GmlLanguageService.FindReferences(code, offset, out string symbol);
+            if (symbol is null)
+                return;
+
+            _resultEntries.Clear();
+            foreach (GmlReference reference in references)
+            {
+                _resultEntries.Add(new CodeEditorResultEntry
+                {
+                    Offset = reference.TextPosition,
+                    Line = reference.Line,
+                    Column = 1,
+                    Display = $"{reference.Line}: {reference.LineText}",
+                    IsReference = true
+                });
+            }
+
+            if (references.Count == 0)
+            {
+                ShowResultsPanel(string.Format(LocalizationSource.GetString("Editor_NoReferences"), symbol), ResultMode.References);
+                return;
+            }
+
+            ShowResultsPanel(string.Format(LocalizationSource.GetString("Editor_ReferencesFound"), symbol, references.Count), ResultMode.References);
+        }
+
+        private void HandleFindSymbol()
+        {
+            UndertaleData data = mainWindow.Data;
+            if (data is null)
+                return;
+
+            SymbolSearchWindow window = new(data) { Owner = Window.GetWindow(this) };
+            bool? result = window.ShowDialog();
+            if (result == true && window.SelectedResource is not null)
+            {
+                mainWindow.ChangeSelection(window.SelectedResource);
+            }
+        }
+
         private void UndertaleCodeEditor_Unloaded(object sender, RoutedEventArgs e)
         {
             if (DataContext is UndertaleCode oldObj)
             {
                 oldObj.PropertyChanged -= OnCodePropertyChanged;
             }
+
+            _diagnosticsCancellation?.Cancel();
+            _diagnosticsTimer?.Stop();
+            _foldingTimer?.Stop();
+            CloseCompletionWindow();
 
             OverriddenDecompPos = default;
             OverriddenDisasmPos = default;
@@ -1282,6 +1860,14 @@ namespace UndertaleModTool
                 return;
 
             FillObjectDicts();
+
+            // Reset diagnostics/references from the previously shown code entry
+            _diagnosticsCancellation?.Cancel();
+            _diagnosticsTimer?.Stop();
+            _diagnosticsRenderer?.SetDiagnostics(Array.Empty<GmlDiagnostic>(), DecompiledEditor?.Document);
+            _panelManuallyClosed = false;
+            HideResultsPanel();
+            CloseCompletionWindow();
 
             // compile/disassemble previously edited code (save changes)
             if (DecompiledTab.IsSelected && DecompiledFocused && DecompiledChanged &&
@@ -1743,6 +2329,7 @@ namespace UndertaleModTool
                 }
                 DecompiledChanged = false;
                 CurrentDecompiled = code;
+                UpdateFolding();
                 if (Settings.Instance?.ChangeTrackingEnabled ?? true)
                     _decompiledModifiedRenderer.SetOriginalText(DecompiledEditor.Text, DecompiledEditor.Document);
                 SaveOriginalBytecodeSnapshot(code);
@@ -1909,9 +2496,11 @@ namespace UndertaleModTool
                             DecompiledChanged = false;
 
                             CurrentDecompiled = code;
+                            UpdateFolding();
                             if (Settings.Instance?.ChangeTrackingEnabled ?? true)
                                 _decompiledModifiedRenderer.SetOriginalText(DecompiledEditor.Text, DecompiledEditor.Document);
                             SaveOriginalBytecodeSnapshot(code);
+                            _ = RunDiagnosticsAsync();
                         }
                         finally
                         {
@@ -2836,6 +3425,48 @@ namespace UndertaleModTool
                 else
                     DisassemblySearchReplacePanel.Open(true);
             }
+        }
+
+        private static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+        /// <summary>
+        /// A single entry in the results panel (diagnostics or references).
+        /// </summary>
+        public class CodeEditorResultEntry
+        {
+            public int Offset { get; set; }
+            public int Line { get; set; }
+            public int Column { get; set; }
+            public string Display { get; set; }
+            public bool IsReference { get; set; }
+        }
+
+        /// <summary>
+        /// Completion item implementation shown by the AvalonEdit completion window.
+        /// </summary>
+        private sealed class GmlCompletionData : ICompletionData
+        {
+            private readonly GmlCompletionItem _item;
+
+            public GmlCompletionData(GmlCompletionItem item)
+            {
+                _item = item;
+            }
+
+            public void Complete(TextArea textArea, ISegment completionSegment, EventArgs insertionRequestEventArgs)
+            {
+                textArea.Document.Replace(completionSegment, _item.Text);
+            }
+
+            public ImageSource Image => null;
+
+            public string Text => _item.Text;
+
+            public object Content => _item.Text;
+
+            public object Description => _item.Type;
+
+            public double Priority => 0;
         }
     }
 }

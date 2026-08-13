@@ -258,6 +258,24 @@
   <data name="Menu_File" xml:space="preserve">
     <value>_File</value>
   </data>
+  <data name="Menu_Edit" xml:space="preserve">
+    <value>_Edit</value>
+  </data>
+  <data name="Menu_Edit_GoToDefinition" xml:space="preserve">
+    <value>_Go to Definition</value>
+  </data>
+  <data name="Menu_Edit_FindReferences" xml:space="preserve">
+    <value>Find _All References</value>
+  </data>
+  <data name="Menu_Edit_FindSymbol" xml:space="preserve">
+    <value>_Find Symbol</value>
+  </data>
+  <data name="Menu_Edit_Find" xml:space="preserve">
+    <value>_Find</value>
+  </data>
+  <data name="Menu_Edit_Replace" xml:space="preserve">
+    <value>_Replace</value>
+  </data>
   <data name="Menu_File_New" xml:space="preserve">
     <value>_New</value>
   </data>
@@ -3837,6 +3855,18 @@ Persists when the tile editor is closed, but not when the file is saved and reop
   <data name="Editor_Top" xml:space="preserve">
     <value>Top:</value>
   </data>
+  <data name="Editor_ErrorsFound" xml:space="preserve">
+    <value>Compilation errors ({0})</value>
+  </data>
+  <data name="Editor_NoReferences" xml:space="preserve">
+    <value>No references found for "{0}"</value>
+  </data>
+  <data name="Editor_ReferencesFound" xml:space="preserve">
+    <value>References to "{0}" ({1})</value>
+  </data>
+  <data name="Editor_FindSymbol" xml:space="preserve">
+    <value>Find symbol</value>
+  </data>
   <data name="Editor_Transparent" xml:space="preserve">
     <value>Transparent</value>
   </data>
@@ -5161,6 +5191,9 @@ It's highly recommended to restart the application.</value>
   </data>
   <data name="Editor_ShowHoverInfo" xml:space="preserve">
     <value>Hover Info</value>
+  </data>
+  <data name="Editor_ShowAutoDiagnostics" xml:space="preserve">
+    <value>Auto check errors</value>
   </data>
   <data name="Editor_BuiltinFunction" xml:space="preserve">
     <value>Built-in function</value>

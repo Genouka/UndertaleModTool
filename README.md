@@ -72,11 +72,17 @@ If you are finding Android version, please check out [this](https://github.com/Q
 
   ![Preview](images/preview/image-18.png)
 
-
 - Improved performance, reduced memory usage, optimized UI thread lag. 提高了性能，减少内存占用，优化了UI线程卡顿。
 
 - Support to use as a MCP Server for AI calling. See [this](MCP.md) for detail. 支持作为MCP服务器使用，点[这里](MCP.md)查看文档。
 
+- 自动补全代码
+
+  ![img.png](images/preview/img.png)
+
+- 实时静态错误检查
+
+  ![img_1.png](images/preview/img_1.png)
 ---
 
 Below are README files of the official repositories of UndertaleModTool:

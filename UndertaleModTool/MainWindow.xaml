@@ -43,6 +43,11 @@
         <CommandBinding Command="CancelPrint" Executed="Command_RunSpecial" />
         <CommandBinding Command="PrintPreview" Executed="Command_RunDebug" />
         <CommandBinding Command="Properties" Executed="Command_Settings" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.GoToDefinition}" Executed="Command_GoToDefinition" CanExecute="Command_CodeEditorNavigation_CanExecute" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.FindReferences}" Executed="Command_FindReferences" CanExecute="Command_CodeEditorNavigation_CanExecute" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.FindSymbol}" Executed="Command_FindSymbol" CanExecute="Command_CodeEditorNavigation_CanExecute" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.OpenFindCommand}" Executed="Command_CodeEditorFind" CanExecute="Command_CodeEditorNavigation_CanExecute" />
+        <CommandBinding Command="{x:Static local:UndertaleCodeEditor.OpenReplaceCommand}" Executed="Command_CodeEditorReplace" CanExecute="Command_CodeEditorNavigation_CanExecute" />
         <CommandBinding Command="{x:Static local:MainWindow.CloseTabCommand}" Executed="Command_CloseTab" />
         <CommandBinding Command="{x:Static local:MainWindow.CloseAllTabsCommand}" Executed="Command_CloseAllTabs" />
         <CommandBinding Command="{x:Static local:MainWindow.RestoreClosedTabCommand}" Executed="Command_RestoreClosedTab" />
@@ -144,6 +149,19 @@
                     <Separator/>
                     <MenuItem Header="{loc:Loc Menu_File_Settings}" Command="Properties"/>
                     <MenuItem Header="{loc:Loc Menu_File_Close}" Command="Close" InputGestureText="Ctrl+Q"/>
+                </local:MenuItemDark>
+                <local:MenuItemDark Header="{loc:Loc Menu_Edit}" SubmenuOpened="EditMenu_SubmenuOpened">
+                    <MenuItem Header="{loc:Loc Menu_Edit_GoToDefinition}" Command="{x:Static local:UndertaleCodeEditor.GoToDefinition}" InputGestureText="F12"/>
+                    <MenuItem Header="{loc:Loc Menu_Edit_FindReferences}" Command="{x:Static local:UndertaleCodeEditor.FindReferences}" InputGestureText="Shift+F12"/>
+                    <MenuItem Header="{loc:Loc Menu_Edit_FindSymbol}" Command="{x:Static local:UndertaleCodeEditor.FindSymbol}" InputGestureText="Ctrl+T"/>
+                    <Separator/>
+                    <MenuItem Header="{loc:Loc Menu_Edit_Find}" Command="{x:Static local:UndertaleCodeEditor.OpenFindCommand}" InputGestureText="Ctrl+F"/>
+                    <MenuItem Header="{loc:Loc Menu_Edit_Replace}" Command="{x:Static local:UndertaleCodeEditor.OpenReplaceCommand}" InputGestureText="Ctrl+H"/>
+                    <Separator/>
+                    <MenuItem x:Name="WordWrapMenuItem" Header="{loc:Loc Editor_WordWrap}" IsCheckable="True" Click="CodeEditorOptionMenuItem_Click"/>
+                    <MenuItem x:Name="ShowWhitespaceMenuItem" Header="{loc:Loc Editor_ShowWhitespace}" IsCheckable="True" Click="CodeEditorOptionMenuItem_Click"/>
+                    <MenuItem x:Name="ShowHoverInfoMenuItem" Header="{loc:Loc Editor_ShowHoverInfo}" IsCheckable="True" Click="CodeEditorOptionMenuItem_Click"/>
+                    <MenuItem x:Name="AutoDiagnosticsMenuItem" Header="{loc:Loc Editor_ShowAutoDiagnostics}" IsCheckable="True" Click="CodeEditorOptionMenuItem_Click"/>
                 </local:MenuItemDark>
                 <local:MenuItemDark x:Name="RootScriptItem" Header="{loc:Loc Menu_Scripts}" SubmenuOpened="RootMenuItem_SubmenuOpened">
                     <MenuItem Header="{loc:Loc Menu_Scripts_Loading}" IsEnabled="False"/>
