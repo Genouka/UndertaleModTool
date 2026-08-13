@@ -713,6 +713,15 @@ namespace UndertaleModTool
             // Re-apply background transparency if a background image is active
             if (Settings.Instance is not null && !string.IsNullOrEmpty(Settings.Instance.BackgroundImagePath))
                 ApplyBackgroundTransparency(true);
+
+            // Re-apply the code editor theme to every open window
+            foreach (Window w in Application.Current.Windows)
+            {
+                if (w is not IWindowHost host)
+                    continue;
+                UndertaleCodeEditor codeEditor = FindVisualChild<UndertaleCodeEditor>(host.DataEditor);
+                codeEditor?.ApplyTheme(enable);
+            }
         }
         private static void SetDarkTitleBarForWindows(bool enable)
         {

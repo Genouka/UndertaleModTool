@@ -54,6 +54,53 @@ namespace UndertaleModTool
         private static readonly Brush editorDefaultDarkBg = new SolidColorBrush(Color.FromRgb(34, 34, 34));
         private static readonly Brush editorDefaultLightBg = new SolidColorBrush(Colors.White);
 
+        // Maps the dark-mode syntax colors (from GML.xshd / VMASM.xshd) to
+        // readable equivalents for the light theme.
+        private static readonly Dictionary<Color, Color> lightSyntaxColorMap = new()
+        {
+            [Color.FromRgb(0x5B, 0x99, 0x5B)] = Color.FromRgb(0x00, 0x80, 0x00),   // Comment
+            [Colors.Yellow] = Color.FromRgb(0xA3, 0x15, 0x15),                     // String
+            [Color.FromRgb(0xC0, 0xC0, 0xC0)] = Color.FromRgb(0x7A, 0x7A, 0x7A),   // TemplateStringField
+            [Color.FromRgb(0xB2, 0xB1, 0xFF)] = Color.FromRgb(0x1F, 0x37, 0x7F),   // GML Identifier/Function
+            [Color.FromRgb(0xFF, 0xF8, 0x99)] = Color.FromRgb(0x9A, 0x67, 0x00),   // AltIdentifier
+            [Color.FromRgb(0xFF, 0x64, 0x64)] = Color.FromRgb(0x09, 0x86, 0x58),   // Number
+            [Color.FromRgb(0xF9, 0xB4, 0x6F)] = Color.FromRgb(0x00, 0x00, 0xFF),   // GML keywords
+            [Color.FromRgb(0xFF, 0x80, 0x80)] = Color.FromRgb(0xC0, 0x00, 0x00),   // Macros
+            [Color.FromRgb(0xC1, 0xC1, 0xC1)] = Color.FromRgb(0x33, 0x33, 0x33),   // VMASM Identifier
+            [Color.FromRgb(0x80, 0xA8, 0xFF)] = Color.FromRgb(0x00, 0x00, 0xFF),   // VMASM BranchOpcode
+            [Color.FromRgb(0xDA, 0xDA, 0xDA)] = Color.FromRgb(0x33, 0x33, 0x33),   // VMASM Opcode
+            [Color.FromRgb(0xFF, 0xB8, 0x71)] = Color.FromRgb(0x79, 0x5E, 0x26),   // VMASM Function/InternalFunction
+            [Color.FromRgb(0xFF, 0x8D, 0x0A)] = Color.FromRgb(0xC0, 0x50, 0x00),   // VMASM Label
+            [Color.FromRgb(0xE0, 0xB0, 0xB0)] = Color.FromRgb(0x70, 0x70, 0x70),   // VMASM addresses
+            [Color.FromRgb(0x59, 0xC2, 0x59)] = Color.FromRgb(0x2E, 0x7D, 0x32),   // VMASM various
+        };
+
+        private static void ApplySyntaxTheme(IHighlightingDefinition def, bool isDark)
+        {
+            if (isDark || def is null)
+                return;
+
+            void Rewrite(HighlightingColor color)
+            {
+                if (color?.Foreground == null)
+                    return;
+                Color? source = color.Foreground.GetColor(null);
+                if (source.HasValue && lightSyntaxColorMap.TryGetValue(source.Value, out Color light))
+                    color.Foreground = new SimpleHighlightingBrush(light);
+            }
+
+            foreach (HighlightingColor color in def.NamedHighlightingColors)
+                Rewrite(color);
+            foreach (HighlightingRule rule in def.MainRuleSet.Rules)
+                Rewrite(rule.Color);
+            foreach (HighlightingSpan span in def.MainRuleSet.Spans)
+            {
+                Rewrite(span.SpanColor);
+                Rewrite(span.StartColor);
+                Rewrite(span.EndColor);
+            }
+        }
+
         public UndertaleCode CurrentDisassembled = null;
         public UndertaleCode CurrentDecompiled = null;
         public List<string> CurrentLocals = new();
@@ -72,6 +119,8 @@ namespace UndertaleModTool
 
         private readonly ModifiedLinesBackgroundRenderer _decompiledModifiedRenderer = new();
         private readonly ModifiedLinesBackgroundRenderer _disassemblyModifiedRenderer = new();
+        private readonly NameGenerator _decompiledNameGenerator;
+        private readonly NameGenerator _disassemblyNameGenerator;
         private bool _isLoadingCode;
         private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<UndertaleCode, List<UndertaleInstruction>> _originalBytecodeSnapshots = new();
 
@@ -244,60 +293,7 @@ namespace UndertaleModTool
             DecompiledSearchReplacePanel.Initialize(DecompiledEditor.TextArea);
             DecompiledEditor.FontSize = ZoomFontSize;
 
-            using (Stream stream = this.GetType().Assembly.GetManifestResourceStream("UndertaleModTool.Resources.GML.xshd"))
-            {
-                using (XmlTextReader reader = new XmlTextReader(stream))
-                {
-                    DecompiledEditor.SyntaxHighlighting = HighlightingLoader.Load(reader, HighlightingManager.Instance);
-                    var def = DecompiledEditor.SyntaxHighlighting;
-                    if (mainWindow.Data.GeneralInfo.Major < 2)
-                    {
-                        foreach (var span in def.MainRuleSet.Spans)
-                        {
-                            string expr = span.StartExpression.ToString();
-                            if (expr == "\"" || expr == "'")
-                            {
-                                span.RuleSet.Spans.Clear();
-                            }
-                        }
-                    }
-                    // This was an attempt to only highlight
-                    // GMS 2.3+ keywords if the game is
-                    // made in such a version.
-                    // However despite what StackOverflow
-                    // says, this isn't working so it's just
-                    // hardcoded in the XML for now
-                    /*
-                    if(mainWindow.Data.IsVersionAtLeast(2, 3))
-                    {
-                        HighlightingColor color = null;
-                        foreach (var rule in def.MainRuleSet.Rules)
-                        {
-                            if (rule.Regex.IsMatch("if"))
-                            {
-                                color = rule.Color;
-                                break;
-                            }
-                        }
-                        if (color != null)
-                        {
-                            string[] keywords =
-                            {
-                                "new",
-                                "function",
-                                "keywords"
-                            };
-                            var rule = new HighlightingRule();
-                            var regex = String.Format(@"\b(?>{0})\b", String.Join("|", keywords));
-
-                            rule.Regex = new Regex(regex);
-                            rule.Color = color;
-
-                            def.MainRuleSet.Rules.Add(rule);
-                        }
-                    }*/
-                }
-            }
+            LoadGMLHighlighting(Settings.Instance?.EnableDarkMode ?? false);
 
             DecompiledEditor.Options.ConvertTabsToSpaces = true;
 
@@ -307,13 +303,12 @@ namespace UndertaleModTool
 
             TextArea textArea = DecompiledEditor.TextArea;
             textArea.TextView.ElementGenerators.Add(new NumberGenerator(this, textArea));
-            textArea.TextView.ElementGenerators.Add(new NameGenerator(this, textArea));
+            _decompiledNameGenerator = new NameGenerator(this, textArea);
+            textArea.TextView.ElementGenerators.Add(_decompiledNameGenerator);
             if (Settings.Instance?.ChangeTrackingEnabled ?? true)
                 textArea.TextView.BackgroundRenderers.Add(_decompiledModifiedRenderer);
 
             textArea.TextView.Options.HighlightCurrentLine = true;
-            textArea.TextView.CurrentLineBackground = new SolidColorBrush(Color.FromRgb(60, 60, 60));
-            textArea.TextView.CurrentLineBorder = new Pen() { Thickness = 0 };
 
             DecompiledEditor.Document.TextChanged += (s, e) =>
             {
@@ -325,31 +320,19 @@ namespace UndertaleModTool
                     _decompiledModifiedRenderer.MarkDirty();
             };
 
-            textArea.SelectionBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100));
-            textArea.SelectionForeground = null;
-            textArea.SelectionBorder = null;
-            textArea.SelectionCornerRadius = 0;
-
             // Disassembly editor styling and functionality
             DisassemblySearchReplacePanel.Initialize(DisassemblyEditor.TextArea);
             DisassemblyEditor.FontSize = ZoomFontSize;
 
-            using (Stream stream = this.GetType().Assembly.GetManifestResourceStream("UndertaleModTool.Resources.VMASM.xshd"))
-            {
-                using (XmlTextReader reader = new XmlTextReader(stream))
-                {
-                    DisassemblyEditor.SyntaxHighlighting = HighlightingLoader.Load(reader, HighlightingManager.Instance);
-                }
-            }
+            LoadVMASMHighlighting(Settings.Instance?.EnableDarkMode ?? false);
 
             textArea = DisassemblyEditor.TextArea;
-            textArea.TextView.ElementGenerators.Add(new NameGenerator(this, textArea));
+            _disassemblyNameGenerator = new NameGenerator(this, textArea);
+            textArea.TextView.ElementGenerators.Add(_disassemblyNameGenerator);
             if (Settings.Instance?.ChangeTrackingEnabled ?? true)
                 textArea.TextView.BackgroundRenderers.Add(_disassemblyModifiedRenderer);
 
             textArea.TextView.Options.HighlightCurrentLine = true;
-            textArea.TextView.CurrentLineBackground = new SolidColorBrush(Color.FromRgb(60, 60, 60));
-            textArea.TextView.CurrentLineBorder = new Pen() { Thickness = 0 };
 
             DisassemblyEditor.Document.TextChanged += (s, e) =>
             {
@@ -360,12 +343,90 @@ namespace UndertaleModTool
                     _disassemblyModifiedRenderer.MarkDirty();
             };
 
-            textArea.SelectionBrush = new SolidColorBrush(Color.FromRgb(100, 100, 100));
-            textArea.SelectionForeground = null;
-            textArea.SelectionBorder = null;
-            textArea.SelectionCornerRadius = 0;
+            ApplyEditorTheme(Settings.Instance?.EnableDarkMode ?? false);
 
             InitializeHoverPopup();
+        }
+
+        private void LoadGMLHighlighting(bool isDark)
+        {
+            using (Stream stream = this.GetType().Assembly.GetManifestResourceStream("UndertaleModTool.Resources.GML.xshd"))
+            {
+                using (XmlTextReader reader = new XmlTextReader(stream))
+                {
+                    var def = HighlightingLoader.Load(reader, HighlightingManager.Instance);
+                    if (mainWindow.Data.GeneralInfo.Major < 2)
+                    {
+                        foreach (var span in def.MainRuleSet.Spans)
+                        {
+                            string expr = span.StartExpression.ToString();
+                            if (expr == "\"" || expr == "'")
+                            {
+                                span.RuleSet.Spans.Clear();
+                            }
+                        }
+                    }
+                    ApplySyntaxTheme(def, isDark);
+                    DecompiledEditor.SyntaxHighlighting = def;
+                }
+            }
+        }
+
+        private void LoadVMASMHighlighting(bool isDark)
+        {
+            using (Stream stream = this.GetType().Assembly.GetManifestResourceStream("UndertaleModTool.Resources.VMASM.xshd"))
+            {
+                using (XmlTextReader reader = new XmlTextReader(stream))
+                {
+                    var def = HighlightingLoader.Load(reader, HighlightingManager.Instance);
+                    ApplySyntaxTheme(def, isDark);
+                    DisassemblyEditor.SyntaxHighlighting = def;
+                }
+            }
+        }
+
+        private void ApplyEditorTheme(bool isDark)
+        {
+            void ApplyTo(TextEditor editor)
+            {
+                editor.Foreground = isDark
+                    ? new SolidColorBrush(Color.FromRgb(0xC0, 0xC0, 0xC0))
+                    : new SolidColorBrush(Colors.Black);
+                editor.LineNumbersForeground = isDark
+                    ? new SolidColorBrush(Color.FromRgb(0xDB, 0xDB, 0xDB))
+                    : new SolidColorBrush(Color.FromRgb(0x2B, 0x2B, 0x2B));
+
+                TextArea textArea = editor.TextArea;
+                if (textArea is null)
+                    return;
+
+                textArea.TextView.CurrentLineBackground = isDark
+                    ? new SolidColorBrush(Color.FromRgb(60, 60, 60))
+                    : new SolidColorBrush(Color.FromRgb(230, 230, 230));
+                textArea.TextView.CurrentLineBorder = new Pen() { Thickness = 0 };
+                textArea.SelectionBrush = isDark
+                    ? new SolidColorBrush(Color.FromRgb(100, 100, 100))
+                    : new SolidColorBrush(Color.FromRgb(180, 210, 255));
+                textArea.SelectionForeground = null;
+                textArea.SelectionBorder = null;
+                textArea.SelectionCornerRadius = 0;
+            }
+
+            ApplyTo(DecompiledEditor);
+            ApplyTo(DisassemblyEditor);
+
+            _decompiledNameGenerator?.UpdateBrushTheme(isDark);
+            _disassemblyNameGenerator?.UpdateBrushTheme(isDark);
+        }
+
+        /// <summary>
+        /// Re-applies the syntax highlighting and editor colors for the given theme.
+        /// </summary>
+        public void ApplyTheme(bool isDark)
+        {
+            LoadGMLHighlighting(isDark);
+            LoadVMASMHighlighting(isDark);
+            ApplyEditorTheme(isDark);
         }
 
         private void ApplySettingsToEditors()
@@ -1149,6 +1210,8 @@ namespace UndertaleModTool
 
         private void UndertaleCodeEditor_Loaded(object sender, RoutedEventArgs e)
         {
+            // Make sure the colors match the theme if it changed while this editor was hidden
+            ApplyTheme(Settings.Instance?.EnableDarkMode ?? false);
             FillInCodeViewer();
         }
         private void FillInCodeViewer(bool overrideFirst = false)
@@ -2319,11 +2382,23 @@ namespace UndertaleModTool
             private readonly TextEditor textEditorInst;
             private readonly UndertaleCodeEditor codeEditorInst;
 
-            private static readonly SolidColorBrush FunctionBrush = new(Color.FromRgb(0xFF, 0xB8, 0x71));
-            private static readonly SolidColorBrush GlobalBrush = new(Color.FromRgb(0xF9, 0x7B, 0xF9));
-            private static readonly SolidColorBrush ConstantBrush = new(Color.FromRgb(0xFF, 0x80, 0x80));
-            private static readonly SolidColorBrush InstanceBrush = new(Color.FromRgb(0x58, 0xE3, 0x5A));
-            private static readonly SolidColorBrush LocalBrush = new(Color.FromRgb(0xFF, 0xF8, 0x99));
+            private static readonly SolidColorBrush FunctionBrushDark = new(Color.FromRgb(0xFF, 0xB8, 0x71));
+            private static readonly SolidColorBrush GlobalBrushDark = new(Color.FromRgb(0xF9, 0x7B, 0xF9));
+            private static readonly SolidColorBrush ConstantBrushDark = new(Color.FromRgb(0xFF, 0x80, 0x80));
+            private static readonly SolidColorBrush InstanceBrushDark = new(Color.FromRgb(0x58, 0xE3, 0x5A));
+            private static readonly SolidColorBrush LocalBrushDark = new(Color.FromRgb(0xFF, 0xF8, 0x99));
+
+            private static readonly SolidColorBrush FunctionBrushLight = new(Color.FromRgb(0x79, 0x5E, 0x26));
+            private static readonly SolidColorBrush GlobalBrushLight = new(Color.FromRgb(0xA0, 0x3A, 0xCB));
+            private static readonly SolidColorBrush ConstantBrushLight = new(Color.FromRgb(0xC0, 0x00, 0x00));
+            private static readonly SolidColorBrush InstanceBrushLight = new(Color.FromRgb(0x2E, 0x7D, 0x32));
+            private static readonly SolidColorBrush LocalBrushLight = new(Color.FromRgb(0x9A, 0x67, 0x00));
+
+            private SolidColorBrush FunctionBrush;
+            private SolidColorBrush GlobalBrush;
+            private SolidColorBrush ConstantBrush;
+            private SolidColorBrush InstanceBrush;
+            private SolidColorBrush LocalBrush;
 
             private static ContextMenuDark contextMenu;
 
@@ -2336,6 +2411,8 @@ namespace UndertaleModTool
 
                 highlighterInst = textAreaInst.GetService(typeof(IHighlighter)) as IHighlighter;
                 textEditorInst = textAreaInst.GetService(typeof(TextEditor)) as TextEditor;
+
+                UpdateBrushTheme(Settings.Instance?.EnableDarkMode ?? false);
 
                 var menuItem = new MenuItemDark()
                 {
@@ -2350,6 +2427,18 @@ namespace UndertaleModTool
                     Items = { menuItem },
                     Placement = PlacementMode.MousePoint
                 };
+            }
+
+            /// <summary>
+            /// Applies the brush set that fits the current (dark or light) theme.
+            /// </summary>
+            public void UpdateBrushTheme(bool isDark)
+            {
+                FunctionBrush = isDark ? FunctionBrushDark : FunctionBrushLight;
+                GlobalBrush = isDark ? GlobalBrushDark : GlobalBrushLight;
+                ConstantBrush = isDark ? ConstantBrushDark : ConstantBrushLight;
+                InstanceBrush = isDark ? InstanceBrushDark : InstanceBrushLight;
+                LocalBrush = isDark ? LocalBrushDark : LocalBrushLight;
             }
 
             public override void StartGeneration(ITextRunConstructionContext context)
@@ -2514,8 +2603,10 @@ namespace UndertaleModTool
                         return new ColorVisualLineText(nameText, CurrentContext.VisualLine, nameLength,
                                                        ConstantBrush);
                     if (data.BuiltinList.GlobalVars.ContainsKey(nameText) ||
-                        data.BuiltinList.InstanceVars.ContainsKey(nameText) ||
                         data.BuiltinList.GlobalArrayVars.ContainsKey(nameText))
+                        return new ColorVisualLineText(nameText, CurrentContext.VisualLine, nameLength,
+                                                       GlobalBrush);
+                    if (data.BuiltinList.InstanceVars.ContainsKey(nameText))
                         return new ColorVisualLineText(nameText, CurrentContext.VisualLine, nameLength,
                                                        InstanceBrush);
                     if (codeEditorInst?.CurrentLocals?.Contains(nameText) == true)

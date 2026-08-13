@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Media;
 
 namespace UndertaleModTool
@@ -47,8 +48,12 @@ namespace UndertaleModTool
             if (content is null)
                 return;
 
-            content.SetResourceReference(ForegroundProperty, SystemColors.ControlTextBrushKey);
-            content.SetResourceReference(BackgroundProperty, SystemColors.WindowBrushKey);
+            // Popup content is not part of the visual tree, so resource references
+            // don't resolve the Application-level theme overrides and fall back to
+            // the system (white) brushes. Resolve the theme brushes explicitly instead.
+            content.SetValue(TextElement.ForegroundProperty,
+                (Brush)Application.Current.TryFindResource("CustomTextBrush") ?? SystemColors.ControlTextBrush);
+            content.Background = (Brush)Application.Current.TryFindResource("CustomTextBoxBrush") ?? SystemColors.WindowBrush;
         }
 
         /// <inheritdoc/>
