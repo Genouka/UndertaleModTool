@@ -535,19 +535,21 @@ namespace UndertaleModTool.Editors
                 foreach (var kvp in builtins.Functions)
                     AddItem(items, kvp.Key, "function", null);
 
-            // Instance / global / global-array variables
+            // Instance variables (built into the engine, per-instance: x, y, speed, ...)
             if (builtins?.InstanceVars is not null)
                 foreach (var kvp in builtins.InstanceVars)
-                    AddItem(items, kvp.Key, "variable", null);
-            if (builtins?.GlobalVars is not null)
-                foreach (var kvp in builtins.GlobalVars)
-                    AddItem(items, kvp.Key, "variable", null);
-            if (builtins?.GlobalArrayVars is not null)
-                foreach (var kvp in builtins.GlobalArrayVars)
-                    AddItem(items, kvp.Key, "variable", null);
+                    AddItem(items, kvp.Key, "instance_var", null);
             if (builtins?.InstanceLimitedVars is not null)
                 foreach (var kvp in builtins.InstanceLimitedVars)
-                    AddItem(items, kvp.Key, "variable", null);
+                    AddItem(items, kvp.Key, "instance_var", null);
+
+            // Global variables (built into the engine, global scope: room, score, ...)
+            if (builtins?.GlobalVars is not null)
+                foreach (var kvp in builtins.GlobalVars)
+                    AddItem(items, kvp.Key, "global_var", null);
+            if (builtins?.GlobalArrayVars is not null)
+                foreach (var kvp in builtins.GlobalArrayVars)
+                    AddItem(items, kvp.Key, "global_var", null);
 
             // Constants
             if (builtins?.Constants is not null)
@@ -625,6 +627,8 @@ namespace UndertaleModTool.Editors
             "function" => 2,
             "script" => 3,
             "variable" => 4,
+            "instance_var" => 4,
+            "global_var" => 4,
             "constant" => 5,
             "object" => 6,
             "sprite" => 6,

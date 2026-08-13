@@ -3458,15 +3458,200 @@ namespace UndertaleModTool
                 textArea.Document.Replace(completionSegment, _item.Text);
             }
 
-            public ImageSource Image => null;
+            public ImageSource Image => CompletionItemStyle.GetIcon(_item.Kind);
 
             public string Text => _item.Text;
 
-            public object Content => _item.Text;
+            public object Content => new TextBlock
+            {
+                Text = _item.Text,
+                Foreground = CompletionItemStyle.GetBrush(_item.Kind),
+                VerticalAlignment = VerticalAlignment.Center
+            };
 
             public object Description => _item.Type;
 
             public double Priority => 0;
+        }
+
+        /// <summary>
+        /// Small vector icons and colors used to visually distinguish completion item categories
+        /// (builtin functions/constants/variables, resources, locals, instance and global variables).
+        /// </summary>
+        private static class CompletionItemStyle
+        {
+            private static readonly Dictionary<string, ImageSource> _darkIcons = new();
+            private static readonly Dictionary<string, ImageSource> _lightIcons = new();
+            private static readonly Dictionary<string, Brush> _darkBrushes = new();
+            private static readonly Dictionary<string, Brush> _lightBrushes = new();
+
+            private static bool IsDark => Settings.Instance?.EnableDarkMode ?? true;
+
+            public static ImageSource GetIcon(string kind)
+            {
+                Dictionary<string, ImageSource> cache = IsDark ? _darkIcons : _lightIcons;
+                if (!cache.TryGetValue(kind, out ImageSource icon))
+                {
+                    icon = CreateIcon(kind, IsDark);
+                    cache[kind] = icon;
+                }
+                return icon;
+            }
+
+            public static Brush GetBrush(string kind)
+            {
+                Dictionary<string, Brush> cache = IsDark ? _darkBrushes : _lightBrushes;
+                if (!cache.TryGetValue(kind, out Brush brush))
+                {
+                    Color color = GetColor(kind, IsDark);
+                    brush = new SolidColorBrush(color);
+                    brush.Freeze();
+                    cache[kind] = brush;
+                }
+                return brush;
+            }
+
+            private static Color GetColor(string kind, bool dark)
+            {
+                (Color DarkColor, Color LightColor) = kind switch
+                {
+                    "function" => (Color.FromRgb(0xA5, 0x73, 0xE8), Color.FromRgb(0x7A, 0x3D, 0xB8)),
+                    "constant" => (Color.FromRgb(0xC9, 0xA6, 0xF2), Color.FromRgb(0x8A, 0x5C, 0xB8)),
+                    "variable" => (Color.FromRgb(0xC9, 0xA6, 0xF2), Color.FromRgb(0x8A, 0x5C, 0xB8)),
+                    "local" => (Color.FromRgb(0x8F, 0xC7, 0xFF), Color.FromRgb(0x1F, 0x6F, 0xB2)),
+                    "instance_var" => (Color.FromRgb(0x4A, 0x7A, 0xDE), Color.FromRgb(0x12, 0x3C, 0x96)),
+                    "global_var" => (Color.FromRgb(0x4D, 0xC9, 0xC9), Color.FromRgb(0x00, 0x8C, 0x8C)),
+                    "keyword" => (Color.FromRgb(0xF9, 0xB4, 0x6F), Color.FromRgb(0xB0, 0x5A, 0x00)),
+                    "user" => (Color.FromRgb(0x9D, 0xA5, 0xB4), Color.FromRgb(0x56, 0x59, 0x5E)),
+                    _ => (Color.FromRgb(0xFF, 0x6B, 0x6B), Color.FromRgb(0xC0, 0x19, 0x19)) // scripts and all asset kinds
+                };
+                return dark ? DarkColor : LightColor;
+            }
+
+            private static ImageSource CreateIcon(string kind, bool dark)
+            {
+                Color color = GetColor(kind, dark);
+                SolidColorBrush brush = new(color);
+                brush.Freeze();
+                Pen pen = new(brush, 1.4);
+                pen.Freeze();
+
+                // All variable kinds (builtin, instance, global) use a cube icon
+                if (kind is "variable" or "instance_var" or "global_var")
+                    return CreateCubeIcon(pen);
+
+                // Functions use a pair of curly braces
+                if (kind == "function")
+                    return CreateTextIcon("{ }", 12, "Consolas", FontWeights.Normal, brush);
+
+                // Scripts and all asset kinds use a "RES" text badge
+                if (kind is not ("constant" or "local" or "keyword" or "user"))
+                    return CreateTextIcon("RES", 9, "Segoe UI", FontWeights.Bold, brush);
+
+                // Remaining kinds keep simple geometric glyphs
+                Geometry outline = null;
+                Geometry filledShape = kind switch
+                {
+                    "constant" => CreatePolygon(new Point(8, 3), new Point(13, 8), new Point(8, 13), new Point(3, 8)),
+                    "local" => CreatePolygon(new Point(5, 4), new Point(12, 8), new Point(5, 12)),
+                    "keyword" => new RectangleGeometry(new Rect(4.5, 5, 7, 6), 3, 3),
+                    _ => null // user
+                };
+                if (kind == "user")
+                    outline = new RectangleGeometry(new Rect(3.5, 3.5, 9, 9), 2, 2);
+
+                DrawingGroup drawings = new();
+                if (outline is not null)
+                    drawings.Children.Add(new GeometryDrawing(null, pen, outline));
+                if (filledShape is not null)
+                    drawings.Children.Add(new GeometryDrawing(brush, null, filledShape));
+
+                DrawingImage image = new(drawings);
+                image.Freeze();
+                return image;
+            }
+
+            private static ImageSource CreateCubeIcon(Pen pen)
+            {
+                PathGeometry cube = new();
+                cube.Figures.Add(new PathFigure(new Point(8, 2.5), new PathSegment[]
+                {
+                    new LineSegment(new Point(3.5, 5.25), true),
+                    new LineSegment(new Point(8, 8), true),
+                    new LineSegment(new Point(12.5, 5.25), true),
+                    new LineSegment(new Point(8, 2.5), true)
+                }, true));
+                cube.Figures.Add(new PathFigure(new Point(3.5, 5.25), new PathSegment[]
+                {
+                    new LineSegment(new Point(3.5, 10.75), true),
+                    new LineSegment(new Point(8, 13.5), true),
+                    new LineSegment(new Point(8, 8), true),
+                    new LineSegment(new Point(3.5, 5.25), true)
+                }, true));
+                cube.Figures.Add(new PathFigure(new Point(12.5, 5.25), new PathSegment[]
+                {
+                    new LineSegment(new Point(12.5, 10.75), true),
+                    new LineSegment(new Point(8, 13.5), true),
+                    new LineSegment(new Point(8, 8), true),
+                    new LineSegment(new Point(12.5, 5.25), true)
+                }, true));
+                cube.Freeze();
+
+                DrawingGroup drawings = new();
+                drawings.Children.Add(new GeometryDrawing(null, pen, cube));
+
+                DrawingImage image = new(drawings);
+                image.Freeze();
+                return image;
+            }
+
+            private static ImageSource CreateTextIcon(string text, double fontSize, string fontFamily, FontWeight weight, Brush brush)
+            {
+                FormattedText formatted = new(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
+                    new Typeface(new FontFamily(fontFamily), FontStyles.Normal, weight, FontStretches.Normal),
+                    fontSize, Brushes.Black, 1.0);
+                Geometry glyph = FitGeometry(formatted.BuildGeometry(new Point(0, 0)), 1.5);
+
+                DrawingGroup drawings = new();
+                drawings.Children.Add(new GeometryDrawing(brush, null, glyph));
+
+                DrawingImage image = new(drawings);
+                image.Freeze();
+                return image;
+            }
+
+            private static Geometry FitGeometry(Geometry source, double padding)
+            {
+                Rect bounds = source.Bounds;
+                if (bounds.IsEmpty)
+                    return source;
+
+                double scale = Math.Min((16 - 2 * padding) / bounds.Width, (16 - 2 * padding) / bounds.Height);
+                double offsetX = (16 - bounds.Width * scale) / 2 - bounds.X * scale;
+                double offsetY = (16 - bounds.Height * scale) / 2 - bounds.Y * scale;
+
+                TransformGroup transform = new();
+                transform.Children.Add(new ScaleTransform(scale, scale));
+                transform.Children.Add(new TranslateTransform(offsetX, offsetY));
+                transform.Freeze();
+
+                Geometry result = source.Clone();
+                result.Transform = transform;
+                result.Freeze();
+                return result;
+            }
+
+            private static Geometry CreatePolygon(params Point[] points)
+            {
+                List<PathSegment> segments = new(points.Length - 1);
+                for (int i = 1; i < points.Length; i++)
+                    segments.Add(new LineSegment(points[i], true));
+
+                PathGeometry geometry = new();
+                geometry.Figures.Add(new PathFigure(points[0], segments, true));
+                geometry.Freeze();
+                return geometry;
+            }
         }
     }
 }

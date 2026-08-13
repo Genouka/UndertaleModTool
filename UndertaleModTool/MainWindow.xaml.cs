@@ -3016,7 +3016,6 @@ namespace UndertaleModTool
             Regex invalidChars = new Regex(@"Git:|[ (),/:;<=>?@[\]{}]");
             string version = invalidChars.Replace(Version, "");
             httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("UndertaleModTool", version));
-
             double bytesToMB = 1024 * 1024;
 
             if (!Environment.Is64BitOperatingSystem)
