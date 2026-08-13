@@ -102,6 +102,9 @@
         <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
         <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" PrivateAssets="All" />
         <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.10" />
+        <PackageReference Include="YY-Thunks">
+          <Version>1.2.2</Version>
+        </PackageReference>
     </ItemGroup>
     <Target Name="AfterResolveReferences">
         <ItemGroup>

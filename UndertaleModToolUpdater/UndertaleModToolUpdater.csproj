@@ -14,4 +14,8 @@
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="YY-Thunks" Version="1.2.2" />
+  </ItemGroup>
+
 </Project>
