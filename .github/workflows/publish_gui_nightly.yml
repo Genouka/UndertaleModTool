@@ -19,6 +19,11 @@ jobs:
         configuration: [Debug]
         bundled: [true]
         singlefile: [true, false]
+        include:
+          - singlefile: true
+            filename: UndertaleModTool_nightly-Windows-SingleFile
+          - singlefile: false
+            filename: UndertaleModTool_nightly-Windows
 
     runs-on: ${{ matrix.os }}
 
@@ -48,12 +53,12 @@ jobs:
         rm ./${{ matrix.os }}/Underanalyzer.pdb
     - name: Create zip for nightly release Windows GUI
       run: |
-        7z a -tzip GUI-${{ matrix.os }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}-isSingleFile-${{ matrix.singlefile }}.zip ./${{ matrix.os }}/* -mx0 
+        7z a -tzip ${{ matrix.filename }}.zip ./${{ matrix.os }}/* -mx0 
     - name: Upload artifact
       uses: actions/upload-artifact@v7
       with:
-          name: GUI-${{ matrix.os }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}-isSingleFile-${{ matrix.singlefile }}
-          path: GUI-${{ matrix.os }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}-isSingleFile-${{ matrix.singlefile }}.zip
+          name: ${{ matrix.filename }}
+          path: ${{ matrix.filename }}.zip
 
   build_cli:
 
@@ -68,18 +73,22 @@ jobs:
             os: ubuntu-latest
             rid: linux-x64
             output: CLI-ubuntu-latest
+            filename: UTMT_CLI_nightly-Ubuntu
           - target: osx-arm64
             os: macOS-latest
             rid: osx-arm64
             output: CLI-macOS-latest
+            filename: UTMT_CLI_nightly-macOS
           - target: osx-x64
             os: macOS-latest
             rid: osx-x64
             output: CLI-macOS-latest-x86
+            filename: UTMT_CLI_nightly-macOS-x86
           - target: win-x64
             os: windows-latest
             rid: win-x64
             output: CLI-windows-latest
+            filename: UTMT_CLI_nightly-Windows
 
     runs-on: ${{ matrix.os }}
 
@@ -106,12 +115,12 @@ jobs:
         rm ./${{ matrix.output }}/Underanalyzer.pdb
     - name: Create zip for nightly release CLI
       run: |
-        7z a -tzip ${{ matrix.output }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}.zip ./${{ matrix.output }}/* -mx0 
+        7z a -tzip ${{ matrix.filename }}.zip ./${{ matrix.output }}/* -mx0 
     - name: Upload artifact
       uses: actions/upload-artifact@v7
       with:
-          name: ${{ matrix.output }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}
-          path: ${{ matrix.output }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}.zip
+          name: ${{ matrix.filename }}
+          path: ${{ matrix.filename }}.zip
 
   upload:
 
@@ -139,10 +148,10 @@ jobs:
           
           If you encounter any bugs, please make an issue on GitHub.
           
-          这是由 秋冥散雨_Genouka 开发的非官方版本的 UndertaleModTool。
+          这是�?秋冥散雨_Genouka 开发的非官方版本的 UndertaleModTool�?
           
-          如果你遇到任何 Bug ，请在 Github 向此仓库提交 Issue 。
+          如果你遇到任�?Bug ，请�?Github 向此仓库提交 Issue �?
 
-          请注意：程序默认进入为英文，请在设置(菜单栏/File/Settings/Language 选择 简体中文，之后可能会简化一下）
+          请注意：程序默认进入为英文，请在设置(菜单�?File/Settings/Language 选择 简体中文，之后可能会简化一下）
           
-          如果你不清楚该下载哪个，请下载`GUI-windows-latest-Debug-isBundled-true-isSingleFile-false.zip`
+          如果你不清楚该下载哪个，请下载`UndertaleModTool_nightly-Windows.zip`
