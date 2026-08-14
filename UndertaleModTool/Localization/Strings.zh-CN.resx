@@ -2300,6 +2300,18 @@ UndertaleModTool的32位（x86）版本已过时。
   <data name="Editor_NumberLabel" xml:space="preserve">
     <value>{0} (数字)</value>
   </data>
+  <data name="Editor_InferredTypeLabel" xml:space="preserve">
+    <value>{0}（推断类型）</value>
+  </data>
+  <data name="Editor_ArgValueLabel" xml:space="preserve">
+    <value>{0} → {1}</value>
+  </data>
+  <data name="Editor_ArgTypesLabel" xml:space="preserve">
+    <value>参数类型: {0}</value>
+  </data>
+  <data name="Editor_ArgTypesInferredLabel" xml:space="preserve">
+    <value>参数类型（推断）: {0}</value>
+  </data>
   <data name="Room_Horizontal" xml:space="preserve">
     <value>水平</value>
   </data>

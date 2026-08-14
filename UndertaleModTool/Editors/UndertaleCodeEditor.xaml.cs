@@ -42,6 +42,10 @@ using UndertaleModLib.Project;
 using UndertaleModTool.Editors;
 using UndertaleModTool.Localization;
 using UndertaleModTool.Windows;
+using Underanalyzer;
+using Underanalyzer.Decompiler;
+using Underanalyzer.Decompiler.AST;
+using Underanalyzer.Decompiler.GameSpecific;
 using Input = System.Windows.Input;
 
 namespace UndertaleModTool
@@ -724,6 +728,7 @@ namespace UndertaleModTool
             var docLine = textArea.Document.GetLineByNumber(lineNum);
             int lineStartOffset = docLine.Offset;
             int lineEndOffset = docLine.EndOffset;
+            string lineText = textArea.Document.GetText(docLine.Offset, docLine.Length);
 
             foreach (var section in highlighted.Sections)
             {
@@ -739,14 +744,14 @@ namespace UndertaleModTool
                 {
                     sectionStart = section.Offset;
                     sectionLength = section.Length;
-                    return BuildNumberHoverContent(sectionText, data);
+                    return AppendInferredArgumentHover(BuildNumberHoverContent(sectionText, data), sectionText, lineText, offset - lineStartOffset, data);
                 }
 
                 if (section.Color.Name == "Identifier" || section.Color.Name == "Function")
                 {
                     sectionStart = section.Offset;
                     sectionLength = section.Length;
-                    return BuildNameHoverContent(sectionText, data, section.Color.Name == "Function");
+                    return AppendInferredFunctionTypesHover(BuildNameHoverContent(sectionText, data, section.Color.Name == "Function"), sectionText, data);
                 }
             }
 
@@ -997,6 +1002,259 @@ namespace UndertaleModTool
             panel.Children.Add(typeBlock);
 
             return CreateHoverBorder(panel);
+        }
+
+        private Border AppendInferredArgumentHover(Border hoverContent, string numText, string lineText, int offsetInLine, UndertaleData data)
+        {
+            if (!int.TryParse(numText, out int numberValue))
+                return hoverContent;
+
+            if (data?.GameSpecificRegistry?.MacroResolver is not GlobalMacroTypeResolver resolver)
+                return hoverContent;
+
+            if (!TryFindCallArgument(lineText, offsetInLine, out string functionName, out int argIndex))
+                return hoverContent;
+
+            if (GetResolvedFunctionArgType(resolver, functionName, out bool isInferred) is not IMacroTypeFunctionArgs argsType)
+                return hoverContent;
+
+            IMacroType[] perArgTypes = FunctionArgTypeInference.GetFunctionArgumentTypes(argsType);
+            if (perArgTypes is null || argIndex >= perArgTypes.Length || perArgTypes[argIndex] is not IMacroType argType)
+                return hoverContent;
+
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
+            Brush typeBrush = isDarkMode
+                ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
+                : new SolidColorBrush(Color.FromRgb(0, 128, 0));
+
+            StackPanel panel = hoverContent?.Child as StackPanel;
+            if (panel is null)
+            {
+                panel = new StackPanel { MaxWidth = 320 };
+            }
+
+            TextBlock typeBlock = new()
+            {
+                Text = string.Format(LocalizationSource.GetString("Editor_InferredTypeLabel"), DescribeMacroType(argType)),
+                Foreground = typeBrush,
+                FontSize = 11,
+                TextWrapping = TextWrapping.Wrap
+            };
+            panel.Children.Add(typeBlock);
+
+            string valueName = ResolveMacroValueName(argType, numberValue, data);
+            if (valueName != null)
+            {
+                TextBlock valueBlock = new()
+                {
+                    Text = string.Format(LocalizationSource.GetString("Editor_ArgValueLabel"), numberValue, valueName),
+                    Foreground = textBrush,
+                    FontWeight = FontWeights.Bold
+                };
+                panel.Children.Add(valueBlock);
+            }
+
+            if (hoverContent is null)
+                return CreateHoverBorder(panel);
+            return hoverContent;
+        }
+
+        private Border AppendInferredFunctionTypesHover(Border hoverContent, string functionName, UndertaleData data)
+        {
+            if (hoverContent is null || functionName is null)
+                return hoverContent;
+
+            if (data?.GameSpecificRegistry?.MacroResolver is not GlobalMacroTypeResolver resolver)
+                return hoverContent;
+
+            if (GetResolvedFunctionArgType(resolver, functionName, out bool isInferred) is not IMacroTypeFunctionArgs argsType)
+                return hoverContent;
+
+            IMacroType[] perArgTypes = FunctionArgTypeInference.GetFunctionArgumentTypes(argsType);
+            if (perArgTypes is null || perArgTypes.Length == 0)
+                return hoverContent;
+
+            string description = string.Join(", ", perArgTypes.Select(t => t is null ? "?" : DescribeMacroType(t)));
+            if (description.Length > 120)
+                description = description.Substring(0, 117) + "...";
+
+            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            Brush typeBrush = isDarkMode
+                ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
+                : new SolidColorBrush(Color.FromRgb(0, 128, 0));
+
+            StackPanel panel = hoverContent.Child as StackPanel;
+            if (panel is null)
+                return hoverContent;
+
+            TextBlock typesBlock = new()
+            {
+                Text = string.Format(LocalizationSource.GetString(isInferred ? "Editor_ArgTypesInferredLabel" : "Editor_ArgTypesLabel"), description),
+                Foreground = typeBrush,
+                FontSize = 11,
+                TextWrapping = TextWrapping.Wrap
+            };
+            panel.Children.Add(typesBlock);
+
+            return hoverContent;
+        }
+
+        private IMacroType GetResolvedFunctionArgType(GlobalMacroTypeResolver resolver, string functionName, out bool isInferred)
+        {
+            string entryName = (DataContext as UndertaleCode)?.Name?.Content;
+            return resolver.GetResolvedFunctionArgumentTypes(entryName, functionName, out isInferred);
+        }
+
+        /// <summary>
+        /// Finds the enclosing function call and argument index for a position within a single line of code,
+        /// using lightweight text scanning. Returns <see langword="false"/> when the position is not a
+        /// plain integer argument of a call on that line.
+        /// </summary>
+        private static bool TryFindCallArgument(string lineText, int offsetInLine, out string functionName, out int argIndex)
+        {
+            functionName = null;
+            argIndex = -1;
+            if (string.IsNullOrEmpty(lineText) || offsetInLine <= 0 || offsetInLine > lineText.Length)
+                return false;
+
+            // Find the nearest '(' before the offset whose matching ')' is at or beyond the offset
+            int open = -1;
+            for (int i = offsetInLine - 1; i >= 0; i--)
+            {
+                if (lineText[i] != '(')
+                    continue;
+
+                int depth = 1;
+                for (int j = i + 1; j < lineText.Length; j++)
+                {
+                    char c = lineText[j];
+                    if (c == '(')
+                        depth++;
+                    else if (c == ')')
+                        depth--;
+
+                    if (depth == 0)
+                    {
+                        if (j >= offsetInLine)
+                        {
+                            open = i;
+                        }
+                        break;
+                    }
+                }
+                if (open >= 0)
+                    break;
+            }
+            if (open < 0)
+                return false;
+
+            // Extract the identifier immediately before '(' as the function name
+            int nameStart = open;
+            while (nameStart > 0 && (char.IsLetterOrDigit(lineText[nameStart - 1]) || lineText[nameStart - 1] == '_' || lineText[nameStart - 1] == '$'))
+                nameStart--;
+            if (nameStart == open)
+                return false;
+            functionName = lineText.Substring(nameStart, open - nameStart);
+
+            // Count top-level commas between the '(' and the offset
+            int nesting = 0;
+            int commas = 0;
+            for (int i = open + 1; i < offsetInLine; i++)
+            {
+                char c = lineText[i];
+                if (c == '(' || c == '[' || c == '{')
+                    nesting++;
+                else if (c == ')' || c == ']' || c == '}')
+                    nesting--;
+                else if (c == ',' && nesting == 0)
+                    commas++;
+            }
+            argIndex = commas;
+            return true;
+        }
+
+        private static string DescribeMacroType(IMacroType type)
+        {
+            switch (type)
+            {
+                case FunctionArgsMacroType args:
+                    return args.ArgumentCount + " args";
+                case UnionMacroType union:
+                    return DescribeMacroTypeList(union.GetTypes(), " | ");
+                case IntersectMacroType intersect:
+                    return DescribeMacroTypeList(intersect.GetTypes(), " & ");
+                case EnumMacroType enumType:
+                    return "Enum." + enumType.Name;
+                case AssetMacroType asset:
+                    return "Asset." + asset.Type;
+                case MatchMacroType match:
+                    return DescribeConditional(match.ConditionalTypeName, match.ConditionalValue, match.InnerType);
+                case MatchNotMacroType match:
+                    return DescribeConditional(match.ConditionalTypeName, match.ConditionalValue, match.InnerType, negated: true);
+                case ConditionalMacroType conditional:
+                    return conditional.InnerType != null ? DescribeMacroType(conditional.InnerType) : "Conditional";
+                case ConstantsMacroType:
+                    return "Constants";
+                case VirtualKeyMacroType:
+                    return "VirtualKey";
+                case InstanceMacroType:
+                    return "Instance";
+                case ColorMacroType:
+                    return "Color";
+                case BooleanMacroType:
+                    return "Boolean";
+                case NoneMacroType:
+                    return "None";
+                case ArrayInitMacroType:
+                    return "ArrayInit";
+                default:
+                    return type.GetType().Name;
+            }
+        }
+
+        private static string DescribeConditional(string typeName, string value, IMacroType innerType, bool negated = false)
+        {
+            string condition = (typeName ?? "?") + (negated ? " ≠ " : " = ") + (value ?? "?");
+            return innerType != null ? condition + ": " + DescribeMacroType(innerType) : condition;
+        }
+
+        private static string DescribeMacroTypeList(IReadOnlyList<IMacroType> types, string separator)
+        {
+            string description = string.Join(separator, types.Select(DescribeMacroType));
+            if (description.Length > 60)
+                description = description.Substring(0, 57) + "...";
+            return description;
+        }
+
+        /// <summary>
+        /// Resolves a numeric value against a macro type using the decompiler's own resolution logic,
+        /// returning the resulting constant/asset name (e.g. 6 → "ev_mouse"), or <see langword="null"/>.
+        /// </summary>
+        private static string ResolveMacroValueName(IMacroType type, int value, UndertaleData data)
+        {
+            try
+            {
+                GlobalDecompileContext parseContext = GmlLanguageService.GetParseContext(data);
+                UndertaleCode anyCode = data.Code?.FirstOrDefault(x => x != null);
+                if (anyCode is null)
+                    return null;
+
+                DecompileContext context = new(parseContext, anyCode, new DecompileSettings());
+                ASTCleaner cleaner = new(context);
+                Int16Node node = new((short)value, true);
+                IExpressionNode resolved = node.ResolveMacroType(cleaner, type);
+                return resolved switch
+                {
+                    MacroValueNode macro => macro.ValueName,
+                    AssetReferenceNode assetRef => parseContext.GetAssetName(assetRef.AssetType, assetRef.AssetId),
+                    _ => null
+                };
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private Border CreateHoverBorder(UIElement content)
