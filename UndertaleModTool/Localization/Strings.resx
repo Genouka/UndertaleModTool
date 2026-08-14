@@ -2308,6 +2308,9 @@ Use one of the search scripts in the "Find" menu if necessary.</value>
   <data name="Editor_NumberLabel" xml:space="preserve">
     <value>{0} (number)</value>
   </data>
+  <data name="Editor_ResourceIdLabel" xml:space="preserve">
+    <value>Resource ID: {0}</value>
+  </data>
   <data name="Editor_InferredTypeLabel" xml:space="preserve">
     <value>{0} (inferred type)</value>
   </data>

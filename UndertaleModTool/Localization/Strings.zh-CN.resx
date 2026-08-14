@@ -2312,6 +2312,9 @@ UndertaleModTool的32位（x86）版本已过时。
   <data name="Editor_NumberLabel" xml:space="preserve">
     <value>{0} (数字)</value>
   </data>
+  <data name="Editor_ResourceIdLabel" xml:space="preserve">
+    <value>资源 ID：{0}</value>
+  </data>
   <data name="Editor_InferredTypeLabel" xml:space="preserve">
     <value>{0}（推断类型）</value>
   </data>

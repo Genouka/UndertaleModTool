@@ -269,6 +269,7 @@ namespace UndertaleModTool
         private static readonly Dictionary<string, UndertaleNamedResource> ScriptsDict = new();
         private static readonly Dictionary<string, UndertaleNamedResource> FunctionsDict = new();
         private static readonly Dictionary<string, UndertaleNamedResource> CodeDict = new();
+        private static readonly Dictionary<UndertaleNamedResource, int> ResourceIdDict = new();
 
         private static double LastZoomFontSize = 14;
         public double ZoomFontSize = LastZoomFontSize;
@@ -1000,6 +1001,17 @@ namespace UndertaleModTool
                 FontSize = 11
             };
             panel.Children.Add(typeBlock);
+
+            if (ResourceIdDict.TryGetValue(val, out int resourceId))
+            {
+                TextBlock idBlock = new()
+                {
+                    Text = string.Format(LocalizationSource.GetString("Editor_ResourceIdLabel"), resourceId),
+                    Foreground = subTextBrush,
+                    FontSize = 11
+                };
+                panel.Children.Add(idBlock);
+            }
 
             return CreateHoverBorder(panel);
         }
@@ -2334,18 +2346,22 @@ namespace UndertaleModTool
             ScriptsDict.Clear();
             FunctionsDict.Clear();
             CodeDict.Clear();
+            ResourceIdDict.Clear();
 
             foreach (var list in objLists)
             {
                 if (list is null)
                     continue;
 
+                int index = 0;
                 foreach (var obj in list)
                 {
-                    if (obj is not UndertaleNamedResource namedObj)
-                        continue;
-
-                    NamedObjDict[namedObj.Name.Content] = namedObj;
+                    if (obj is UndertaleNamedResource namedObj)
+                    {
+                        NamedObjDict[namedObj.Name.Content] = namedObj;
+                        ResourceIdDict[namedObj] = index;
+                    }
+                    index++;
                 }
             }
             foreach (var scr in data.Scripts)
