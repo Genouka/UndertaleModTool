@@ -29,16 +29,18 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
                 <CheckBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="3" Content="{loc:Loc GML_UseCSSHexColors}" ToolTip="{loc:Loc GML_UseCSSHexColors_Tooltip}"
                     IsChecked="{Binding DecompilerSettings.UseCSSColors}"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="2" Margin="3" Text="{loc:Loc GML_InstanceIdPrefix}" ToolTip="{loc:Loc GML_InstanceIdPrefix_Tooltip}"/>
-                <local:TextBoxDark Grid.Row="1" Grid.Column="3" Margin="3" Grid.ColumnSpan="1"
+                <local:TextBoxDark Grid.Row="1" Grid.Column="3" Margin="3"
                     Text="{Binding InstanceIdPrefix}"/>
             </Grid>
             <Separator Margin="10,0,10,0"/>
@@ -100,8 +102,8 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Margin="3" Text="{loc:Loc GML_AddEmptyLines}" ToolTip="{loc:Loc GML_AddEmptyLines_Tooltip}"/>
-                <Grid Grid.Row="3" Grid.Column="2" Margin="3,3,3,3">
+                <TextBlock Grid.Row="0" Grid.Column="0" Margin="3" Text="{loc:Loc GML_AddEmptyLines}" ToolTip="{loc:Loc GML_AddEmptyLines_Tooltip}"/>
+                <Grid Grid.Row="0" Grid.Column="2" Margin="3,3,3,3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="220"/>
                         <ColumnDefinition Width="Auto" MinWidth="220"/>
@@ -142,14 +144,15 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Margin="3" Text="{loc:Loc GML_PerformCleanups}"
+                <TextBlock Grid.Row="0" Grid.Column="0" Margin="3" Text="{loc:Loc GML_PerformCleanups}"
                            ToolTip="{loc:Loc GML_PerformCleanups_Tooltip}"/>
-                <Grid Grid.Row="3" Grid.Column="2" Margin="3,3,3,3">
+                <Grid Grid.Row="0" Grid.Column="2" Margin="3,3,3,3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="220"/>
                         <ColumnDefinition Width="Auto" MinWidth="220"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -172,6 +175,9 @@
                     <CheckBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="3" Content="Template strings" 
                               ToolTip="If enabled, the decompiler will attempt to rewrite string()/@@string@@() as template strings." 
                               IsChecked="{Binding DecompilerSettings.CleanupTemplateStrings}"/>
+                    <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_InferFunctionArgumentTypes}"
+                              ToolTip="{loc:Loc GML_InferFunctionArgumentTypes_Tooltip}"
+                              IsChecked="{Binding DecompilerSettings.InferFunctionArgumentTypes}"/>
                 </Grid>
             </Grid>
             <Separator Margin="10,0,10,0"/>

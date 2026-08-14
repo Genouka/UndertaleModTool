@@ -726,6 +726,12 @@
   <data name="GML_CleanupLocalVarDeclarations_Tooltip" xml:space="preserve">
     <value>如果启用，局部变量声明将根据其作用域放置，作用域是根据代码中的使用情况检测的。</value>
   </data>
+  <data name="GML_InferFunctionArgumentTypes" xml:space="preserve">
+    <value>推断脚本参数类型</value>
+  </data>
+  <data name="GML_InferFunctionArgumentTypes_Tooltip" xml:space="preserve">
+    <value>如果启用，反编译器将分析每个脚本中 argument0 等参数的最终流向来推断其参数类型，并在调用这些脚本的位置将整数字面量展开为命名常量（枚举、资源、颜色等）。</value>
+  </data>
   <data name="GML_RestoreToDefaults" xml:space="preserve">
     <value>恢复默认值</value>
   </data>

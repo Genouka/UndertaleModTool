@@ -18,7 +18,7 @@ namespace UndertaleModLib.Decompiler;
 /// <remarks>
 /// Can be used for multiple runs of both the Underanalyzer decompiler and compiler, and is generally thread-safe after initialization.
 /// </remarks>
-public class GlobalDecompileContext : IGameContext
+public class GlobalDecompileContext : IGameContext, IFunctionArgTypeProvider
 {
     /// <summary>
     /// Associated game data for this decompile context.
@@ -63,6 +63,7 @@ public class GlobalDecompileContext : IGameContext
     public GameSpecificRegistry GameSpecificRegistry => Data?.GameSpecificRegistry;
     public IBuiltins Builtins { get; private set; } = null;
     public ICodeBuilder CodeBuilder { get; private set; } = null;
+    public IFunctionArgTypeProvider FunctionArgTypeProvider => this;
 
     /// <summary>
     /// The current compile group being used for main compile, and for linking.
@@ -74,6 +75,10 @@ public class GlobalDecompileContext : IGameContext
 
     // Lookup from script name to index (and potentially encoded asset type)
     private Dictionary<string, int> _scriptIdLookup = null;
+
+    // Lookup from code entry name to code entry, for root code entries (used for function argument type inference)
+    private Dictionary<string, IGMCode> _rootCodeByName = null;
+    private readonly object _rootCodeByNameLock = new();
 
     // Prefix used for instance IDs, cached per each context
     private readonly string _instanceIdPrefix;
@@ -499,5 +504,44 @@ public class GlobalDecompileContext : IGameContext
         }
         name = null;
         return false;
+    }
+
+    /// <inheritdoc/>
+    public IGMCode GetFunctionCode(string functionName)
+    {
+        if (string.IsNullOrEmpty(functionName))
+        {
+            return null;
+        }
+
+        lock (_rootCodeByNameLock)
+        {
+            // Build the lookup of root code entries by name, once
+            if (_rootCodeByName is null)
+            {
+                _rootCodeByName = [];
+                if (Data.Code is IList<UndertaleCode> codeEntries)
+                {
+                    foreach (UndertaleCode code in codeEntries)
+                    {
+                        if (code.ParentEntry is null && code.Name?.Content is string name)
+                        {
+                            if (!_rootCodeByName.ContainsKey(name))
+                            {
+                                _rootCodeByName[name] = code;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Global functions/scripts are generally stored in code entries named "gml_Script_<name>"
+            if (_rootCodeByName.TryGetValue("gml_Script_" + functionName, out IGMCode result) ||
+                _rootCodeByName.TryGetValue(functionName, out result))
+            {
+                return result;
+            }
+            return null;
+        }
     }
 }

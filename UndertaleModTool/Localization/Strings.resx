@@ -726,6 +726,12 @@
   <data name="GML_CleanupLocalVarDeclarations_Tooltip" xml:space="preserve">
     <value>If enabled, local variable declarations will be placed according to their scopes, which are detected based on usage in the code.</value>
   </data>
+  <data name="GML_InferFunctionArgumentTypes" xml:space="preserve">
+    <value>Infer script argument types</value>
+  </data>
+  <data name="GML_InferFunctionArgumentTypes_Tooltip" xml:space="preserve">
+    <value>If enabled, the decompiler will attempt to infer the types of user script arguments by analyzing how arguments such as argument0 flow through each script, expanding integer literals into named constants (enums, assets, colors, etc.) at call sites.</value>
+  </data>
   <data name="GML_RestoreToDefaults" xml:space="preserve">
     <value>Restore to defaults</value>
   </data>
