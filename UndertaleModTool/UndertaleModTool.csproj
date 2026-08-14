@@ -123,7 +123,6 @@
         <TrimmerRootAssembly Include="System.Diagnostics.PerformanceCounter" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Scripts" />
         <Content Include="Scripts/**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
