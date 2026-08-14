@@ -51,7 +51,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="{loc:Loc SearchInCode_ReplaceWith}" VerticalAlignment="Top" HorizontalAlignment="Left" Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                <TextBlock Grid.Column="0" Text="{loc:Loc SearchInCode_ReplaceWith}" VerticalAlignment="Top" HorizontalAlignment="Left" Foreground="{StaticResource {x:Static SystemColors.ControlTextBrushKey}}"/>
                 <UndertaleModTool:TextBoxDark x:Name="ReplaceTextBox" Grid.Column="1" TextWrapping="Wrap" AcceptsReturn="True" Height="36" VerticalScrollBarVisibility="Auto" PreviewKeyDown="ReplaceTextBox_PreviewKeyDown"/>
             </Grid>
             <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,5,0,0">
