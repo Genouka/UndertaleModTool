@@ -275,7 +275,7 @@
                 <local:TextBoxDark Grid.Row="8" Grid.Column="1" Margin="3" Text="{Binding Options.Frequency}"/>
 
                 <TextBlock Grid.Row="9" Grid.Column="0" Margin="3" Text="{loc:Loc Editor_VertexSync}"/>
-                <local:TextBoxDark Grid.Row="9" Grid.Column="1" Margin="3" Text="{Binding Options.Vertexsync}"/>
+                <local:TextBoxDark Grid.Row="9" Grid.Column="1" Margin="3" Text="{Binding Options.VertexSync}"/>
 
                 <TextBlock Grid.Row="10" Grid.Column="0" Margin="3" Text="{loc:Loc Editor_Priority}"/>
                 <local:TextBoxDark Grid.Row="10" Grid.Column="1" Margin="3" Text="{Binding Options.Priority}"/>
