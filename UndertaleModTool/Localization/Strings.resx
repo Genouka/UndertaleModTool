@@ -732,6 +732,18 @@
   <data name="GML_InferFunctionArgumentTypes_Tooltip" xml:space="preserve">
     <value>If enabled, the decompiler will attempt to infer the types of user script arguments by analyzing how arguments such as argument0 flow through each script, expanding integer literals into named constants (enums, assets, colors, etc.) at call sites.</value>
   </data>
+  <data name="GML_ReverseInferVariableTypes" xml:space="preserve">
+    <value>Reverse-infer variable types</value>
+  </data>
+  <data name="GML_ReverseInferVariableTypes_Tooltip" xml:space="preserve">
+    <value>If enabled, inferred argument types are propagated back onto variables that were assigned from those arguments, so that literals assigned to those variables (e.g. colors) are also expanded.</value>
+  </data>
+  <data name="GML_InlinePropagateVariableTypes" xml:space="preserve">
+    <value>Propagate variable types inline</value>
+  </data>
+  <data name="GML_InlinePropagateVariableTypes_Tooltip" xml:space="preserve">
+    <value>If enabled, when an argument with a known type is assigned to a variable, the variable's type is registered on the spot, expanding literals assigned to it later (e.g. colors).</value>
+  </data>
   <data name="GML_RestoreToDefaults" xml:space="preserve">
     <value>Restore to defaults</value>
   </data>

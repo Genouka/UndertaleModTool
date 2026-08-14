@@ -53,12 +53,13 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
                 <CheckBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="3" Content="{loc:Loc GML_AlwaysUseSemicolons}" ToolTip="{loc:Loc GML_AlwaysUseSemicolons_Tooltip}"
                     IsChecked="{Binding DecompilerSettings.UseSemicolon}"/>
@@ -178,6 +179,12 @@
                     <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_InferFunctionArgumentTypes}"
                               ToolTip="{loc:Loc GML_InferFunctionArgumentTypes_Tooltip}"
                               IsChecked="{Binding DecompilerSettings.InferFunctionArgumentTypes}"/>
+                    <CheckBox Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_ReverseInferVariableTypes}"
+                              ToolTip="{loc:Loc GML_ReverseInferVariableTypes_Tooltip}"
+                              IsChecked="{Binding DecompilerSettings.ReverseInferVariableTypes}"/>
+                    <CheckBox Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_InlinePropagateVariableTypes}"
+                              ToolTip="{loc:Loc GML_InlinePropagateVariableTypes_Tooltip}"
+                              IsChecked="{Binding DecompilerSettings.InlinePropagateVariableTypes}"/>
                 </Grid>
             </Grid>
             <Separator Margin="10,0,10,0"/>

@@ -232,6 +232,8 @@ namespace UndertaleModTool
         public bool CleanupTemplateStrings { get => _innerSettings.CleanupTemplateStrings; set => _innerSettings.CleanupTemplateStrings = value; }
         public bool CreateEnumDeclarations { get => _innerSettings.CreateEnumDeclarations; set => _innerSettings.CreateEnumDeclarations = value; }
         public bool InferFunctionArgumentTypes { get => _innerSettings.InferFunctionArgumentTypes; set => _innerSettings.InferFunctionArgumentTypes = value; }
+        public bool ReverseInferVariableTypes { get => _innerSettings.ReverseInferVariableTypes; set => _innerSettings.ReverseInferVariableTypes = value; }
+        public bool InlinePropagateVariableTypes { get => _innerSettings.InlinePropagateVariableTypes; set => _innerSettings.InlinePropagateVariableTypes = value; }
         public string UnknownEnumName { get => _innerSettings.UnknownEnumName; set => _innerSettings.UnknownEnumName = value; }
         public string UnknownEnumValuePattern { get => _innerSettings.UnknownEnumValuePattern; set => _innerSettings.UnknownEnumValuePattern = value; }
         public string UnknownArgumentNamePattern { get => _innerSettings.UnknownArgumentNamePattern; set => _innerSettings.UnknownArgumentNamePattern = value; }

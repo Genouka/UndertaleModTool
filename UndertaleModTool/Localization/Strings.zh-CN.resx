@@ -732,6 +732,18 @@
   <data name="GML_InferFunctionArgumentTypes_Tooltip" xml:space="preserve">
     <value>如果启用，反编译器将分析每个脚本中 argument0 等参数的最终流向来推断其参数类型，并在调用这些脚本的位置将整数字面量展开为命名常量（枚举、资源、颜色等）。</value>
   </data>
+  <data name="GML_ReverseInferVariableTypes" xml:space="preserve">
+    <value>反向推断变量类型</value>
+  </data>
+  <data name="GML_ReverseInferVariableTypes_Tooltip" xml:space="preserve">
+    <value>如果启用，推断出的参数类型会反向传播到由此类参数赋值的变量上，使赋值给这些变量的字面量（如颜色）也能展开。</value>
+  </data>
+  <data name="GML_InlinePropagateVariableTypes" xml:space="preserve">
+    <value>内联传播变量类型</value>
+  </data>
+  <data name="GML_InlinePropagateVariableTypes_Tooltip" xml:space="preserve">
+    <value>如果启用，当已知类型的参数被赋值给变量时，会即时注册该变量的类型，使其后赋给该变量的字面量（如颜色）得以展开。</value>
+  </data>
   <data name="GML_RestoreToDefaults" xml:space="preserve">
     <value>恢复默认值</value>
   </data>
