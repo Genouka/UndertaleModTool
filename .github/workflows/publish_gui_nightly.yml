@@ -128,6 +128,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - rid: linux-x64
+            os: ubuntu-latest
+            filename: UndertaleModToolAvalonia_nightly-Linux
           - rid: win-x64
             os: windows-latest
             filename: UndertaleModToolAvalonia_nightly-Windows
