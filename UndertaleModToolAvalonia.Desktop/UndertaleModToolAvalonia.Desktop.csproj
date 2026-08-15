@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <OutputType>WinExe</OutputType>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+        <ApplicationIcon>..\UndertaleModToolAvalonia\Assets\Icon.ico</ApplicationIcon>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+        <PackageReference Include="SDL3-CS" Version="3.4.12.3" />
+        <PackageReference Include="SDL3-CS.Linux" Version="3.4.12.1" />
+        <PackageReference Include="SDL3-CS.Linux.Mixer" Version="3.2.4.7" />
+        <PackageReference Include="SDL3-CS.MacOS" Version="3.4.12.1" />
+        <PackageReference Include="SDL3-CS.MacOS.Mixer" Version="3.2.4.7" />
+        <PackageReference Include="SDL3-CS.Windows" Version="3.4.12.1" />
+        <PackageReference Include="SDL3-CS.Windows.Mixer" Version="3.2.4.7" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\UndertaleModToolAvalonia\UndertaleModToolAvalonia.csproj" />
+    </ItemGroup>
+</Project>

@@ -122,9 +122,103 @@ jobs:
           name: ${{ matrix.filename }}
           path: ${{ matrix.filename }}.zip
 
+  build_avalonia_gui:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+            filename: UndertaleModToolAvalonia_nightly-Windows
+          - rid: osx-arm64
+            os: macOS-latest
+            filename: UndertaleModToolAvalonia_nightly-macOS
+          - rid: osx-x64
+            os: macOS-latest
+            filename: UndertaleModToolAvalonia_nightly-macOS-x86
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: true
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+    - name: Restore dependencies
+      run: dotnet restore UndertaleModToolAvalonia.Desktop
+    - name: Publish ${{ matrix.rid }} Avalonia GUI
+      run: |
+        dotnet publish UndertaleModToolAvalonia.Desktop -c Debug -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ${{ matrix.filename }}
+    - name: Copy external files
+      run: |
+        cp ./README.md ./${{ matrix.filename }}/
+        cp ./SCRIPTS.md ./${{ matrix.filename }}/
+        cp ./LICENSE.txt ./${{ matrix.filename }}/
+        rm ./${{ matrix.filename }}/Underanalyzer.pdb
+    - name: Create zip for nightly release Avalonia GUI
+      run: |
+        7z a -tzip ${{ matrix.filename }}.zip ./${{ matrix.filename }}/* -mx0
+    - name: Upload artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.filename }}
+        path: ${{ matrix.filename }}.zip
+
+  build_avalonia_android:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [android-arm64, android-x64]
+        include:
+          - rid: android-arm64
+            filename: UndertaleModToolAvalonia_nightly-Android-arm64
+          - rid: android-x64
+            filename: UndertaleModToolAvalonia_nightly-Android-x64
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: true
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+    - name: Setup JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+    - name: Install Android workload
+      run: dotnet workload install android
+    - name: Publish Avalonia Android APK
+      run: |
+        dotnet publish UndertaleModToolAvalonia.Android -c Debug -r ${{ matrix.rid }} --self-contained true -p:AndroidSdkDirectory="$env:ANDROID_HOME" --output ${{ github.workspace }}\Avalonia-Android-${{ matrix.rid }}
+    - name: Copy external files
+      shell: pwsh
+      run: |
+        Copy-Item -Path ./README.md, ./SCRIPTS.md, ./LICENSE.txt -Destination ./Avalonia-Android-${{ matrix.rid }}/
+        Remove-Item -Path ./Avalonia-Android-${{ matrix.rid }}/Underanalyzer.pdb -ErrorAction SilentlyContinue
+    - name: Create zip for nightly release Avalonia Android
+      shell: pwsh
+      run: |
+        Remove-Item -Path ./Avalonia-Android-${{ matrix.rid }}/com.undertalemodtool.avalonia.android.apk -ErrorAction SilentlyContinue
+        7z a -tzip ${{ matrix.filename }}.zip ./Avalonia-Android-${{ matrix.rid }}/* -mx0
+    - name: Upload artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.filename }}
+        path: ${{ matrix.filename }}.zip
+
   upload:
 
-    needs: [build_gui, build_cli]
+    needs: [build_gui, build_cli, build_avalonia_gui, build_avalonia_android]
     runs-on: ubuntu-latest
     steps:
     - name: Download artifacts

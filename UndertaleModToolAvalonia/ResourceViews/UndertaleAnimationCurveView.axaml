@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+             xmlns:undertalem="clr-namespace:UndertaleModLib.Models;assembly=UndertaleModLib"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="UndertaleModToolAvalonia.UndertaleAnimationCurveView"
+             x:DataType="l:UndertaleAnimationCurveViewModel">
+    <UserControl.Resources>
+        <l:EnumTypeToValuesConverter x:Key="EnumTypeToValuesConverter" />
+    </UserControl.Resources>
+    
+    <ScrollViewer>
+        <StackPanel Classes="PaddedProperties">
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                <Label Content="{l:Loc Common_Name}"/>
+                <l:UndertaleStringReferenceView Reference="{Binding AnimationCurve.Name}" />
+
+                <Label Content="{l:Loc AnimCurve_GraphType}"/>
+                <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleAnimationCurve+GraphTypeEnum}, Converter={StaticResource EnumTypeToValuesConverter}}"
+                          SelectedItem="{Binding AnimationCurve.GraphType}" />
+
+                <Label Content="{l:Loc AnimCurve_Channels}"/>
+                <l:EditableDataGrid Name="ChannelsDataGrid" ItemsSource="{Binding AnimationCurve.Channels}" ItemFactory="{Binding CreateChannel}" HeadersVisibility="None"
+                                    SelectionChanged="{Binding ChannelSelectedChanged}">
+                    <l:EditableDataGrid.Columns>
+                        <DataGridTemplateColumn Header="{l:Loc Common_Name}" Width="1*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="undertalem:UndertaleAnimationCurve+Channel">
+                                    <TextBlock Text="{Binding Name.Content}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </l:EditableDataGrid.Columns>
+                </l:EditableDataGrid>
+            </Grid>
+
+            <StackPanel IsVisible="{Binding ChannelSelected, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <Separator />
+                
+                <Label>
+                    <TextBlock FontWeight="Bold">{l:Loc AnimCurve_SelectedChannelProperties} (<TextBlock Text="{Binding ChannelSelected.Name.Content}"/>)</TextBlock>
+                </Label>
+
+                <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                    <Label Content="{l:Loc Common_Name}"/>
+                    <l:UndertaleStringReferenceView Reference="{Binding ChannelSelected.Name}"/>
+                        
+                    <Label Content="{l:Loc AnimCurve_CurveType}"/>
+                    <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleAnimationCurve+Channel+CurveType}, Converter={StaticResource EnumTypeToValuesConverter}}"
+                                SelectedItem="{Binding ChannelSelected.Curve}" />
+                        
+                    <Label Content="{l:Loc AnimCurve_Iterations}"/>
+                    <TextBox Text="{Binding ChannelSelected.Iterations}" />
+
+                    <Label Content="{l:Loc Editor_Points}"/>
+                    <l:EditableDataGrid ItemsSource="{Binding ChannelPoints}" ItemFactory="{Binding CreateWrapperPoint}">
+                        <l:EditableDataGrid.Columns>
+                            <DataGridTemplateColumn Header="{l:Loc Common_H}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="l:ChannelPointWrapper">
+                                        <TextBox Text="{Binding X}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_V}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="l:ChannelPointWrapper">
+                                        <TextBox Text="{Binding Value}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_BezierX0}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="l:ChannelPointWrapper">
+                                        <TextBox Text="{Binding BezierX0}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_BezierY0}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="l:ChannelPointWrapper">
+                                        <TextBox Text="{Binding BezierY0}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_BezierX1}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="l:ChannelPointWrapper">
+                                        <TextBox Text="{Binding BezierX1}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_BezierY1}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="l:ChannelPointWrapper">
+                                        <TextBox Text="{Binding BezierY1}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </l:EditableDataGrid.Columns>
+                    </l:EditableDataGrid>
+                </Grid>
+                <!-- TODO: Visual curve editor -->
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

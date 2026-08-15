@@ -1,0 +1,118 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+             xmlns:undertalem="clr-namespace:UndertaleModLib.Models;assembly=UndertaleModLib"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="UndertaleModToolAvalonia.UndertaleShaderView"
+             x:DataType="l:UndertaleShaderViewModel">
+    <UserControl.Resources>
+        <l:EnumTypeToValuesConverter x:Key="EnumTypeToValuesConverter" />
+    </UserControl.Resources>
+
+    <ScrollViewer>
+        <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*" Classes="PaddedProperties">
+            <Label Content="{l:Loc Common_Name}"/>
+            <l:UndertaleStringReferenceView Reference="{Binding Shader.Name}" />
+
+            <Label Content="{l:Loc Common_Type}"/>
+            <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleShader+ShaderType}, Converter={StaticResource EnumTypeToValuesConverter}}"
+                      SelectedItem="{Binding Shader.Type}" />
+
+            <Label Content="{l:Loc Common_Version}"/>
+            <TextBox Text="{Binding Shader.Version}" />
+
+            <Label Content="{l:Loc Editor_Shader_GLSLESVertex}"/>
+            <Expander Header="{l:Loc Editor_Code}">
+                <l:UndertaleStringReferenceView Reference="{Binding Shader.GLSL_ES_Vertex}" />
+            </Expander>
+
+            <Label Content="{l:Loc Editor_Shader_GLSLESFragment}"/>
+            <Expander Header="{l:Loc Editor_Code}">
+                <l:UndertaleStringReferenceView Reference="{Binding Shader.GLSL_ES_Fragment}" />
+            </Expander>
+
+            <Label Content="{l:Loc Editor_Shader_GLSLVertex}"/>
+            <Expander Header="{l:Loc Editor_Code}">
+                <l:UndertaleStringReferenceView Reference="{Binding Shader.GLSL_Vertex}" />
+            </Expander>
+
+            <Label Content="{l:Loc Editor_Shader_GLSLFragment}"/>
+            <Expander Header="{l:Loc Editor_Code}">
+                <l:UndertaleStringReferenceView Reference="{Binding Shader.GLSL_Fragment}" />
+            </Expander>
+
+            <Label Content="{l:Loc Editor_Shader_HLSL9Vertex}"/>
+            <Expander Header="{l:Loc Editor_Code}">
+                <l:UndertaleStringReferenceView Reference="{Binding Shader.HLSL9_Vertex}" />
+            </Expander>
+
+            <Label Content="{l:Loc Editor_Shader_HLSL9Fragment}"/>
+            <Expander Header="{l:Loc Editor_Code}">
+                <l:UndertaleStringReferenceView Reference="{Binding Shader.HLSL9_Fragment}" />
+            </Expander>
+
+            <Label Content="{l:Loc Editor_Shader_HLSL11Vertex}"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ImportRawShaderDataCommand}" CommandParameter="HLSL11_VertexData" Content="{l:Loc Common_Import}"/>
+                <Button Command="{Binding ExportRawShaderDataCommand}" CommandParameter="HLSL11_VertexData" Content="{l:Loc Common_Export}"/>
+            </StackPanel>
+
+            <Label Content="{l:Loc Editor_Shader_HLSL11Pixel}"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ImportRawShaderDataCommand}" CommandParameter="HLSL11_PixelData" Content="{l:Loc Common_Import}"/>
+                <Button Command="{Binding ExportRawShaderDataCommand}" CommandParameter="HLSL11_PixelData" Content="{l:Loc Common_Export}"/>
+            </StackPanel>
+
+            <Label Content="{l:Loc Editor_Shader_PSSLVertex}"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ImportRawShaderDataCommand}" CommandParameter="PSSL_VertexData" Content="{l:Loc Common_Import}"/>
+                <Button Command="{Binding ExportRawShaderDataCommand}" CommandParameter="PSSL_VertexData" Content="{l:Loc Common_Export}"/>
+            </StackPanel>
+
+            <Label Content="{l:Loc Editor_Shader_PSSLPixel}"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ImportRawShaderDataCommand}" CommandParameter="PSSL_PixelData" Content="{l:Loc Common_Import}"/>
+                <Button Command="{Binding ExportRawShaderDataCommand}" CommandParameter="PSSL_PixelData" Content="{l:Loc Common_Export}"/>
+            </StackPanel>
+
+            <Label Content="{l:Loc Editor_Shader_CgPSVitaVertex}"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ImportRawShaderDataCommand}" CommandParameter="Cg_PSVita_VertexData" Content="{l:Loc Common_Import}"/>
+                <Button Command="{Binding ExportRawShaderDataCommand}" CommandParameter="Cg_PSVita_VertexData" Content="{l:Loc Common_Export}"/>
+            </StackPanel>
+
+            <Label Content="{l:Loc Editor_Shader_CgPSVitaPixel}"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ImportRawShaderDataCommand}" CommandParameter="Cg_PSVita_PixelData" Content="{l:Loc Common_Import}"/>
+                <Button Command="{Binding ExportRawShaderDataCommand}" CommandParameter="Cg_PSVita_PixelData" Content="{l:Loc Common_Export}"/>
+            </StackPanel>
+
+            <Label Content="{l:Loc Editor_Shader_CgPS3Vertex}"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ImportRawShaderDataCommand}" CommandParameter="Cg_PS3_VertexData" Content="{l:Loc Common_Import}"/>
+                <Button Command="{Binding ExportRawShaderDataCommand}" CommandParameter="Cg_PS3_VertexData" Content="{l:Loc Common_Export}"/>
+            </StackPanel>
+
+            <Label Content="{l:Loc Editor_Shader_CgPS3Pixel}"/>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ImportRawShaderDataCommand}" CommandParameter="Cg_PS3_PixelData" Content="{l:Loc Common_Import}"/>
+                <Button Command="{Binding ExportRawShaderDataCommand}" CommandParameter="Cg_PS3_PixelData" Content="{l:Loc Common_Export}"/>
+            </StackPanel>
+
+            <Label Content="{l:Loc Editor_Shader_VertexShaderAttributes}"/>
+            <l:EditableDataGrid ItemsSource="{Binding Shader.VertexShaderAttributes}" ItemFactory="{Binding CreateVertexShaderAttribute}" HeadersVisibility="None">
+                <l:EditableDataGrid.Columns>
+                    <DataGridTemplateColumn Header="{l:Loc Common_Name}" Width="1*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate DataType="undertalem:UndertaleShader+VertexShaderAttribute">
+                                <l:UndertaleStringReferenceView Reference="{Binding Name}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </l:EditableDataGrid.Columns>
+            </l:EditableDataGrid>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

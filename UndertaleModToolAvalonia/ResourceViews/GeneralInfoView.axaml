@@ -1,0 +1,223 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+             xmlns:undertale="clr-namespace:UndertaleModLib;assembly=UndertaleModLib"
+             xmlns:undertalem="clr-namespace:UndertaleModLib.Models;assembly=UndertaleModLib"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="UndertaleModToolAvalonia.GeneralInfoView"
+             x:DataType="l:GeneralInfoViewModel">
+    <UserControl.Resources>
+        <l:ByteArrayToStringConverter x:Key="ByteArrayToStringConverter" />
+        <l:UndertaleColorToColorConverter x:Key="UndertaleColorToColorConverter" />
+        <l:VersionCompareConverter x:Key="VersionCompareConverter" />
+    </UserControl.Resources>
+
+    <ScrollViewer>
+        <StackPanel Classes="PaddedProperties">
+            <StackPanel IsVisible="{Binding GeneralInfo, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <TextBlock FontWeight="Bold" Text="{l:Loc Editor_GeneralInfo}"/>
+                <Separator/>
+
+                <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                    <Label Content="{l:Loc Editor_DisableGMSDebugger}"/>
+                    <CheckBox IsChecked="{Binding GeneralInfo.IsDebuggerDisabled}"/>
+
+                    <Label Content="{l:Loc Editor_BytecodeVersion}"/>
+                    <TextBox Text="{Binding GeneralInfo.BytecodeVersion}"/>
+
+                    <Label Content="{l:Loc Editor_FileName}"/>
+                    <l:UndertaleStringReferenceView Reference="{Binding GeneralInfo.FileName}"/>
+
+                    <Label Content="{l:Loc Editor_Config}"/>
+                    <l:UndertaleStringReferenceView Reference="{Binding GeneralInfo.Config}"/>
+
+                    <Label Content="{l:Loc Editor_LastObjectID}"/>
+                    <TextBox Text="{Binding GeneralInfo.LastObj}"/>
+
+                    <Label Content="{l:Loc Editor_LastTileID}"/>
+                    <TextBox Text="{Binding GeneralInfo.LastTile}"/>
+
+                    <Label Content="{l:Loc Editor_GameID}"/>
+                    <TextBox Text="{Binding GeneralInfo.GameID}"/>
+
+                    <Label Content="{l:Loc Editor_DirectPlayGUID}"/>
+                    <TextBox Text="{Binding GeneralInfo.DirectPlayGuid}"/>
+
+                    <Label Content="{l:Loc Common_Name}"/>
+                    <l:UndertaleStringReferenceView Reference="{Binding GeneralInfo.Name}"/>
+
+                    <Label Content="{l:Loc Editor_Version}"/>
+                    <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="*,Auto,*,Auto,*,Auto,*">
+                        <TextBox Text="{Binding GeneralInfo.Major}"/>
+                        <TextBlock Text="."/>
+                        <TextBox Text="{Binding GeneralInfo.Minor}"/>
+                        <TextBlock Text="."/>
+                        <TextBox Text="{Binding GeneralInfo.Release}"/>
+                        <TextBlock Text="."/>
+                        <TextBox Text="{Binding GeneralInfo.Build}"/>
+                    </Grid>
+
+                    <Label Content="{l:Loc Editor_DefaultWindowSize}"/>
+                    <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="*,Auto,*">
+                        <TextBox Text="{Binding GeneralInfo.DefaultWindowWidth}"/>
+                        <TextBlock Text="x"/>
+                        <TextBox Text="{Binding GeneralInfo.DefaultWindowHeight}"/>
+                    </Grid>
+
+                    <Label Content="{l:Loc Common_Flags}"/>
+                    <l:FlagsBoxView Value="{Binding GeneralInfo.Info}" />
+
+                    <Label Content="{l:Loc Editor_LicenseMD5}"/>
+                    <TextBox Text="{Binding GeneralInfo.LicenseMD5, Converter={StaticResource ByteArrayToStringConverter}}" />
+
+                    <!-- TODO: Format it as hex -->
+                    <Label Content="{l:Loc Editor_LicenseCRC32}"/>
+                    <TextBox Text="{Binding GeneralInfo.LicenseCRC32}" />
+
+                    <!-- TODO: Format it as date -->
+                    <Label Content="{l:Loc Editor_Timestamp}"/>
+                    <TextBox Text="{Binding GeneralInfo.Timestamp}" />
+
+                    <Label Content="{l:Loc Editor_DisplayName}"/>
+                    <l:UndertaleStringReferenceView Reference="{Binding GeneralInfo.DisplayName}" />
+
+                    <Label Content="{l:Loc Editor_ActiveTargets}"/>
+                    <TextBox Text="{Binding GeneralInfo.ActiveTargets}" />
+
+                    <Label Content="{l:Loc Editor_FunctionClassifications}"/>
+                    <l:FlagsBoxView Value="{Binding GeneralInfo.FunctionClassifications}" />
+
+                    <Label Content="{l:Loc Editor_SteamAppID}"/>
+                    <TextBox Text="{Binding GeneralInfo.SteamAppID}" />
+
+                    <Label Content="{l:Loc Editor_DebuggerPort}"/>
+                    <TextBox Text="{Binding GeneralInfo.DebuggerPort}" />
+
+                    <Label Content="{l:Loc Editor_RoomOrder}"/>
+                    <Expander Header="{l:Loc Common_Room}">
+                        <l:EditableDataGrid ItemsSource="{Binding GeneralInfo.RoomOrder}" ItemFactory="{Binding CreateRoomOrderItem}" HeadersVisibility="None">
+                            <l:EditableDataGrid.Columns>
+                                <DataGridTemplateColumn Header="{l:Loc Common_Room}" Width="1*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <DataTemplate.DataType>
+                                                <x:Type TypeName="undertale:UndertaleResourceById" x:TypeArguments="undertalem:UndertaleRoom,undertale:UndertaleChunkROOM"/>
+                                            </DataTemplate.DataType>
+                                            <l:UndertaleResourceReferenceView Reference="{Binding Resource}" ReferenceType="undertalem:UndertaleRoom"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </l:EditableDataGrid.Columns>
+                        </l:EditableDataGrid>
+                    </Expander>
+                </Grid>
+
+                <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*"
+                      IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
+                      Converter={StaticResource VersionCompareConverter},
+                      ConverterParameter=GE2}">
+                    <Label Content="{l:Loc Editor_FPS}"/>
+                    <TextBox Text="{Binding GeneralInfo.GMS2FPS}" />
+
+                    <Label Content="{l:Loc Editor_AllowStatistics}"/>
+                    <CheckBox IsChecked="{Binding GeneralInfo.GMS2AllowStatistics}"/>
+
+                    <!-- TODO: Convert to GUID -->
+                    <Label Content="{l:Loc Editor_GameGUID}"/>
+                    <TextBox Text="{Binding GeneralInfo.GMS2GameGUID, Converter={StaticResource ByteArrayToStringConverter}}" />
+                </Grid>
+            </StackPanel>
+
+            <StackPanel IsVisible="{Binding Options, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <TextBlock FontWeight="Bold" Text="{l:Loc Editor_Options}"/>
+                <Separator/>
+
+                <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                    <Label Content="{l:Loc Editor_ShaderExtensionFlag}"/>
+                    <TextBox Text="{Binding Options.ShaderExtensionFlag}"/>
+
+                    <Label Content="{l:Loc Editor_ShaderExtensionVersion}"/>
+                    <TextBox Text="{Binding Options.ShaderExtensionVersion}"/>
+
+                    <Label Content="{l:Loc Common_Flags}"/>
+                    <l:FlagsBoxView Value="{Binding Options.Info}"/>
+
+                    <Label Content="{l:Loc Common_Scale}"/>
+                    <TextBox Text="{Binding Options.Scale}"/>
+
+                    <Label Content="{l:Loc Editor_WindowColor}"/>
+                    <ColorPicker Color="{Binding Options.WindowColor, Converter={StaticResource UndertaleColorToColorConverter}}" />
+
+                    <Label Content="{l:Loc Editor_ColorDepth}"/>
+                    <TextBox Text="{Binding Options.ColorDepth}"/>
+
+                    <Label Content="{l:Loc Editor_Resolution}"/>
+                    <TextBox Text="{Binding Options.Resolution}"/>
+
+                    <Label Content="{l:Loc Editor_Frequency}"/>
+                    <TextBox Text="{Binding Options.Frequency}"/>
+
+                    <Label Content="{l:Loc Editor_VertexSync}"/>
+                    <TextBox Text="{Binding Options.VertexSync}"/>
+
+                    <Label Content="{l:Loc Editor_Priority}"/>
+                    <TextBox Text="{Binding Options.Priority}"/>
+
+                    <Label Content="{l:Loc Editor_BackImage}"/>
+                    <l:UndertaleResourceReferenceView Reference="{Binding Options.BackImage.Texture}" ReferenceType="{x:Type undertalem:UndertaleTexturePageItem}" />
+
+                    <Label Content="{l:Loc Editor_FrontImage}"/>
+                    <l:UndertaleResourceReferenceView Reference="{Binding Options.FrontImage.Texture}" ReferenceType="{x:Type undertalem:UndertaleTexturePageItem}" />
+
+                    <Label Content="{l:Loc Editor_LoadImage}"/>
+                    <l:UndertaleResourceReferenceView Reference="{Binding Options.LoadImage.Texture}" ReferenceType="{x:Type undertalem:UndertaleTexturePageItem}" />
+
+                    <Label Content="{l:Loc Editor_LoadAlpha}"/>
+                    <TextBox Text="{Binding Options.LoadAlpha}" />
+
+                    <Label Content="{l:Loc Editor_Constants}"/>
+                    <Expander Header="{l:Loc Editor_Constants}">
+                        <l:EditableDataGrid ItemsSource="{Binding Options.Constants}" ItemFactory="{Binding CreateConstant}">
+                            <l:EditableDataGrid.Columns>
+                                <DataGridTemplateColumn Header="{l:Loc Common_Name}" Width="1*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="{x:Type undertalem:UndertaleOptions+Constant}">
+                                            <l:UndertaleStringReferenceView Reference="{Binding Name}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="{l:Loc Common_Value}" Width="1*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="{x:Type undertalem:UndertaleOptions+Constant}">
+                                            <l:UndertaleStringReferenceView Reference="{Binding Value}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </l:EditableDataGrid.Columns>
+                        </l:EditableDataGrid>
+                    </Expander>
+                </Grid>
+            </StackPanel>
+
+            <StackPanel IsVisible="{Binding Language, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <TextBlock FontWeight="Bold" Text="{l:Loc Editor_Language}"/>
+                <Separator/>
+
+                <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                    <Label Content="{l:Loc Editor_Unknown}"/>
+                    <TextBox Text="{Binding Language.Unknown1}"/>
+                
+                    <Label Content="{l:Loc Editor_LanguageCount}"/>
+                    <TextBox Text="{Binding Language.LanguageCount}"/>
+                
+                    <Label Content="{l:Loc Editor_EntryCount}"/>
+                    <TextBox Text="{Binding Language.EntryCount}"/>
+                
+                    <!-- TODO: Language editor -->
+                </Grid>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

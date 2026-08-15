@@ -1,0 +1,81 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:UndertaleModToolAvalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="UndertaleModToolAvalonia.MainWindow"
+        Icon="/Assets/Icon.ico"
+        x:DataType="l:MainViewModel"
+        Title="{Binding Title}"
+        WindowState="{Binding WindowState}"
+        IsEnabled="{Binding IsEnabled}">
+    <NativeMenu.Menu>
+        <NativeMenu>
+            <NativeMenuItem Header="{l:Loc Menu_File}">
+                <NativeMenu>
+                    <NativeMenuItem Header="{l:Loc Menu_File_New}" Command="{Binding FileNew}" Gesture="{OnPlatform 'Ctrl+N', macOS='Meta+N'}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_File_Open}" Command="{Binding FileOpen}" Gesture="{OnPlatform 'Ctrl+O', macOS='Meta+O'}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_File_Save}" Command="{Binding FileSave}" Gesture="{OnPlatform 'Ctrl+S', macOS='Meta+S'}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_File_Close}" Command="{Binding FileClose}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_File_TempRun}" Command="{Binding FileRun}" Gesture="F5"/>
+                    <NativeMenuItem Header="{l:Loc Menu_File_RunOtherRunner}" Command="{Binding FileRunWithOther}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_File_Settings}" Command="{Binding FileSettings}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_File_Exit}" Command="{Binding FileExit}"/>
+                </NativeMenu>
+            </NativeMenuItem>
+            <NativeMenuItem Header="{l:Loc Menu_Import}" IsEnabled="False">
+            </NativeMenuItem>
+            <NativeMenuItem Header="{l:Loc Menu_Export}" IsEnabled="False">
+            </NativeMenuItem>
+            <NativeMenuItem Header="{l:Loc Menu_Tools}">
+                <NativeMenu>
+                    <NativeMenuItem Header="{l:Loc Menu_Find_SearchInCode}" Command="{Binding ToolsSearchInCode}" Gesture="{OnPlatform 'Ctrl+Shift+F', macOS='Meta+Shift+F'}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Edit_FindReferences}" Command="{Binding ToolsFindReferences}"/>
+                </NativeMenu>
+            </NativeMenuItem>
+            <NativeMenuItem Header="{l:Loc Menu_Scripts}">
+                <NativeMenu>
+                    <NativeMenuItem Header="{l:Loc Menu_Scripts_RunOther}" Command="{Binding ScriptsRunOtherScript}" />
+                </NativeMenu>
+            </NativeMenuItem>
+            <NativeMenuItem Header="{l:Loc Menu_Project}">
+                <NativeMenu>
+                    <NativeMenuItem Header="{l:Loc Menu_Project_New}" Command="{Binding ProjectNew}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Project_Open}" Command="{Binding ProjectOpen}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Project_Save}" Command="{Binding ProjectSave}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Project_Reload}" Command="{Binding ProjectReload}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Project_ViewUnexportedAssets}" Command="{Binding ProjectViewUnexportedAssets}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Project_Close}" Command="{Binding ProjectClose}"/>
+                </NativeMenu>
+            </NativeMenuItem>
+            <NativeMenuItem Header="{l:Loc Menu_Help}">
+                <NativeMenu>
+                    <NativeMenuItem Header="{l:Loc Menu_Help_GitHub}" Command="{Binding HelpGitHub}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Help_About}" Command="{Binding HelpAbout}" Gesture="F1"/>
+                </NativeMenu>
+            </NativeMenuItem>
+        </NativeMenu>
+    </NativeMenu.Menu>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+N', macOS='Meta+N'}" Command="{Binding FileNew}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+O', macOS='Meta+O'}" Command="{Binding FileOpen}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+S', macOS='Meta+S'}" Command="{Binding FileSave}" />
+        <KeyBinding Gesture="F5" Command="{Binding FileRun}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+F', macOS='Meta+Shift+F'}" Command="{Binding ToolsSearchInCode}" />
+        <KeyBinding Gesture="F1" Command="{Binding HelpAbout}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+W', macOS='Meta+W'}" Command="{Binding TabCloseSelected}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+W', macOS='Meta+Shift+W'}" Command="{Binding TabCloseAll}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+Tab', macOS='Meta+Shift+Tab'}" Command="{Binding TabSetToPrevious}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+Tab', macOS='Meta+Tab'}" Command="{Binding TabSetToNext}" />
+    </Window.KeyBindings>
+
+    <l:MainView />
+</Window>

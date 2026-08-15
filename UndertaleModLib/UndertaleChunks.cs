@@ -1746,7 +1746,7 @@ namespace UndertaleModLib
         public uint VarCount2 { get; set; }
         public uint MaxLocalVarCount { get; set; }
         public bool DifferentVarCounts { get; set; }
-        public List<UndertaleVariable> List = new List<UndertaleVariable>();
+        public UndertaleObservableList<UndertaleVariable> List = new();
 
         [Obsolete]
         public uint InstanceVarCount { get => VarCount1; set => VarCount1 = value; }
@@ -1796,9 +1796,9 @@ namespace UndertaleModLib
             else
                 varLength = 12;
             List.Clear();
-            List.Capacity = (int)(Length / varLength);
+            List.SetCapacity((int)(Length / varLength));
             while (reader.Position + varLength <= startPosition + Length)
-                List.Add(reader.ReadUndertaleObject<UndertaleVariable>());
+                List.InternalAdd(reader.ReadUndertaleObject<UndertaleVariable>());
         }
 
         internal override uint UnserializeObjectCount(UndertaleReader reader)

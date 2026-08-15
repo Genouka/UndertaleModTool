@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0-android</TargetFramework>
+        <SupportedOSPlatformVersion>23.0</SupportedOSPlatformVersion>
+        <OutputType>Exe</OutputType>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+        <AndroidUseFastDeployment>False</AndroidUseFastDeployment>
+
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+
+        <!-- Compile against the real Avalonia assemblies so the simulated windowing platform
+             (Avalonia.Platform.IWindowImpl etc.) and AvaloniaLocator.CurrentMutable are usable. -->
+        <AvaloniaAccessUnstablePrivateApis>true</AvaloniaAccessUnstablePrivateApis>
+        <NoWarn>$(NoWarn);AVA3001</NoWarn>
+
+        <Version>0.9.1.2</Version>
+
+        <ApplicationId>com.undertalemodtool.avalonia.android</ApplicationId>
+        <ApplicationTitle>UndertaleModToolAvalonia</ApplicationTitle>
+        <ApplicationVersion>1</ApplicationVersion>
+        <ApplicationDisplayVersion>0.9.1.2</ApplicationDisplayVersion>
+
+        <AndroidUseAapt2>true</AndroidUseAapt2>
+        <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+        <RunAOTCompilation>false</RunAOTCompilation>
+        <EnableLLVM>false</EnableLLVM>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia.Android" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+        <PackageReference Include="Magick.NET.Core" Version="14.16.0" />
+        <!-- Android 版 Magick 原生包：arm64 / x64 都引用，打包时按当前 ABI 只打进对应的 .so -->
+        <PackageReference Include="Magick.NET-Q8-arm64" Version="14.16.0" />
+        <PackageReference Include="Magick.NET-Q8-x64" Version="14.16.0" />
+        <!-- 安全网：共享项目会把桌面包 Magick.NET-Q8-AnyCPU 传递进来，这里显式排除其 runtimes，
+             确保 linux-* 的 .so 永远不会混进 Android APK -->
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0" ExcludeAssets="runtimes;native" />
+        <PackageReference Include="SDL3-CS.Android" Version="3.4.12.1" />
+        <PackageReference Include="SDL3-CS.Android.Mixer" Version="3.2.4.7" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\UndertaleModToolAvalonia\UndertaleModToolAvalonia.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AndroidResource Include="Resources\values\colors.xml" />
+        <AndroidResource Include="Resources\values\styles.xml" />
+    </ItemGroup>
+
+</Project>

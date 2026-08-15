@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+             xmlns:undertalem="clr-namespace:UndertaleModLib.Models;assembly=UndertaleModLib"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="UndertaleModToolAvalonia.UndertalePathView"
+             x:DataType="l:UndertalePathViewModel">
+    <ScrollViewer>
+        <StackPanel>
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*" Classes="PaddedProperties">
+                <Label Content="{l:Loc Common_Name}"/>
+                <l:UndertaleStringReferenceView Reference="{Binding Path.Name}" />
+
+                <Label Content="{l:Loc Editor_Path_Smooth}"/>
+                <CheckBox IsChecked="{Binding Path.IsSmooth}" />
+        
+                <Label Content="{l:Loc Editor_Path_Closed}"/>
+                <CheckBox IsChecked="{Binding Path.IsClosed}" />
+        
+                <Label Content="{l:Loc Editor_Path_Precision}"/>
+                <TextBox Text="{Binding Path.Precision}" />
+        
+                <Label Content="{l:Loc Editor_Path_Points}"/>
+                <l:EditableDataGrid ItemsSource="{Binding Path.Points}" ItemFactory="{Binding CreatePathPoint}">
+                    <l:EditableDataGrid.Columns>
+                        <DataGridTemplateColumn Header="{l:Loc Common_X}" Width="1*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="undertalem:UndertalePath+PathPoint">
+                                    <TextBox Text="{Binding X}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="{l:Loc Common_Y}" Width="1*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="undertalem:UndertalePath+PathPoint">
+                                    <TextBox Text="{Binding Y}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="{l:Loc Common_Speed}" Width="1*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate DataType="undertalem:UndertalePath+PathPoint">
+                                    <TextBox Text="{Binding Speed}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </l:EditableDataGrid.Columns>
+                </l:EditableDataGrid>
+            </Grid>
+
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" HorizontalAlignment="Center"
+                          MaxHeight="{Binding $parent[ScrollViewer].Viewport.Height}">
+                <l:UndertalePathEditor />
+            </ScrollViewer>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

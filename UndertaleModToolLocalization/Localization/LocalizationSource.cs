@@ -24,7 +24,11 @@ namespace UndertaleModTool.Localization
                 {
                     _currentCulture = value;
                     CultureInfo.DefaultThreadCurrentUICulture = value;
+
+                    // WPF indexer bindings refresh on a null property name ("everything changed"),
+                    // while Avalonia's reflection indexer nodes respond to the actual indexer name.
                     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item"));
                 }
             }
         }

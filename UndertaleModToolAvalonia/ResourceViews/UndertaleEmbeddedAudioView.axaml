@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="UndertaleModToolAvalonia.UndertaleEmbeddedAudioView"
+             x:DataType="l:UndertaleEmbeddedAudioViewModel">
+    <ScrollViewer>
+        <StackPanel Classes="PaddedProperties">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{l:Loc Common_EmbeddedAudioLength}" />
+                <TextBlock Text="{Binding EmbeddedAudio.Data.Length}" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding ImportAudio}" Content="{l:Loc Common_Import}"/>
+                <Button Command="{Binding ExportAudio}" Content="{l:Loc Common_Export}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding PlayAudio}" Content="{l:Loc Common_Play}"/>
+                <Button Command="{Binding StopAudio}" Content="{l:Loc Common_Stop}"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,79 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using Avalonia.Platform.Storage;
+using Microsoft.Extensions.DependencyInjection;
+using UndertaleModLib;
+using UndertaleModLib.Models;
+using UndertaleModTool.Localization;
+
+namespace UndertaleModToolAvalonia;
+
+public partial class UndertaleEmbeddedAudioViewModel : IUndertaleResourceViewModel
+{
+    public MainViewModel MainVM;
+    public UndertaleResource Resource => EmbeddedAudio;
+    public UndertaleEmbeddedAudio EmbeddedAudio { get; }
+
+    AudioPlayer? audioPlayer = null;
+
+    public UndertaleEmbeddedAudioViewModel(UndertaleEmbeddedAudio embeddedAudio, IServiceProvider serviceProvider)
+    {
+        MainVM = serviceProvider.GetRequiredService<MainViewModel>();
+
+        EmbeddedAudio = embeddedAudio;
+    }
+
+    void ITabContent.OnDetached()
+    {
+        StopAudio();
+    }
+
+    public async void PlayAudio()
+    {
+        audioPlayer?.Stop();
+        audioPlayer = new(EmbeddedAudio.Data);
+    }
+
+    public async void StopAudio()
+    {
+        audioPlayer?.Stop();
+        audioPlayer = null;
+    }
+
+    public async void ImportAudio()
+    {
+        IReadOnlyList<IStorageFile> files = await MainVM.View!.OpenFileDialog(new FilePickerOpenOptions
+        {
+            Title = LocalizationSource.GetString("Msg_ImportAudio"),
+            FileTypeFilter = FilePickerFileTypes.WAV,
+        });
+
+        if (files.Count != 1)
+            return;
+
+        using (Stream stream = await files[0].OpenReadAsync())
+        {
+            await ImportExport.ImportEmbeddedAudio(EmbeddedAudio, stream);
+        }
+    }
+
+    public async void ExportAudio()
+    {
+        IStorageFile? file = await MainVM.View!.SaveFileDialog(new FilePickerSaveOptions()
+        {
+            Title = LocalizationSource.GetString("Msg_ExportAudio"),
+            FileTypeChoices = FilePickerFileTypes.WAV,
+            DefaultExtension = ".wav",
+            SuggestedFileName = $"{EmbeddedAudio.Name?.Content ?? "audio"}.wav",
+        });
+
+        if (file is null)
+            return;
+
+        using (Stream stream = await file.OpenWriteAsync())
+        {
+            await ImportExport.ExportEmbeddedAudio(EmbeddedAudio, stream);
+        }
+    }
+}

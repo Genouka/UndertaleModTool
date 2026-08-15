@@ -1,0 +1,69 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+             xmlns:undertalem="clr-namespace:UndertaleModLib.Models;assembly=UndertaleModLib"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="UndertaleModToolAvalonia.UndertaleSoundView"
+             x:DataType="l:UndertaleSoundViewModel">
+    <UserControl.Resources>
+        <l:VersionCompareConverter x:Key="VersionCompareConverter" />
+    </UserControl.Resources>
+    
+    <ScrollViewer>
+        <StackPanel Classes="PaddedProperties">
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                <Label Content="{l:Loc Common_Name}"/>
+                <l:UndertaleStringReferenceView Reference="{Binding Sound.Name}" />
+
+                <Label Content="{l:Loc Common_Flags}"/>
+                <l:FlagsBoxView Value="{Binding Sound.Flags}" />
+
+                <Label Content="{l:Loc Common_Type}"/>
+                <l:UndertaleStringReferenceView Reference="{Binding Sound.Type}" />
+
+                <Label Content="{l:Loc Editor_File}"/>
+                <l:UndertaleStringReferenceView Reference="{Binding Sound.File}" />
+
+                <Label Content="{l:Loc Editor_Effects}"/>
+                <TextBox Text="{Binding Sound.Effects}" />
+
+                <Label Content="{l:Loc Editor_Volume}"/>
+                <TextBox Text="{Binding Sound.Volume}" />
+
+                <Label Content="{l:Loc Editor_Pitch}"/>
+                <TextBox Text="{Binding Sound.Pitch}" />
+
+                <Label Content="{l:Loc Editor_PreloadOldAudio}"/>
+                <CheckBox IsChecked="{Binding Sound.Preload}" />
+
+                <Label Content="{l:Loc Editor_AudioGroup}"/>
+                <l:UndertaleResourceReferenceView Reference="{Binding Sound.AudioGroup}" ReferenceType="undertalem:UndertaleAudioGroup" />
+            </Grid>
+
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*" IsVisible="{Binding IsBuiltinAudioGroup}">
+                <Label Content="{l:Loc Editor_AudioFile}"/>
+                <l:UndertaleResourceReferenceView Reference="{Binding Sound.AudioFile}" ReferenceType="undertalem:UndertaleEmbeddedAudio" />
+            </Grid>
+
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*" IsVisible="{Binding !IsBuiltinAudioGroup}">
+                <Label Content="{l:Loc Editor_EmbeddedAudioIDOnAudioGroup}"/>
+                <TextBox Text="{Binding Sound.AudioID}" />
+            </Grid>
+
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding PlayAudio}" Content="{l:Loc Common_Play}"/>
+                <Button Command="{Binding StopAudio}" Content="{l:Loc Common_Stop}"/>
+            </StackPanel>
+
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*"
+                  IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
+                  Converter={StaticResource VersionCompareConverter},
+                  ConverterParameter=GE2024.6}">
+                <Label Content="{l:Loc Editor_AudioLength}"/>
+                <TextBox Text="{Binding Sound.AudioLength}" />
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

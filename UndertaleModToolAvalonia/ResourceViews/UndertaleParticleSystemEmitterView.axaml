@@ -1,0 +1,226 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+             xmlns:undertale="clr-namespace:UndertaleModLib;assembly=UndertaleModLib"
+             xmlns:undertalem="clr-namespace:UndertaleModLib.Models;assembly=UndertaleModLib"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="UndertaleModToolAvalonia.UndertaleParticleSystemEmitterView"
+             x:DataType="l:UndertaleParticleSystemEmitterViewModel">
+    <UserControl.Resources>
+        <l:VersionCompareConverter x:Key="VersionCompareConverter" />
+        <l:EnumTypeToValuesConverter x:Key="EnumTypeToValuesConverter" />
+        <l:UndertaleColorToColorConverter x:Key="UndertaleColorToColorConverter" />
+    </UserControl.Resources>
+
+    <ScrollViewer>
+        <StackPanel Classes="PaddedProperties">
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                <Label Content="{l:Loc Common_Name}"/>
+                <l:UndertaleStringReferenceView Reference="{Binding ParticleSystemEmitter.Name}" />
+            </Grid>
+        
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*"
+                  IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
+                  Converter={StaticResource VersionCompareConverter},
+                  ConverterParameter=GE2023.6}">
+                <Label Content="{l:Loc Editor_Enabled}"/>
+                <CheckBox IsChecked="{Binding ParticleSystemEmitter.Enabled}" />
+            </Grid>
+        
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                <Label Content="{l:Loc Editor_EmitMode}"/>
+                <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleParticleSystemEmitter+EmitMode}, Converter={StaticResource EnumTypeToValuesConverter}}"
+                          SelectedItem="{Binding ParticleSystemEmitter.Mode}" />
+
+                <Label Content="{l:Loc Editor_EmitCount}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.EmitCount}" />
+            </Grid>
+
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*"
+                  IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
+                  Converter={StaticResource VersionCompareConverter},
+                  ConverterParameter=GE2023.8}">
+                <Label Content="{l:Loc Editor_EmitRelative}"/>
+                <CheckBox IsChecked="{Binding ParticleSystemEmitter.EmitRelative}" />
+
+                <Label Content="{l:Loc Editor_DelayMinMax}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.DelayMin}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.DelayMax}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_DelayMeasuredIn}"/>
+                <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleParticleSystemEmitter+TimeUnitEnum}, Converter={StaticResource EnumTypeToValuesConverter}}"
+                          SelectedItem="{Binding ParticleSystemEmitter.DelayUnit}" />
+
+                <Label Content="{l:Loc Editor_IntervalMinMax}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.IntervalMin}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.IntervalMax}" />
+                </Grid>
+            
+                <Label Content="{l:Loc Editor_IntervalMeasuredIn}"/>
+                <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleParticleSystemEmitter+TimeUnitEnum}, Converter={StaticResource EnumTypeToValuesConverter}}"
+                          SelectedItem="{Binding ParticleSystemEmitter.IntervalUnit}" />
+            </Grid>
+
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                <Label Content="{l:Loc Editor_Distribution}"/>
+                <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleParticleSystemEmitter+DistributionEnum}, Converter={StaticResource EnumTypeToValuesConverter}}"
+                          SelectedItem="{Binding ParticleSystemEmitter.Distribution}" />
+
+                <Label Content="{l:Loc Editor_Shape}"/>
+                <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleParticleSystemEmitter+EmitterShape}, Converter={StaticResource EnumTypeToValuesConverter}}"
+                          SelectedItem="{Binding ParticleSystemEmitter.Shape}" />
+
+                <Label Content="{l:Loc Editor_RegionXYWidthHeight}"/>
+                <Grid ColumnDefinitions="1*,1*,1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.RegionX}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.RegionY}" />
+                    <TextBox Grid.Column="2" Text="{Binding ParticleSystemEmitter.RegionWidth}" />
+                    <TextBox Grid.Column="3" Text="{Binding ParticleSystemEmitter.RegionHeight}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_Rotation}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.Rotation}" />
+
+                <Label Content="{l:Loc Editor_Sprite}"/>
+                <l:UndertaleResourceReferenceView Reference="{Binding ParticleSystemEmitter.Sprite}" ReferenceType="undertalem:UndertaleSprite" />
+
+                <!-- TODO: View sprite -->
+
+                <Label Content="{l:Loc Editor_SpriteFrameIndex}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.FrameIndex}" />
+            </Grid>
+
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*"
+                  IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
+                  Converter={StaticResource VersionCompareConverter},
+                  ConverterParameter=GE2023.4}">
+                <Label Content="{l:Loc Editor_AnimateSprite}"/>
+                <CheckBox IsChecked="{Binding ParticleSystemEmitter.Animate}" />
+            
+                <Label Content="{l:Loc Editor_StretchSprite}"/>
+                <CheckBox IsChecked="{Binding ParticleSystemEmitter.Stretch}" />
+            
+                <Label Content="{l:Loc Editor_Random}"/>
+                <CheckBox IsChecked="{Binding ParticleSystemEmitter.IsRandom}" />
+            </Grid>
+
+            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
+                <Label Content="{l:Loc Common_Texture}"/>
+                <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleParticleSystemEmitter+TextureEnum}, Converter={StaticResource EnumTypeToValuesConverter}}"
+                          SelectedItem="{Binding ParticleSystemEmitter.Texture}" />
+
+                <Label Content="{l:Loc Editor_StartColor}"/>
+                <ColorPicker Color="{Binding ParticleSystemEmitter.StartColor, Converter={StaticResource UndertaleColorToColorConverter}}" />
+
+                <Label Content="{l:Loc Editor_MiddleColor}"/>
+                <ColorPicker Color="{Binding ParticleSystemEmitter.MidColor, Converter={StaticResource UndertaleColorToColorConverter}}" />
+            
+                <Label Content="{l:Loc Editor_EndColor}"/>
+                <ColorPicker Color="{Binding ParticleSystemEmitter.EndColor, Converter={StaticResource UndertaleColorToColorConverter}}" />
+            
+                <Label Content="{l:Loc Editor_AdditiveColorBlend}"/>
+                <CheckBox IsChecked="{Binding ParticleSystemEmitter.AdditiveBlend}" />
+
+                <Label Content="{l:Loc Editor_LifetimeMinMax}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.LifetimeMin}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.LifetimeMax}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_ScaleXY}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.ScaleX}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.ScaleY}" />
+                </Grid>
+
+                <!-- TODO: Version check for < 2023.8, show only 1 Scale (and other things). -->
+
+                <Label Content="{l:Loc Editor_SizeMin}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.SizeMinX}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.SizeMinY}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_SizeMax}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.SizeMaxX}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.SizeMaxY}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_SizeIncrease}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.SizeIncreaseX}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.SizeIncreaseY}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_SizeWiggle}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.SizeWiggleX}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.SizeWiggleY}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_SpeedMinMax}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.SpeedMin}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.SpeedMax}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_SpeedIncrease}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.SpeedIncrease}" />
+
+                <Label Content="{l:Loc Editor_SpeedWiggle}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.SpeedWiggle}" />
+            
+                <Label Content="{l:Loc Editor_GravityForce}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.GravityForce}" />
+
+                <Label Content="{l:Loc Editor_GravityForceDirection}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.GravityDirection}" />
+
+                <Label Content="{l:Loc Editor_DirectionMinMax}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.DirectionMin}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.DirectionMax}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_DirectionIncrease}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.DirectionIncrease}" />
+
+                <Label Content="{l:Loc Editor_DirectionWiggle}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.DirectionWiggle}" />
+
+                <Label Content="{l:Loc Editor_OrientationMinMax}"/>
+                <Grid ColumnDefinitions="1*,1*">
+                    <TextBox Grid.Column="0" Text="{Binding ParticleSystemEmitter.OrientationMin}" />
+                    <TextBox Grid.Column="1" Text="{Binding ParticleSystemEmitter.OrientationMax}" />
+                </Grid>
+
+                <Label Content="{l:Loc Editor_OrientationIncrease}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.OrientationIncrease}" />
+
+                <Label Content="{l:Loc Editor_OrientationWiggle}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.OrientationWiggle}" />
+            
+                <Label Content="{l:Loc Editor_IsOrientationRelative}"/>
+                <CheckBox IsChecked="{Binding ParticleSystemEmitter.OrientationRelative}" />
+
+                <Label Content="{l:Loc Editor_SpawnOnDeath}"/>
+                <l:UndertaleResourceReferenceView Reference="{Binding ParticleSystemEmitter.SpawnOnDeath}" ReferenceType="undertalem:UndertaleParticleSystemEmitter" />
+
+                <Label Content="{l:Loc Editor_SpawnOnDeathCount}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.SpawnOnDeathCount}" />
+
+                <Label Content="{l:Loc Editor_SpawnOnUpdate}"/>
+                <l:UndertaleResourceReferenceView Reference="{Binding ParticleSystemEmitter.SpawnOnUpdate}" ReferenceType="undertalem:UndertaleParticleSystemEmitter" />
+
+                <Label Content="{l:Loc Editor_SpawnOnUpdateCount}"/>
+                <TextBox Text="{Binding ParticleSystemEmitter.SpawnOnUpdateCount}" />
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
