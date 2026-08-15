@@ -6356,4 +6356,7 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Msg_SaveToProjectDataFileQuestion" xml:space="preserve">
     <value>保存到项目指定的数据文件？</value>
   </data>
+  <data name="GML_AutoInfer" xml:space="preserve">
+    <value>自动推断：</value>
+  </data>
 </root>

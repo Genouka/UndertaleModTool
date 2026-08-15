@@ -156,7 +156,6 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <CheckBox Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_CleanupTryCatchFinally}"
                               ToolTip="{loc:Loc GML_CleanupTryCatchFinally_Tooltip}"
@@ -176,13 +175,37 @@
                     <CheckBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="3" Content="Template strings" 
                               ToolTip="If enabled, the decompiler will attempt to rewrite string()/@@string@@() as template strings." 
                               IsChecked="{Binding DecompilerSettings.CleanupTemplateStrings}"/>
-                    <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_InferFunctionArgumentTypes}"
+                </Grid>
+            </Grid>
+            <Separator Margin="10,0,10,0"/>            <Grid Margin="10,3,10,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110"/>
+                    <ColumnDefinition Width="*" MinWidth="60"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Margin="3" Text="{loc:Loc GML_AutoInfer}"/>
+                <Grid Grid.Row="0" Grid.Column="2" Margin="3,3,3,3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" MinWidth="220"/>
+                        <ColumnDefinition Width="Auto" MinWidth="220"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <CheckBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_InferFunctionArgumentTypes}"
                               ToolTip="{loc:Loc GML_InferFunctionArgumentTypes_Tooltip}"
                               IsChecked="{Binding DecompilerSettings.InferFunctionArgumentTypes}"/>
-                    <CheckBox Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_ReverseInferVariableTypes}"
+                    <CheckBox Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_ReverseInferVariableTypes}"
                               ToolTip="{loc:Loc GML_ReverseInferVariableTypes_Tooltip}"
                               IsChecked="{Binding DecompilerSettings.ReverseInferVariableTypes}"/>
-                    <CheckBox Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_InlinePropagateVariableTypes}"
+                    <CheckBox Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_InlinePropagateVariableTypes}"
                               ToolTip="{loc:Loc GML_InlinePropagateVariableTypes_Tooltip}"
                               IsChecked="{Binding DecompilerSettings.InlinePropagateVariableTypes}"/>
                 </Grid>

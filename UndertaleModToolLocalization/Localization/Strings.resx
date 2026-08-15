@@ -6335,4 +6335,7 @@ It's highly recommended to restart the application.</value>
   <data name="Msg_SaveImageTitle" xml:space="preserve">
     <value>Save image</value>
   </data>
+  <data name="GML_AutoInfer" xml:space="preserve">
+    <value>Auto Infer:</value>
+  </data>
 </root>
