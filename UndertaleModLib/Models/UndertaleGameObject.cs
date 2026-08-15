@@ -429,6 +429,36 @@ public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotif
     }
     #endregion
 
+    /// <summary>
+    /// Returns children game objects of this game object.
+    /// </summary>
+    /// <param name="data">The game data instance, used for searching.</param>
+    /// <returns>
+    /// The children of this game object.
+    /// </returns>
+    /// <remarks>
+    /// "Children" are game objects with this game object as its <see cref="ParentId"/>.
+    /// </remarks>
+    public IEnumerable<UndertaleGameObject> FindChildren(UndertaleData data)
+    {
+        if ((data?.GameObjects.Count ?? 0) == 0)
+        {
+            yield break;
+        }
+
+        foreach (UndertaleGameObject gameObj in data.GameObjects)
+        {
+            if (gameObj is null)
+            {
+                continue;
+            }
+            if (gameObj._parentId.Resource == this)
+            {
+                yield return gameObj;
+            }
+        }
+    }
+
     /// <inheritdoc />
     public override string ToString()
     {

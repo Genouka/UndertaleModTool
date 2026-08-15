@@ -3361,6 +3361,9 @@ UndertaleModTool 通过取平均值来表示。
   <data name="RefType_GameObjects" xml:space="preserve">
     <value>游戏对象</value>
   </data>
+  <data name="RefType_GameObjectsChildren" xml:space="preserve">
+    <value>游戏对象（子项）</value>
+  </data>
   <data name="RefType_CodeEntries" xml:space="preserve">
     <value>代码条目</value>
   </data>
@@ -3459,6 +3462,12 @@ UndertaleModTool 通过取平均值来表示。
   </data>
   <data name="RefType_RoomObjectInstance" xml:space="preserve">
     <value>房间对象实例</value>
+  </data>
+  <data name="RefType_RoomObjectInstancesCreationCode" xml:space="preserve">
+    <value>房间对象实例（创建代码）</value>
+  </data>
+  <data name="RefType_RoomObjectInstancesCreationOrPreCreateCode" xml:space="preserve">
+    <value>房间对象实例（创建或预创建代码）</value>
   </data>
   <data name="RefType_RoomSequenceInstances" xml:space="preserve">
     <value>房间序列实例</value>

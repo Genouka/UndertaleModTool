@@ -24,21 +24,6 @@ public readonly struct CompileError
     public UndertaleCode Code { get; }
 
     /// <summary>
-    /// The 1-based line number of the error within <see cref="Code"/>, or <see langword="null"/> if unknown.
-    /// </summary>
-    public int? Line => (_sourceError as IPositionedCompileError)?.Line;
-
-    /// <summary>
-    /// The 1-based column number of the error within <see cref="Code"/>, or <see langword="null"/> if unknown.
-    /// </summary>
-    public int? Column => (_sourceError as IPositionedCompileError)?.Column;
-
-    /// <summary>
-    /// The absolute text position (offset) of the error within <see cref="Code"/>, or <see langword="null"/> if unknown.
-    /// </summary>
-    public int? TextPosition => (_sourceError as IPositionedCompileError)?.TextPosition;
-
-    /// <summary>
     /// Base, but possibly uninformative, error message.
     /// </summary>
     public string BaseMessage => _sourceError?.BaseMessage ?? _exception.Message;
@@ -99,7 +84,9 @@ public readonly struct CompileResult
     /// <summary>
     /// A standard successful result instance.
     /// </summary>
-    public static readonly CompileResult SuccessfulResult = new(true, null);    /// <summary>
+    public static readonly CompileResult SuccessfulResult = new(true, null);
+
+    /// <summary>
     /// A standard unsuccessful result instance, with no errors.
     /// </summary>
     public static readonly CompileResult UnsuccessfulResult = new(false, null);

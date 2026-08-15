@@ -3357,6 +3357,9 @@ Persists when the tile editor is closed, but not when the file is saved and reop
   <data name="RefType_GameObjects" xml:space="preserve">
     <value>Game objects</value>
   </data>
+  <data name="RefType_GameObjectsChildren" xml:space="preserve">
+    <value>Game objects (children)</value>
+  </data>
   <data name="RefType_CodeEntries" xml:space="preserve">
     <value>Code entries</value>
   </data>
@@ -3455,6 +3458,12 @@ Persists when the tile editor is closed, but not when the file is saved and reop
   </data>
   <data name="RefType_RoomObjectInstance" xml:space="preserve">
     <value>Room object instance</value>
+  </data>
+  <data name="RefType_RoomObjectInstancesCreationCode" xml:space="preserve">
+    <value>Room object instances (creation code)</value>
+  </data>
+  <data name="RefType_RoomObjectInstancesCreationOrPreCreateCode" xml:space="preserve">
+    <value>Room object instances (creation or pre create code)</value>
   </data>
   <data name="RefType_RoomSequenceInstances" xml:space="preserve">
     <value>Room sequence instances</value>

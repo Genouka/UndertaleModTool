@@ -87,7 +87,11 @@ namespace UndertaleModTool.Windows
                 return;
             }
 
-            var ver = (data.GeneralInfo.Major, data.GeneralInfo.Minor, data.GeneralInfo.Release);
+            GameVersion ver;
+            if (data.GeneralInfo.Branch == UndertaleGeneralInfo.BranchType.LTS2022_0)
+                ver = (2022, 0, 0);
+            else
+                ver = (data.GeneralInfo.Major, data.GeneralInfo.Minor, data.GeneralInfo.Release);
             var sourceTypes = UndertaleResourceReferenceMap.GetReferenceableTypes(ver);
 
             foreach (var typePair in sourceTypes)
@@ -104,6 +108,28 @@ namespace UndertaleModTool.Windows
             }
 
             this.data = data;
+        }
+
+        public bool ShowReferencesFor(UndertaleResource sourceObj, HashSetTypesOverride typesList, bool showIfNoResults = true)
+        {
+            FindReferencesResults dialog = null;
+            try
+            {
+                var results = UndertaleResourceReferenceMethodsMap.GetReferencesOfObject(sourceObj, data, typesList);
+                if (results is null && !showIfNoResults)
+                    return false;
+
+                dialog = new(sourceObj, data, results);
+                dialog.Show();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                mainWindow.ShowError(string.Format(LocalizationSource.GetString("Msg_ObjectReferencesWindowError"), ex));
+                dialog?.Close();
+                return false;
+            }
         }
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
@@ -143,20 +169,7 @@ namespace UndertaleModTool.Windows
                     return;
                 }
 
-                FindReferencesResults dialog = null;
-                try
-                {
-                    var results = UndertaleResourceReferenceMethodsMap.GetReferencesOfObject(sourceObj, data, typesList);
-                    dialog = new(sourceObj, data, results);
-                    dialog.Show();
-                }
-                catch (Exception ex)
-                {
-                    mainWindow.ShowError(string.Format(LocalizationSource.GetString("Msg_ObjectReferencesWindowError"), ex));
-                    dialog?.Close();
-
-                }
-
+ShowReferencesFor(sourceObj, typesList);
             }
             else
             {
@@ -185,6 +198,7 @@ namespace UndertaleModTool.Windows
                 }
 
                 Hide();
+
                 FindReferencesResults dialog = null;
                 try
                 {
