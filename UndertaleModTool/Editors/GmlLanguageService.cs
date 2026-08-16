@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using UndertaleModLib;
@@ -7,6 +8,7 @@ using UndertaleModLib.Compiler;
 using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
 using UndertaleModTool;
+using UndertaleModTool.Localization;
 using Underanalyzer;
 using Underanalyzer.Compiler;
 using Underanalyzer.Compiler.Errors;
@@ -290,6 +292,158 @@ namespace UndertaleModTool.Editors
             }
 
             return diagnostics ?? (IReadOnlyList<GmlDiagnostic>)Array.Empty<GmlDiagnostic>();
+        }
+
+        // GML keywords that may be followed by a parenthesized expression and
+        // must not be treated as function calls.
+        private static readonly HashSet<string> _controlKeywords = new(StringComparer.Ordinal)
+        {
+            "if", "then", "else", "switch", "case", "default", "break", "continue", "exit", "return",
+            "while", "for", "repeat", "do", "until", "with", "var", "globalvar", "not", "and", "or",
+            "xor", "div", "mod", "enum", "try", "catch", "finally", "throw", "new", "delete",
+            "function", "static", "constructor", "begin", "end", "in"
+        };
+
+        /// <summary>
+        /// Scans the given GML source and reports calls to GmlSpec functions that
+        /// receive a number of arguments that likely does not match their signature,
+        /// e.g. <c>show_message()</c> or <c>draw_text(x, y)</c>. Produced as warnings
+        /// (<see cref="GmlDiagnostic.IsError"/> == <c>false</c>) so the editor can render
+        /// them distinctly from real errors. Variadic functions (whose GmlSpec signature
+        /// contains a <c>"..."</c> parameter) are skipped, as are member calls (<c>a.b(...)</c>).
+        /// </summary>
+        public static IReadOnlyList<GmlDiagnostic> CheckArgumentCountDiagnostics(string code)
+        {
+            if (string.IsNullOrEmpty(code))
+                return Array.Empty<GmlDiagnostic>();
+
+            GmlSpecLoader.EnsureLoaded();
+
+            List<GmlDiagnostic> diagnostics = null;
+            int i = 0;
+            int len = code.Length;
+
+            while (i < len)
+            {
+                char c = code[i];
+
+                // Skip line comments
+                if (c == '/' && i + 1 < len && code[i + 1] == '/')
+                {
+                    while (i < len && code[i] != '\n') i++;
+                    continue;
+                }
+                // Skip block comments
+                if (c == '/' && i + 1 < len && code[i + 1] == '*')
+                {
+                    i += 2;
+                    while (i + 1 < len && !(code[i] == '*' && code[i + 1] == '/')) i++;
+                    i += 2;
+                    continue;
+                }
+                // Skip string/char literals (treat backticks as strings too)
+                if (c == '"' || c == '\'' || c == '`')
+                {
+                    char quote = c;
+                    i++;
+                    while (i < len)
+                    {
+                        if (code[i] == '\\') { i += 2; continue; }
+                        if (code[i] == quote) { i++; break; }
+                        i++;
+                    }
+                    continue;
+                }
+                // Identifiers
+                if (char.IsLetter(c) || c == '_')
+                {
+                    int wordStart = i;
+                    while (i < len && (char.IsLetterOrDigit(code[i]) || code[i] == '_' || code[i] == '$')) i++;
+                    string word = code.Substring(wordStart, i - wordStart);
+
+                    if (i < len && code[i] == '(' && !_controlKeywords.Contains(word))
+                    {
+                        // Skip member/method calls: identifier preceded by a '.' (e.g. "struct.func(...)")
+                        bool isMemberCall = wordStart > 0 && code[wordStart - 1] == '.';
+                        if (!isMemberCall)
+                            CheckFunctionCall(code, word, wordStart, ref i, ref diagnostics);
+                    }
+                    continue;
+                }
+                i++;
+            }
+
+            return diagnostics ?? (IReadOnlyList<GmlDiagnostic>)Array.Empty<GmlDiagnostic>();
+        }
+
+        private static void CheckFunctionCall(string code, string functionName, int wordStart,
+                                              ref int openParenIndex, ref List<GmlDiagnostic> diagnostics)
+        {
+            // openParenIndex points at '('; find the matching ')'
+            int startIndex = openParenIndex;
+            int scan = startIndex + 1;
+            int depth = 1;
+            while (scan < code.Length && depth > 0)
+            {
+                char ch = code[scan];
+                if (ch == '(' || ch == '[' || ch == '{') depth++;
+                else if (ch == ')')
+                {
+                    depth--;
+                    if (depth == 0) break;
+                }
+                scan++;
+            }
+            int closeIndex = scan;              // position of the matching ')'
+            if (closeIndex >= code.Length)
+                return;
+            openParenIndex = startIndex + 1;    // continue scanning inside the parentheses (to catch nested calls)
+
+            GmlSpecFunction func = GmlSpecLoader.GetFunction(functionName);
+            if (func is null)
+                return;
+
+            // Variadic functions are marked with a "..." parameter in GmlSpec; skip them
+            if (func.Parameters.Any(p => p.Name == "..." || p.Name.StartsWith("...", StringComparison.Ordinal)))
+                return;
+
+            // Count top-level arguments inside the parentheses
+            int argCount = 0;
+            bool hasContent = false;
+            int nesting = 0;
+            for (int k = startIndex + 1; k < closeIndex; k++)
+            {
+                char ch = code[k];
+                if (char.IsWhiteSpace(ch)) continue;
+                hasContent = true;
+                if (ch == '(' || ch == '[' || ch == '{') nesting++;
+                else if (ch == ')' || ch == ']' || ch == '}') nesting--;
+                else if (ch == ',' && nesting == 0) argCount++;
+            }
+            if (hasContent) argCount++;
+
+            int totalParams = func.Parameters.Count;
+            int requiredParams = func.Parameters.Count(p => !p.Optional);
+
+            bool tooFew = argCount < requiredParams;
+            bool tooMany = argCount > totalParams;
+            if (!tooFew && !tooMany)
+                return;
+
+            int line = 1;
+            int column = 1;
+            for (int k = 0; k < wordStart && k < code.Length; k++)
+            {
+                if (code[k] == '\n') { line++; column = 1; }
+                else column++;
+            }
+
+            string message = tooFew
+                ? string.Format(LocalizationSource.GetString("Editor_ArgMismatchTooFew"), functionName, requiredParams, argCount)
+                : string.Format(LocalizationSource.GetString("Editor_ArgMismatchTooMany"), functionName, totalParams, argCount);
+
+            diagnostics ??= new List<GmlDiagnostic>();
+            diagnostics.Add(new GmlDiagnostic(line, column, wordStart, functionName.Length, message, false));
         }
 
         /// <summary>

@@ -9,23 +9,36 @@ using ICSharpCode.AvalonEdit.Rendering;
 namespace UndertaleModTool.Editors
 {
     /// <summary>
-    /// Renders red squiggly underlines beneath segments in the editor that have
-    /// diagnostics (e.g. compile/parse errors), and also highlights the whole
-    /// offending line with a subtle background tint.
+    /// Renders squiggly underlines beneath segments in the editor that have
+    /// diagnostics: red for errors (e.g. compile/parse errors) and blue for
+    /// warnings (e.g. possibly mismatched argument counts), while also
+    /// highlighting the offending line with a subtle background tint.
     /// </summary>
     [SupportedOSPlatform("windows7.0")]
     public class GmlDiagnosticsRenderer : IBackgroundRenderer
     {
         private readonly TextView _textView;
         private readonly List<TextSegment> _segments = new();
+        private readonly List<TextSegment> _warningSegments = new();
         private readonly object _lock = new();
 
         private static readonly SolidColorBrush ErrorBackgroundBrush = new(Color.FromArgb(0x14, 0xFF, 0x00, 0x00));
         private static readonly Pen ErrorPen = CreateErrorPen();
 
+        private static readonly SolidColorBrush WarningBackgroundBrush = new(Color.FromArgb(0x14, 0x00, 0x70, 0xFF));
+        private static readonly Pen WarningPen = CreateWarningPen();
+
         private static Pen CreateErrorPen()
         {
             Pen pen = new(Brushes.Tomato, 1.0);
+            pen.DashStyle = DashStyles.Dot;
+            pen.Freeze();
+            return pen;
+        }
+
+        private static Pen CreateWarningPen()
+        {
+            Pen pen = new(new SolidColorBrush(Color.FromRgb(0x4D, 0x9D, 0xFF)), 1.0);
             pen.DashStyle = DashStyles.Dot;
             pen.Freeze();
             return pen;
@@ -48,6 +61,7 @@ namespace UndertaleModTool.Editors
             lock (_lock)
             {
                 _segments.Clear();
+                _warningSegments.Clear();
                 if (diagnostics is not null && document is not null)
                 {
                     foreach (GmlDiagnostic diagnostic in diagnostics)
@@ -65,7 +79,10 @@ namespace UndertaleModTool.Editors
                             StartOffset = start,
                             Length = length
                         };
-                        _segments.Add(segment);
+                        if (diagnostic.IsError)
+                            _segments.Add(segment);
+                        else
+                            _warningSegments.Add(segment);
                     }
                 }
             }
@@ -76,12 +93,17 @@ namespace UndertaleModTool.Editors
         /// <inheritdoc/>
         public void Draw(TextView textView, DrawingContext drawingContext)
         {
-            List<TextSegment> segmentsToDraw;
+            List<KeyValuePair<TextSegment, bool>> segmentsToDraw;
             lock (_lock)
             {
-                if (_segments.Count == 0)
+                int total = _segments.Count + _warningSegments.Count;
+                if (total == 0)
                     return;
-                segmentsToDraw = new List<TextSegment>(_segments);
+                segmentsToDraw = new List<KeyValuePair<TextSegment, bool>>(total);
+                foreach (TextSegment segment in _segments)
+                    segmentsToDraw.Add(new KeyValuePair<TextSegment, bool>(segment, true));
+                foreach (TextSegment segment in _warningSegments)
+                    segmentsToDraw.Add(new KeyValuePair<TextSegment, bool>(segment, false));
             }
 
             bool isDark = Settings.Instance?.EnableDarkMode ?? true;
@@ -95,8 +117,11 @@ namespace UndertaleModTool.Editors
                 visibleEnd = textView.VisualLines[textView.VisualLines.Count - 1].LastDocumentLine.EndOffset;
             }
 
-            foreach (TextSegment segment in segmentsToDraw)
+            foreach (KeyValuePair<TextSegment, bool> pair in segmentsToDraw)
             {
+                TextSegment segment = pair.Key;
+                bool isError = pair.Value;
+
                 // Only draw segments that intersect the visible region
                 if (segment.EndOffset < visibleStart)
                     continue;
@@ -112,9 +137,17 @@ namespace UndertaleModTool.Editors
                 if (geometry is null)
                     continue;
 
-                // Subtle line background tint + squiggly error underline
-                drawingContext.DrawGeometry(isDark ? ErrorBackgroundBrush : ErrorBackgroundBrush, null, geometry);
-                drawingContext.DrawGeometry(null, ErrorPen, geometry);
+                // Subtle line background tint + squiggly underline
+                if (isError)
+                {
+                    drawingContext.DrawGeometry(isDark ? ErrorBackgroundBrush : ErrorBackgroundBrush, null, geometry);
+                    drawingContext.DrawGeometry(null, ErrorPen, geometry);
+                }
+                else
+                {
+                    drawingContext.DrawGeometry(isDark ? WarningBackgroundBrush : WarningBackgroundBrush, null, geometry);
+                    drawingContext.DrawGeometry(null, WarningPen, geometry);
+                }
             }
         }
     }

@@ -5237,6 +5237,21 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Editor_ShowAutoDiagnostics" xml:space="preserve">
     <value>自动检查错误</value>
   </data>
+  <data name="Editor_ShowArgumentCountCheck" xml:space="preserve">
+    <value>自动检查参数数量可能不匹配的函数</value>
+  </data>
+  <data name="Editor_ArgMismatchTooFew" xml:space="preserve">
+    <value>可能参数数量不匹配：&quot;{0}&quot; 至少需要 {1} 个参数，但只提供了 {2} 个</value>
+  </data>
+  <data name="Editor_ArgMismatchTooMany" xml:space="preserve">
+    <value>可能参数数量不匹配：&quot;{0}&quot; 期望 {1} 个参数，但提供了 {2} 个</value>
+  </data>
+  <data name="Editor_WarningsFound" xml:space="preserve">
+    <value>发现警告：{0} 条</value>
+  </data>
+  <data name="Editor_ErrorsAndWarningsFound" xml:space="preserve">
+    <value>发现错误：{0} 条，发现警告：{1} 条</value>
+  </data>
   <data name="Editor_BuiltinFunction" xml:space="preserve">
     <value>内置函数</value>
   </data>
@@ -6032,6 +6047,7 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Editor_ConstantsMenu" xml:space="preserve">
     <value>常量</value>
   </data>
+  <data name="Editor_SymbolSearch" xml:space="preserve">符号 ({0})</data>
   <data name="Editor_EmbeddedAudioIDOnAudioGroup" xml:space="preserve">
     <value>音频组文件中的嵌入音频 ID</value>
   </data>
@@ -6367,5 +6383,110 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   </data>
   <data name="GML_AutoInfer" xml:space="preserve">
     <value>自动推断：</value>
+  </data>
+  <data name="Menu_Import_Graphics" xml:space="preserve">
+    <value>导入图形...</value>
+  </data>
+  <data name="Menu_Import_GraphicsAdvanced" xml:space="preserve">
+    <value>导入图形（高级）...</value>
+  </data>
+  <data name="Menu_Import_ApplyBasicGraphicsMod" xml:space="preserve">
+    <value>应用基础图形修改...</value>
+  </data>
+  <data name="Menu_Import_AllEmbeddedTextures" xml:space="preserve">
+    <value>导入所有嵌入纹理...</value>
+  </data>
+  <data name="Menu_Import_AllTilesets" xml:space="preserve">
+    <value>导入所有图块集...</value>
+  </data>
+  <data name="Menu_Import_AllStrings" xml:space="preserve">
+    <value>导入所有字符串...</value>
+  </data>
+  <data name="Menu_Import_AllStringsJSON" xml:space="preserve">
+    <value>导入所有字符串（JSON）...</value>
+  </data>
+  <data name="Menu_Import_Fonts" xml:space="preserve">
+    <value>导入字体...</value>
+  </data>
+  <data name="Menu_Import_GMS2FontData" xml:space="preserve">
+    <value>导入 GMS2 字体数据...</value>
+  </data>
+  <data name="Menu_Import_GML" xml:space="preserve">
+    <value>导入 GML 代码...</value>
+  </data>
+  <data name="Menu_Import_Assembly" xml:space="preserve">
+    <value>导入汇编代码...</value>
+  </data>
+  <data name="Menu_Import_Masks" xml:space="preserve">
+    <value>导入碰撞掩码...</value>
+  </data>
+  <data name="Menu_Import_Shaders" xml:space="preserve">
+    <value>导入着色器...</value>
+  </data>
+  <data name="Menu_Import_Sounds" xml:space="preserve">
+    <value>导入声音...</value>
+  </data>
+  <data name="Menu_Import_SingleSound" xml:space="preserve">
+    <value>导入单个声音...</value>
+  </data>
+  <data name="Menu_Import_NewTextureRepacker" xml:space="preserve">
+    <value>新的纹理重打包器...</value>
+  </data>
+  <data name="Menu_Import_ReduceEmbeddedTexturePages" xml:space="preserve">
+    <value>减少嵌入纹理页数...</value>
+  </data>
+  <data name="Menu_Export_AllSprites" xml:space="preserve">
+    <value>导出所有精灵...</value>
+  </data>
+  <data name="Menu_Export_AllTextures" xml:space="preserve">
+    <value>导出所有纹理...</value>
+  </data>
+  <data name="Menu_Export_AllTexturesGrouped" xml:space="preserve">
+    <value>导出所有纹理（分组）...</value>
+  </data>
+  <data name="Menu_Export_AllTilesets" xml:space="preserve">
+    <value>导出所有图块集...</value>
+  </data>
+  <data name="Menu_Export_AllMasks" xml:space="preserve">
+    <value>导出所有碰撞掩码...</value>
+  </data>
+  <data name="Menu_Export_AllEmbeddedTextures" xml:space="preserve">
+    <value>导出所有嵌入纹理...</value>
+  </data>
+  <data name="Menu_Export_AllFonts" xml:space="preserve">
+    <value>导出所有字体...</value>
+  </data>
+  <data name="Menu_Export_AllShaders" xml:space="preserve">
+    <value>导出所有着色器...</value>
+  </data>
+  <data name="Menu_Export_AllSounds" xml:space="preserve">
+    <value>导出所有声音...</value>
+  </data>
+  <data name="Menu_Export_AllStrings" xml:space="preserve">
+    <value>导出所有字符串...</value>
+  </data>
+  <data name="Menu_Export_AllStringsJSON" xml:space="preserve">
+    <value>导出所有字符串（JSON）...</value>
+  </data>
+  <data name="Menu_Export_AllCode" xml:space="preserve">
+    <value>导出所有代码...</value>
+  </data>
+  <data name="Menu_Export_AllAssembly" xml:space="preserve">
+    <value>导出所有汇编代码...</value>
+  </data>
+  <data name="Menu_Export_SpecificCode" xml:space="preserve">
+    <value>导出指定代码...</value>
+  </data>
+  <data name="Menu_Export_SpecificSprites" xml:space="preserve">
+    <value>导出指定精灵...</value>
+  </data>
+  <data name="Menu_Export_SpritesAsGIF" xml:space="preserve">
+    <value>将精灵导出为 GIF...</value>
+  </data>
+  <data name="Menu_Export_TextureGroups" xml:space="preserve">
+    <value>导出纹理组...</value>
+  </data>
+  <data name="Menu_Export_AllRoomsToPNG" xml:space="preserve">
+    <value>将所有房间导出为 PNG...</value>
   </data>
 </root>

@@ -5237,6 +5237,21 @@ It's highly recommended to restart the application.</value>
   <data name="Editor_ShowAutoDiagnostics" xml:space="preserve">
     <value>Auto check errors</value>
   </data>
+  <data name="Editor_ShowArgumentCountCheck" xml:space="preserve">
+    <value>Check for functions with possibly mismatched argument counts</value>
+  </data>
+  <data name="Editor_ArgMismatchTooFew" xml:space="preserve">
+    <value>Possible argument count mismatch: &quot;{0}&quot; requires at least {1}, but {2} were provided</value>
+  </data>
+  <data name="Editor_ArgMismatchTooMany" xml:space="preserve">
+    <value>Possible argument count mismatch: &quot;{0}&quot; expects {1} argument(s), but {2} were provided</value>
+  </data>
+  <data name="Editor_WarningsFound" xml:space="preserve">
+    <value>Warnings found: {0}</value>
+  </data>
+  <data name="Editor_ErrorsAndWarningsFound" xml:space="preserve">
+    <value>Errors found: {0}, Warnings found: {1}</value>
+  </data>
   <data name="Editor_BuiltinFunction" xml:space="preserve">
     <value>Built-in function</value>
   </data>
@@ -6260,6 +6275,9 @@ It's highly recommended to restart the application.</value>
   <data name="Editor_ConstantsMenu" xml:space="preserve">
     <value>Constants</value>
   </data>
+  <data name="Editor_SymbolSearch" xml:space="preserve">
+    <value>Symbols ({0})</value>
+  </data>
   <data name="RefTooltip_ObjRefPlaceholder" xml:space="preserve">
     <value>({0} reference)</value>
   </data>
@@ -6346,5 +6364,110 @@ It's highly recommended to restart the application.</value>
   </data>
   <data name="GML_AutoInfer" xml:space="preserve">
     <value>Auto Infer:</value>
+  </data>
+  <data name="Menu_Import_Graphics" xml:space="preserve">
+    <value>Import graphics...</value>
+  </data>
+  <data name="Menu_Import_GraphicsAdvanced" xml:space="preserve">
+    <value>Import graphics (advanced)...</value>
+  </data>
+  <data name="Menu_Import_ApplyBasicGraphicsMod" xml:space="preserve">
+    <value>Apply basic graphics mod...</value>
+  </data>
+  <data name="Menu_Import_AllEmbeddedTextures" xml:space="preserve">
+    <value>Import all embedded textures...</value>
+  </data>
+  <data name="Menu_Import_AllTilesets" xml:space="preserve">
+    <value>Import all tilesets...</value>
+  </data>
+  <data name="Menu_Import_AllStrings" xml:space="preserve">
+    <value>Import all strings...</value>
+  </data>
+  <data name="Menu_Import_AllStringsJSON" xml:space="preserve">
+    <value>Import all strings (JSON)...</value>
+  </data>
+  <data name="Menu_Import_Fonts" xml:space="preserve">
+    <value>Import fonts...</value>
+  </data>
+  <data name="Menu_Import_GMS2FontData" xml:space="preserve">
+    <value>Import GMS2 font data...</value>
+  </data>
+  <data name="Menu_Import_GML" xml:space="preserve">
+    <value>Import GML code...</value>
+  </data>
+  <data name="Menu_Import_Assembly" xml:space="preserve">
+    <value>Import assembly...</value>
+  </data>
+  <data name="Menu_Import_Masks" xml:space="preserve">
+    <value>Import collision masks...</value>
+  </data>
+  <data name="Menu_Import_Shaders" xml:space="preserve">
+    <value>Import shaders...</value>
+  </data>
+  <data name="Menu_Import_Sounds" xml:space="preserve">
+    <value>Import sounds...</value>
+  </data>
+  <data name="Menu_Import_SingleSound" xml:space="preserve">
+    <value>Import single sound...</value>
+  </data>
+  <data name="Menu_Import_NewTextureRepacker" xml:space="preserve">
+    <value>New texture repacker...</value>
+  </data>
+  <data name="Menu_Import_ReduceEmbeddedTexturePages" xml:space="preserve">
+    <value>Reduce embedded texture pages...</value>
+  </data>
+  <data name="Menu_Export_AllSprites" xml:space="preserve">
+    <value>Export all sprites...</value>
+  </data>
+  <data name="Menu_Export_AllTextures" xml:space="preserve">
+    <value>Export all textures...</value>
+  </data>
+  <data name="Menu_Export_AllTexturesGrouped" xml:space="preserve">
+    <value>Export all textures (grouped)...</value>
+  </data>
+  <data name="Menu_Export_AllTilesets" xml:space="preserve">
+    <value>Export all tilesets...</value>
+  </data>
+  <data name="Menu_Export_AllMasks" xml:space="preserve">
+    <value>Export all collision masks...</value>
+  </data>
+  <data name="Menu_Export_AllEmbeddedTextures" xml:space="preserve">
+    <value>Export all embedded textures...</value>
+  </data>
+  <data name="Menu_Export_AllFonts" xml:space="preserve">
+    <value>Export all fonts...</value>
+  </data>
+  <data name="Menu_Export_AllShaders" xml:space="preserve">
+    <value>Export all shaders...</value>
+  </data>
+  <data name="Menu_Export_AllSounds" xml:space="preserve">
+    <value>Export all sounds...</value>
+  </data>
+  <data name="Menu_Export_AllStrings" xml:space="preserve">
+    <value>Export all strings...</value>
+  </data>
+  <data name="Menu_Export_AllStringsJSON" xml:space="preserve">
+    <value>Export all strings (JSON)...</value>
+  </data>
+  <data name="Menu_Export_AllCode" xml:space="preserve">
+    <value>Export all code...</value>
+  </data>
+  <data name="Menu_Export_AllAssembly" xml:space="preserve">
+    <value>Export all assembly...</value>
+  </data>
+  <data name="Menu_Export_SpecificCode" xml:space="preserve">
+    <value>Export specific code...</value>
+  </data>
+  <data name="Menu_Export_SpecificSprites" xml:space="preserve">
+    <value>Export specific sprites...</value>
+  </data>
+  <data name="Menu_Export_SpritesAsGIF" xml:space="preserve">
+    <value>Export sprites as GIF...</value>
+  </data>
+  <data name="Menu_Export_TextureGroups" xml:space="preserve">
+    <value>Export texture groups...</value>
+  </data>
+  <data name="Menu_Export_AllRoomsToPNG" xml:space="preserve">
+    <value>Export all rooms to PNG...</value>
   </data>
 </root>

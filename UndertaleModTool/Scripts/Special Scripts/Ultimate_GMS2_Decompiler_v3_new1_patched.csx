@@ -1754,6 +1754,7 @@ if (!YYMPS)
 
 public bool DUMP, OBJT, ROOM, EXTN, SCPT, TMLN, SOND, SHDR, PATH, ACRV, SEQN, FONT, SPRT, BGND, LOG, YYMPS, ENUM, ADDFILES, FIXAUDIO, FIXTILE, GENROOM;
 public bool CSTM_Enable = false;
+public bool WRAPSCRIPTS = true;
 public List<string> CSTM = new List<string>();
 public int cpu_usage = 70;
 
@@ -1763,6 +1764,7 @@ public class MainWindow : Window
     public bool DUMP, OBJT, ROOM, EXTN, SCPT, TMLN, SOND, SHDR, PATH, ACRV, SEQN, FONT, SPRT, BGND, LOG, YYMPS, ENUM, ADDFILES, FIXAUDIO, FIXTILE, GENROOM;
 	public int cpu_usage = 70;
 	public bool CSTM_Enable = false;
+	public bool WRAPSCRIPTS = true;
 	public List<string> CSTM = new List<string>();
 	
 	private AssetPickerWindow pickerWindow;
@@ -2047,6 +2049,15 @@ public class MainWindow : Window
 		var _GENROOM = CreateCheckBox(isDark, "Generate Room Name");
 		_GENROOM.ToolTip = "Simulates GameMaker asset naming behavior.";
 
+		var _WRAPSCRIPTS = CreateCheckBox(isDark, "Wrap Scripts as Functions", true);
+		_WRAPSCRIPTS.ToolTip = "Wraps pre-2.3 scripts in 'function name(arg0, arg1...)' declarations\nand converts argument0/argument[0] to arg0/arg1.\nDynamic access like argument[i] is left untouched.\nOnly applies to GMS 2.3 and below games.";
+		if (_data.IsVersionAtLeast(2, 3))
+		{
+			_WRAPSCRIPTS.IsEnabled = false;
+			_WRAPSCRIPTS.IsChecked = false;
+			_WRAPSCRIPTS.Content = "Wrap Scripts (2.3-)";
+		}
+
 		settingsGrid.Children.Add(_LOG);
 		settingsGrid.Children.Add(_YYMPS);
 		settingsGrid.Children.Add(_ENUM);
@@ -2054,6 +2065,7 @@ public class MainWindow : Window
 		settingsGrid.Children.Add(_FIXA);
 		settingsGrid.Children.Add(_FIXT);
 		settingsGrid.Children.Add(_GENROOM);
+		settingsGrid.Children.Add(_WRAPSCRIPTS);
 
 		mainPanel.Children.Add(settingsGrid);
 
@@ -2130,6 +2142,7 @@ public class MainWindow : Window
 			FIXAUDIO = _FIXA.IsChecked == true;
 			FIXTILE = _FIXT.IsChecked == true;
 			GENROOM = _GENROOM.IsChecked == true;
+			WRAPSCRIPTS = _WRAPSCRIPTS.IsChecked == true;
 			
 			CSTM_Enable = _CSTM.IsChecked == true;
 
@@ -2467,6 +2480,7 @@ ADDFILES = window.ADDFILES;
 FIXAUDIO = window.FIXAUDIO;
 FIXTILE = window.FIXTILE;
 GENROOM = window.GENROOM;
+WRAPSCRIPTS = window.WRAPSCRIPTS;
 
 cpu_usage = window.cpu_usage;
 
@@ -3018,6 +3032,25 @@ string GetTexturePageSize()
 
 #region Main Resource Dumpers
 
+string WrapScriptAsFunction(string scriptName, string code)
+{
+    // find the highest literal argument index used, either via argumentN or argument[N].
+    int argCount = 0;
+    Regex literalIndexRegex = new Regex(@"\bargument\[\s*(\d+)\s*\]");
+    foreach (Match m in Regex.Matches(code, @"\bargument(\d+)\b"))
+        argCount = Math.Max(argCount, int.Parse(m.Groups[1].Value) + 1);
+    foreach (Match m in literalIndexRegex.Matches(code))
+        argCount = Math.Max(argCount, int.Parse(m.Groups[1].Value) + 1);
+
+    // convert argumentN -> argN and argument[N] -> argN (literal indices only).
+    // dynamic access like argument[i], argument_count, or the argument array are left untouched.
+    string newCode = Regex.Replace(code, @"\bargument(\d+)\b", m => "arg" + m.Groups[1].Value);
+    newCode = literalIndexRegex.Replace(newCode, m => "arg" + m.Groups[1].Value);
+
+    string args = String.Join(", ", Enumerable.Range(0, argCount).Select(i => $"arg{i}"));
+    return $"function {scriptName}({args})\n{{\n{newCode}\n}}";
+}
+
 void DumpScript(UndertaleScript s, int index)
 {
     string scriptName = s.Name.Content;
@@ -3033,11 +3066,13 @@ void DumpScript(UndertaleScript s, int index)
     // fallback to empty function for when the script is empty just in case if its called.
     if (dumpedCode == String.Empty)
         dumpedCode = "function " + scriptName + "()\n{\n\n}";
+    else if (!Data.IsVersionAtLeast(2, 3) && WRAPSCRIPTS)
+        dumpedCode = WrapScriptAsFunction(scriptName, dumpedCode);
 
     Directory.CreateDirectory(assetDir);
     GMScript dumpedScript = new(scriptName)
     {
-        isCompatibility = !Data.IsVersionAtLeast(2, 3),
+        isCompatibility = !Data.IsVersionAtLeast(2, 3) && !WRAPSCRIPTS,
         tags = GetTags(s)
     };
     File.WriteAllText($"{assetDir}{scriptName}.yy", JsonSerializer.Serialize(dumpedScript, jsonOptions));
@@ -5436,14 +5471,50 @@ void DumpTexGroup(UndertaleTextureGroupInfo t)
     finalExport.TextureGroups.Add(dumpedTexGroup);
 }
 
+void DumpDefaultTexGroup()
+{
+    string texGroupName = "Default";
+    GMProject.GMTextureGroup dumpedTexGroup = new(texGroupName)
+    {
+        isScaled = true,
+        compressFormat = "png",
+        loadType = "default"
+    };
+
+    foreach (var spr in Data.Sprites)
+        if (spr?.Name.Content != null && !texGroupStuff.ContainsKey(spr.Name.Content))
+            texGroupStuff.Add(spr.Name.Content, dumpedTexGroup.name);
+
+    foreach (var bgr in Data.Backgrounds)
+        if (bgr?.Name.Content != null && !texGroupStuff.ContainsKey(bgr.Name.Content))
+            texGroupStuff.Add(bgr.Name.Content, dumpedTexGroup.name);
+
+    foreach (var fnt in Data.Fonts)
+        if (fnt?.Name.Content != null && !texGroupStuff.ContainsKey(fnt.Name.Content))
+            texGroupStuff.Add(fnt.Name.Content, dumpedTexGroup.name);
+
+    finalExport.TextureGroups.Add(dumpedTexGroup);
+}
+
 async Task DumpTexGroups()
 {
     var watch = Stopwatch.StartNew();
-    foreach (UndertaleTextureGroupInfo tg in Data.TextureGroupInfo)
+    if (Data.TextureGroupInfo is null)
     {
-        DumpTexGroup(tg);
-        if (LOG)
-            PushToLog($"'{tg.Name.Content}' successfully dumped.");
+        // GMS 2.3- games have no TGIN chunk, so everything belongs to a single default group.
+        PushToLog("No texture group info found (GMS 2.3 or older detected) - using a single 'Default' texture group.");
+        DumpDefaultTexGroup();
+    }
+    else
+    {
+        foreach (UndertaleTextureGroupInfo tg in Data.TextureGroupInfo)
+        {
+            if (tg is null)
+                continue;
+            DumpTexGroup(tg);
+            if (LOG)
+                PushToLog($"'{tg.Name.Content}' successfully dumped.");
+        }
     }
     watch.Stop();
     PushToLog($"Texture Groups complete! Took {watch.ElapsedMilliseconds} ms");

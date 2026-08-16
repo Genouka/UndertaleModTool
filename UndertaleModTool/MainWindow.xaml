@@ -163,6 +163,7 @@
                     <MenuItem x:Name="ShowWhitespaceMenuItem" Header="{loc:Loc Editor_ShowWhitespace}" IsCheckable="True" Click="CodeEditorOptionMenuItem_Click"/>
                     <MenuItem x:Name="ShowHoverInfoMenuItem" Header="{loc:Loc Editor_ShowHoverInfo}" IsCheckable="True" Click="CodeEditorOptionMenuItem_Click"/>
                     <MenuItem x:Name="AutoDiagnosticsMenuItem" Header="{loc:Loc Editor_ShowAutoDiagnostics}" IsCheckable="True" Click="CodeEditorOptionMenuItem_Click"/>
+                    <MenuItem x:Name="ArgumentCountMenuItem" Header="{loc:Loc Editor_ShowArgumentCountCheck}" IsCheckable="True" Click="CodeEditorOptionMenuItem_Click"/>
                 </local:MenuItemDark>
                 <local:MenuItemDark x:Name="RootScriptItem" Header="{loc:Loc Menu_Scripts}" SubmenuOpened="RootMenuItem_SubmenuOpened">
                     <MenuItem Header="{loc:Loc Menu_Scripts_Loading}" IsEnabled="False"/>

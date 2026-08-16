@@ -2256,6 +2256,24 @@ namespace UndertaleModTool.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Possible argument count mismatch: &quot;{0}&quot; requires at least {1}, but {2} were provided.
+        /// </summary>
+        public static string Editor_ArgMismatchTooFew {
+            get {
+                return ResourceManager.GetString("Editor_ArgMismatchTooFew", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Possible argument count mismatch: &quot;{0}&quot; expects {1} argument(s), but {2} were provided.
+        /// </summary>
+        public static string Editor_ArgMismatchTooMany {
+            get {
+                return ResourceManager.GetString("Editor_ArgMismatchTooMany", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Argument types (inferred): {0}.
         /// </summary>
         public static string Editor_ArgTypesInferredLabel {
@@ -3134,6 +3152,15 @@ namespace UndertaleModTool.Localization {
         public static string Editor_ErrorsFound {
             get {
                 return ResourceManager.GetString("Editor_ErrorsFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Errors found: {0}, Warnings found: {1}.
+        /// </summary>
+        public static string Editor_ErrorsAndWarningsFound {
+            get {
+                return ResourceManager.GetString("Editor_ErrorsAndWarningsFound", resourceCulture);
             }
         }
         
@@ -5451,6 +5478,15 @@ namespace UndertaleModTool.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Check for functions with possibly mismatched argument counts.
+        /// </summary>
+        public static string Editor_ShowArgumentCountCheck {
+            get {
+                return ResourceManager.GetString("Editor_ShowArgumentCountCheck", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Hover Info.
         /// </summary>
         public static string Editor_ShowHoverInfo {
@@ -5465,6 +5501,15 @@ namespace UndertaleModTool.Localization {
         public static string Editor_ShowWhitespace {
             get {
                 return ResourceManager.GetString("Editor_ShowWhitespace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Warnings found: {0}.
+        /// </summary>
+        public static string Editor_WarningsFound {
+            get {
+                return ResourceManager.GetString("Editor_WarningsFound", resourceCulture);
             }
         }
         

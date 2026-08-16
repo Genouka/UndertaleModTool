@@ -1384,6 +1384,7 @@ namespace UndertaleModTool
                 ShowWhitespaceMenuItem.IsChecked = Settings.Instance.CodeEditorShowWhitespace;
                 ShowHoverInfoMenuItem.IsChecked = Settings.Instance.CodeEditorShowHoverInfo;
                 AutoDiagnosticsMenuItem.IsChecked = Settings.Instance.CodeEditorAutoDiagnostics;
+                ArgumentCountMenuItem.IsChecked = Settings.Instance.CodeEditorCheckArgumentCount;
             }
         }
 
@@ -1401,6 +1402,8 @@ namespace UndertaleModTool
                 Settings.Instance.CodeEditorShowHoverInfo = value;
             else if (item == AutoDiagnosticsMenuItem)
                 Settings.Instance.CodeEditorAutoDiagnostics = value;
+            else if (item == ArgumentCountMenuItem)
+                Settings.Instance.CodeEditorCheckArgumentCount = value;
             else
                 return;
             Settings.Save();

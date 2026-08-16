@@ -492,6 +492,7 @@ namespace UndertaleModTool
             ShowWhitespaceCheck.IsChecked = settings.CodeEditorShowWhitespace;
             ShowHoverInfoCheck.IsChecked = settings.CodeEditorShowHoverInfo;
             AutoDiagnosticsCheck.IsChecked = settings.CodeEditorAutoDiagnostics;
+            ArgumentCountCheck.IsChecked = settings.CodeEditorCheckArgumentCount;
 
             DecompiledEditor.WordWrap = settings.CodeEditorWordWrap;
             DisassemblyEditor.WordWrap = settings.CodeEditorWordWrap;
@@ -584,6 +585,20 @@ namespace UndertaleModTool
                 return;
 
             _ = RunDiagnosticsAsync();
+        }
+
+        private void ArgumentCountCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            if (DecompiledEditor == null)
+                return;
+            if (Settings.Instance == null) return;
+            bool value = ArgumentCountCheck.IsChecked ?? true;
+            Settings.Instance.CodeEditorCheckArgumentCount = value;
+            Settings.Save();
+
+            // Re-run diagnostics so the blue argument-mismatch warnings appear/disappear immediately
+            if (Settings.Instance?.CodeEditorAutoDiagnostics ?? true)
+                _ = RunDiagnosticsAsync();
         }
 
         private void InitializeHoverPopup()
@@ -1791,6 +1806,25 @@ namespace UndertaleModTool
             try
             {
                 result = await Task.Run(() => GmlLanguageService.ParseDiagnostics(data, docText, codeName), cts.Token);
+                if (Settings.Instance?.CodeEditorCheckArgumentCount ?? true)
+                {
+                    // Append warnings for calls whose argument count likely doesn't match the GmlSpec signature
+                    try
+                    {
+                        var argDiags = await Task.Run(() => GmlLanguageService.CheckArgumentCountDiagnostics(docText), cts.Token);
+                        if (argDiags.Count > 0)
+                        {
+                            var merged = new List<GmlDiagnostic>(result.Count + argDiags.Count);
+                            merged.AddRange(result);
+                            merged.AddRange(argDiags);
+                            result = merged;
+                        }
+                    }
+                    catch
+                    {
+                        // Argument count checking is best-effort; keep parse errors on failure
+                    }
+                }
             }
             catch (OperationCanceledException)
             {
@@ -1833,8 +1867,11 @@ namespace UndertaleModTool
                 return;
 
             _resultEntries.Clear();
+            int errorCount = 0, warningCount = 0;
             foreach (GmlDiagnostic diag in diagnostics)
             {
+                if (diag.IsError) errorCount++;
+                else warningCount++;
                 _resultEntries.Add(new CodeEditorResultEntry
                 {
                     Offset = diag.TextPosition,
@@ -1845,7 +1882,15 @@ namespace UndertaleModTool
                 });
             }
 
-            ShowResultsPanel(string.Format(LocalizationSource.GetString("Editor_ErrorsFound"), diagnostics.Count), ResultMode.Errors);
+            string header;
+            if (errorCount > 0 && warningCount > 0)
+                header = string.Format(LocalizationSource.GetString("Editor_ErrorsAndWarningsFound"), errorCount, warningCount);
+            else if (warningCount > 0)
+                header = string.Format(LocalizationSource.GetString("Editor_WarningsFound"), warningCount);
+            else
+                header = string.Format(LocalizationSource.GetString("Editor_ErrorsFound"), errorCount);
+
+            ShowResultsPanel(header, ResultMode.Errors);
         }
 
         private enum ResultMode

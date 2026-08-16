@@ -72,6 +72,9 @@
             <CheckBox x:Name="AutoDiagnosticsCheck" Margin="3,0,12,0" VerticalAlignment="Center"
                       Content="{loc:Loc Editor_ShowAutoDiagnostics}" IsChecked="True"
                       Checked="AutoDiagnosticsCheck_Changed" Unchecked="AutoDiagnosticsCheck_Changed"/>
+            <CheckBox x:Name="ArgumentCountCheck" Margin="3,0,12,0" VerticalAlignment="Center"
+                      Content="{loc:Loc Editor_ShowArgumentCountCheck}" IsChecked="True"
+                      Checked="ArgumentCountCheck_Changed" Unchecked="ArgumentCountCheck_Changed"/>
         </StackPanel>
 
         <local:TabControlDark x:Name="CodeModeTabs" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" SelectionChanged="TabControl_SelectionChanged">
