@@ -8,6 +8,9 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
         <ApplicationIcon>..\UndertaleModToolAvalonia\Assets\Icon.ico</ApplicationIcon>
+        <!-- KDE treats executables ending in ".Desktop" as desktop entry files, so drop the
+             suffix on Linux builds (the executable becomes "UndertaleModToolAvalonia"). -->
+        <AssemblyName Condition="$(RuntimeIdentifier.StartsWith('linux')) or $([MSBuild]::IsOSPlatform('Linux'))">UndertaleModToolAvalonia</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
