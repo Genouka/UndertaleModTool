@@ -41,8 +41,8 @@
         <!-- 安全网：共享项目会把桌面包 Magick.NET-Q8-AnyCPU 传递进来，这里显式排除其 runtimes，
              确保 linux-* 的 .so 永远不会混进 Android APK -->
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0" ExcludeAssets="runtimes;native" />
-        <PackageReference Include="SDL3-CS.Android" Version="3.4.12.1" />
-        <PackageReference Include="SDL3-CS.Android.Mixer" Version="3.2.4.7" />
+        <PackageReference Include="SDL3-CS.Android" Version="3.4.14.1" />
+        <PackageReference Include="SDL3-CS.Android.Mixer" Version="3.2.4.9" />
     </ItemGroup>
 
     <ItemGroup>

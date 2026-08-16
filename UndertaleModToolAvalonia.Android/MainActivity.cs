@@ -1,6 +1,8 @@
+using System;
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
+using Android.Runtime;
 using Avalonia.Android;
 using Org.Libsdl.App;
 using Android.Views;
@@ -26,7 +28,12 @@ public class MainActivity : AvaloniaMainActivity
         // SDLActivity.getContext(), which just returns SDL.getContext(). Apps that host SDL inside
         // a non-SDL activity (like Avalonia's) must register the real activity context here so SDL
         // calls like SDL_IOFromFile can initialize the APK asset manager.
+        Java.Lang.JavaSystem.LoadLibrary("SDL3");
+        SDL.SetupJNI();
+        SDL.Initialize();
         SDL.Context = this;
+
+        RegisterCrashDialog();
 
         base.OnCreate(savedInstanceState);
 
@@ -35,5 +42,27 @@ public class MainActivity : AvaloniaMainActivity
         // TreeDataGrid rows, later throws "Peer instance does not implement T" and kills the app).
         // The app does not target TalkBack/screen-reader users, so disable the whole bridge.
         AndroidAccessibilityDisabler.Disable(Window!.DecorView);
+    }
+
+    private void RegisterCrashDialog()
+    {
+        AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) =>
+        {
+            RunOnUiThread(() =>
+            {
+                var errorText = args.Exception.ToString();
+                var dialog = new AlertDialog.Builder(this);
+                dialog.SetTitle("Application error");
+                dialog.SetMessage(errorText);
+                dialog.SetPositiveButton("OK", (_, _) => { });
+                dialog.Show();
+            });
+        };
+    }
+
+    protected override void OnDestroy()
+    {
+        SDL.Context = null;
+        base.OnDestroy();
     }
 }

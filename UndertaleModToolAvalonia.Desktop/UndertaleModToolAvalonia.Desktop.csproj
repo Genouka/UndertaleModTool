@@ -12,12 +12,12 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
-        <PackageReference Include="SDL3-CS" Version="3.4.12.3" />
-        <PackageReference Include="SDL3-CS.Linux" Version="3.4.12.1" />
+        <PackageReference Include="SDL3-CS" Version="3.4.14.1" />
+        <PackageReference Include="SDL3-CS.Linux" Version="3.4.14.1" />
         <PackageReference Include="SDL3-CS.Linux.Mixer" Version="3.2.4.7" />
-        <PackageReference Include="SDL3-CS.MacOS" Version="3.4.12.1" />
+        <PackageReference Include="SDL3-CS.MacOS" Version="3.4.14.1" />
         <PackageReference Include="SDL3-CS.MacOS.Mixer" Version="3.2.4.7" />
-        <PackageReference Include="SDL3-CS.Windows" Version="3.4.12.1" />
+        <PackageReference Include="SDL3-CS.Windows" Version="3.4.14.1" />
         <PackageReference Include="SDL3-CS.Windows.Mixer" Version="3.2.4.7" />
     </ItemGroup>
 

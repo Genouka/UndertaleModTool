@@ -22,6 +22,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Content Include="..\UndertaleModTool\Resources\GmlSpecEnglish.gmlspec" Link="GmlSpecEnglish.gmlspec" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="..\UndertaleModTool\Resources\GmlSpecChinese.gmlspec" Link="GmlSpecChinese.gmlspec" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.1.0" />
         <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
         <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.0" />
@@ -35,7 +40,7 @@
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.6.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
-        <PackageReference Include="SDL3-CS" Version="3.4.12.3" />
+        <PackageReference Include="SDL3-CS" Version="3.4.14.1" />
         <PackageReference Include="TreeDataGrid" Version="12.0.0" />
         <PackageReference Include="Xaml.Behaviors" Version="12.0.5" />
     </ItemGroup>
@@ -44,4 +49,20 @@
         <ProjectReference Include="..\UndertaleModLib\UndertaleModLib.csproj" />
         <ProjectReference Include="..\UndertaleModToolLocalization\UndertaleModToolLocalization.csproj" />
     </ItemGroup>
+
+    <PropertyGroup>
+        <!--
+        Avalonia's AvaloniaPrivateApis.targets removes the reference assemblies for the Avalonia
+        package after "ResolveTargetingPackAssets", but package references are resolved later, so
+        the reference assembly (whose Unstable API members are internal) stays on the compile line
+        and prevents implementing ITopLevelImpl etc. Remove them after "ResolvePackageAssets"
+        instead; the real (lib) assemblies are then added by AvaloniaPrivateApis.targets.
+        -->
+        <AvaloniaAccessUnstablePrivateApis>true</AvaloniaAccessUnstablePrivateApis>
+    </PropertyGroup>
+    <Target Name="RemoveAvaloniaRefAssembliesLate" AfterTargets="ResolvePackageAssets">
+        <ItemGroup>
+            <Reference Remove="@(Reference)" Condition="'%(Reference.NuGetPackageId)' == 'Avalonia' And '%(Reference.HintPath)' != ''" />
+        </ItemGroup>
+    </Target>
 </Project>

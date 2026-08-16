@@ -97,7 +97,7 @@ public sealed class SimulatedWindowImpl : IWindowImpl, IOptionalFeatureProvider
     public IPlatformHandle Handle { get; } = new PlatformHandle((nint)0x4D4F434B, "SimulatedWindow");
     public Action<RawInputEventArgs>? Input { get; set; }
     public Action? LostFocus { get; set; }
-    public Action<Rect>? Paint { get; set; }
+    public System.Action<Avalonia.Rect>? Paint { get; set; }
     public double RenderScaling { get; set; } = 1;
     public Action<Size, WindowResizeReason>? Resized { get; set; }
     public Action<double>? ScalingChanged { get; set; }
@@ -213,7 +213,7 @@ public sealed class SimulatedPopupImpl : IPopupImpl
     public IPlatformHandle Handle { get; } = new PlatformHandle((nint)0x504F5000, "SimulatedPopup");
     public Action<RawInputEventArgs>? Input { get; set; }
     public Action? LostFocus { get; set; }
-    public Action<Rect>? Paint { get; set; }
+    public System.Action<Avalonia.Rect>? Paint { get; set; }
     public double RenderScaling { get; set; } = 1;
     public Action<Size, WindowResizeReason>? Resized { get; set; }
     public Action<double>? ScalingChanged { get; set; }

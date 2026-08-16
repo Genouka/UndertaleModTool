@@ -130,6 +130,13 @@ public partial class SettingsFile
     public bool EnableSyntaxHighlighting { get; set; } = true;
     public bool AutomaticallyCompileAndDecompileCodeOnLostFocus { get; set; } = true;
 
+    // Code editor options
+    public bool CodeEditorWordWrap { get; set; } = true;
+    public bool CodeEditorShowWhitespace { get; set; } = false;
+    public bool CodeEditorShowHoverInfo { get; set; } = true;
+    public bool CodeEditorAutoDiagnostics { get; set; } = true;
+    public bool ChangeTrackingEnabled { get; set; } = true;
+
     public bool EnableRoomGridByDefault { get; set; } = false;
     public uint DefaultRoomGridWidth { get; set; } = 20;
     public uint DefaultRoomGridHeight { get; set; } = 20;

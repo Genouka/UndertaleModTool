@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Avalonia.Xaml.Interactions.DragAndDrop;
 using Avalonia.Xaml.Interactivity;
 using UndertaleModLib;
@@ -61,6 +62,33 @@ public class UndertaleRoomEditor : Control
 
     uint? hoveredTile = null;
 
+    #region Touch
+
+    enum TouchMode
+    {
+        None,
+        PossibleTap,
+        Panning,
+        MovingItem,
+        Pinching,
+    }
+
+    static readonly TimeSpan TouchLongPressDuration = TimeSpan.FromSeconds(2);
+    const double TouchMoveThreshold = 10;
+
+    readonly Dictionary<long, Point> touchPoints = new();
+    TouchMode touchMode = TouchMode.None;
+    long? touchPrimaryId = null;
+    long? touchSecondaryId = null;
+    Point touchStartPosition;
+    DispatcherTimer? longPressTimer;
+
+    double pinchStartDistance;
+    double pinchStartScale;
+    Point pinchStartRoomPoint;
+
+    #endregion
+
     public UndertaleRoomEditor()
     {
         ClipToBounds = true;
@@ -82,6 +110,13 @@ public class UndertaleRoomEditor : Control
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
+        if (e.Pointer.Type == PointerType.Touch)
+        {
+            TouchPressed(e);
+            e.Handled = true;
+            return;
+        }
+
         PointerPoint pointerPoint = e.GetCurrentPoint(this);
         InteractionMode interactionMode = GetInteractionMode();
 
@@ -89,7 +124,8 @@ public class UndertaleRoomEditor : Control
 
         var roomItems = Updater.MakeRoomItems(vm!.Room);
 
-        if (pointerPoint.Properties.IsMiddleButtonPressed)
+        if (pointerPoint.Properties.IsMiddleButtonPressed
+            || (interactionMode == InteractionMode.Items && pointerPoint.Properties.IsRightButtonPressed))
         {
             TranslationMoveOnPressed();
         }
@@ -131,6 +167,13 @@ public class UndertaleRoomEditor : Control
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
+        if (e.Pointer.Type == PointerType.Touch)
+        {
+            TouchMoved(e);
+            e.Handled = true;
+            return;
+        }
+
         PointerPoint pointerPoint = e.GetCurrentPoint(this);
         InteractionMode interactionMode = GetInteractionMode();
         UndertaleRoom.Layer? tilesLayer = GetSelectedTilesLayer();
@@ -203,6 +246,13 @@ public class UndertaleRoomEditor : Control
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
+        if (e.Pointer.Type == PointerType.Touch)
+        {
+            TouchReleased(e);
+            e.Handled = true;
+            return;
+        }
+
         InteractionMode interactionMode = GetInteractionMode();
         UndertaleRoom.Layer? tilesLayer = GetSelectedTilesLayer();
 
@@ -280,6 +330,278 @@ public class UndertaleRoomEditor : Control
         if (e.PhysicalKey == PhysicalKey.Space)
         {
             TranslationMoveOnReleased();
+        }
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        if (e.Pointer.Type == PointerType.Touch)
+        {
+            ResetTouchState();
+        }
+    }
+
+    static double Distance(Point a, Point b)
+    {
+        Vector v = b - a;
+        return v.Length;
+    }
+
+    void StartLongPressTimer()
+    {
+        StopLongPressTimer();
+        longPressTimer = new DispatcherTimer(TouchLongPressDuration, DispatcherPriority.Background, (_, _) => OnLongPressTimerTick());
+        longPressTimer.Start();
+    }
+
+    void StopLongPressTimer()
+    {
+        longPressTimer?.Stop();
+        longPressTimer = null;
+    }
+
+    void ResetTouchState()
+    {
+        StopLongPressTimer();
+        touchPoints.Clear();
+        touchPrimaryId = null;
+        touchSecondaryId = null;
+        touchMode = TouchMode.None;
+        TranslationMoveOnReleased();
+    }
+
+    void TouchPressed(PointerPressedEventArgs e)
+    {
+        long id = e.Pointer.Id;
+        Point pos = e.GetPosition(this);
+        e.Pointer.Capture(this);
+
+        touchPoints[id] = pos;
+
+        if (touchPrimaryId is null)
+        {
+            touchPrimaryId = id;
+            touchStartPosition = pos;
+            pointerPosition = pos;
+            pointerPositionInRoom = (pointerPosition - translation) / scaling;
+            touchMode = TouchMode.PossibleTap;
+            StartLongPressTimer();
+        }
+        else if (touchSecondaryId is null)
+        {
+            touchSecondaryId = id;
+            StopLongPressTimer();
+            BeginPinch();
+        }
+    }
+
+    void TouchMoved(PointerEventArgs e)
+    {
+        long id = e.Pointer.Id;
+        Point pos = e.GetPosition(this);
+        pointerPosition = pos;
+
+        if (touchPoints.ContainsKey(id))
+            touchPoints[id] = pos;
+
+        if (touchMode == TouchMode.Pinching)
+        {
+            UpdatePinch();
+            return;
+        }
+
+        if (id != touchPrimaryId)
+            return;
+
+        pointerPositionInRoom = (pointerPosition - translation) / scaling;
+
+        switch (touchMode)
+        {
+            case TouchMode.PossibleTap:
+                if (Distance(pos, touchStartPosition) > TouchMoveThreshold)
+                {
+                    StopLongPressTimer();
+                    touchMode = TouchMode.Panning;
+                    TranslationMoveOnPressed();
+                }
+                break;
+            case TouchMode.Panning:
+                TranslationMoveOnMoved();
+                break;
+            case TouchMode.MovingItem:
+                TouchMoveAction();
+                break;
+        }
+
+        vm!.StatusText = $"({Math.Floor(pointerPositionInRoom.X)}, {Math.Floor(pointerPositionInRoom.Y)})";
+    }
+
+    void TouchReleased(PointerReleasedEventArgs e)
+    {
+        long id = e.Pointer.Id;
+        Point pos = e.GetPosition(this);
+        pointerPosition = pos;
+
+        if (touchMode == TouchMode.Pinching)
+        {
+            touchPoints.Remove(id);
+            if (id == touchPrimaryId) touchPrimaryId = null;
+            if (id == touchSecondaryId) touchSecondaryId = null;
+
+            if (touchPoints.Count < 2)
+            {
+                if (touchPoints.Count == 1)
+                {
+                    var remaining = touchPoints.First();
+                    touchPrimaryId = remaining.Key;
+                    touchMode = TouchMode.Panning;
+                    pointerPosition = remaining.Value;
+                    TranslationMoveOnPressed();
+                }
+                else
+                {
+                    touchMode = TouchMode.None;
+                }
+            }
+            return;
+        }
+
+        if (id != touchPrimaryId)
+        {
+            touchPoints.Remove(id);
+            return;
+        }
+
+        if (touchMode == TouchMode.PossibleTap)
+        {
+            StopLongPressTimer();
+            pointerPosition = pos;
+            pointerPositionInRoom = (pointerPosition - translation) / scaling;
+            TouchPressAction();
+        }
+        else if (touchMode == TouchMode.Panning)
+        {
+            TranslationMoveOnReleased();
+        }
+
+        touchPoints.Remove(id);
+        touchPrimaryId = null;
+        touchSecondaryId = null;
+
+        if (touchPoints.Count > 0)
+        {
+            var remaining = touchPoints.First();
+            touchPrimaryId = remaining.Key;
+            touchStartPosition = remaining.Value;
+            pointerPosition = remaining.Value;
+            pointerPositionInRoom = (pointerPosition - translation) / scaling;
+            touchMode = TouchMode.Panning;
+            TranslationMoveOnPressed();
+        }
+        else
+        {
+            touchMode = TouchMode.None;
+        }
+    }
+
+    void OnLongPressTimerTick()
+    {
+        if (touchMode != TouchMode.PossibleTap)
+            return;
+        if (touchPoints.Count != 1)
+            return;
+
+        touchMode = TouchMode.MovingItem;
+        pointerPosition = touchStartPosition;
+        pointerPositionInRoom = (pointerPosition - translation) / scaling;
+        TouchPressAction();
+    }
+
+    void BeginPinch()
+    {
+        if (touchPoints.Count < 2)
+            return;
+
+        var points = touchPoints.Values.Take(2).ToArray();
+        pinchStartDistance = Distance(points[0], points[1]);
+        if (pinchStartDistance <= 0)
+            pinchStartDistance = 1;
+        pinchStartScale = scaling;
+
+        Point mid = new((points[0].X + points[1].X) / 2, (points[0].Y + points[1].Y) / 2);
+        pinchStartRoomPoint = (mid - translation) / scaling;
+
+        touchMode = TouchMode.Pinching;
+        TranslationMoveOnReleased();
+    }
+
+    void UpdatePinch()
+    {
+        if (touchPoints.Count < 2)
+            return;
+
+        var points = touchPoints.Values.Take(2).ToArray();
+        double newDist = Distance(points[0], points[1]);
+        if (newDist <= 0)
+            return;
+
+        double factor = newDist / pinchStartDistance;
+        double newScale = Math.Clamp(pinchStartScale * factor, 0.001, 1000);
+
+        Point mid = new((points[0].X + points[1].X) / 2, (points[0].Y + points[1].Y) / 2);
+
+        translation = mid - pinchStartRoomPoint * newScale;
+        translation = new Vector(Math.Round(translation.X), Math.Round(translation.Y));
+
+        scaling = newScale;
+        vm!.Zoom = scaling;
+    }
+
+    void TouchPressAction()
+    {
+        var roomItems = Updater.MakeRoomItems(vm!.Room);
+        InteractionMode interactionMode = GetInteractionMode();
+
+        switch (interactionMode)
+        {
+            case InteractionMode.Items:
+                ItemHoverOnMoved(roomItems);
+                ItemMoveOnPressed(roomItems);
+                break;
+            case InteractionMode.Tiles:
+                UndertaleRoom.Layer? tilesLayer = GetSelectedTilesLayer();
+                if (tilesLayer is not null && !vm!.IsLocked)
+                    SetLayerTileAtPointer(tilesLayer, vm!.SelectedTileData);
+                break;
+            case InteractionMode.RoomTiles:
+                if (!vm!.IsLocked)
+                    SetRoomTileAtPointer(roomItems, vm!.SelectedTileResource, vm!.SelectedTileSourceRect, overrideGrid: false);
+                break;
+        }
+    }
+
+    void TouchMoveAction()
+    {
+        if (vm!.IsLocked)
+            return;
+
+        var roomItems = Updater.MakeRoomItems(vm!.Room);
+        InteractionMode interactionMode = GetInteractionMode();
+
+        switch (interactionMode)
+        {
+            case InteractionMode.Items:
+                ItemMoveOnMoved(roomItems, overrideGrid: false);
+                break;
+            case InteractionMode.Tiles:
+                UndertaleRoom.Layer? tilesLayer = GetSelectedTilesLayer();
+                if (tilesLayer is not null)
+                    SetLayerTileAtPointer(tilesLayer, vm!.SelectedTileData);
+                break;
+            case InteractionMode.RoomTiles:
+                SetRoomTileAtPointer(roomItems, vm!.SelectedTileResource, vm!.SelectedTileSourceRect, overrideGrid: false);
+                break;
         }
     }
 

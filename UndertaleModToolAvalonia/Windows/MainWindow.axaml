@@ -27,9 +27,63 @@
                     <NativeMenuItem Header="{l:Loc Menu_File_Exit}" Command="{Binding FileExit}"/>
                 </NativeMenu>
             </NativeMenuItem>
-            <NativeMenuItem Header="{l:Loc Menu_Import}" IsEnabled="False">
+            <NativeMenuItem Header="{l:Loc Menu_Import}">
+                <NativeMenu>
+                    <NativeMenuItem Header="{l:Loc Menu_Import_Graphics}" Command="{Binding ImportGraphics}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Import_GraphicsAdvanced}" Command="{Binding ImportGraphicsAdvanced}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Import_ApplyBasicGraphicsMod}" Command="{Binding ImportApplyBasicGraphicsMod}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Import_AllEmbeddedTextures}" Command="{Binding ImportAllEmbeddedTextures}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Import_AllTilesets}" Command="{Binding ImportAllTilesets}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Import_AllStrings}" Command="{Binding ImportAllStrings}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Import_AllStringsJSON}" Command="{Binding ImportAllStringsJSON}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Import_Fonts}" Command="{Binding ImportFonts}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Import_GMS2FontData}" Command="{Binding ImportGMS2FontData}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Import_GML}" Command="{Binding ImportGML}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Import_Assembly}" Command="{Binding ImportAssembly}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Import_Masks}" Command="{Binding ImportMasks}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Import_Shaders}" Command="{Binding ImportShaders}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Import_Sounds}" Command="{Binding ImportSounds}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Import_SingleSound}" Command="{Binding ImportSingleSound}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Import_NewTextureRepacker}" Command="{Binding NewTextureRepacker}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Import_ReduceEmbeddedTexturePages}" Command="{Binding ReduceEmbeddedTexturePages}"/>
+                </NativeMenu>
             </NativeMenuItem>
-            <NativeMenuItem Header="{l:Loc Menu_Export}" IsEnabled="False">
+            <NativeMenuItem Header="{l:Loc Menu_Export}">
+                <NativeMenu>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllSprites}" Command="{Binding ExportAllSprites}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_SpecificSprites}" Command="{Binding ExportSpecificSprites}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_SpritesAsGIF}" Command="{Binding ExportSpritesAsGIF}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllTextures}" Command="{Binding ExportAllTextures}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllTexturesGrouped}" Command="{Binding ExportAllTexturesGrouped}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllTilesets}" Command="{Binding ExportAllTilesets}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllMasks}" Command="{Binding ExportAllMasks}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllEmbeddedTextures}" Command="{Binding ExportAllEmbeddedTextures}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllFonts}" Command="{Binding ExportAllFonts}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllShaders}" Command="{Binding ExportAllShaders}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllSounds}" Command="{Binding ExportAllSounds}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllStrings}" Command="{Binding ExportAllStrings}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllStringsJSON}" Command="{Binding ExportAllStringsJSON}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllCode}" Command="{Binding ExportAllCode}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllAssembly}" Command="{Binding ExportAllAssembly}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_SpecificCode}" Command="{Binding ExportSpecificCode}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_Export_AllRoomsToPNG}" Command="{Binding ExportAllRoomsToPNG}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Export_TextureGroups}" Command="{Binding ExportTextureGroups}"/>
+                </NativeMenu>
             </NativeMenuItem>
             <NativeMenuItem Header="{l:Loc Menu_Tools}">
                 <NativeMenu>

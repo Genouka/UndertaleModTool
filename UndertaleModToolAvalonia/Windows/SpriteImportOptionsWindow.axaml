@@ -1,0 +1,53 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        mc:Ignorable="d"
+        x:Class="UndertaleModToolAvalonia.SpriteImportOptionsWindow"
+        Title="Select Sprite Parameters"
+        Width="360"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <StackPanel Margin="12" Spacing="8">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Special Version:" VerticalAlignment="Center" Width="120"/>
+            <CheckBox x:Name="IsSpecialBox" VerticalAlignment="Center"/>
+            <TextBox x:Name="SpecialVersionBox" Width="60" Text="1" IsEnabled="False"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Animation Speed:" VerticalAlignment="Center" Width="120"/>
+            <TextBox x:Name="AnimationSpeedBox" Width="60" Text="1" IsEnabled="False"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Playback Type:" VerticalAlignment="Center" Width="120"/>
+            <ComboBox x:Name="PlaybackTypeBox" Width="180">
+                <ComboBoxItem Content="Frames Per Second"/>
+                <ComboBoxItem Content="Frames Per Game Frame"/>
+            </ComboBox>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Origin Position:" VerticalAlignment="Center" Width="120"/>
+            <ComboBox x:Name="OriginPositionBox" Width="180">
+                <ComboBoxItem Content="Top Left"/>
+                <ComboBoxItem Content="Top Center"/>
+                <ComboBoxItem Content="Top Right"/>
+                <ComboBoxItem Content="Center Left"/>
+                <ComboBoxItem Content="Center"/>
+                <ComboBoxItem Content="Center Right"/>
+                <ComboBoxItem Content="Bottom Left"/>
+                <ComboBoxItem Content="Bottom Center"/>
+                <ComboBoxItem Content="Bottom Right"/>
+            </ComboBox>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Content="&amp;Confirm" Click="ConfirmButton_Click" IsDefault="True"/>
+            <Button Content="Cancel" Click="CancelButton_Click"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

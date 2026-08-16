@@ -8,7 +8,9 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="UndertaleModToolAvalonia.UndertaleCodeView"
              x:DataType="l:UndertaleCodeViewModel">
-    <Grid RowDefinitions="Auto,1*" ColumnDefinitions="1*">
+    <!-- Note: The 4th row is zero-sized so results & diagnostics panel is initialy hidden/closed. -->
+    <Grid RowDefinitions="Auto,Auto,1*,Auto" ColumnDefinitions="1*">
+
         <Grid Grid.Row="0" ColumnDefinitions="1*,Auto" Classes="PaddedProperties">
             <Grid Grid.Column="0" l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
                 <Label Content="{l:Loc Common_Name}"/>
@@ -23,11 +25,21 @@
                 <TextBlock IsVisible="{Binding IsCompiled}" Text="{l:Loc Common_Compiled}"/>
             </StackPanel>
         </Grid>
-        
-        <TabControl Grid.Row="1" IsVisible="{Binding Code.ParentEntry, Converter={x:Static ObjectConverters.IsNull}}"
-                    SelectedIndex="{Binding SelectedTab}">
-            <TabItem Header="{l:Loc Common_GML}">
-                <ThemeVariantScope RequestedThemeVariant="Dark">
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Classes="PaddedProperties" Spacing="12">
+            <CheckBox x:Name="WordWrapCheck" Content="{l:Loc Editor_WordWrap}" IsChecked="True" IsHitTestVisible="True"
+                      IsCheckedChanged="WordWrapCheck_Changed"/>
+            <CheckBox x:Name="ShowWhitespaceCheck" Content="{l:Loc Editor_ShowWhitespace}" IsChecked="False"
+                      IsCheckedChanged="ShowWhitespaceCheck_Changed"/>
+            <CheckBox x:Name="ShowHoverInfoCheck" Content="{l:Loc Editor_ShowHoverInfo}" IsChecked="True"
+                      IsCheckedChanged="ShowHoverInfoCheck_Changed"/>
+            <CheckBox x:Name="AutoDiagnosticsCheck" Content="{l:Loc Editor_ShowAutoDiagnostics}" IsChecked="True"
+                      IsCheckedChanged="AutoDiagnosticsCheck_Changed"/>
+        </StackPanel>
+
+        <Grid Grid.Row="2">
+            <TabControl IsVisible="{Binding Code.ParentEntry, Converter={x:Static ObjectConverters.IsNull}}" SelectedIndex="{Binding SelectedTab}">
+                <TabItem Header="{l:Loc Common_GML}">
                     <AvaloniaEdit:TextEditor x:Name="GMLTextEditor"
                                              Document="{Binding GMLTextDocument, Mode=OneWayToSource}"
                                              IsEnabled="{Binding !IsCodeProcessing, Mode=OneWay}"
@@ -38,10 +50,8 @@
                             <KeyBinding Gesture="{OnPlatform 'Ctrl+K', macOS='Meta+K'}" Command="{Binding CompileAndDecompileGML}" />
                         </AvaloniaEdit:TextEditor.KeyBindings>
                     </AvaloniaEdit:TextEditor>
-                </ThemeVariantScope>
-            </TabItem>
-            <TabItem Header="{l:Loc Common_ASM}">
-                <ThemeVariantScope RequestedThemeVariant="Dark">
+                </TabItem>
+                <TabItem Header="{l:Loc Common_ASM}">
                     <AvaloniaEdit:TextEditor x:Name="ASMTextEditor"
                                              Document="{Binding ASMTextDocument, Mode=OneWayToSource}"
                                              IsEnabled="{Binding !IsCodeProcessing, Mode=OneWay}"
@@ -52,12 +62,36 @@
                             <KeyBinding Gesture="{OnPlatform 'Ctrl+K', macOS='Meta+K'}" Command="{Binding CompileAndDecompileASM}" />
                         </AvaloniaEdit:TextEditor.KeyBindings>
                     </AvaloniaEdit:TextEditor>
-                </ThemeVariantScope>
-            </TabItem>
-        </TabControl>
-        
-        <TextBlock Grid.Row="1" IsVisible="{Binding Code.ParentEntry, Converter={x:Static ObjectConverters.IsNotNull}}" Classes="PaddedProperties">
-            <Run Text="{l:Loc Editor_Code_AnonymousFunctionBefore}" /><Run Text="{Binding Code.ParentEntry.Name.Content}"/><Run Text="{l:Loc Editor_Code_AnonymousFunctionAfter}" />
-        </TextBlock>
+                </TabItem>
+            </TabControl>
+            <TextBlock IsVisible="{Binding Code.ParentEntry, Converter={x:Static ObjectConverters.IsNotNull}}" Classes="PaddedProperties" TextWrapping="Wrap">
+                <Run Text="{l:Loc Editor_Code_AnonymousFunctionBefore}" /><Run Text="{Binding Code.ParentEntry.Name.Content}"/><Run Text="{l:Loc Editor_Code_AnonymousFunctionAfter}" />
+            </TextBlock>
+        </Grid>
+
+        <!-- Results panel (search references / diagnostics) -->
+        <Border x:Name="ResultsPanel" Grid.Row="3" BorderThickness="0,1,0,0" IsVisible="False" MaxHeight="180">
+            <Border.BorderBrush>
+                <SolidColorBrush Color="#FF3C3C3C" />
+            </Border.BorderBrush>
+            <Grid RowDefinitions="Auto,*">
+                <DockPanel Grid.Row="0" Margin="4,2,4,0">
+                    <Button x:Name="ResultsCloseButton" DockPanel.Dock="Right" Content="&#x2715;" Width="20" Height="20"
+                            Margin="6,0,0,0" Click="ResultsCloseButton_Click" Focusable="False"/>
+                    <TextBlock x:Name="ResultsHeaderText" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                </DockPanel>
+                <ListBox x:Name="ResultsListBox" Grid.Row="1" Margin="4,2,4,4"
+                         FontFamily="Consolas" FontSize="12"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         DoubleTapped="ResultsListBox_DoubleTapped">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="l:UndertaleCodeView+CodeEditorResultEntry">
+                            <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>
