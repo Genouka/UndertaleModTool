@@ -489,14 +489,32 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         {
             if (path is null)
             {
-                // Platform without a local path (e.g. Android SAF storage access).
-                using Stream stream = await file.OpenWriteAsync();
-                if (await SaveData(stream))
+                // Android SAF 输出流可能不支持随机访问(不可 Seek),而 UndertaleWriter 依赖
+                // Position/Seek。先把数据写入缓存里的临时文件(可 Seek),再顺序拷贝到所选文件。
+                string tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".tmp");
+                try
                 {
+                    using (FileStream tempStream = File.Open(tempFilePath, FileMode.CreateNew, FileAccess.ReadWrite))
+                    {
+                        if (!await SaveData(tempStream))
+                        {
+                            return false;
+                        }
+                        tempStream.Flush(flushToDisk: true);
+                        tempStream.Position = 0;
+
+                        using Stream destStream = await file.OpenWriteAsync();
+                        await tempStream.CopyToAsync(destStream);
+                        await destStream.FlushAsync();
+                    }
+
                     lastDataLocation = await file.GetParentAsync();
                     return true;
                 }
-                return false;
+                finally
+                {
+                    File.Delete(tempFilePath);
+                }
             }
 
             string tempPath = path + "temp";
