@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark-mode activity theme (see values/styles.xml). -->
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:statusBarColor">#FF202020</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">#FF202020</item>
+    </style>
+</resources>

@@ -9,6 +9,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 
 namespace UndertaleModToolAvalonia.Android;
 
@@ -68,6 +69,10 @@ public class MockStackWindow : UserControl
     TextBlock captionLabel = null!;
     ContentControl activeContentHost = null!;
     Panel modalOverlay = null!;
+
+    // Simulated-window chrome whose colors track the current theme (see ApplyThemeColors).
+    Border headerBorder = null!;
+    Border modalSurface = null!;
     Border modalHeader = null!;
     TextBlock modalTitle = null!;
     ContentControl modalContentHost = null!;
@@ -78,6 +83,11 @@ public class MockStackWindow : UserControl
 
         BuildVisualTree();
         Reset();
+
+        // The hard-coded dark background used to make the app stay black even in light mode.
+        // Re-derive all chrome colors from the active theme variant from now on.
+        ApplyThemeColors();
+        ActualThemeVariantChanged += (_, _) => ApplyThemeColors();
     }
 
     /// <summary>The simulated main page (the actual UndertaleModTool UI).</summary>
@@ -113,8 +123,6 @@ public class MockStackWindow : UserControl
         BuildModalOverlay();
 
         Content = root;
-
-        Background = new SolidColorBrush(Color.FromRgb(32, 32, 32));
     }
 
     Control BuildHeader()
@@ -123,8 +131,8 @@ public class MockStackWindow : UserControl
         {
             Padding = new Thickness(8, 4),
             BorderThickness = new Thickness(0, 0, 0, 1),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(32, 255, 255, 255)),
         };
+        headerBorder = border;
 
         DockPanel dock = new();
         border.Child = dock;
@@ -133,7 +141,6 @@ public class MockStackWindow : UserControl
         {
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 8, 0),
-            Foreground = new SolidColorBrush(Color.FromRgb(180, 180, 180)),
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
         DockPanel.SetDock(captionLabel, Dock.Right);
@@ -157,10 +164,8 @@ public class MockStackWindow : UserControl
 
     void BuildModalOverlay()
     {
-        Border overlay = new()
-        {
-            Background = new SolidColorBrush(Color.FromRgb(26, 26, 26)),
-        };
+        Border overlay = new();
+        modalSurface = overlay;
 
         DockPanel dock = new();
 
@@ -168,7 +173,6 @@ public class MockStackWindow : UserControl
         {
             Padding = new Thickness(8, 4),
             BorderThickness = new Thickness(0, 0, 0, 1),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(48, 255, 255, 255)),
         };
         Grid grid = new()
         {
@@ -459,6 +463,55 @@ public class MockStackWindow : UserControl
     }
 
     /// <summary>
+    /// Repaints the simulated-window chrome to match the active theme variant (light/dark).
+    /// The app used to paint a hard-coded dark background here, which made the Android UI stay
+    /// black even when the light theme was selected. The colors are now taken from the same
+    /// Avalonia Fluent theme brushes the regular (desktop) windows use, so the single Android
+    /// window surface follows the theme like everything else.
+    /// </summary>
+    void ApplyThemeColors()
+    {
+        bool isDark = ActualThemeVariant != ThemeVariant.Light;
+
+        SolidColorBrush? Resolve(string key)
+        {
+            if (App.Current is { } app &&
+                app.TryFindResource(key, ActualThemeVariant, out object? value) &&
+                value is SolidColorBrush brush)
+            {
+                return brush;
+            }
+
+            return null;
+        }
+
+        // App surface: the Fluent theme's window-surface brush (white in light mode,
+        // black in dark mode). Falls back to equivalents of the old hard-coded color.
+        SolidColorBrush surfaceBrush = Resolve("SystemControlBackgroundAltHighBrush")
+            ?? new SolidColorBrush(isDark ? Color.FromRgb(32, 32, 32) : Colors.White);
+        Background = surfaceBrush;
+
+        // Hairline separators: translucent foreground ink (dark theme → white, light → black).
+        headerBorder.BorderBrush = new SolidColorBrush(
+            isDark ? Color.FromArgb(32, 255, 255, 255) : Color.FromArgb(32, 0, 0, 0));
+        modalHeader.BorderBrush = new SolidColorBrush(
+            isDark ? Color.FromArgb(48, 255, 255, 255) : Color.FromArgb(48, 0, 0, 0));
+
+        // Secondary caption text ("N active dialog(s)").
+        captionLabel.Foreground = Resolve("SystemControlForegroundBaseMediumBrush")
+            ?? new SolidColorBrush(isDark ? Color.FromRgb(180, 180, 180) : Color.FromRgb(90, 90, 90));
+
+        // Surface behind modal dialogs: a slightly contrasting chrome surface.
+        modalSurface.Background = Resolve("SystemControlBackgroundChromeMediumLowBrush")
+            ?? new SolidColorBrush(isDark ? Color.FromRgb(26, 26, 26) : Color.FromRgb(245, 245, 245));
+
+        // Keep the Android status bar the same color as the app surface. Avalonia applies
+        // SystemBarColor to the native status bar on Android (see TopLevel.SystemBarColor).
+        if (TopLevel.GetTopLevel(this) is { } topLevel)
+            TopLevel.SetSystemBarColor(topLevel, surfaceBrush);
+    }
+
+    /// <summary>
     /// Reads the result value that was passed to <see cref="Window.Close(object?)"/>.
     /// The field is not exposed publicly by Avalonia, so it is read reflectively here.
     /// </summary>
@@ -477,6 +530,10 @@ public class MockStackWindow : UserControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+
+        // The top-level (and the native status bar) is only reachable once attached;
+        // re-apply so the system bar color is pushed to the platform.
+        ApplyThemeColors();
 
         TopLevel? topLevel = TopLevel.GetTopLevel(this);
         if (topLevel is not null)

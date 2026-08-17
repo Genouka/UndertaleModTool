@@ -64,10 +64,11 @@ public partial class LoaderWindow : Window, ILoaderWindow
 
     public void EnsureShown()
     {
-        if (showOwner is not null && canShow)
+        if (canShow)
         {
             canShow = false;
-            _ = WindowHost.ShowDialog(showOwner, this);
+            if (showOwner is not null || WindowHost.ShowDialogHandler is not null)
+                _ = WindowHost.ShowDialog(showOwner, this);
         }
     }
 

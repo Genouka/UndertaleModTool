@@ -4626,6 +4626,9 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Msg_UnhandledException" xml:space="preserve">
     <value>未处理的异常</value>
   </data>
+  <data name="Crash_FullLogNote" xml:space="preserve">
+    <value>详细信息已写入崩溃日志：</value>
+  </data>
   <data name="Msg_UnknownIndentStyle" xml:space="preserve">
     <value>未知缩进样式</value>
   </data>

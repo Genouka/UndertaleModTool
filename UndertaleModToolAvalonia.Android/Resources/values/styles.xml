@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
+      Light-mode activity theme. The dark-mode counterpart lives in values-night/styles.xml;
+      the system picks the right one automatically. These colors only matter before the
+      Avalonia surface renders (cold start) and for the status bar in legacy (non
+      edge-to-edge) layout; once the app paints, the theme-aware colors set by
+      MockStackWindow.ApplyThemeColors take over.
+    -->
     <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:statusBarColor">#FF202020</item>
-        <item name="android:windowBackground">#FF202020</item>
+        <item name="android:statusBarColor">#FFFFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">#FFFFFFFF</item>
     </style>
 </resources>

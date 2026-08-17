@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0-android</TargetFramework>
@@ -52,6 +52,48 @@
     <ItemGroup>
         <AndroidResource Include="Resources\values\colors.xml" />
         <AndroidResource Include="Resources\values\styles.xml" />
+        <AndroidResource Include="Resources\values-night\colors.xml" />
+        <AndroidResource Include="Resources\values-night\styles.xml" />
     </ItemGroup>
+
+    <!--
+        Android script support: the Roslyn scripting engine (Core/Scripting.cs) resolves metadata
+        references from real files, but on Android the managed (non-AOT) assemblies are stored
+        inside the APK (assembly store / lib/*.dll.so) and cannot be resolved from the filesystem,
+        so script compilation fails with "cannot find assembly". To fix that, package plain DLL
+        copies of every resolved managed assembly under assets/ScriptAssemblies; at runtime
+        ScriptAssemblyExtractor extracts them to internal storage and Scripting.RunScript uses that
+        folder as the script compilation references.
+
+        Source of the DLLs: the unshrunk (and non-AOT) per-ABI assembly copies produced by
+        _LinkAssembliesNoShrink into $(MonoAndroidIntermediateAssemblyDir)<abi>\. Only the first
+        supported ABI is packaged - the managed assemblies are identical across ABIs.
+        Hooked before _ComputeAndroidAssetsPaths (the target inside UpdateAndroidAssets that consumes
+        @(AndroidAsset)), so the new asset entries always reach the aapt2 packaging regardless of
+        incremental build state. Note: hooking UpdateAndroidAssets itself is too late - a target's
+        DependsOnTargets run before BeforeTargets hooks.
+    -->
+    <Target Name="BundleScriptAssembliesToAssets"
+            DependsOnTargets="_LinkAssembliesNoShrink;_ResolveAndroidTooling"
+            BeforeTargets="_ComputeAndroidAssetsPaths"
+            Condition="'$(EmbedAssembliesIntoApk)' == 'True'">
+        <PropertyGroup>
+            <_ScriptAssembliesAbi>$(AndroidSupportedAbis.Split(';')[0])</_ScriptAssembliesAbi>
+            <_ScriptAssembliesDir>$(MonoAndroidIntermediateAssemblyDir)$(_ScriptAssembliesAbi)</_ScriptAssembliesDir>
+        </PropertyGroup>
+        <ItemGroup Condition="'$(_ScriptAssembliesAbi)' != '' And Exists('$(_ScriptAssembliesDir)')">
+            <!-- Two-step item construction: well-known metadata (%(Filename)/%(Extension)) of glob
+                 items is not yet computed when other metadata on the SAME ItemGroup entry is
+                 evaluated, so Link would end up empty. Reading them via %(_ScriptDll.Filename)
+                 in a second ItemGroup yields the real value. Link must carry the "Assets\" prefix:
+                 AndroidComputeResPaths strips it and keeps the remainder as the asset path inside
+                 assets/ScriptAssemblies/. -->
+            <_ScriptDll Include="$(_ScriptAssembliesDir)\*.dll" />
+        </ItemGroup>
+        <ItemGroup Condition="'$(_ScriptAssembliesAbi)' != '' And Exists('$(_ScriptAssembliesDir)')">
+            <AndroidAsset Include="@(_ScriptDll)"
+                          Link="Assets\ScriptAssemblies\%(_ScriptDll.Filename)%(_ScriptDll.Extension)" />
+        </ItemGroup>
+    </Target>
 
 </Project>

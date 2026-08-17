@@ -2,7 +2,6 @@ using System;
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
-using Android.Runtime;
 using Avalonia.Android;
 using Org.Libsdl.App;
 using Android.Views;
@@ -33,8 +32,6 @@ public class MainActivity : AvaloniaMainActivity
         SDL.Initialize();
         SDL.Context = this;
 
-        RegisterCrashDialog();
-
         base.OnCreate(savedInstanceState);
 
         // Avalonia.Android's accessibility bridge crashes when a screen-reader/accessibility service
@@ -59,22 +56,6 @@ public class MainActivity : AvaloniaMainActivity
     {
         base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         StoragePermissionHelper.OnRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    private void RegisterCrashDialog()
-    {
-        AndroidEnvironment.UnhandledExceptionRaiser += (sender, args) =>
-        {
-            RunOnUiThread(() =>
-            {
-                var errorText = args.Exception.ToString();
-                var dialog = new AlertDialog.Builder(this);
-                dialog.SetTitle("Application error");
-                dialog.SetMessage(errorText);
-                dialog.SetPositiveButton("OK", (_, _) => { });
-                dialog.Show();
-            });
-        };
     }
 
     protected override void OnDestroy()

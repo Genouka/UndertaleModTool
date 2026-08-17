@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -26,6 +26,22 @@ public class Scripting
 {
     public readonly MainViewModel MainVM;
 
+    /// <summary>
+    /// Optional directory containing plain DLL copies of the assemblies the script engine should
+    /// reference. Android sets this to the internal-storage folder the packaged assets were
+    /// extracted into; on Android the assemblies normally live inside the APK and cannot be
+    /// resolved from the filesystem, which made script compilation fail with "cannot find
+    /// assembly".
+    /// </summary>
+    public static string? ScriptAssembliesDirectory { get; set; }
+
+    /// <summary>
+    /// Optional platform hook invoked right before a script is compiled. The Android head uses it
+    /// to extract the packaged script assemblies from the app assets into
+    /// <see cref="ScriptAssembliesDirectory"/> (internal storage) on first use.
+    /// </summary>
+    public static Action? PrepareScriptAssemblies { get; set; }
+
     public Scripting(IServiceProvider serviceProvider)
     {
         MainVM = serviceProvider.GetRequiredService<MainViewModel>();
@@ -37,7 +53,12 @@ public class Scripting
         {
             MainVM.IsEnabled = false;
 
-            Script<object?> script = CSharpScript.Create(text, ScriptOptions.Default
+            // Platforms that ship the script assemblies as packaged assets (e.g. Android) extract
+            // them to internal storage here, before the script is compiled, so the Roslyn scripting
+            // engine can resolve metadata references from real files.
+            PrepareScriptAssemblies?.Invoke();
+
+            ScriptOptions options = ScriptOptions.Default
                 .AddImports(
                     "System",
                     "System.Collections.Generic",
@@ -51,13 +72,29 @@ public class Scripting
                     "UndertaleModLib.Decompiler",
                     "UndertaleModLib.Models",
                     "UndertaleModLib.Scripting")
-                .AddReferences(
-                    "System.Core",
-                    "UndertaleModLib")
                 .WithFilePath(filePath)
                 .WithFileEncoding(Encoding.Default)
-                .WithEmitDebugInformation(true),
-                typeof(IScriptInterface));
+                .WithEmitDebugInformation(true);
+
+            if (!string.IsNullOrEmpty(ScriptAssembliesDirectory) && Directory.Exists(ScriptAssembliesDirectory))
+            {
+                // Reference every DLL next to the app directly, and let #r / name-based references
+                // resolve from that directory: the default resolver only looks at the trusted
+                // platform assemblies, which on Android are stored inside the APK and cannot be
+                // resolved from the filesystem.
+                IEnumerable<MetadataReference> references = Directory
+                    .EnumerateFiles(ScriptAssembliesDirectory, "*.dll", SearchOption.TopDirectoryOnly)
+                    .Select(path => MetadataReference.CreateFromFile(path));
+                options = options
+                    .AddReferences(references)
+                    .WithMetadataResolver(ScriptMetadataResolver.Default.WithSearchPaths(ScriptAssembliesDirectory));
+            }
+            else
+            {
+                options = options.AddReferences("System.Core", "UndertaleModLib");
+            }
+
+            Script<object?> script = CSharpScript.Create(text, options, typeof(IScriptInterface));
 
             ImmutableArray<Diagnostic> diagnostics = await Task.Run(() => script.Compile());
 

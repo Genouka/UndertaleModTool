@@ -4626,6 +4626,9 @@ It can't be displayed.</value>
   <data name="Msg_UnhandledException" xml:space="preserve">
     <value>Unhandled exception</value>
   </data>
+  <data name="Crash_FullLogNote" xml:space="preserve">
+    <value>Full details in the crash log:</value>
+  </data>
   <data name="Msg_UnknownIndentStyle" xml:space="preserve">
     <value>Unknown indent style</value>
   </data>

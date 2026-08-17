@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Platform;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
@@ -67,6 +68,7 @@ public partial class UndertaleCodeView : UserControl
     const double CodeEditorFontSizeMin = 8;
     const double CodeEditorFontSizeMax = 36;
     static readonly TimeSpan CodeEditorLongPressDuration = TimeSpan.FromMilliseconds(450);
+    static readonly TimeSpan CodeEditorKeyboardCheckDelay = TimeSpan.FromMilliseconds(150);
     const double CodeEditorTouchMoveThreshold = 12;
 
     readonly Dictionary<long, Point> codeEditorTouchPoints = new();
@@ -78,9 +80,12 @@ public partial class UndertaleCodeView : UserControl
     bool codeEditorTouchPinching;
     bool codeEditorTouchLongPressFired;
     bool codeEditorTouchScrolled;
+    bool codeEditorTouchSelecting;           // a long-press selection is being extended by drag
+    int codeEditorSelectionAnchorOffset = -1;
     double codeEditorPinchStartDistance;
     double codeEditorPinchStartFontSize;
     DispatcherTimer? codeEditorLongPressTimer;
+    DispatcherTimer? codeEditorKeyboardCheckTimer;
 
     #endregion
 
@@ -144,6 +149,12 @@ public partial class UndertaleCodeView : UserControl
         [Color.FromRgb(0xE0, 0xB0, 0xB0)] = Color.FromRgb(0x70, 0x70, 0x70),   // VMASM addresses
         [Color.FromRgb(0x59, 0xC2, 0x59)] = Color.FromRgb(0x2E, 0x7D, 0x32),   // VMASM various
     };
+
+    // Tinted palette brushes for hover tooltips (matches the custom app color scheme).
+    static readonly SolidColorBrush HoverTextDark = new(Color.FromRgb(0xE6, 0xE8, 0xF0));
+    static readonly SolidColorBrush HoverTextLight = new(Color.FromRgb(0x28, 0x24, 0x19));
+    static readonly SolidColorBrush HoverSubTextDark = new(Color.FromRgb(0xA6, 0xAB, 0xC0));
+    static readonly SolidColorBrush HoverSubTextLight = new(Color.FromRgb(0x6F, 0x69, 0x5B));
 
     public bool IsDarkTheme => ActualThemeVariant != ThemeVariant.Light;
 
@@ -216,6 +227,7 @@ public partial class UndertaleCodeView : UserControl
         _diagnosticsCancellation?.Cancel();
         _diagnosticsTimer?.Stop();
         _foldingTimer?.Stop();
+        StopCodeEditorKeyboardCheckTimer();
         CloseCompletionWindow();
         CloseHoverPopup();
     }
@@ -327,26 +339,26 @@ public partial class UndertaleCodeView : UserControl
         void ApplyTo(TextEditor editor)
         {
             editor.Foreground = isDark
-                ? new SolidColorBrush(Color.FromRgb(0xC0, 0xC0, 0xC0))
-                : new SolidColorBrush(Colors.Black);
+                ? new SolidColorBrush(Color.FromRgb(0xC9, 0xCD, 0xDC))
+                : new SolidColorBrush(Color.FromRgb(0x28, 0x24, 0x19));
             editor.Background = isDark
-                ? new SolidColorBrush(Color.FromRgb(34, 34, 34))
-                : new SolidColorBrush(Colors.White);
+                ? new SolidColorBrush(Color.FromRgb(0x1B, 0x1E, 0x29))
+                : new SolidColorBrush(Color.FromRgb(0xFA, 0xF8, 0xF3));
             editor.LineNumbersForeground = isDark
-                ? new SolidColorBrush(Color.FromRgb(0xDB, 0xDB, 0xDB))
-                : new SolidColorBrush(Color.FromRgb(0x2B, 0x2B, 0x2B));
+                ? new SolidColorBrush(Color.FromRgb(0x76, 0x7C, 0x92))
+                : new SolidColorBrush(Color.FromRgb(0x9A, 0x93, 0x84));
 
             TextArea textArea = editor.TextArea;
             if (textArea is null)
                 return;
 
             textArea.TextView.CurrentLineBackground = isDark
-                ? new SolidColorBrush(Color.FromRgb(60, 60, 60))
-                : new SolidColorBrush(Color.FromRgb(230, 230, 230));
+                ? new SolidColorBrush(Color.FromRgb(0x23, 0x27, 0x38))
+                : new SolidColorBrush(Color.FromRgb(0xED, 0xE9, 0xDF));
             textArea.TextView.CurrentLineBorder = new Pen(Brushes.Transparent, 0);
             textArea.SelectionBrush = isDark
-                ? new SolidColorBrush(Color.FromRgb(100, 100, 100))
-                : new SolidColorBrush(Color.FromRgb(180, 210, 255));
+                ? new SolidColorBrush(Color.FromRgb(0x3D, 0x4A, 0x78))
+                : new SolidColorBrush(Color.FromRgb(0xC3, 0xD2, 0xEA));
             textArea.SelectionForeground = null;
             textArea.SelectionBorder = null;
             textArea.SelectionCornerRadius = 0;
@@ -361,15 +373,15 @@ public partial class UndertaleCodeView : UserControl
         if (ResultsPanel is null)
             return;
 
-        Color panelBg = isDark ? Color.FromRgb(45, 45, 48) : Color.FromRgb(240, 240, 240);
-        Color panelBorder = isDark ? Color.FromRgb(60, 60, 60) : Color.FromRgb(180, 180, 180);
-        Color panelText = isDark ? Colors.White : Colors.Black;
+        Color panelBg = isDark ? Color.FromRgb(0x22, 0x26, 0x33) : Color.FromRgb(0xEF, 0xEC, 0xE4);
+        Color panelBorder = isDark ? Color.FromRgb(0x3A, 0x3F, 0x50) : Color.FromRgb(0xC9, 0xC3, 0xB4);
+        Color panelText = isDark ? Color.FromRgb(0xE6, 0xE8, 0xF0) : Color.FromRgb(0x28, 0x24, 0x19);
         ResultsPanel.Background = new SolidColorBrush(panelBg);
         ResultsPanel.BorderBrush = new SolidColorBrush(panelBorder);
         ResultsHeaderText.Foreground = new SolidColorBrush(panelText);
         ResultsListBox.Background = isDark
-            ? new SolidColorBrush(Color.FromRgb(30, 30, 30))
-            : new SolidColorBrush(Colors.White);
+            ? new SolidColorBrush(Color.FromRgb(0x1D, 0x21, 0x2D))
+            : new SolidColorBrush(Color.FromRgb(0xF7, 0xF4, 0xEE));
         ResultsListBox.Foreground = new SolidColorBrush(panelText);
     }
 
@@ -578,6 +590,31 @@ public partial class UndertaleCodeView : UserControl
         editor.AddHandler<PointerEventArgs>(InputElement.PointerMovedEvent, EditorTouch_PointerMoved, RoutingStrategies.Bubble, handledEventsToo: true);
         editor.AddHandler<PointerReleasedEventArgs>(InputElement.PointerReleasedEvent, EditorTouch_PointerReleased, RoutingStrategies.Bubble, handledEventsToo: true);
         editor.AddHandler<PointerCaptureLostEventArgs>(InputElement.PointerCaptureLostEvent, EditorTouch_PointerCaptureLost, RoutingStrategies.Bubble, handledEventsToo: true);
+
+        // Tunnel-stage guards: while a touch selection is being extended, the editor's own
+        // gesture recognizers (ScrollViewer panning, AvaloniaEdit's drag handling, hover popups)
+        // would compete with the selection, so swallow the pointer events before they reach them.
+        editor.AddHandler<PointerPressedEventArgs>(InputElement.PointerPressedEvent, EditorTouch_PointerPressedTunnel, RoutingStrategies.Tunnel);
+        editor.AddHandler<PointerEventArgs>(InputElement.PointerMovedEvent, EditorTouch_PointerMovedTunnel, RoutingStrategies.Tunnel);
+        editor.AddHandler<PointerReleasedEventArgs>(InputElement.PointerReleasedEvent, EditorTouch_PointerReleasedTunnel, RoutingStrategies.Tunnel);
+    }
+
+    void EditorTouch_PointerPressedTunnel(object? sender, PointerPressedEventArgs e)
+    {
+        if (codeEditorTouchSelecting)
+            e.Handled = true;
+    }
+
+    void EditorTouch_PointerMovedTunnel(object? sender, PointerEventArgs e)
+    {
+        if (codeEditorTouchSelecting)
+            e.Handled = true;
+    }
+
+    void EditorTouch_PointerReleasedTunnel(object? sender, PointerReleasedEventArgs e)
+    {
+        if (codeEditorTouchSelecting)
+            e.Handled = true;
     }
 
     /// <summary>
@@ -585,9 +622,10 @@ public partial class UndertaleCodeView : UserControl
     /// <list type="bullet">
     /// <item>one-finger scroll is left to the ScrollViewer (the editor is one);</item>
     /// <item>tap positions the caret (fallback so it works even when the ScrollViewer competes
-    /// for the touch);</item>
+    /// for the touch) and keeps the soft keyboard visible;</item>
     /// <item>two-finger pinch changes the font size (persisted in settings);</item>
-    /// <item>long-press opens an edit menu (undo/redo/select all/cut/copy/paste).</item>
+    /// <item>long-press selects the word under the finger; dragging while holding extends the
+    /// selection, releasing opens the edit menu (undo/redo/select all/cut/copy/paste).</item>
     /// </list>
     /// </summary>
     void EditorTouch_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -603,6 +641,10 @@ public partial class UndertaleCodeView : UserControl
 
         if (codeEditorTouchPrimaryId is null)
         {
+            // Fresh gesture: clear any state left behind by a previous one (a missed release
+            // could otherwise leave a stale secondary pointer id that blocks the next pinch).
+            codeEditorTouchPoints.Clear();
+            codeEditorTouchPoints[id] = pos;
             codeEditorTouchPrimaryId = id;
             codeEditorTouchEditor = editor;
             codeEditorTouchStartPosition = pos;
@@ -610,16 +652,29 @@ public partial class UndertaleCodeView : UserControl
             codeEditorTouchPinching = false;
             codeEditorTouchLongPressFired = false;
             codeEditorTouchScrolled = false;
+            codeEditorTouchSelecting = false;
+            codeEditorSelectionAnchorOffset = -1;
             StartCodeEditorLongPressTimer();
         }
         else if (codeEditorTouchSecondaryId is null && !codeEditorTouchPinching)
         {
             // Second finger: begin pinch zoom immediately (a two-finger tap without movement
-            // applies a scale factor of ~1, so it is harmless).
+            // applies a scale factor of ~1, so it is harmless). A long-press selection in
+            // progress is cancelled in favour of the pinch.
+            codeEditorTouchSelecting = false;
+            codeEditorSelectionAnchorOffset = -1;
             codeEditorTouchSecondaryId = id;
             StopCodeEditorLongPressTimer();
             codeEditorTouchPinching = true;
-            codeEditorPinchStartDistance = Distance(pos, codeEditorTouchPoints[codeEditorTouchPrimaryId.Value]);
+            if (codeEditorTouchPrimaryId is long primaryId
+                && codeEditorTouchPoints.TryGetValue(primaryId, out Point p1))
+            {
+                codeEditorPinchStartDistance = Distance(pos, p1);
+            }
+            else
+            {
+                codeEditorPinchStartDistance = 1;
+            }
             codeEditorPinchStartFontSize = editor.FontSize > 0 ? editor.FontSize : 12;
         }
     }
@@ -651,6 +706,19 @@ public partial class UndertaleCodeView : UserControl
                 }
             }
             e.Handled = true;
+            return;
+        }
+
+        if (codeEditorTouchSelecting)
+        {
+            // Long-press selection: dragging the held finger extends the selection.
+            // (The tunnel guard above already blocks the ScrollViewer and hover logic.)
+            if (id == codeEditorTouchPrimaryId)
+            {
+                int selOffset = GetOffsetFromPointer(e, editor.TextArea);
+                if (selOffset >= 0)
+                    ExtendCodeEditorSelection(editor.TextArea, selOffset);
+            }
             return;
         }
 
@@ -687,7 +755,13 @@ public partial class UndertaleCodeView : UserControl
                 {
                     var remaining = codeEditorTouchPoints.First();
                     codeEditorTouchPrimaryId = remaining.Key;
+                    // The secondary pointer must be cleared too: when the primary finger lifts
+                    // first it used to stay set (pointing at the same remaining finger), and the
+                    // stale id then silently disabled every later pinch.
+                    codeEditorTouchSecondaryId = null;
                     codeEditorTouchStartPosition = remaining.Value;
+                    codeEditorTouchSelecting = false;
+                    codeEditorSelectionAnchorOffset = -1;
                 }
                 else
                 {
@@ -706,11 +780,24 @@ public partial class UndertaleCodeView : UserControl
 
         codeEditorTouchPoints.Remove(id);
         codeEditorTouchPrimaryId = null;
+        codeEditorTouchSecondaryId = null;
 
         if (codeEditorTouchLongPressFired)
         {
-            // The long-press menu already positioned the caret; do nothing else.
             codeEditorTouchLongPressFired = false;
+
+            // A long-press selection was started in CodeEditorLongPressTimer_Tick: extend it to
+            // the release point (covers a drag while the finger is still down) and then show the
+            // edit menu so the selection can be cut/copied.
+            if (codeEditorTouchSelecting)
+            {
+                int endOffset = GetOffsetFromPointer(e, editor.TextArea);
+                if (endOffset >= 0)
+                    ExtendCodeEditorSelection(editor.TextArea, endOffset);
+                codeEditorTouchSelecting = false;
+                codeEditorSelectionAnchorOffset = -1;
+                OpenCodeEditorTouchMenu(editor, pos);
+            }
             return;
         }
 
@@ -723,11 +810,17 @@ public partial class UndertaleCodeView : UserControl
             return;
         }
 
-        // Tap: focus and place the caret right under the finger.
+        // Tap: focus and place the caret right under the finger. A tap also collapses any
+        // previous touch selection.
+        bool wasFocused = editor.TextArea.IsFocused;
         editor.TextArea.Focus();
         int offset = GetOffsetFromPointer(e, editor.TextArea);
         if (offset >= 0)
+        {
             editor.CaretOffset = offset;
+            editor.TextArea.ClearSelection();
+        }
+        EnsureCodeEditorKeyboardVisible(editor, wasFocused);
     }
 
     void EditorTouch_PointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
@@ -748,6 +841,8 @@ public partial class UndertaleCodeView : UserControl
         codeEditorTouchPinching = false;
         codeEditorTouchLongPressFired = false;
         codeEditorTouchScrolled = false;
+        codeEditorTouchSelecting = false;
+        codeEditorSelectionAnchorOffset = -1;
         codeEditorTouchEditor = null;
     }
 
@@ -775,7 +870,7 @@ public partial class UndertaleCodeView : UserControl
         if (codeEditorTouchEditor is not { } editor)
             return;
 
-        if (codeEditorTouchPrimaryId is not long id || !codeEditorTouchPoints.TryGetValue(id, out Point posInEditor))
+        if (codeEditorTouchPrimaryId is not long id || !codeEditorTouchPoints.TryGetValue(id, out _))
             return;
 
         codeEditorTouchLongPressFired = true;
@@ -784,11 +879,109 @@ public partial class UndertaleCodeView : UserControl
         editor.TextArea.Focus();
 
         int offset = GetOffsetFromTextViewPoint(editor.TextArea, codeEditorTouchStartTextViewPosition);
-        if (offset >= 0)
-            editor.CaretOffset = offset;
+        if (offset < 0)
+            return;
+
+        editor.CaretOffset = offset;
+
+        // Start a touch text selection: select the word under the finger. Dragging while the
+        // finger is still down extends the selection (see EditorTouch_PointerMoved / the tunnel
+        // guards), and releasing shows the edit menu with cut/copy enabled.
+        (int start, int end) = GetWordBoundsAtOffset(editor.TextArea, offset);
+        codeEditorTouchSelecting = true;
+        codeEditorSelectionAnchorOffset = start;
+        editor.TextArea.Selection = Selection.Create(editor.TextArea, start, end);
 
         PlatformHaptics.OnLongPress();
-        OpenCodeEditorTouchMenu(editor, posInEditor);
+    }
+
+    void ExtendCodeEditorSelection(TextArea textArea, int offset)
+    {
+        if (textArea.Document is null)
+            return;
+
+        int clamped = Math.Clamp(offset, 0, textArea.Document.TextLength);
+        if (codeEditorSelectionAnchorOffset < 0)
+            codeEditorSelectionAnchorOffset = clamped;
+
+        int start = Math.Min(codeEditorSelectionAnchorOffset, clamped);
+        int end = Math.Max(codeEditorSelectionAnchorOffset, clamped);
+        textArea.Selection = Selection.Create(textArea, start, end);
+        textArea.Caret.Offset = end;
+    }
+
+    static (int start, int end) GetWordBoundsAtOffset(TextArea textArea, int offset)
+    {
+        if (textArea.Document is not { } doc)
+            return (offset, offset);
+
+        string text = doc.Text;
+        if (text.Length == 0)
+            return (offset, offset);
+
+        int clamped = Math.Clamp(offset, 0, text.Length);
+        int start = clamped;
+        while (start > 0 && IsWordChar(text[start - 1]))
+            start--;
+        int end = clamped;
+        while (end < text.Length && IsWordChar(text[end]))
+            end++;
+        return (start, end);
+    }
+
+    /// <summary>
+    /// Keeps the soft keyboard visible after a touch tap that did not change focus. When the
+    /// editor was already focused, <c>Focus()</c> is a no-op and the platform is not told about
+    /// the tap at all, so on Android the keyboard can retract even though the IME client stays
+    /// attached - a state that plain taps can never re-show (the platform only shows the input
+    /// pane when the client is (re)applied). Re-asserting the client here, now and once more
+    /// shortly after the gesture, brings the keyboard back.
+    /// </summary>
+    void EnsureCodeEditorKeyboardVisible(TextEditor editor, bool wasFocusedBeforeTap)
+    {
+        if (!wasFocusedBeforeTap)
+            return; // the fresh focus-gain path already re-applies the IME client
+
+        // Re-check shortly after the gesture as well: the platform may hide the keyboard
+        // asynchronously (e.g. an IME restart triggered by the caret move).
+        StopCodeEditorKeyboardCheckTimer();
+        codeEditorKeyboardCheckTimer = new DispatcherTimer(CodeEditorKeyboardCheckDelay, DispatcherPriority.Background, (_, _) => CodeEditorKeyboardCheckTimer_Tick(editor));
+        codeEditorKeyboardCheckTimer.Start();
+
+        CodeEditorKeyboardCheck(editor);
+    }
+
+    void CodeEditorKeyboardCheckTimer_Tick(TextEditor editor)
+    {
+        codeEditorKeyboardCheckTimer?.Stop();
+        codeEditorKeyboardCheckTimer = null;
+        CodeEditorKeyboardCheck(editor);
+    }
+
+    void CodeEditorKeyboardCheck(TextEditor editor)
+    {
+        if (!editor.TextArea.IsFocused)
+            return;
+
+        IInputPane? pane = GetInputPane(editor);
+        if (pane is null)
+            return; // no software keyboard on this platform
+        if (pane.State == InputPaneState.Open)
+            return; // the keyboard is already visible
+
+        // The editor is focused but the soft keyboard is not shown: re-apply the IME client so
+        // the platform shows the input pane again (Android shows the keyboard on SetClient).
+        InputMethod.SetIsInputMethodEnabled(editor.TextArea, false);
+        InputMethod.SetIsInputMethodEnabled(editor.TextArea, true);
+    }
+
+    static IInputPane? GetInputPane(Visual visual)
+        => (TopLevel.GetTopLevel(visual)?.PlatformImpl as IOptionalFeatureProvider)?.TryGetFeature(typeof(IInputPane)) as IInputPane;
+
+    void StopCodeEditorKeyboardCheckTimer()
+    {
+        codeEditorKeyboardCheckTimer?.Stop();
+        codeEditorKeyboardCheckTimer = null;
     }
 
     void SetCodeEditorFontSize(double size)
@@ -1577,8 +1770,8 @@ public partial class UndertaleCodeView : UserControl
 
         StackPanel panel = new() { MaxWidth = 320 };
         bool isDarkMode = IsDarkTheme;
-        IBrush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
-        IBrush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+        IBrush textBrush = isDarkMode ? HoverTextDark : HoverTextLight;
+        IBrush subTextBrush = isDarkMode ? HoverSubTextDark : HoverSubTextLight;
 
         if (possibleObjects.Count > 0)
         {
@@ -1745,8 +1938,8 @@ public partial class UndertaleCodeView : UserControl
 
         StackPanel panel = new() { MaxWidth = 320 };
         bool isDarkMode = IsDarkTheme;
-        IBrush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
-        IBrush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+        IBrush textBrush = isDarkMode ? HoverTextDark : HoverTextLight;
+        IBrush subTextBrush = isDarkMode ? HoverSubTextDark : HoverSubTextLight;
 
         if (val is UndertaleSprite sprite && sprite.Textures.Count > 0)
         {
@@ -1842,7 +2035,7 @@ public partial class UndertaleCodeView : UserControl
             return hoverContent;
 
         bool isDarkMode = IsDarkTheme;
-        IBrush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
+        IBrush textBrush = isDarkMode ? HoverTextDark : HoverTextLight;
         IBrush typeBrush = isDarkMode
             ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
             : new SolidColorBrush(Color.FromRgb(0, 128, 0));
@@ -2071,11 +2264,11 @@ public partial class UndertaleCodeView : UserControl
     {
         bool isDarkMode = IsDarkTheme;
         IBrush bgBrush = isDarkMode
-            ? new SolidColorBrush(Color.FromRgb(45, 45, 48))
-            : new SolidColorBrush(Color.FromRgb(240, 240, 240));
+            ? new SolidColorBrush(Color.FromRgb(0x26, 0x2A, 0x38))
+            : new SolidColorBrush(Color.FromRgb(0xEF, 0xEC, 0xE4));
         IBrush borderBrush = isDarkMode
-            ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
-            : new SolidColorBrush(Color.FromRgb(180, 180, 180));
+            ? new SolidColorBrush(Color.FromRgb(0x3A, 0x3F, 0x50))
+            : new SolidColorBrush(Color.FromRgb(0xC9, 0xC3, 0xB4));
 
         return new Border
         {
@@ -2091,8 +2284,8 @@ public partial class UndertaleCodeView : UserControl
     private Border? BuildBuiltinFunctionHover(string nameText)
     {
         bool isDarkMode = IsDarkTheme;
-        IBrush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
-        IBrush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+        IBrush textBrush = isDarkMode ? HoverTextDark : HoverTextLight;
+        IBrush subTextBrush = isDarkMode ? HoverSubTextDark : HoverSubTextLight;
         IBrush paramBrush = isDarkMode
             ? new SolidColorBrush(Color.FromRgb(86, 156, 214))
             : new SolidColorBrush(Color.FromRgb(0, 0, 200));
@@ -2146,8 +2339,8 @@ public partial class UndertaleCodeView : UserControl
             {
                 Margin = new Thickness(0, 4, 0, 4),
                 Background = isDarkMode
-                    ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
-                    : new SolidColorBrush(Color.FromRgb(180, 180, 180))
+                    ? new SolidColorBrush(Color.FromRgb(0x3A, 0x3F, 0x50))
+                    : new SolidColorBrush(Color.FromRgb(0xC9, 0xC3, 0xB4))
             });
 
             TextBlock descBlock = new()
@@ -2168,8 +2361,8 @@ public partial class UndertaleCodeView : UserControl
                     {
                         Margin = new Thickness(0, 4, 0, 2),
                         Background = isDarkMode
-                            ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
-                            : new SolidColorBrush(Color.FromRgb(180, 180, 180))
+                            ? new SolidColorBrush(Color.FromRgb(0x3A, 0x3F, 0x50))
+                            : new SolidColorBrush(Color.FromRgb(0xC9, 0xC3, 0xB4))
                     });
 
                     foreach (var p in specFunc.Parameters)
@@ -2205,8 +2398,8 @@ public partial class UndertaleCodeView : UserControl
     private Border? BuildBuiltinVariableHover(string nameText)
     {
         bool isDarkMode = IsDarkTheme;
-        IBrush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
-        IBrush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+        IBrush textBrush = isDarkMode ? HoverTextDark : HoverTextLight;
+        IBrush subTextBrush = isDarkMode ? HoverSubTextDark : HoverSubTextLight;
         IBrush typeBrush = isDarkMode
             ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
             : new SolidColorBrush(Color.FromRgb(0, 128, 0));
@@ -2241,8 +2434,8 @@ public partial class UndertaleCodeView : UserControl
             {
                 Margin = new Thickness(0, 4, 0, 4),
                 Background = isDarkMode
-                    ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
-                    : new SolidColorBrush(Color.FromRgb(180, 180, 180))
+                    ? new SolidColorBrush(Color.FromRgb(0x3A, 0x3F, 0x50))
+                    : new SolidColorBrush(Color.FromRgb(0xC9, 0xC3, 0xB4))
             });
 
             TextBlock descBlock = new()
@@ -2271,8 +2464,8 @@ public partial class UndertaleCodeView : UserControl
     private Border? BuildBuiltinConstantHover(string nameText)
     {
         bool isDarkMode = IsDarkTheme;
-        IBrush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
-        IBrush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
+        IBrush textBrush = isDarkMode ? HoverTextDark : HoverTextLight;
+        IBrush subTextBrush = isDarkMode ? HoverSubTextDark : HoverSubTextLight;
         IBrush typeBrush = isDarkMode
             ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
             : new SolidColorBrush(Color.FromRgb(0, 128, 0));
@@ -2301,8 +2494,8 @@ public partial class UndertaleCodeView : UserControl
             {
                 Margin = new Thickness(0, 4, 0, 4),
                 Background = isDarkMode
-                    ? new SolidColorBrush(Color.FromRgb(80, 80, 80))
-                    : new SolidColorBrush(Color.FromRgb(180, 180, 180))
+                    ? new SolidColorBrush(Color.FromRgb(0x3A, 0x3F, 0x50))
+                    : new SolidColorBrush(Color.FromRgb(0xC9, 0xC3, 0xB4))
             });
 
             TextBlock descBlock = new()
