@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -62,6 +62,28 @@ public partial class UndertaleCodeView : UserControl
 
     (TextLocation, TextLocation) lastCaretLocations;
 
+    #region Touch
+
+    const double CodeEditorFontSizeMin = 8;
+    const double CodeEditorFontSizeMax = 36;
+    static readonly TimeSpan CodeEditorLongPressDuration = TimeSpan.FromMilliseconds(450);
+    const double CodeEditorTouchMoveThreshold = 12;
+
+    readonly Dictionary<long, Point> codeEditorTouchPoints = new();
+    TextEditor? codeEditorTouchEditor;
+    long? codeEditorTouchPrimaryId;
+    long? codeEditorTouchSecondaryId;
+    Point codeEditorTouchStartPosition;      // relative to the editor (viewport)
+    Point codeEditorTouchStartTextViewPosition; // relative to the TextView (content)
+    bool codeEditorTouchPinching;
+    bool codeEditorTouchLongPressFired;
+    bool codeEditorTouchScrolled;
+    double codeEditorPinchStartDistance;
+    double codeEditorPinchStartFontSize;
+    DispatcherTimer? codeEditorLongPressTimer;
+
+    #endregion
+
     // Change tracking
     readonly ModifiedLinesBackgroundRenderer _gmlModifiedRenderer = new();
     readonly ModifiedLinesBackgroundRenderer _asmModifiedRenderer = new();
@@ -123,7 +145,7 @@ public partial class UndertaleCodeView : UserControl
         [Color.FromRgb(0x59, 0xC2, 0x59)] = Color.FromRgb(0x2E, 0x7D, 0x32),   // VMASM various
     };
 
-    public bool IsDarkTheme => ActualThemeVariant == ThemeVariant.Light;
+    public bool IsDarkTheme => ActualThemeVariant != ThemeVariant.Light;
 
     public UndertaleCodeView()
     {
@@ -135,6 +157,9 @@ public partial class UndertaleCodeView : UserControl
 
         InitializeTextEditor(GMLTextEditor);
         InitializeTextEditor(ASMTextEditor);
+
+        InitializeTextEditorTouchHandling(GMLTextEditor);
+        InitializeTextEditorTouchHandling(ASMTextEditor);
 
         GMLTextEditor.TextArea.GotFocus += GMLTextEditor_GotFocus;
         ASMTextEditor.TextArea.GotFocus += ASMTextEditor_GotFocus;
@@ -362,6 +387,10 @@ public partial class UndertaleCodeView : UserControl
         ApplyWordWrapToEditors(settings.CodeEditorWordWrap);
         ApplyWhitespaceToEditors(settings.CodeEditorShowWhitespace);
         ApplyAutoDiagnosticsState();
+
+        double fontSize = settings.CodeEditorFontSize > 0 ? settings.CodeEditorFontSize : 12;
+        GMLTextEditor.FontSize = fontSize;
+        ASMTextEditor.FontSize = fontSize;
     }
 
     private void ApplyWordWrapToEditors(bool value)
@@ -540,6 +569,356 @@ public partial class UndertaleCodeView : UserControl
             }
         }
     }
+
+    #region Touch handling
+
+    void InitializeTextEditorTouchHandling(TextEditor editor)
+    {
+        editor.AddHandler<PointerPressedEventArgs>(InputElement.PointerPressedEvent, EditorTouch_PointerPressed, RoutingStrategies.Bubble, handledEventsToo: true);
+        editor.AddHandler<PointerEventArgs>(InputElement.PointerMovedEvent, EditorTouch_PointerMoved, RoutingStrategies.Bubble, handledEventsToo: true);
+        editor.AddHandler<PointerReleasedEventArgs>(InputElement.PointerReleasedEvent, EditorTouch_PointerReleased, RoutingStrategies.Bubble, handledEventsToo: true);
+        editor.AddHandler<PointerCaptureLostEventArgs>(InputElement.PointerCaptureLostEvent, EditorTouch_PointerCaptureLost, RoutingStrategies.Bubble, handledEventsToo: true);
+    }
+
+    /// <summary>
+    /// Touch gestures on the code editor (Android / other touch platforms):
+    /// <list type="bullet">
+    /// <item>one-finger scroll is left to the ScrollViewer (the editor is one);</item>
+    /// <item>tap positions the caret (fallback so it works even when the ScrollViewer competes
+    /// for the touch);</item>
+    /// <item>two-finger pinch changes the font size (persisted in settings);</item>
+    /// <item>long-press opens an edit menu (undo/redo/select all/cut/copy/paste).</item>
+    /// </list>
+    /// </summary>
+    void EditorTouch_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not TextEditor editor || e.Pointer.Type != PointerType.Touch)
+            return;
+
+        long id = e.Pointer.Id;
+        Point pos = e.GetPosition(editor);
+        Point posInTextView = e.GetPosition(editor.TextArea.TextView);
+
+        codeEditorTouchPoints[id] = pos;
+
+        if (codeEditorTouchPrimaryId is null)
+        {
+            codeEditorTouchPrimaryId = id;
+            codeEditorTouchEditor = editor;
+            codeEditorTouchStartPosition = pos;
+            codeEditorTouchStartTextViewPosition = posInTextView;
+            codeEditorTouchPinching = false;
+            codeEditorTouchLongPressFired = false;
+            codeEditorTouchScrolled = false;
+            StartCodeEditorLongPressTimer();
+        }
+        else if (codeEditorTouchSecondaryId is null && !codeEditorTouchPinching)
+        {
+            // Second finger: begin pinch zoom immediately (a two-finger tap without movement
+            // applies a scale factor of ~1, so it is harmless).
+            codeEditorTouchSecondaryId = id;
+            StopCodeEditorLongPressTimer();
+            codeEditorTouchPinching = true;
+            codeEditorPinchStartDistance = Distance(pos, codeEditorTouchPoints[codeEditorTouchPrimaryId.Value]);
+            codeEditorPinchStartFontSize = editor.FontSize > 0 ? editor.FontSize : 12;
+        }
+    }
+
+    void EditorTouch_PointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (sender is not TextEditor editor || e.Pointer.Type != PointerType.Touch)
+            return;
+
+        long id = e.Pointer.Id;
+        if (!codeEditorTouchPoints.ContainsKey(id))
+            return;
+
+        Point pos = e.GetPosition(editor);
+        codeEditorTouchPoints[id] = pos;
+
+        if (codeEditorTouchPinching)
+        {
+            if (codeEditorTouchPrimaryId is long primaryId && codeEditorTouchSecondaryId is long secondaryId
+                && codeEditorTouchPoints.TryGetValue(primaryId, out Point p1) && codeEditorTouchPoints.TryGetValue(secondaryId, out Point p2))
+            {
+                double distance = Distance(p1, p2);
+                if (distance > 1 && codeEditorPinchStartDistance > 1)
+                {
+                    double factor = distance / codeEditorPinchStartDistance;
+                    double size = Math.Clamp(codeEditorPinchStartFontSize * factor, CodeEditorFontSizeMin, CodeEditorFontSizeMax);
+                    if (size != editor.FontSize)
+                        SetCodeEditorFontSize(size);
+                }
+            }
+            e.Handled = true;
+            return;
+        }
+
+        // Single finger: if it starts moving this is a scroll, so cancel the long-press and the
+        // upcoming tap.
+        if (id == codeEditorTouchPrimaryId && !codeEditorTouchLongPressFired
+            && Distance(pos, codeEditorTouchStartPosition) > CodeEditorTouchMoveThreshold)
+        {
+            codeEditorTouchScrolled = true;
+            StopCodeEditorLongPressTimer();
+        }
+    }
+
+    void EditorTouch_PointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (sender is not TextEditor editor || e.Pointer.Type != PointerType.Touch)
+            return;
+
+        long id = e.Pointer.Id;
+        Point pos = e.GetPosition(editor);
+
+        if (codeEditorTouchPinching)
+        {
+            codeEditorTouchPoints.Remove(id);
+            if (id == codeEditorTouchPrimaryId) codeEditorTouchPrimaryId = null;
+            if (id == codeEditorTouchSecondaryId) codeEditorTouchSecondaryId = null;
+
+            if (codeEditorTouchPoints.Count < 2)
+            {
+                codeEditorTouchPinching = false;
+                SaveCodeEditorFontSize();
+
+                if (codeEditorTouchPoints.Count == 1)
+                {
+                    var remaining = codeEditorTouchPoints.First();
+                    codeEditorTouchPrimaryId = remaining.Key;
+                    codeEditorTouchStartPosition = remaining.Value;
+                }
+                else
+                {
+                    codeEditorTouchPrimaryId = null;
+                    codeEditorTouchSecondaryId = null;
+                }
+            }
+            return;
+        }
+
+        if (id != codeEditorTouchPrimaryId)
+        {
+            codeEditorTouchPoints.Remove(id);
+            return;
+        }
+
+        codeEditorTouchPoints.Remove(id);
+        codeEditorTouchPrimaryId = null;
+
+        if (codeEditorTouchLongPressFired)
+        {
+            // The long-press menu already positioned the caret; do nothing else.
+            codeEditorTouchLongPressFired = false;
+            return;
+        }
+
+        StopCodeEditorLongPressTimer();
+
+        if (codeEditorTouchScrolled)
+        {
+            // This release ends a scroll gesture, not a tap.
+            codeEditorTouchScrolled = false;
+            return;
+        }
+
+        // Tap: focus and place the caret right under the finger.
+        editor.TextArea.Focus();
+        int offset = GetOffsetFromPointer(e, editor.TextArea);
+        if (offset >= 0)
+            editor.CaretOffset = offset;
+    }
+
+    void EditorTouch_PointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (sender is not TextEditor editor || e.Pointer.Type != PointerType.Touch)
+            return;
+
+        // The ScrollViewer took over the gesture (scroll) or the touch was cancelled.
+        ResetCodeEditorTouchState();
+    }
+
+    void ResetCodeEditorTouchState()
+    {
+        StopCodeEditorLongPressTimer();
+        codeEditorTouchPoints.Clear();
+        codeEditorTouchPrimaryId = null;
+        codeEditorTouchSecondaryId = null;
+        codeEditorTouchPinching = false;
+        codeEditorTouchLongPressFired = false;
+        codeEditorTouchScrolled = false;
+        codeEditorTouchEditor = null;
+    }
+
+    void StartCodeEditorLongPressTimer()
+    {
+        StopCodeEditorLongPressTimer();
+        codeEditorLongPressTimer = new DispatcherTimer(CodeEditorLongPressDuration, DispatcherPriority.Background, (_, _) => CodeEditorLongPressTimer_Tick());
+        codeEditorLongPressTimer.Start();
+    }
+
+    void StopCodeEditorLongPressTimer()
+    {
+        codeEditorLongPressTimer?.Stop();
+        codeEditorLongPressTimer = null;
+    }
+
+    void CodeEditorLongPressTimer_Tick()
+    {
+        if (codeEditorTouchLongPressFired)
+            return;
+
+        if (codeEditorTouchPoints.Count != 1)
+            return;
+
+        if (codeEditorTouchEditor is not { } editor)
+            return;
+
+        if (codeEditorTouchPrimaryId is not long id || !codeEditorTouchPoints.TryGetValue(id, out Point posInEditor))
+            return;
+
+        codeEditorTouchLongPressFired = true;
+        StopCodeEditorLongPressTimer();
+
+        editor.TextArea.Focus();
+
+        int offset = GetOffsetFromTextViewPoint(editor.TextArea, codeEditorTouchStartTextViewPosition);
+        if (offset >= 0)
+            editor.CaretOffset = offset;
+
+        PlatformHaptics.OnLongPress();
+        OpenCodeEditorTouchMenu(editor, posInEditor);
+    }
+
+    void SetCodeEditorFontSize(double size)
+    {
+        if (GMLTextEditor is not null)
+            GMLTextEditor.FontSize = size;
+        if (ASMTextEditor is not null)
+            ASMTextEditor.FontSize = size;
+
+        if (Settings is not null && Math.Abs(Settings.CodeEditorFontSize - size) > 0.01)
+        {
+            Settings.CodeEditorFontSize = size;
+            // Save deferred until the pinch ends to avoid writing the settings file on every frame.
+        }
+    }
+
+    void SaveCodeEditorFontSize()
+    {
+        if (Settings is null)
+            return;
+
+        double size = codeEditorTouchEditor?.FontSize ?? Settings.CodeEditorFontSize;
+        if (Math.Abs(Settings.CodeEditorFontSize - size) > 0.01)
+        {
+            Settings.CodeEditorFontSize = size;
+            Settings.Save();
+        }
+    }
+
+    void OpenCodeEditorTouchMenu(TextEditor editor, Point positionInEditor)
+    {
+        // PlacementMode.Pointer tracks the last pointer position, which for a long-press is the
+        // holding finger, so the menu appears right at the touch point.
+        ContextMenu contextMenu = new()
+        {
+            Placement = PlacementMode.Pointer,
+        };
+
+        TextArea textArea = editor.TextArea;
+
+        MenuItem undoItem = new()
+        {
+            Header = LocalizationSource.GetString("Common_Undo"),
+            IsEnabled = editor.CanUndo,
+        };
+        undoItem.Click += (_, _) => editor.Undo();
+
+        MenuItem redoItem = new()
+        {
+            Header = LocalizationSource.GetString("Common_Redo"),
+            IsEnabled = editor.CanRedo,
+        };
+        redoItem.Click += (_, _) => editor.Redo();
+
+        MenuItem selectAllItem = new()
+        {
+            Header = LocalizationSource.GetString("Common_SelectAll"),
+        };
+        selectAllItem.Click += (_, _) => editor.SelectAll();
+
+        MenuItem cutItem = new()
+        {
+            Header = LocalizationSource.GetString("Common_Cut"),
+            IsEnabled = textArea.Selection.Length > 0,
+        };
+        cutItem.Click += (_, _) => editor.Cut();
+
+        MenuItem copyItem = new()
+        {
+            Header = LocalizationSource.GetString("Common_Copy"),
+            IsEnabled = textArea.Selection.Length > 0,
+        };
+        copyItem.Click += (_, _) => editor.Copy();
+
+        MenuItem pasteItem = new()
+        {
+            Header = LocalizationSource.GetString("Common_Paste"),
+        };
+        pasteItem.Click += (_, _) => TryPaste(editor);
+
+        contextMenu.Items.Add(undoItem);
+        contextMenu.Items.Add(redoItem);
+        contextMenu.Items.Add(new Separator());
+        contextMenu.Items.Add(selectAllItem);
+        contextMenu.Items.Add(new Separator());
+        contextMenu.Items.Add(cutItem);
+        contextMenu.Items.Add(copyItem);
+        contextMenu.Items.Add(pasteItem);
+
+        contextMenu.Open(editor);
+    }
+
+    static void TryPaste(TextEditor editor)
+    {
+        try
+        {
+            editor.Paste();
+        }
+        catch (Exception)
+        {
+            // E.g. clipboard unavailable; nothing sensible to do.
+        }
+    }
+
+    static double Distance(Point a, Point b)
+    {
+        Vector v = b - a;
+        return v.Length;
+    }
+
+    int GetOffsetFromTextViewPoint(TextArea textArea, Point posInTextView)
+    {
+        if (textArea.Document is null)
+            return -1;
+
+        Point pos = posInTextView + textArea.TextView.ScrollOffset;
+
+        TextViewPosition? textViewPos = textArea.TextView.GetPosition(pos);
+        if (textViewPos == null) return -1;
+
+        int line = textViewPos.Value.Line;
+        int column = textViewPos.Value.Column;
+
+        if (line < 1 || line > textArea.Document.LineCount) return -1;
+
+        var docLine = textArea.Document.GetLineByNumber(line);
+        return docLine.Offset + Math.Min(column - 1, docLine.Length);
+    }
+
+    #endregion
 
     static void InitializeTextEditor(TextEditor textEditor)
     {

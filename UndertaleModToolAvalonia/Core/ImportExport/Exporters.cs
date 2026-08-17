@@ -27,7 +27,7 @@ public partial class ImportExportService
             return;
         }
 
-        string codeFolder = PromptChooseDirectory();
+        string codeFolder = PromptChooseExportDirectory();
         if (codeFolder is null)
             return;
 
@@ -53,6 +53,7 @@ public partial class ImportExportService
             IncrementProgressParallel();
         }));
 
+        await FinalizeExportAsync();
         HideProgressBar();
     }
 
@@ -67,7 +68,7 @@ public partial class ImportExportService
             return;
         }
 
-        string codeFolder = PromptChooseDirectory();
+        string codeFolder = PromptChooseExportDirectory();
         if (codeFolder is null)
             return;
 
@@ -96,6 +97,7 @@ public partial class ImportExportService
             IncrementProgressParallel();
         }));
 
+        await FinalizeExportAsync();
         HideProgressBar();
     }
 
@@ -115,7 +117,7 @@ public partial class ImportExportService
 
         int failed = 0;
 
-        string codeFolder = PromptChooseDirectory();
+        string codeFolder = PromptChooseExportDirectory();
         if (codeFolder is null)
             throw new Exception("The export folder was not set.");
         codeFolder = Path.Join(codeFolder, "Code");
@@ -204,6 +206,7 @@ public partial class ImportExportService
             }
         });
 
+        await FinalizeExportAsync();
         HideProgressBar();
         if (failed > 0)
             ScriptWarning($"{failed} code entries failed to decompile.");
@@ -244,7 +247,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string texFolder = PromptChooseDirectory();
+        string texFolder = PromptChooseExportDirectory();
         if (texFolder is null)
             return;
 
@@ -266,6 +269,7 @@ public partial class ImportExportService
 
         await Task.Run(() => ExportTextures());
 
+        await FinalizeExportAsync();
         HideProgressBar();
 
         void FetchTexturesFromSprite(UndertaleSprite sprite)
@@ -326,7 +330,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string texFolder = PromptChooseDirectory();
+        string texFolder = PromptChooseExportDirectory();
         if (texFolder is null)
             return;
 
@@ -372,6 +376,7 @@ public partial class ImportExportService
             }
         });
 
+        await FinalizeExportAsync();
         HideProgressBar();
     }
 
@@ -380,7 +385,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string texFolder = PromptChooseDirectory();
+        string texFolder = PromptChooseExportDirectory();
         if (texFolder is null)
             return;
 
@@ -433,6 +438,7 @@ public partial class ImportExportService
             IncrementProgressParallel();
         }));
 
+        await FinalizeExportAsync();
         HideProgressBar();
     }
 
@@ -441,7 +447,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string texFolder = PromptChooseDirectory();
+        string texFolder = PromptChooseExportDirectory();
         if (texFolder is null)
             return;
 
@@ -498,6 +504,7 @@ public partial class ImportExportService
             IncrementProgressParallel();
         }));
 
+        await FinalizeExportAsync();
         HideProgressBar();
     }
 
@@ -506,7 +513,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string texFolder = PromptChooseDirectory();
+        string texFolder = PromptChooseExportDirectory();
         if (texFolder is null)
             return;
 
@@ -523,6 +530,7 @@ public partial class ImportExportService
             IncrementProgressParallel();
         }));
 
+        await FinalizeExportAsync();
         HideProgressBar();
     }
 
@@ -531,7 +539,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string texFolder = PromptChooseDirectory();
+        string texFolder = PromptChooseExportDirectory();
         if (texFolder is null)
             return;
 
@@ -554,6 +562,7 @@ public partial class ImportExportService
             IncrementProgressParallel();
         }));
 
+        await FinalizeExportAsync();
         HideProgressBar();
     }
 }

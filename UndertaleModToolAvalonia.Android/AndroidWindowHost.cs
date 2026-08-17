@@ -2,6 +2,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Platform;
 using Avalonia.Platform;
 
 namespace UndertaleModToolAvalonia.Android;
@@ -31,6 +32,11 @@ public static class AndroidWindowHost
         // even though Android only supports a single real window.
         AvaloniaLocator.CurrentMutable
             .Bind<IWindowingPlatform>().ToConstant(new SimulatedWindowingPlatform());
+
+        // Resolve SAF picker results into real filesystem paths (when permissions allow direct
+        // access), so path-based read/write works on external storage without SAF streams.
+        AvaloniaLocator.CurrentMutable
+            .Bind<IStorageProviderFactory>().ToConstant(RealPathStorageProviderFactory.Instance);
 
         MockStackWindow host = new(vm);
         Host = host;

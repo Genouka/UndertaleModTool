@@ -42,6 +42,23 @@ public class MainActivity : AvaloniaMainActivity
         // TreeDataGrid rows, later throws "Peer instance does not implement T" and kills the app).
         // The app does not target TalkBack/screen-reader users, so disable the whole bridge.
         AndroidAccessibilityDisabler.Disable(Window!.DecorView);
+
+        // Ask for direct external-storage access: runtime permission dialog on Android 6-10,
+        // "All files access" (MANAGE_EXTERNAL_STORAGE) settings on Android 11+. This lets the app
+        // resolve SAF picker results into real paths and read/write external storage directly.
+        StoragePermissionHelper.RequestOnStartup(this);
+
+        // Wire the shared UI's haptic feedback hooks (long-press / tap gestures in the code editor
+        // and room editor) to the platform's haptic feedback API.
+        View decorView = Window!.DecorView;
+        PlatformHaptics.LongPressFeedback = () => RunOnUiThread(() => decorView.PerformHapticFeedback(FeedbackConstants.LongPress));
+        PlatformHaptics.TapFeedback = () => RunOnUiThread(() => decorView.PerformHapticFeedback(FeedbackConstants.VirtualKey));
+    }
+
+    public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
+    {
+        base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        StoragePermissionHelper.OnRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     private void RegisterCrashDialog()

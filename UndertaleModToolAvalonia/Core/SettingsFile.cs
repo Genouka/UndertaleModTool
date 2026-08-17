@@ -137,6 +137,12 @@ public partial class SettingsFile
     public bool CodeEditorAutoDiagnostics { get; set; } = true;
     public bool ChangeTrackingEnabled { get; set; } = true;
 
+    /// <summary>
+    /// Code editor font size in DIPs. Used on touch platforms (pinch-to-zoom) but also applies on
+    /// desktop so the setting is shared everywhere.
+    /// </summary>
+    public double CodeEditorFontSize { get; set; } = 12;
+
     public bool EnableRoomGridByDefault { get; set; } = false;
     public uint DefaultRoomGridWidth { get; set; } = 20;
     public uint DefaultRoomGridHeight { get; set; } = 20;

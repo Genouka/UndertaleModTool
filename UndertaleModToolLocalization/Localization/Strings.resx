@@ -183,6 +183,18 @@
   <data name="Common_Copy" xml:space="preserve">
     <value>Copy</value>
   </data>
+  <data name="Common_Undo" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="Common_Redo" xml:space="preserve">
+    <value>Redo</value>
+  </data>
+  <data name="Common_Cut" xml:space="preserve">
+    <value>Cut</value>
+  </data>
+  <data name="Common_SelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
   <data name="Common_CopyAll" xml:space="preserve">
     <value>Copy all</value>
   </data>

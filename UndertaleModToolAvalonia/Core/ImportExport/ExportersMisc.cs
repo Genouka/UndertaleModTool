@@ -18,7 +18,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string fntFolder = PromptChooseDirectory();
+        string fntFolder = PromptChooseExportDirectory();
         if (fntFolder is null)
             return;
 
@@ -46,15 +46,16 @@ public partial class ImportExportService
             }));
         }
 
+        await FinalizeExportAsync();
         HideProgressBar();
     }
 
     /// <summary>Exports all shaders to a folder of per-shader subfolders.</summary>
-    public void ExportAllShaders()
+    public async void ExportAllShaders()
     {
         EnsureDataLoaded();
 
-        string exportFolder = PromptChooseDirectory();
+        string exportFolder = PromptChooseExportDirectory();
         if (exportFolder is null)
             return;
 
@@ -89,6 +90,8 @@ public partial class ImportExportService
             }
             File.WriteAllText(Paths.JoinVerifyWithinDirectory(exportBase, "VertexShaderAttributes.txt"), vertexSb.ToString());
         }
+
+        await FinalizeExportAsync();
     }
 
     static void WriteShaderBinaryIfNotNull(UndertaleShader.UndertaleRawShaderData data, string exportBase, string filename)
@@ -102,7 +105,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string exportedSoundsDir = PromptChooseDirectory();
+        string exportedSoundsDir = PromptChooseExportDirectory();
         if (exportedSoundsDir is null)
             return;
 
@@ -123,6 +126,7 @@ public partial class ImportExportService
         
         await Task.Run(DumpSounds);
 
+        await FinalizeExportAsync();
         HideProgressBar();
 
         void IncProgressLocal()
@@ -278,7 +282,7 @@ public partial class ImportExportService
     }
 
     /// <summary>Exports all strings to a text file.</summary>
-    public void ExportAllStrings()
+    public async void ExportAllStrings()
     {
         EnsureDataLoaded();
 
@@ -307,10 +311,12 @@ public partial class ImportExportService
                 writer.WriteLine(str.Content);
             }
         }
+
+        await FinalizeExportAsync();
     }
 
     /// <summary>Exports all strings to a JSON file.</summary>
-    public void ExportAllStringsJSON()
+    public async void ExportAllStringsJSON()
     {
         EnsureDataLoaded();
 
@@ -331,7 +337,10 @@ public partial class ImportExportService
         json.Append("\r\n    ]\r\n}");
 
         File.WriteAllText(path, json.ToString());
-        ScriptMessage($"Successfully exported to\n{path}");
+
+        string? targetName = LastExportTargetName;
+        await FinalizeExportAsync();
+        ScriptMessage($"Successfully exported to\n{targetName ?? path}");
 
         static string JsonifyString(string str)
         {
@@ -362,7 +371,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string texturesFolder = PromptChooseDirectory();
+        string texturesFolder = PromptChooseExportDirectory();
         if (texturesFolder is null)
             return;
 
@@ -386,6 +395,7 @@ public partial class ImportExportService
             }
         });
 
+        await FinalizeExportAsync();
         HideProgressBar();
     }
 
@@ -394,7 +404,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string folder = PromptChooseDirectory();
+        string folder = PromptChooseExportDirectory();
         if (folder is null)
             return;
 
@@ -427,6 +437,7 @@ public partial class ImportExportService
             });
         });
 
+        await FinalizeExportAsync();
         HideProgressBar();
 
         void ExtractSprite(UndertaleSprite sprite, string folderPath, TextureWorker textureWorker)
@@ -484,7 +495,7 @@ public partial class ImportExportService
             return;
         }
 
-        string mainOutputFolder = PromptChooseDirectory();
+        string mainOutputFolder = PromptChooseExportDirectory();
         if (mainOutputFolder is null)
             return;
 
@@ -599,6 +610,7 @@ public partial class ImportExportService
             }
         }
 
+        await FinalizeExportAsync();
         HideProgressBar();
         ScriptMessage("All graphics texture groups successfully exported.");
     }
@@ -608,7 +620,7 @@ public partial class ImportExportService
     {
         EnsureDataLoaded();
 
-        string exportedTexturesFolder = PromptChooseDirectory();
+        string exportedTexturesFolder = PromptChooseExportDirectory();
         if (exportedTexturesFolder is null)
             throw new Exception("The export folder was not set, stopping script.");
 
@@ -638,6 +650,7 @@ public partial class ImportExportService
             IncrementProgress();
         }
 
+        await FinalizeExportAsync();
         HideProgressBar();
         ScriptMessage("Exported successfully.");
     }

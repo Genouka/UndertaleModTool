@@ -183,6 +183,18 @@
   <data name="Common_Copy" xml:space="preserve">
     <value>复制</value>
   </data>
+  <data name="Common_Undo" xml:space="preserve">
+    <value>撤销</value>
+  </data>
+  <data name="Common_Redo" xml:space="preserve">
+    <value>重做</value>
+  </data>
+  <data name="Common_Cut" xml:space="preserve">
+    <value>剪切</value>
+  </data>
+  <data name="Common_SelectAll" xml:space="preserve">
+    <value>全选</value>
+  </data>
   <data name="Common_CopyAll" xml:space="preserve">
     <value>全部复制</value>
   </data>

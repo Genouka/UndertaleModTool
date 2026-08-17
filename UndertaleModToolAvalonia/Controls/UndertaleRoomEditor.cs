@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -73,14 +73,20 @@ public class UndertaleRoomEditor : Control
         Pinching,
     }
 
-    static readonly TimeSpan TouchLongPressDuration = TimeSpan.FromSeconds(2);
-    const double TouchMoveThreshold = 10;
+    static readonly TimeSpan TouchLongPressDuration = TimeSpan.FromMilliseconds(500);
+    static readonly TimeSpan TouchTwoFingerTapDuration = TimeSpan.FromMilliseconds(700);
+    const double TouchMoveThreshold = 12;
+    const double TouchPinchStartDistanceThreshold = 8;
 
     readonly Dictionary<long, Point> touchPoints = new();
     TouchMode touchMode = TouchMode.None;
     long? touchPrimaryId = null;
     long? touchSecondaryId = null;
     Point touchStartPosition;
+    Point touchSecondStartPosition;
+    double touchTwoFingerStartDistance;
+    DateTime touchTwoFingerStartTime;
+    bool touchTwoFingerCancelled;
     DispatcherTimer? longPressTimer;
 
     double pinchStartDistance;
@@ -367,6 +373,7 @@ public class UndertaleRoomEditor : Control
         touchPoints.Clear();
         touchPrimaryId = null;
         touchSecondaryId = null;
+        touchTwoFingerCancelled = true;
         touchMode = TouchMode.None;
         TranslationMoveOnReleased();
     }
@@ -391,8 +398,23 @@ public class UndertaleRoomEditor : Control
         else if (touchSecondaryId is null)
         {
             touchSecondaryId = id;
+            touchSecondStartPosition = pos;
+            touchTwoFingerStartDistance = Distance(pos, touchPoints[touchPrimaryId.Value]);
+            touchTwoFingerStartTime = DateTime.UtcNow;
+            touchTwoFingerCancelled = false;
             StopLongPressTimer();
-            BeginPinch();
+
+            // If the first finger was already dragging (pan/move), a two-finger tap is no longer
+            // possible — start pinching right away.
+            if (touchMode is TouchMode.Panning or TouchMode.MovingItem)
+            {
+                BeginPinch();
+            }
+        }
+        else
+        {
+            // A third finger only complicates things; cancel any pending two-finger tap.
+            touchTwoFingerCancelled = true;
         }
     }
 
@@ -408,6 +430,25 @@ public class UndertaleRoomEditor : Control
         if (touchMode == TouchMode.Pinching)
         {
             UpdatePinch();
+            return;
+        }
+
+        // Both fingers down, gesture still undetermined: promote to a pinch once the fingers
+        // clearly move apart/together (this also cancels the pending two-finger tap).
+        if (touchMode == TouchMode.PossibleTap && touchSecondaryId is not null && !touchTwoFingerCancelled
+            && touchPrimaryId is long primaryId)
+        {
+            Point p1 = touchPoints[primaryId];
+            Point p2 = touchPoints[touchSecondaryId.Value];
+            double dist = Distance(p1, p2);
+            bool firstMoved = Distance(p1, touchStartPosition) > TouchMoveThreshold;
+            bool secondMoved = Distance(p2, touchSecondStartPosition) > TouchMoveThreshold;
+
+            if (Math.Abs(dist - touchTwoFingerStartDistance) > TouchPinchStartDistanceThreshold || firstMoved || secondMoved)
+            {
+                touchTwoFingerCancelled = true;
+                BeginPinch();
+            }
             return;
         }
 
@@ -456,13 +497,67 @@ public class UndertaleRoomEditor : Control
                     var remaining = touchPoints.First();
                     touchPrimaryId = remaining.Key;
                     touchMode = TouchMode.Panning;
+                    touchStartPosition = remaining.Value;
                     pointerPosition = remaining.Value;
+                    pointerPositionInRoom = (pointerPosition - translation) / scaling;
                     TranslationMoveOnPressed();
                 }
                 else
                 {
                     touchMode = TouchMode.None;
                 }
+            }
+            return;
+        }
+
+        if (id != touchPrimaryId && id != touchSecondaryId)
+        {
+            touchPoints.Remove(id);
+            return;
+        }
+
+        // Two-finger tap: both fingers were down and the gesture never became a pinch. Picking a
+        // tile under the fingers mirrors the desktop middle-click.
+        if (touchMode == TouchMode.PossibleTap && touchSecondaryId is not null && !touchTwoFingerCancelled)
+        {
+            bool wasSecondary = id == touchSecondaryId;
+
+            touchPoints.Remove(id);
+            if (wasSecondary) touchSecondaryId = null;
+            else touchPrimaryId = null;
+
+            if (touchPoints.Count >= 2)
+            {
+                // A third finger remains; keep tracking a fresh pair.
+                touchTwoFingerCancelled = true;
+                var remaining = touchPoints.First();
+                touchPrimaryId = remaining.Key;
+                touchSecondaryId = null;
+                touchStartPosition = remaining.Value;
+                return;
+            }
+
+            // Clean two-finger tap: exactly one finger remains.
+            var last = touchPoints.First();
+            touchPrimaryId = last.Key;
+            touchSecondaryId = null;
+            touchStartPosition = last.Value;
+            pointerPosition = last.Value;
+            pointerPositionInRoom = (pointerPosition - translation) / scaling;
+
+            if (DateTime.UtcNow - touchTwoFingerStartTime <= TouchTwoFingerTapDuration)
+            {
+                TwoFingerTapAction();
+
+                // The remaining finger's release must not trigger a normal tap action as well,
+                // so idle it until it lifts or the next press starts fresh.
+                touchMode = TouchMode.None;
+                touchTwoFingerCancelled = true;
+            }
+            else
+            {
+                touchMode = TouchMode.PossibleTap;
+                StartLongPressTimer();
             }
             return;
         }
@@ -516,6 +611,46 @@ public class UndertaleRoomEditor : Control
         pointerPosition = touchStartPosition;
         pointerPositionInRoom = (pointerPosition - translation) / scaling;
         TouchPressAction();
+        PlatformHaptics.OnLongPress();
+    }
+
+    /// <summary>
+    /// Touch equivalent of the desktop middle-click: picks the tile under the fingers (GMS2 tile
+    /// layers and legacy room tiles).
+    /// </summary>
+    void TwoFingerTapAction()
+    {
+        var roomItems = Updater.MakeRoomItems(vm!.Room);
+        InteractionMode interactionMode = GetInteractionMode();
+
+        switch (interactionMode)
+        {
+            case InteractionMode.Tiles:
+            {
+                UndertaleRoom.Layer? tilesLayer = GetSelectedTilesLayer();
+                if (tilesLayer is not null)
+                {
+                    uint? tile = GetLayerTileAtPointer(tilesLayer);
+                    if (tile is not null)
+                    {
+                        vm!.SelectedTileData = (uint)tile;
+                        PlatformHaptics.OnTap();
+                    }
+                }
+                break;
+            }
+            case InteractionMode.RoomTiles:
+            {
+                UndertaleRoom.Tile? tile = GetRoomTileAtPointer(roomItems);
+                if (tile is not null)
+                {
+                    vm!.SelectedTileResource = tile.ObjectDefinition;
+                    vm!.SelectedTileSourceRect = new(tile.SourceX, tile.SourceY, tile.Width, tile.Height);
+                    PlatformHaptics.OnTap();
+                }
+                break;
+            }
+        }
     }
 
     void BeginPinch()
