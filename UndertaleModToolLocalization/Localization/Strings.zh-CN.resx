@@ -363,6 +363,9 @@
   <data name="Menu_Help_GitHub" xml:space="preserve">
     <value>GitHub(_G)</value>
   </data>
+  <data name="Menu_Help_CheckForUpdates" xml:space="preserve">
+    <value>检查更新(_U)</value>
+  </data>
   <data name="Menu_Help_About" xml:space="preserve">
     <value>关于(_A)</value>
   </data>
@@ -584,6 +587,15 @@
   </data>
   <data name="Msg_UpdateAvailable" xml:space="preserve">
     <value>UndertaleModTool 有新版本可用，是否现在更新？</value>
+  </data>
+  <data name="Msg_UpToDate" xml:space="preserve">
+    <value>你已是最新版本。</value>
+  </data>
+  <data name="Msg_ExtractingUpdate" xml:space="preserve">
+    <value>正在解压更新...</value>
+  </data>
+  <data name="Msg_UpdateNotSupported" xml:space="preserve">
+    <value>此平台不支持自动更新。</value>
   </data>
   <data name="GML_Title" xml:space="preserve">
     <value>设置 - GML 编译器/反编译器</value>

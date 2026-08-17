@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using UndertaleModTool.Localization;
 
 namespace UndertaleModToolAvalonia;
@@ -14,7 +14,7 @@ public partial class MainWindow : Window
     {
         if (!e.IsProgrammatic)
         {
-            if (DataContext is MainViewModel vm && vm.Data is not null)
+            if (DataContext is MainViewModel vm && vm.Data is not null && !vm.IsUpdating)
             {
                 e.Cancel = true;
 

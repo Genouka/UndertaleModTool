@@ -111,6 +111,8 @@
             </NativeMenuItem>
             <NativeMenuItem Header="{l:Loc Menu_Help}">
                 <NativeMenu>
+                    <NativeMenuItem Header="{l:Loc Menu_Help_CheckForUpdates}" Command="{Binding HelpCheckForUpdates}"/>
+                    <NativeMenuItemSeparator Header="-" />
                     <NativeMenuItem Header="{l:Loc Menu_Help_GitHub}" Command="{Binding HelpGitHub}"/>
                     <NativeMenuItem Header="{l:Loc Menu_Help_About}" Command="{Binding HelpAbout}" Gesture="F1"/>
                 </NativeMenu>

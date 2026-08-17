@@ -53,6 +53,13 @@
                           IsChecked="{Binding MainVM.Settings.EnableSelectAnyLayerByDefault}"/>
                 <CheckBox Content="{l:Loc Settings_EnableProjectBackup}"
                           IsChecked="{Binding MainVM.Settings.EnableProjectBackup}"/>
+
+                <CheckBox Content="{l:Loc Settings_CheckForUpdates}"
+                          ToolTip.Tip="{l:Loc Settings_CheckForUpdatesToolTip}"
+                          IsChecked="{Binding MainVM.Settings.CheckForUpdates}"/>
+                <Button Content="{l:Loc Settings_UpdateApp}"
+                        Command="{Binding MainVM.HelpUpdateApp}"
+                        HorizontalAlignment="Left" Margin="0,4,0,0"/>
             </StackPanel>
 
             <!--

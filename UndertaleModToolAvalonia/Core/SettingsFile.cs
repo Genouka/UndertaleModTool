@@ -151,6 +151,9 @@ public partial class SettingsFile
 
     public bool EnableProjectBackup { get; set; } = true;
 
+    /// <summary>Check for a newer nightly build automatically when the app starts.</summary>
+    public bool CheckForUpdates { get; set; } = true;
+
     public string InstanceIdPrefix { get; set; } = "inst_";
 
     public string Language { get; set; } = "";

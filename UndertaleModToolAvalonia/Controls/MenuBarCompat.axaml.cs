@@ -116,6 +116,8 @@ public partial class MenuBarCompat : UserControl
         project.Items.Add(Item("Menu_Project_Close", command: new RelayCommand(vm.ProjectClose)));
 
         NativeMenu help = new();
+        help.Items.Add(Item("Menu_Help_CheckForUpdates", command: new RelayCommand(vm.HelpCheckForUpdates)));
+        help.Items.Add(new NativeMenuItemSeparator());
         help.Items.Add(Item("Menu_Help_GitHub", command: new RelayCommand(vm.HelpGitHub)));
         help.Items.Add(Item("Menu_Help_About", command: new RelayCommand(vm.HelpAbout), gesture: new KeyGesture(Key.F1)));
 

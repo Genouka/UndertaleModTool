@@ -5,7 +5,9 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -143,6 +145,8 @@ public partial class MainViewModel : ObservableObject
             await View!.MessageDialog(message);
         }
         LazyErrorMessages.Clear();
+
+        _ = CheckForUpdatesAutomatically();
 
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -962,6 +966,297 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             "\n" + string.Format(LocalizationSource.GetString("Msg_AboutBody3"), App.InformationalVersionString)
             ,
             title: LocalizationSource.GetString("Msg_AboutTitle"));
+    }
+
+    // Update checking (mirrors the update check of the WPF version of UndertaleModTool)
+    bool updateInProgress = false;
+
+    /// <summary>Set right before the app closes to install an update; checked by <see cref="MainWindow.OnClosing"/>.</summary>
+    public bool IsUpdating { get; private set; } = false;
+
+    /// <summary>
+    /// Automatically checks for a new nightly build on startup (if enabled in settings) and
+    /// prompts the user to update when one is available.
+    /// </summary>
+    public async void CheckForUpdatesAutomatically()
+    {
+        if (Settings?.CheckForUpdates != true)
+            return;
+        if (!UpdateChecker.IsSupportedPlatform)
+            return;
+
+        try
+        {
+            using HttpClient client = UpdateChecker.CreateHttpClient();
+            UpdateChecker.UpdateInfo? info = await UpdateChecker.FetchLatestBuildAsync(client);
+            if (info is null || !UpdateChecker.IsNewerThanLocal(info))
+                return;
+
+            if (await View!.MessageDialog(LocalizationSource.GetString("Msg_UpdateAvailable"),
+                    buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes)
+            {
+                await UpdateAppAsync(info);
+            }
+        }
+        catch
+        {
+            // Silently ignore any errors - this is just a convenience check
+        }
+    }
+
+    /// <summary>Manual "Check for updates" command from the Help menu.</summary>
+    public async void HelpCheckForUpdates()
+    {
+        if (!UpdateChecker.IsSupportedPlatform)
+        {
+            await View!.MessageDialog(LocalizationSource.GetString("Msg_UpdateNotSupported"));
+            return;
+        }
+
+        try
+        {
+            using HttpClient client = UpdateChecker.CreateHttpClient();
+            UpdateChecker.UpdateInfo? info = await UpdateChecker.FetchLatestBuildAsync(client);
+            if (info is null)
+            {
+                await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToFindBuild"), UpdateChecker.WorkflowName));
+                return;
+            }
+
+            if (!UpdateChecker.IsNewerThanLocal(info))
+            {
+                await View!.MessageDialog(LocalizationSource.GetString("Msg_UpToDate"));
+                return;
+            }
+
+            if (await View!.MessageDialog(LocalizationSource.GetString("Msg_UpdateAvailable"),
+                    buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes)
+            {
+                await UpdateAppAsync(info);
+            }
+        }
+        catch (Exception e)
+        {
+            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToFetchBuild"), e.Message));
+        }
+    }
+
+    /// <summary>"Update app" command from the settings window: always downloads the latest build,
+    /// asking for confirmation first when the app is already up to date.</summary>
+    public async void HelpUpdateApp()
+    {
+        if (!UpdateChecker.IsSupportedPlatform)
+            return;
+
+        try
+        {
+            using HttpClient client = UpdateChecker.CreateHttpClient();
+            UpdateChecker.UpdateInfo? info = await UpdateChecker.FetchLatestBuildAsync(client);
+            if (info is null)
+            {
+                await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToFindBuild"), UpdateChecker.WorkflowName));
+                return;
+            }
+
+            if (!UpdateChecker.IsNewerThanLocal(info))
+            {
+                if (await View!.MessageDialog(LocalizationSource.GetString("Msg_AlreadyUpToDate"),
+                        buttons: MessageWindow.Buttons.YesNo) != MessageWindow.Result.Yes)
+                {
+                    return;
+                }
+            }
+
+            await UpdateAppAsync(info);
+        }
+        catch (Exception e)
+        {
+            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToFetchBuild"), e.Message));
+        }
+    }
+
+    /// <summary>Downloads and installs the given nightly build, then restarts the app.</summary>
+    async Task UpdateAppAsync(UpdateChecker.UpdateInfo info)
+    {
+        if (updateInProgress)
+            return;
+        updateInProgress = true;
+        ILoaderWindow? loader = null;
+        try
+        {
+            // Prepare the temp folder the updater will work from.
+            string tempFolder = Path.Join(Path.GetTempPath(), "UndertaleModToolAvalonia");
+            Directory.CreateDirectory(tempFolder);
+
+            // Check that there is enough free space on the system drive.
+            string sysDriveLetter = Path.GetPathRoot(Path.GetTempPath()) ?? "C:";
+            try
+            {
+                if ((new DriveInfo(sysDriveLetter).AvailableFreeSpace / (1024.0 * 1024.0)) < 500)
+                {
+                    await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_NotEnoughSpace"), sysDriveLetter));
+                    return;
+                }
+            }
+            catch
+            {
+                // DriveInfo can fail on some platforms; don't block the update over it.
+            }
+
+            // Download the update, showing progress in a loader window.
+            loader = View!.LoaderOpen();
+            loader.SetMessage(LocalizationSource.GetString("Main_Downloading"));
+            loader.SetMaximum(1000);
+
+            string downloadOutput = Path.Join(tempFolder, "Update.zip.zip");
+
+            using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) })
+            {
+                bool downloaded = await DownloadUpdateAsync(client, info, downloadOutput, loader);
+                if (!downloaded)
+                {
+                    await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"),
+                        LocalizationSource.GetString("Msg_CheckInternetConnection")));
+                    return;
+                }
+            }
+
+            // Extract the update (the downloaded file can be single or double zipped).
+            loader.SetStatus(LocalizationSource.GetString("Msg_ExtractingUpdate"));
+            string updateFolder = Path.Join(tempFolder, "Update");
+            if (Directory.Exists(updateFolder))
+                Directory.Delete(updateFolder, true);
+            await Task.Run(() => ExtractUpdateZip(downloadOutput, updateFolder));
+
+            // Copy the running executable to the temp folder - it will act as the updater
+            // (it can replace the app files once this instance has exited).
+            if (Environment.ProcessPath is null)
+                throw new InvalidOperationException("Can't determine the app executable path.");
+            string appPath = Path.GetDirectoryName(Environment.ProcessPath)!;
+            string updaterFolderTemp = Path.Join(tempFolder, "Updater");
+            if (Directory.Exists(updaterFolderTemp))
+                Directory.Delete(updaterFolderTemp, true);
+            Directory.CreateDirectory(updaterFolderTemp);
+            string updaterName = OperatingSystem.IsWindows() ? "UndertaleModToolAvaloniaUpdater.exe" : "UndertaleModToolAvaloniaUpdater";
+            string updaterExe = Path.Join(updaterFolderTemp, updaterName);
+            File.Copy(Environment.ProcessPath, updaterExe);
+            File.WriteAllText(Path.Join(updaterFolderTemp, "actualAppFolder"), appPath);
+
+            // Close the loader, inform the user, launch the updater and exit.
+            loader.Close();
+            loader = null;
+
+            await View!.MessageDialog(LocalizationSource.GetString("Msg_WillCloseToUpdate"));
+
+            Process.Start(new ProcessStartInfo(updaterExe)
+            {
+                WorkingDirectory = updaterFolderTemp,
+                Arguments = $"--update-install {Environment.ProcessId}",
+            });
+
+            IsUpdating = true;
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                desktop.Shutdown();
+            else
+                Environment.Exit(0);
+        }
+        catch (Exception e)
+        {
+            loader?.Close();
+            string errMsg = e.InnerException?.Message ?? e.Message;
+            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"), errMsg));
+        }
+        finally
+        {
+            updateInProgress = false;
+        }
+    }
+
+    /// <summary>Downloads the update, trying the GitHub release asset first and nightly.link as a fallback.</summary>
+    static async Task<bool> DownloadUpdateAsync(HttpClient client, UpdateChecker.UpdateInfo info, string downloadOutput, ILoaderWindow loader)
+    {
+        double bytesToMB = 1024 * 1024;
+        string[] urls = [info.ReleaseDownloadUrl, info.NightlyLinkDownloadUrl];
+
+        foreach (string url in urls)
+        {
+            try
+            {
+                using HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                if (!response.IsSuccessStatusCode)
+                    continue;
+
+                long totalBytes = response.Content.Headers.ContentLength ?? 0;
+                long bytesToUpdateProgress = Math.Max(1, totalBytes / 500);
+                long bytesToProgressCounter = 0;
+
+                using Stream contentStream = await response.Content.ReadAsStreamAsync();
+                using FileStream fs = new(downloadOutput, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
+                byte[] buffer = new byte[8192];
+                long totalBytesDownloaded = 0;
+                int bytesRead = await contentStream.ReadAsync(buffer);
+                while (bytesRead > 0)
+                {
+                    await fs.WriteAsync(buffer.AsMemory(0, bytesRead));
+                    totalBytesDownloaded += bytesRead;
+                    bytesToProgressCounter += bytesRead;
+                    if (bytesToProgressCounter >= bytesToUpdateProgress)
+                    {
+                        bytesToProgressCounter -= bytesToUpdateProgress;
+                        long downloaded = totalBytesDownloaded;
+                        string status = string.Format(LocalizationSource.GetString("Msg_DownloadedMB"),
+                            (totalBytesDownloaded / bytesToMB).ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            loader.SetValue((int)Math.Min(1000, downloaded * 1000 / Math.Max(1, totalBytes)));
+                            loader.SetStatus(status);
+                        });
+                    }
+                    bytesRead = await contentStream.ReadAsync(buffer);
+                }
+
+                Dispatcher.UIThread.Post(() => loader.SetValue(1000));
+                return true;
+            }
+            catch (Exception)
+            {
+                // Try the next download source.
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Extracts the downloaded zip into <paramref name="targetFolder"/>. GitHub Actions artifacts
+    /// are re-zipped by upload-artifact (double zip), while release assets are already the inner zip.
+    /// </summary>
+    static void ExtractUpdateZip(string zipPath, string targetFolder)
+    {
+        string? innerZip = null;
+        using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+        {
+            List<string> topLevelZips = archive.Entries
+                .Where(e => e.FullName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) && !e.FullName.Contains('/'))
+                .Select(e => e.FullName)
+                .ToList();
+            if (topLevelZips.Count == 1)
+                innerZip = topLevelZips[0];
+        }
+
+        if (innerZip is not null)
+        {
+            string artifactFolder = Path.Join(Path.GetDirectoryName(zipPath)!, "Artifact");
+            if (Directory.Exists(artifactFolder))
+                Directory.Delete(artifactFolder, true);
+            ZipFile.ExtractToDirectory(zipPath, artifactFolder, true);
+            ZipFile.ExtractToDirectory(Path.Join(artifactFolder, innerZip), targetFolder, true);
+        }
+        else
+        {
+            ZipFile.ExtractToDirectory(zipPath, targetFolder, true);
+        }
     }
 
     public async void DataItemAdd(IList list)
