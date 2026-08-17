@@ -45,6 +45,7 @@
                                              IsEnabled="{Binding !IsCodeProcessing, Mode=OneWay}"
                                              TextChanged="GMLTextEditor_TextChanged"
                                              ShowLineNumbers="True"
+                                             FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
                                              WordWrap="True">
                         <AvaloniaEdit:TextEditor.KeyBindings>
                             <KeyBinding Gesture="{OnPlatform 'Ctrl+K', macOS='Meta+K'}" Command="{Binding CompileAndDecompileGML}" />
