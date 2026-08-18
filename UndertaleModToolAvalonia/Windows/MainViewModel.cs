@@ -60,10 +60,12 @@ public partial class MainViewModel : ObservableObject
     // Data
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Title))]
+    [NotifyPropertyChangedFor(nameof(ProjectActive))]
     public partial UndertaleData? Data { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Title))]
+    [NotifyPropertyChangedFor(nameof(ProjectActive))]
     public partial string? DataPath { get; set; }
 
     [ObservableProperty]
@@ -74,7 +76,12 @@ public partial class MainViewModel : ObservableObject
     // Project
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Title))]
+    [NotifyPropertyChangedFor(nameof(ProjectActive))]
     public partial ProjectContext? Project { get; set; }
+
+    /// <summary>Whether a project is currently usable (a data file is loaded and a project is set),
+    /// used to enable/disable project menu items like the WPF version does.</summary>
+    public bool ProjectActive => Project is not null && Data is not null && DataPath is not null;
 
     // Left panel
     public DataExplorerViewModel DataExplorer { get; set; }
@@ -146,7 +153,7 @@ public partial class MainViewModel : ObservableObject
         }
         LazyErrorMessages.Clear();
 
-        _ = CheckForUpdatesAutomatically();
+        CheckForUpdatesAutomatically();
 
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -342,10 +349,26 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
         try
         {
-            // TODO: RecompileAllCodeSourcesOnProjectSave setting
-            if (Project is not null)
+            // Recompile all code sources before saving, if requested and a project is open (mirrors the WPF version)
+            if (Settings!.RecompileAllCodeSourcesOnProjectSave && Project is not null)
             {
-                Project.RecompileAllCodeSources();
+                try
+                {
+                    await Task.Run(() => Project.RecompileAllCodeSources());
+                }
+                catch (ProjectException e)
+                {
+                    w.EnsureShown();
+                    await View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_RecompileError"));
+                    return false;
+                }
+                catch (Exception e)
+                {
+                    w.EnsureShown();
+                    await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_RecompileErrorDetail"), e.Message),
+                        title: LocalizationSource.GetString("Msg_RecompileError"));
+                    return false;
+                }
             }
 
             await Task.Run(() => UndertaleIO.Write(stream, Data, message =>
@@ -747,8 +770,11 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             mainView.CloseProjectAssets();
     }
 
+    /// <summary>Assigns a new project context, replacing (and unloading) any currently open project, mirroring the WPF version's AssignNewProject.</summary>
     void SetProject(ProjectContext projectContext)
     {
+        ClearProject();
+
         Project = projectContext;
         Project.UnexportedAssetsChanged += (s, e) =>
         {
@@ -758,115 +784,235 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         UpdateSelectedTabProperties();
     }
 
-    async Task<string?> AskProjectDestinationDataFile()
+    /// <summary>Asks the user to choose the destination data file for a project, checking that it's not in the same
+    /// directory as the source data file and warning about empty directories. Returns null if cancelled.</summary>
+    async Task<string?> AskProjectDestinationDataFile(string sourceDataPath)
     {
         // Destination data file
-        // TODO: Check if same as source and if empty directory
         IStorageFile? destinationDataFile = await View!.SaveFileDialog(new()
         {
-            Title = LocalizationSource.GetString("Msg_SelectDestDataFile"),
+            Title = LocalizationSource.GetString("Msg_ChooseDestinationDataFile"),
             FileTypeChoices = FilePickerFileTypes.Data,
         });
         string? destinationDataPath = destinationDataFile?.TryGetLocalPath();
+
+        if (destinationDataPath is null)
+            return null;
+
+        // Check if the directories are the same and warn if so (note: not a fully exhaustive check, but decent)
+        try
+        {
+            if (sourceDataPath is not null && Path.GetDirectoryName(sourceDataPath) is string sourceDirectory
+                && Path.GetDirectoryName(destinationDataPath) is string destinationDirectory
+                && Path.GetFullPath(destinationDirectory).Equals(Path.GetFullPath(sourceDirectory), StringComparison.OrdinalIgnoreCase))
+            {
+                MessageWindow.Result result = await View!.MessageDialog(LocalizationSource.GetString("Msg_SameDirectoryWarning"),
+                    title: LocalizationSource.GetString("Msg_SameDirectoryWarningTitle"),
+                    buttons: MessageWindow.Buttons.YesNoCancel);
+                if (result != MessageWindow.Result.Yes)
+                {
+                    // Abort
+                    return null;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore filesystem errors on the above check; we don't really care
+        }
+
+        // Check if the save directory is empty, and warn if so
+        try
+        {
+            if (!Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(destinationDataPath)).Any())
+            {
+                await View!.MessageDialog(LocalizationSource.GetString("Msg_EmptyDirectoryWarning"));
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore filesystem errors on the above check; we don't really care
+        }
 
         return destinationDataPath;
     }
 
     public async void ProjectNew()
     {
-        // TODO: Ask for source data file if nothing is opened
-        if (Data is null || DataPath is null)
-            return;
-
         if (!await AskProjectSave(LocalizationSource.GetString("Msg_SaveProjectBeforeCreating")))
             return;
 
-        ClearProject();
+        // If necessary, ask for a source data file
+        if (Data is null || DataPath is null)
+        {
+            IReadOnlyList<IStorageFile> sourceFiles = await View!.OpenFileDialog(new FilePickerOpenOptions()
+            {
+                Title = LocalizationSource.GetString("Msg_ChooseSourceDataFile"),
+                FileTypeFilter = FilePickerFileTypes.Data,
+            });
+            if (sourceFiles.Count != 1)
+            {
+                CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
+                return;
+            }
+
+            using Stream stream = await sourceFiles[0].OpenReadAsync();
+            if (!await LoadData(stream))
+            {
+                CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
+                return;
+            }
+            DataPath = sourceFiles[0].TryGetLocalPath();
+            lastDataLocation = await sourceFiles[0].GetParentAsync();
+
+            // Upon load failure, exit
+            if (Data is null || DataPath is null)
+            {
+                CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
+                return;
+            }
+        }
 
         // Project name
-        string? projectName = await View!.TextBoxDialog(LocalizationSource.GetString("Msg_ProjectName"), $"{Data.GeneralInfo?.DisplayName?.Content ?? LocalizationSource.GetString("Msg_NewMod")} Mod");
+        string? projectName = await View!.TextBoxDialog(
+            LocalizationSource.GetString("Msg_ChooseProjectName"),
+            $"{Data.GeneralInfo?.DisplayName?.Content ?? LocalizationSource.GetString("Msg_NewMod")} Mod",
+            title: LocalizationSource.GetString("Msg_ChooseNewProjectName"));
         if (projectName is null)
+        {
+            CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
             return;
+        }
+        projectName = projectName.Trim();
 
         // Project folder
         IReadOnlyList<IStorageFolder> projectFolderList = await View!.OpenFolderDialog(new() { Title = LocalizationSource.GetString("Msg_SelectProjectFolder") });
         string? projectFolderPath = projectFolderList.ElementAtOrDefault(0)?.TryGetLocalPath();
-
         if (projectFolderPath is null)
+        {
+            CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
             return;
+        }
 
         string projectFilePath = Path.Join(projectFolderPath, "project.json");
 
         // Destination data file
-        string? destinationDataPath = await AskProjectDestinationDataFile();
+        string? destinationDataPath = await AskProjectDestinationDataFile(DataPath!);
         if (destinationDataPath is null)
+        {
+            CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
             return;
+        }
 
+        // Attempt creating project at the specified location (will fail if the folder isn't empty, etc.)
         ProjectContext projectContext;
         try
         {
-            projectContext = new(Data, DataPath, destinationDataPath, projectFilePath, projectName.Trim(), Dispatcher.UIThread.Invoke);
+            projectContext = new(Data, DataPath, destinationDataPath, projectFilePath, projectName, Dispatcher.UIThread.Invoke);
         }
         catch (ProjectException e)
         {
             await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedCreateProject"), e.Message));
+            CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectCreationFailed");
             return;
         }
         catch (Exception e)
         {
             await View!.MessageDialog(LocalizationSource.GetString("Msg_ErrorCreateProject") + "\n" + e);
+            CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectCreationFailed");
             return;
         }
 
+        // Start using new project context
         DataPath = destinationDataPath;
         SetProject(projectContext);
+        CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ProjectCreated"), projectName);
     }
 
     public async void ProjectOpen()
     {
-        // TODO: Ask for source data file if nothing is opened
-        if (Data is null || DataPath is null)
-            return;
-
         if (!await AskProjectSave(LocalizationSource.GetString("Msg_SaveProjectBeforeOpening")))
             return;
 
-        ClearProject();
-
-        // Project file
+        // Choose project file to open
         IReadOnlyList<IStorageFile> projectFileList = await View!.OpenFileDialog(new()
         {
-            Title = LocalizationSource.GetString("Msg_SelectProjectFile"),
+            Title = LocalizationSource.GetString("Msg_OpenProjectFile"),
             FileTypeFilter = FilePickerFileTypes.JSON,
         });
         string? projectFilePath = projectFileList.ElementAtOrDefault(0)?.TryGetLocalPath();
         if (projectFilePath is null)
             return;
 
+        // If necessary, ask for a source data file
+        IStorageFile? sourceDataFile = null;
+        if (Data is null || DataPath is null)
+        {
+            IReadOnlyList<IStorageFile> sourceFileList = await View!.OpenFileDialog(new FilePickerOpenOptions()
+            {
+                Title = LocalizationSource.GetString("Msg_ChooseSourceDataFile"),
+                FileTypeFilter = FilePickerFileTypes.Data,
+            });
+            if (sourceFileList.Count != 1)
+                return;
+            sourceDataFile = sourceFileList[0];
+        }
+
         // Destination data file
-        string? destinationDataPath = await AskProjectDestinationDataFile();
+        string? destinationDataPath = await AskProjectDestinationDataFile(sourceDataFile?.TryGetLocalPath() ?? DataPath!);
         if (destinationDataPath is null)
             return;
 
+        // Load data file if needed
+        if (sourceDataFile is not null)
+        {
+            using Stream stream = await sourceDataFile.OpenReadAsync();
+            if (!await LoadData(stream))
+                return;
+            DataPath = sourceDataFile.TryGetLocalPath();
+            lastDataLocation = await sourceDataFile.GetParentAsync();
+
+            // Upon load failure, exit
+            if (Data is null || DataPath is null)
+                return;
+        }
+
+        // Change main data file path to the save data file path (the project's destination data file)
+        string loadDataPath = DataPath!;
+        DataPath = destinationDataPath;
+
+        // Attempt loading project from the specific JSON, running the potentially long import on a background thread
         ProjectContext projectContext;
+        IsEnabled = false;
         try
         {
-            projectContext = ProjectContext.CreateWithDataFilePaths(DataPath, destinationDataPath, projectFilePath);
-            projectContext.Import(Data, Settings!.EnableProjectBackup ? null : new GameFileNoOpBackup(), Dispatcher.UIThread.Invoke);
+            projectContext = await Task.Run(() =>
+            {
+                ProjectContext created = ProjectContext.CreateWithDataFilePaths(loadDataPath, destinationDataPath, projectFilePath);
+                created.Import(Data, Settings!.EnableProjectBackup ? null : new GameFileNoOpBackup(), Dispatcher.UIThread.Invoke);
+                return created;
+            });
         }
         catch (ProjectException e)
         {
             await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedLoadProject"), e.Message));
+            CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectFailedToOpen");
             return;
         }
         catch (Exception e)
         {
             await View!.MessageDialog(LocalizationSource.GetString("Msg_ErrorLoadProject") + "\n" + e);
+            CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectFailedToOpen");
             return;
         }
+        finally
+        {
+            IsEnabled = true;
+        }
 
-        DataPath = destinationDataPath;
+        // Start using new project context
         SetProject(projectContext);
+        CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_OpenedProject"), projectContext.Name);
     }
 
     public async void ProjectSave()
@@ -879,10 +1025,13 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         if (Project is null || Data is null || DataPath is null)
             return false;
 
+        // Attempt saving project on a background thread
+        IsEnabled = false;
+        bool success = false;
         try
         {
-            Project.Export(true);
-            return true;
+            await Task.Run(() => Project.Export(true));
+            success = true;
         }
         catch (ProjectException e)
         {
@@ -892,8 +1041,13 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         {
             await View!.MessageDialog(LocalizationSource.GetString("Msg_ErrorSaveProject") + "\n" + e);
         }
+        finally
+        {
+            IsEnabled = true;
+        }
 
-        return false;
+        CommandTextBoxText = success ? LocalizationSource.GetString("Msg_SavedProjectSuccessfully") : LocalizationSource.GetString("Msg_ProjectFailedToSave");
+        return success;
     }
 
     public async void ProjectReload()
@@ -911,13 +1065,17 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         if (!await AskProjectSave(LocalizationSource.GetString("Msg_SaveProjectBeforeReloading")))
             return;
 
-        ClearProject();
-
+        // Attempt loading project from the specific JSON, running the potentially long import on a background thread
         ProjectContext projectContext;
+        IsEnabled = false;
         try
         {
-            projectContext = ProjectContext.CreateWithDataFilePaths(sourceDataPath, destinationDataPath, projectFilePath);
-            projectContext.Import(Data, Settings!.EnableProjectBackup ? null : new GameFileNoOpBackup(), Dispatcher.UIThread.Invoke);
+            projectContext = await Task.Run(() =>
+            {
+                ProjectContext created = ProjectContext.CreateWithDataFilePaths(sourceDataPath, destinationDataPath, projectFilePath);
+                created.Import(Data, Settings!.EnableProjectBackup ? null : new GameFileNoOpBackup(), Dispatcher.UIThread.Invoke);
+                return created;
+            });
         }
         catch (ProjectException e)
         {
@@ -928,6 +1086,10 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         {
             await View!.MessageDialog(LocalizationSource.GetString("Msg_ErrorLoadProject") + "\n" + e);
             return;
+        }
+        finally
+        {
+            IsEnabled = true;
         }
 
         DataPath = destinationDataPath;
@@ -949,6 +1111,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             return;
 
         ClearProject();
+        CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectClosed");
     }
 
     public async void HelpGitHub()

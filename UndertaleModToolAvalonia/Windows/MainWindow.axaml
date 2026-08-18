@@ -100,13 +100,13 @@
                 <NativeMenu>
                     <NativeMenuItem Header="{l:Loc Menu_Project_New}" Command="{Binding ProjectNew}"/>
                     <NativeMenuItem Header="{l:Loc Menu_Project_Open}" Command="{Binding ProjectOpen}"/>
-                    <NativeMenuItem Header="{l:Loc Menu_Project_Save}" Command="{Binding ProjectSave}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Project_Save}" Command="{Binding ProjectSave}" IsEnabled="{Binding ProjectActive}"/>
                     <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_Project_Reload}" Command="{Binding ProjectReload}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Project_Reload}" Command="{Binding ProjectReload}" IsEnabled="{Binding ProjectActive}"/>
                     <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_Project_ViewUnexportedAssets}" Command="{Binding ProjectViewUnexportedAssets}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Project_ViewUnexportedAssets}" Command="{Binding ProjectViewUnexportedAssets}" IsEnabled="{Binding ProjectActive}"/>
                     <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_Project_Close}" Command="{Binding ProjectClose}"/>
+                    <NativeMenuItem Header="{l:Loc Menu_Project_Close}" Command="{Binding ProjectClose}" IsEnabled="{Binding ProjectActive}"/>
                 </NativeMenu>
             </NativeMenuItem>
             <NativeMenuItem Header="{l:Loc Menu_Help}">

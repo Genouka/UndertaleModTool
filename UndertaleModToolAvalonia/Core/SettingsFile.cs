@@ -151,6 +151,12 @@ public partial class SettingsFile
 
     public bool EnableProjectBackup { get; set; } = true;
 
+    /// <summary>
+    /// Recompile all GML code sources when saving the data file with a project open,
+    /// so the exported data file contains up-to-date code (mirrors the WPF version's setting).
+    /// </summary>
+    public bool RecompileAllCodeSourcesOnProjectSave { get; set; } = false;
+
     /// <summary>Check for a newer nightly build automatically when the app starts.</summary>
     public bool CheckForUpdates { get; set; } = true;
 

@@ -53,6 +53,9 @@
                           IsChecked="{Binding MainVM.Settings.EnableSelectAnyLayerByDefault}"/>
                 <CheckBox Content="{l:Loc Settings_EnableProjectBackup}"
                           IsChecked="{Binding MainVM.Settings.EnableProjectBackup}"/>
+                <CheckBox Content="{l:Loc Settings_RecompileOnSave}"
+                          ToolTip.Tip="{l:Loc Settings_RecompileOnSaveToolTip}"
+                          IsChecked="{Binding MainVM.Settings.RecompileAllCodeSourcesOnProjectSave}"/>
 
                 <CheckBox Content="{l:Loc Settings_CheckForUpdates}"
                           ToolTip.Tip="{l:Loc Settings_CheckForUpdatesToolTip}"
