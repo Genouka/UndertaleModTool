@@ -226,11 +226,72 @@ jobs:
     steps:
     - name: Download artifacts
       uses: actions/download-artifact@v8
-    - run: |
-        gh release delete nightly --cleanup-tag --yes
+
+    - name: Delete old nightly release (if exists)
+      run: |
+        gh release delete nightly --cleanup-tag --yes || true
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GH_REPO: ${{ github.repository }}
+
+    - name: Generate release body with build table
+      run: |
+        cat > release_body.md <<'EOF'
+        This is an unofficial version of UndertaleModTool developed by 秋冥散雨_Genouka.
+
+        If you encounter any bugs, please submit an issue to this repository on Github.
+
+        If you're not sure which one to download, please download `UndertaleModTool_nightly-Windows.zip`
+        
+        这是由 秋冥散雨_Genouka 开发的非官方版本的 UndertaleModTool。
+        
+        如果你遇到任何Bug ，请在Github 向此仓库提交 Issue 。
+        
+        如果你不清楚该下载哪个，请下载`UndertaleModTool_nightly-Windows.zip`
+        
+        ## Available builds
+        | Name | Platform | Type | Download |
+        |------|----------|------|----------|
+        EOF
+        # 遍历所有下载的 .zip 文件，生成表格行
+        for file in $(find . -name "*.zip" -type f); do
+          name=$(basename "$file")
+          # 提取平台与图标
+          if [[ "$name" =~ Windows ]]; then
+            icon="🪟"
+            platform="Windows"
+          elif [[ "$name" =~ Ubuntu ]] || [[ "$name" =~ Linux ]]; then
+            icon="🐧"
+            platform="Linux"
+          elif [[ "$name" =~ macOS ]]; then
+            icon="🍎"
+            platform="macOS"
+          elif [[ "$name" =~ Android ]]; then
+            icon="📱"
+            platform="Android"
+          else
+            icon="❓"
+            platform="Unknown"
+          fi
+          # 提取版本类型
+          if [[ "$name" =~ CLI ]]; then
+            type="CLI"
+          elif [[ "$name" =~ Avalonia ]]; then
+            if [[ "$name" =~ Android ]]; then
+              type="Avalonia Android"
+            else
+              type="Avalonia GUI"
+            fi
+          else
+            type="GUI"
+          fi
+          echo "| $name | $icon $platform | $type | [Download](https://github.com/${{ github.repository }}/releases/download/nightly/$name) |" >> release_body.md
+        done
+        echo "" >> release_body.md
+        echo "## Changelog" >> release_body.md
+        echo "[View Changelog](https://github.com/${{ github.repository }}/blob/master/CHANGELOG.md)" >> release_body.md
+      shell: bash
+
     - name: Release
       uses: softprops/action-gh-release@v3
       with:
@@ -240,15 +301,4 @@ jobs:
         fail_on_unmatched_files: true
         files: |
           */*
-        body: | 
-          This is the latest version of unofficial fork of UndertaleModTool By Genouka.
-          
-          If you encounter any bugs, please make an issue on GitHub.
-          
-          这是由秋冥散雨_Genouka 开发的非官方版本的 UndertaleModTool。
-          
-          如果你遇到任何Bug ，请在Github 向此仓库提交 Issue 。
-          
-          请注意：程序默认进入为英文，请在设置(菜单栏)File/Settings/Language 选择 简体中文，之后可能会简化一下）
-          
-          如果你不清楚该下载哪个，请下载`UndertaleModTool_nightly-Windows.zip`
+        body_path: release_body.md
