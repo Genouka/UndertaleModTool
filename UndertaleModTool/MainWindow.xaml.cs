@@ -3042,12 +3042,8 @@ namespace UndertaleModTool
                 return;
             }
 
-            string configStr = Version.Contains("Git:") ? "Debug" : "Release";
             bool isSingleFile = !File.Exists(Path.Join(ExePath, "UndertaleModTool.dll"));
-            string assemblyLocation = AppDomain.CurrentDomain.GetAssemblies()
-                                      .First(x => x.GetName().Name.StartsWith("System.Collections")).Location; // any of currently used assemblies
-            bool isBundled = !Regex.Match(assemblyLocation, @"C:\\Program Files( \(x86\))*\\dotnet\\shared\\").Success;
-            string patchName = $"GUI-windows-latest-{configStr}-isBundled-{isBundled.ToString().ToLower()}-isSingleFile-{isSingleFile.ToString().ToLower()}";
+            string patchName = $"UndertaleModTool_nightly-Windows{(isSingleFile ? "-SingleFile" : "")}";
 
             string baseUrl = "https://api.github.com/repos/genouka/UndertaleModTool/actions/";
             string detectedActionName = "Publish continuous release of UndertaleModTool";
