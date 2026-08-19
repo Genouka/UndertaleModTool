@@ -1,0 +1,6845 @@
+﻿#region LICENSE
+/*
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "[]"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright [yyyy] [name of copyright owner]
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+#endregion
+#region Disclaimer
+/*
+    Ultimate_GMS2_Decompiler_v5
+        The Ultimate GameMaker Studio 2 Decompiler
+
+            New Features by burnedpopcorn180
+            Original Decompiler made by crystallizedsparkle/setupwitch
+
+    Originally used 0.0.1-prerelease as a base
+    and updated some elements to use code from the latest public release 
+    (commit hash 508b4aecc79ebd730bbd198ffed64f3340d23cbc as of time of writing)
+    https://github.com/crystallizedsparkle/Gamemaker-LTS-Decompiler/
+
+    I also used a lot of UnscrambleTileset.csx's code for the Fix Tileset Window (thanks CST)
+    https://gamebanana.com/tools/19813
+
+    This Script is Compatible with Both My UnderAnalyzer Decompiler
+    and Bleeding Edge UTMT 0.8.4.1+
+
+    List of New Features I added
+        - Replaced YAML Config with an Advanced GUI
+        - Made Progress Bar display Asset Name currently being decompiled
+        - Added High Quality Icon Extraction
+        - Added ability to select individual assets to decompile
+        - Added ability to decompile as a GameMaker Importable Package (YYMPS) file
+        - Added ability to include UnknownEnum Declaration into GlobalInit Script
+        - Added ability to copy external datafiles into the project (before official implimentation, and a bit better)
+        - Added ability to manually correct Tileset Seperation in the Fix Tileset Window
+        - Added ability to clean decompiled code (such as string and ds_* functions to use literals and accessors instead)
+        - Added ability to automatically organize some assets based on Texture and Audio Groups
+        - (NEW) Added ability to extract the game's compile config
+
+    Since the original script was left in an unfinished state, there was some things that couldn't be decompiled 
+    correctly or at all, but now can with this script, that being:
+        - WMA sound files
+        - SPINE and SVG Vector sprites
+        - Sequence track visibility
+
+    Included LICENSE file applies ONLY to setupwitch's code
+    Any of my own changes are not under this LICENSE file, and can be freely used by anyone
+    (although credit would be nice)
+ */
+#endregion
+
+#region Usings
+using ImageMagick;
+using NAudio.Vorbis;
+using NAudio.Wave;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Dynamic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+// new ui
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shell;
+using Underanalyzer;
+using Underanalyzer.Decompiler;
+using Underanalyzer.Decompiler.AST;
+using Underanalyzer.Decompiler.ControlFlow;
+using Underanalyzer.Decompiler.GameSpecific;
+using UndertaleModLib.Models;
+using UndertaleModLib.Util;
+using static UndertaleModLib.Models.UndertaleRoom;
+#endregion
+
+#region Checks
+EnsureDataLoaded();
+if (!Data.IsVersionAtLeast(2, 3))
+{
+    if (!ScriptQuestion("This Script is not intended for games made with GameMaker versions below GMS2.3\n(Consider using the GMS1 Decompiler instead)\n\nContinue Anyways?"))
+        return;
+}
+if (Data.ToolInfo.DecompilerSettings.CreateEnumDeclarations == true)
+{
+	if (!ScriptQuestion("The 'Create Enum Declarations' Setting is ENABLED\nDecompiling with this Enabled will almost certainly break your decompilation\n\nContinue Anyways?"))
+		return;
+}
+#endregion
+
+#region Classes
+
+#region Asset Type Enums
+// the color enum ripped from GM
+public enum eColour : uint
+{
+    Red = 4278190335U,
+    Green = 4278255360U,
+    Blue = 4294901760U,
+    Cyan = 4294967040U,
+    Purple = 4294902015U,
+    Yellow = 4278255615U,
+    Orange = 4278232575U,
+    White = 4294967295U,
+    LightGray = 4290822336U,
+    LightBlue = 4294944000U,
+    Gray = 4286611584U,
+    DarkGray = 4282400832U,
+    Black = 4278190080U,
+    DarkRed = 4278190208U,
+    DarkGreen = 4278222848U,
+    DarkBlue = 4286578688U,
+    DarkCyan = 4286611456U,
+    DarkPurple = 4286578816U,
+    DarkYellow = 4278222976U,
+    NOALPHA_Red = 16711680U,
+    NOALPHA_Green = 65280U,
+    NOALPHA_Blue = 16711680U,
+    NOALPHA_Cyan = 16776960U,
+    NOALPHA_Purple = 16711935U,
+    NOALPHA_Yellow = 65535U,
+    NOALPHA_White = 16777215U,
+    NOALPHA_LightGray = 12632256U,
+    NOALPHA_Gray = 8421504U,
+    NOALPHA_DarkGray = 4210752U,
+    NOALPHA_Black = 0U,
+    NOALPHA_DarkRed = 128U,
+    NOALPHA_DarkGreen = 32768U,
+    NOALPHA_DarkBlue = 8388608U,
+    NOALPHA_DarkCyan = 8421376U,
+    NOALPHA_DarkPurple = 8388736U,
+    NOALPHA_DarkYellow = 32896U,
+    HALFALPHA_White = 2164260863U,
+    SlateGrey = 4283977031U
+}
+// asset types
+public enum GMAssetType
+{
+    None = -1,
+    Room = 0,
+    Sprite = 1,
+    Object = 2,
+    Script = 3,
+    Sound = 4,
+    AudioGroup = 5,
+    TileSet = 6,
+    Note = 7,
+    TextureGroup = 8,
+    Font = 9,
+    Sequence = 10,
+    Shader = 11,
+    Extension = 12,
+    Path = 13,
+    AnimationCurve = 14,
+    Timeline = 15,
+}
+// the origin enum ripped from GM
+public enum eOrigin
+{
+    TopLeft,
+    TopCentre,
+    TopRight,
+    MiddleLeft,
+    MiddleCentre,
+    MiddleRight,
+    BottomLeft,
+    BottomCentre,
+    BottomRight,
+    Custom
+}
+
+#endregion
+#region Internal Data Classes
+// thanks https://stackoverflow.com/questions/17830853/how-can-i-load-a-program-icon-in-c-sharp
+#region Extract Icon Functions
+internal static class ExtractIcon
+{
+    [UnmanagedFunctionPointer(CallingConvention.Winapi, SetLastError = true, CharSet = CharSet.Unicode)]
+    [SuppressUnmanagedCodeSecurity]
+    internal delegate bool ENUMRESNAMEPROC(IntPtr hModule, IntPtr lpszType, IntPtr lpszName, IntPtr lParam);
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern IntPtr FindResource(IntPtr hModule, IntPtr lpName, IntPtr lpType);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr LoadResource(IntPtr hModule, IntPtr hResInfo);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr LockResource(IntPtr hResData);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern uint SizeofResource(IntPtr hModule, IntPtr hResInfo);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    [SuppressUnmanagedCodeSecurity]
+    public static extern bool EnumResourceNames(IntPtr hModule, IntPtr lpszType, ENUMRESNAMEPROC lpEnumFunc, IntPtr lParam);
+
+
+    private const uint LOAD_LIBRARY_AS_DATAFILE = 0x00000002;
+    private readonly static IntPtr RT_ICON = (IntPtr)3;
+    private readonly static IntPtr RT_GROUP_ICON = (IntPtr)14;
+
+    public static IMagickImage ExtractIconFromExecutable(string path)
+    {
+        IntPtr hModule = LoadLibraryEx(path, IntPtr.Zero, LOAD_LIBRARY_AS_DATAFILE);
+        var tmpData = new List<byte[]>();
+
+        ENUMRESNAMEPROC callback = (h, t, name, l) =>
+        {
+            var dir = GetDataFromResource(hModule, RT_GROUP_ICON, name);
+
+            // Calculate the size of an entire .icon file.
+
+            int count = BitConverter.ToUInt16(dir, 4);  // GRPICONDIR.idCount
+            int len = 6 + 16 * count;                   // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
+            for (int i = 0; i < count; ++i)
+                len += BitConverter.ToInt32(dir, 6 + 14 * i + 8);   // GRPICONDIRENTRY.dwBytesInRes
+
+            using (var dst = new BinaryWriter(new MemoryStream(len)))
+            {
+                // Copy GRPICONDIR to ICONDIR.
+
+                dst.Write(dir, 0, 6);
+
+                int picOffset = 6 + 16 * count; // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
+
+                for (int i = 0; i < count; ++i)
+                {
+                    // Load the picture.
+
+                    ushort id = BitConverter.ToUInt16(dir, 6 + 14 * i + 12);    // GRPICONDIRENTRY.nID
+                    var pic = GetDataFromResource(hModule, RT_ICON, (IntPtr)id);
+
+                    // Copy GRPICONDIRENTRY to ICONDIRENTRY.
+
+                    dst.Seek(6 + 16 * i, 0);
+
+                    dst.Write(dir, 6 + 14 * i, 8);  // First 8bytes are identical.
+                    dst.Write(pic.Length);          // ICONDIRENTRY.dwBytesInRes
+                    dst.Write(picOffset);           // ICONDIRENTRY.dwImageOffset
+
+                    // Copy a picture.
+
+                    dst.Seek(picOffset, 0);
+                    dst.Write(pic, 0, pic.Length);
+
+                    picOffset += pic.Length;
+                }
+
+                tmpData.Add(((MemoryStream)dst.BaseStream).ToArray());
+            }
+            return true;
+        };
+        EnumResourceNames(hModule, RT_GROUP_ICON, callback, IntPtr.Zero);
+        byte[][] iconData = tmpData.ToArray();
+        using (var ms = new MemoryStream(iconData[0]))
+        {
+            var ico = new Icon(ms);
+            return ConvertIcon(ico.ToBitmap());
+        }
+    }
+    private static IMagickImage ConvertIcon(Bitmap _icon)
+    {
+        // Convert bitmap to IMagickImage
+        using (MemoryStream memoryStream = new())
+        {
+            // save Bitmap to MemoryStream
+            _icon.Save(memoryStream, ImageFormat.Png);
+
+            // reset memory stream position
+            memoryStream.Seek(0, SeekOrigin.Begin);
+
+            // create a MagickImage from MemoryStream
+            return new MagickImage(memoryStream);
+        }
+    }
+    private static byte[] GetDataFromResource(IntPtr hModule, IntPtr type, IntPtr name)
+    {
+        // Load the binary data from the specified resource.
+
+        IntPtr hResInfo = FindResource(hModule, name, type);
+
+        IntPtr hResData = LoadResource(hModule, hResInfo);
+
+        IntPtr pResData = LockResource(hResData);
+
+        uint size = SizeofResource(hModule, hResInfo);
+
+        byte[] buf = new byte[size];
+        Marshal.Copy(pResData, buf, 0, buf.Length);
+
+        return buf;
+    }
+}
+#endregion
+
+public class RunnerData
+{
+    public RunnerData(string filePath)
+    {
+        if (filePath == String.Empty || filePath == null)
+            return;
+
+        name = Path.GetFileNameWithoutExtension(filePath);
+        path = filePath;
+        iconData = ExtractIcon.ExtractIconFromExecutable(filePath);
+        var runnerInfo = FileVersionInfo.GetVersionInfo(filePath);
+
+        if (runnerInfo is null)
+            return;
+
+        version = runnerInfo.FileVersion;
+        companyName = runnerInfo.CompanyName;
+        productName = runnerInfo.ProductName;
+        copyright = runnerInfo.LegalCopyright;
+        description = runnerInfo.FileDescription;
+    }
+    public string name { get; set; } = "decompiledGame";
+    public string path { get; set; } = "";
+    public IMagickImage? iconData { get; set; } = null;
+    public string version { get; set; } = "";
+    public string companyName { get; set; } = "";
+    public string productName { get; set; } = "";
+    public string copyright { get; set; } = "";
+    public string description { get; set; } = "";
+
+    public void DumpIcon(string filepath, uint _width = 256, uint _height = 256)
+    {
+        // stop interpolation
+        iconData.FilterType = FilterType.Point;
+        // set size
+        MagickGeometry size = new(_width, _height);
+        // maintain the aspect ratio
+        size.IgnoreAspectRatio = false;
+        // resize image
+        iconData.Resize(size);
+
+        // write to file
+        iconData.Write(filepath);
+    }
+}
+
+public class ImageAssetData
+{
+    public ImageAssetData(dynamic image, string filePath, string imageName, string spriteName)
+    {
+        this.image = image;
+        this.filePath = filePath;
+        this.imageName = imageName;
+        this.spriteName = spriteName;
+    }
+    // either UndertaleTexturePageItem or MagickImage
+    public dynamic image { get; set; }
+    public string filePath { get; set; }
+    public string imageName { get; set; }
+    public string spriteName { get; set; }
+    public void Dump(TextureWorker tw)
+    {
+        if (image is null) return;
+
+        tw.ExportAsPNG(image, filePath + imageName, null, true);
+    }
+}
+
+#endregion
+#region Common Classes
+
+public class GMResource
+{
+    public GMResource()
+    {
+        resourceType = base.GetType().Name;
+    }
+    public string resourceType { get; set; }
+    public string resourceVersion { get; set; } = "1.0";
+    // ignore these conditions when they're null
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string name { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public AssetReference? parent { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string[] tags { get; set; }
+}
+
+public class AssetReference
+{
+    public AssetReference(string name, GMAssetType type)
+    {
+        this.name = name;
+        path = CreateFilePath(name, type);
+    }
+    // overload method
+    public AssetReference() { }
+
+    public string name { get; set; }
+    public string path { get; set; }
+}
+
+#endregion
+
+#region GMProject Class
+
+public class GMProject : GMResource
+{
+    public GMProject(string name)
+    {
+        resourceVersion = "1.6";
+        this.name = name;
+    }
+
+    public ConcurrentQueue<Resource> resources { get; set; } = new();
+    public List<AssetReference> Options { get; set; } = new();
+    public int defaultScriptType { get; set; } = 1;
+    public bool isEcma { get; set; } = false;
+    public RoomOrderNode[] RoomOrderNodes { get; set; } = new RoomOrderNode[0];
+    public GMFolder[] Folders { get; set; } = new GMFolder[0];
+    public GMAudioGroup[] AudioGroups { get; set; } = new GMAudioGroup[0];
+    public List<GMTextureGroup> TextureGroups { get; set; } = new();
+    public List<GMIncludedFile> IncludedFiles { get; set; } = new();
+    public ProjectMetaData MetaData { get; set; } = new();
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public BuildConfig? configs { get; set; } = new();
+
+    public class ProjectMetaData
+    {
+        public string IDEVersion { get; set; } = "2022.0.3.85"; // the IDE version this script was made for
+
+        // YYMPS metadata (don't add if not yymps)
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? PackageType { get; set; } = null;
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? PackageName { get; set; } = null;
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? PackageID { get; set; } = null;
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? PackagePublisher { get; set; } = null;
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? PackageVersion { get; set; } = null;
+    }
+
+    public class Resource
+    {
+        public AssetReference id { get; set; }
+        public int order { get; set; }
+        // type of resource
+        [JsonIgnore]
+        public GMAssetType type { get; set; } = GMAssetType.None;
+    }
+
+    public class BuildConfig
+    {
+        public BuildConfig[] children { get; set; } = new BuildConfig[0];
+        public string name { get; set; } = "Default";
+    }
+
+    public class RoomOrderNode
+    {
+        public RoomOrderNode(string name)
+        {
+            roomId = new AssetReference(name, GMAssetType.Room);
+        }
+        public AssetReference roomId { get; set; }
+    }
+
+    public class GMAudioGroup : GMResource
+    {
+        public GMAudioGroup(string name)
+        {
+            resourceVersion = "1.3";
+            this.name = name;
+        }
+        public long targets { get; set; } = -1L;
+    }
+
+    public class GMTextureGroup : GMResource
+    {
+        public GMTextureGroup(string name)
+        {
+            resourceVersion = "1.3";
+            this.name = name;
+        }
+        public bool isScaled { get; set; } = true;
+        public string compressFormat { get; set; }
+        public string loadType { get; set; } = "default";
+        public string directory { get; set; } = String.Empty;
+        public bool autocrop { get; set; } = true;
+        public int border { get; set; } = 2;
+        public int mipsToGenerate { get; set; } = 0;
+        public AssetReference? groupParent { get; set; } = null;
+        public long targets { get; set; } = -1L;
+    }
+
+    public class GMIncludedFile : GMResource
+    {
+        public GMIncludedFile(string name)
+        {
+            this.name = name;
+        }
+        public long CopyToMask { get; set; } = -1L;
+        public string filePath { get; set; } = "datafiles";
+    }
+
+    public class GMFolder : GMResource
+    {
+        public GMFolder(string name, string folderPath)
+        {
+            this.name = name;
+            this.folderPath = folderPath;
+        }
+        public string folderPath { get; set; }
+        public int order { get; set; }
+    }
+}
+
+#endregion
+#region GMObject Class
+
+public class GMObject : GMResource
+{
+    public GMObject(string name)
+    {
+        this.name = name;
+    }
+    public AssetReference? spriteId { get; set; } = null;
+    public bool solid { get; set; } = false;
+    public bool visible { get; set; } = true;
+    public bool managed { get; set; } = true;
+    public AssetReference? spriteMaskId { get; set; } = null;
+    public bool persistent { get; set; } = false;
+    public AssetReference? parentObjectId { get; set; } = null;
+    public bool physicsObject { get; set; } = false;
+    public bool physicsSensor { get; set; } = false;
+    public int physicsShape { get; set; }
+    public int physicsGroup { get; set; }
+    public float physicsDensity { get; set; } = 0.5f;
+    public float physicsRestitution { get; set; } = 0.1f;
+    public float physicsLinearDamping { get; set; } = 0.1f;
+    public float physicsAngularDamping { get; set; } = 0.1f;
+    public float physicsFriction { get; set; } = 0.2f;
+    public bool physicsStartAwake { get; set; } = true;
+    public bool physicsKinematic { get; set; } = false;
+    public GMPoint[] physicsShapePoints { get; set; } = new GMPoint[0];
+    public List<GMEvent> eventList { get; set; } = new();
+    public List<GMObjectProperty> properties { get; set; } = new();
+    public List<GMOverriddenProperty> overriddenProperties { get; set; } = new();
+}
+
+public class GMEvent : GMResource
+{
+    public GMEvent()
+    {
+        name = String.Empty;
+    }
+    public bool isDnD { get; set; } = false;
+    public int eventNum { get; set; }
+    public int eventType { get; set; }
+    public AssetReference? collisionObjectId { get; set; } = null;
+}
+
+public class GMObjectProperty : GMResource
+{
+    public GMObjectProperty(string name)
+    {
+        this.name = name;
+    }
+    public int varType { get; set; }
+    public string value { get; set; }
+    public bool rangeEnabled { get; set; } = false;
+    public float rangeMin { get; set; } = 0f;
+    public float rangeMax { get; set; } = 0f;
+    public string[] listItems { get; set; } = new string[0];
+    public bool multiselect { get; set; } = false;
+    public string[] filters { get; set; } = new string[0];
+}
+
+public class GMOverriddenProperty : GMResource
+{
+    public AssetReference propertyId { get; set; }
+    public AssetReference objectId { get; set; }
+    public string value { get; set; }
+}
+
+#endregion
+#region GMScript Class
+
+public class GMScript : GMResource
+{
+    public GMScript(string name)
+    {
+        this.name = name;
+
+        parent = GetParentFolder(GMAssetType.Script);
+    }
+    public bool isDnd { get; set; } = false;
+    public bool isCompatibility { get; set; } = false;
+}
+
+#endregion
+#region GMSound Class
+
+public class GMSound : GMResource
+{
+    public GMSound(string name) {
+        this.name = name;
+    }
+    public int conversionMode { get; set; }
+    public int compression { get; set; }
+    public float volume { get; set; }
+    public bool preload { get; set; }
+    public int bitRate { get; set; } = 128; // cant obtain original value afaik
+    public int sampleRate { get; set; } = 44100;
+    public int type { get; set; } = 0;
+    public int bitDepth { get; set; } = 1; // cant obtain original value afaik
+    public AssetReference audioGroupId { get; set; }
+    public string soundFile { get; set; }
+    public float duration { get; set; } = 0f;
+    public AssetReference parent { get; set; }
+}
+
+#endregion
+#region GMRoom Class
+
+public class GMRoom : GMResource
+{
+    public GMRoom(string roomName)
+    {
+        parent = GetParentFolder(GMAssetType.Room);
+
+        name = roomName;
+    }
+
+    public bool isDnd { get; set; } = false;
+    public float volume { get; set; } = 1f;
+    public AssetReference? parentRoom { get; set; } = null;
+    public GMRView[] views { get; set; } = new GMRView[0];
+    public List<dynamic> layers { get; set; } = new();
+    public bool inheritLayers { get; set; } = false;
+    public string creationCodeFile { get; set; } = String.Empty;
+    public bool inheritCode { get; set; } = false;
+    public List<AssetReference> instanceCreationOrder { get; set; } = new();
+    public bool inheritCreationOrder { get; set; }
+    public AssetReference? sequenceId { get; set; } = null;
+    public GMRoomSettings roomSettings { get; set; } = new GMRoomSettings();
+    public GMRoomViewSettings viewSettings { get; set; } = new GMRoomViewSettings();
+    public GMRoomPhysicsSettings physicsSettings { get; set; } = new GMRoomPhysicsSettings();
+    public AssetReference parent { get; set; }
+    public class GMRAsset : GMResource
+    {
+        public float x { get; set; }
+        public float y { get; set; }
+        public AssetReference spriteId { get; set; }
+        public float headPosition { get; set; }
+        public float rotation { get; set; }
+        public float scaleX { get; set; }
+        public float scaleY { get; set; }
+        public float animationSpeed { get; set; }
+        public uint colour { get; set; }
+        public AssetReference? inheritedItemId { get; set; } = null;
+        public bool frozen { get; set; }
+        public bool ignore { get; set; }
+        public bool inheritItemSettings { get; set; }
+    }
+
+    public class GMRSpriteGraphic : GMRAsset
+    {
+        public GMRSpriteGraphic()
+        {
+            this.name = name;
+        }
+
+        public float headPosition { get; set; }
+        public float rotation { get; set; }
+        public float scaleX { get; set; }
+        public float scaleY { get; set; }
+        public float animationSpeed { get; set; }
+    }
+
+    public class GMRLayerBase : GMResource
+    {
+        public GMRLayerBase(string name)
+        {
+            this.name = name;
+        }
+        public GMRLayerBase() { }
+
+        public bool visible { get; set; } = true;
+        public float depth { get; set; } = 0;
+        public bool userdefinedDepth { get; set; } = false;
+        public bool inheritLayerDepth { get; set; } = false;
+        public bool inheritLayerSettings { get; set; } = false;
+        //public bool inheritVisibility { get; set; } = true;
+        //public bool inheritSubLayers { get; set; } = false;
+        public double gridX { get; set; } = 32;
+        public double gridY { get; set; } = 32;
+        public List<GMRLayerBase> layers { get; set; } = new();
+        public bool hierarchyFrozen { get; set; } = false;
+        public bool effectEnabled { get; set; } = true;
+        public string? effectType { get; set; } = null;
+        public GMREffectProperty[] properties { get; set; } = new GMREffectProperty[0];
+    }
+
+    public class GMREffectProperty
+    {
+        public int type { get; set; } = 0;
+        public string name { get; set; }
+        public string value { get; set; }
+    }
+
+    public class GMREffectLayer : GMRLayerBase
+    {
+        public GMREffectLayer(string name)
+        {
+            this.name = name;
+        }
+        // its basically the layer base
+    }
+
+    public class GMRAssetLayer : GMRLayerBase
+    {
+        public GMRAssetLayer(string name)
+        {
+            this.name = name;
+        }
+
+        public List<dynamic> assets { get; set; } = new();
+
+        public class GMRGraphic : GMRAsset
+        {
+            public GMRGraphic(string name)
+            {
+                this.name = name;
+            }
+            public uint w { get; set; }
+            public uint h { get; set; }
+            public int u0 { get; set; }
+            public int v0 { get; set; }
+            public int u1 { get; set; }
+            public int v1 { get; set; }
+        }
+    }
+
+    public class GMRBackgroundLayer : GMRLayerBase
+    {
+        public GMRBackgroundLayer(string name)
+        {
+            this.name = name;
+        }
+        public AssetReference? spriteId { get; set; } = null;
+        public uint colour { get; set; }
+        public float x { get; set; }
+        public float y { get; set; }
+        public bool htiled { get; set; }
+        public bool vtiled { get; set; }
+        public float hspeed { get; set; }
+        public float vspeed { get; set; }
+        public bool stretch { get; set; }
+        public float animationFPS { get; set; }
+        public int animationSpeedType { get; set; }
+        public bool userdefinedAnimFPS { get; set; }
+    }
+
+    public class GMRPathLayer : GMRLayerBase
+    {
+        public GMRPathLayer(string name)
+        {
+            this.name = name;
+        }
+        public AssetReference? pathId { get; set; } = null;
+        public uint colour { get; set; }
+    }
+
+    public class GMRTileLayer : GMRLayerBase
+    {
+        public GMRTileLayer(string name)
+        {
+            resourceVersion = "1.1";
+            this.name = name;
+        }
+        public AssetReference? tilesetId { get; set; }
+        // offset
+        public float x { get; set; }
+        public float y { get; set; }
+        public GMRTileData tiles { get; set; }
+
+        public class GMRTileData
+        {
+            //public int TileDataFormat { get; set; } = 1; // unknown
+            public int SerialiseWidth { get; set; }
+            public int SerialiseHeight { get; set; }
+            // uint because thats what it is in gamemaker.
+            public List<uint> TileSerialiseData { get; set; } = new();
+        }
+    }
+
+    public class GMRInstanceLayer : GMRLayerBase
+    {
+        public GMRInstanceLayer(string name)
+        {
+            this.name = name;
+        }
+        public List<GMRInstance> instances { get; set; } = new();
+
+        public class GMRInstance : GMResource
+        {
+            public GMRInstance(string name)
+            {
+                this.name = name;
+            }
+            public List<GMOverriddenProperty> properties { get; set; } = new();
+            public bool isDnd { get; set; }
+            public AssetReference objectId { get; set; }
+            public bool inheritCode { get; set; }
+            public bool hasCreationCode { get; set; }
+            public uint colour { get; set; }
+            public float rotation { get; set; }
+            public float scaleX { get; set; }
+            public float scaleY { get; set; }
+            public float imageSpeed { get; set; }
+            public int imageIndex { get; set; }
+            public AssetReference? inheritedItemId { get; set; } = null;
+            public bool frozen { get; set; }
+            public bool ignore { get; set; }
+            public bool inheritItemSettings { get; set; }
+            public float x { get; set; }
+            public float y { get; set; }
+        }
+    }
+
+    public class GMRoomPhysicsSettings
+    {
+        public bool inheritPhysicsSettings { get; set; } = false;
+        public bool PhysicsWorld { get; set; } = false;
+        public float PhysicsWorldGravityX { get; set; } = 0f;
+        public float PhysicsWorldGravityY { get; set; } = 10f;
+        public float PhysicsWorldPixToMetres { get; set; } = 0.1f;
+    }
+    public class GMRoomViewSettings
+    {
+        public bool inheritViewSettings { get; set; } = false;
+        public bool enableViews { get; set; } = false;
+        public bool clearViewBackground { get; set; } = false;
+        public bool clearDisplayBuffer { get; set; } = true;
+    }
+    public class GMRView
+    {
+        public bool inherit { get; set; } = false;
+        public bool visible { get; set; } = false;
+        public int xview { get; set; } = 0;
+        public int yview { get; set; } = 0;
+        public int wview { get; set; } = 1366;
+        public int hview { get; set; } = 768;
+        public int xport { get; set; } = 0;
+        public int yport { get; set; } = 0;
+        public int wport { get; set; } = 1366;
+        public int hport { get; set; } = 768;
+        public uint hborder { get; set; } = 32;
+        public uint vborder { get; set; } = 32;
+        public int hspeed { get; set; } = -1;
+        public int vspeed { get; set; } = -1;
+        public AssetReference? objectId { get; set; } = null;
+    }
+    public class GMRoomSettings
+    {
+        public bool inheritRoomSettings { get; set; } = false;
+        public uint Width { get; set; } = 1366;
+        public uint Height { get; set; } = 768;
+        public bool persistent { get; set; } = false;
+    }
+}
+
+public class ObjectProperty
+{
+    public string ObjName { get; set; }
+    public KeyValuePair<string, string> Prop { get; set; }
+    public ObjectProperty(string objName, KeyValuePair<string, string> prop)
+    {
+        ObjName = objName;
+        Prop = prop;
+    }
+}
+
+#endregion
+#region GMAnimCurve Class
+
+public class GMPoint
+{
+    public GMPoint(float x, float y)
+    {
+        this.x = x;
+        this.y = y;
+    }
+    public float x { get; set; } = 0f;
+    public float y { get; set; } = 0f;
+}
+
+public class GMAnimCurve : GMResource
+{
+    public int function { get; set; }
+    public List<GMAnimCurveChannel> channels { get; set; } = new();
+    public AssetReference parent { get; set; }
+    public GMAnimCurve(string name)
+    {
+        resourceVersion = "1.2";
+        this.name = name;
+    }
+    public class GMAnimCurveChannel : GMResource
+    {
+        public GMAnimCurveChannel(string name)
+        {
+            this.name = name;
+        }
+        public uint colour { get; set; } = 4290799884;
+        public bool visible { get; set; } = true;
+        public List<GMAnimCurvePoint> points { get; set; } = new();
+
+    }
+    public class GMAnimCurvePoint : GMPoint
+    {
+        public GMAnimCurvePoint(float x, float y) : base(x, y) { }
+
+        public float th0 { get; set; }
+        public float th1 { get; set; }
+        public float tv0 { get; set; }
+        public float tv1 { get; set; }
+    }
+}
+
+#endregion
+#region GMSprite Class
+
+public class GMSprite : GMResource
+{
+    public GMSprite(string name)
+    {
+        this.name = name;
+    }
+
+    public int bboxMode { get; set; } = 0;
+    public int collisionKind { get; set; } = 1;
+    public int type { get; set; } = 0;
+    public eOrigin origin { get; set; } = 0;
+    public bool preMultiplyAlpha { get; set; } = false;
+    public bool edgeFiltering { get; set; } = false;
+    public int collisionTolerance { get; set; } = 0;
+    public float swfPrecision { get; set; } = 2.525f;
+    public int bbox_left { get; set; }
+    public int bbox_right { get; set; }
+    public int bbox_top { get; set; }
+    public int bbox_bottom { get; set; }
+    public bool HTile { get; set; }
+    public bool VTile { get; set; }
+    public bool For3D { get; set; }
+    public bool DynamicTexturePage { get; set; }
+    public int width { get; set; }
+    public int height { get; set; }
+    public AssetReference textureGroupId { get; set; }
+    public uint[]? swatchColours { get; set; } = null;
+    public int gridX { get; set; }
+    public int gridY { get; set; }
+    public List<GMSpriteFrame> frames { get; set; } = new();
+    public GMSequence sequence { get; set; }
+    public List<GMImageLayer> layers { get; set; } = new();
+    public GMNineSliceData? nineSlice { get; set; }
+    public AssetReference parent { get; set; }
+
+    public class GMSpriteFrame : GMResource
+    {
+        public GMSpriteFrame(string frameGuid)
+        {
+            resourceVersion = "1.1";
+            name = frameGuid;
+        }
+    }
+    public class GMImageLayer : GMResource
+    {
+        public GMImageLayer(string name)
+        {
+            this.name = name;
+        }
+        public bool visible { get; set; } = true;
+        public bool isLocked { get; set; }
+        public int blendMode { get; set; } = 0;
+        public float opacity { get; set; } = 100f;
+        public string displayName { get; set; } = "default";
+    }
+    public class GMNineSliceData : GMResource
+    {
+        public int left { get; set; }
+        public int top { get; set; }
+        public int right { get; set; }
+        public int bottom { get; set; }
+        public uint[] guideColour { get; set; } = new uint[] { 4294902015U, 4294902015U, 4294902015U, 4294902015U, 4294902015U };
+        public uint highlightColour { get; set; } = 1728023040U;
+        public int highlightStyle { get; set; }
+        public bool enabled { get; set; }
+        public int[] tileMode { get; set; }
+    }
+}
+
+// Vector Class
+public class GMShape : GMResource
+{
+    public bool baked { get; set; } = false;
+    public bool hiddenGeometryClipped { get; set; } = false;
+    public float maxX { get; set; }
+    public float maxY { get; set; }
+    public float minX { get; set; }
+    public float minY { get; set; }
+    public double precision { get; set; } = 0.5;
+    public List<GMStyleGroups> styleGroups { get; set; } = new();
+    public bool triangulated { get; set; } = true;
+
+    public class GMStyleGroups : GMResource
+    {
+        public List<FillStyles> fillStyles { get; set; } = new();
+        public List<int> lineStyleData { get; set; } = new();
+        public List<GMSubShape> shapes { get; set; } = new();
+
+        public class FillStyles { 
+            public uint rgba { get; set; }
+        }
+    }
+    public class GMSubShape : GMResource
+    {
+        public List<int> AALines { get; set; } = new();
+        public List<Vec2> AAVectors { get; set; } = new();
+
+        public bool closed { get; set; } = true;
+
+        public int fillStyle0 { get; set; } = -1;
+        public int fillStyle1 { get; set; } = 0;
+
+        public List<int> linePoints { get; set; } = new();
+        public List<int> lines { get; set; } = new();
+        public int lineStyle { get; set; } = -1;
+        public List<int> lineTris { get; set; } = new();
+        public List<uint> pointColours { get; set; } = new();
+        public List<Vec2> points { get; set; } = new();
+        public List<int> tris { get; set; } = new();
+
+        public class Vec2
+        {
+            public float x { get; set; } = 0;
+            public float y { get; set; } = 0;
+        }
+    }
+}
+
+#endregion
+#region GMSequence Class
+
+public class GMSequence : GMResource
+{
+    public GMSequence(string name)
+    {
+        resourceVersion = "1.4";
+        this.name = name;
+    }
+    public int timeUnits { get; set; } = 1;
+    public int playback { get; set; } = 1;
+    public float playbackSpeed { get; set; } = 30f;
+    public int playbackSpeedType { get; set; } = 0;
+    public bool autoRecord { get; set; } = true;
+    public float volume { get; set; } = 1f;
+    public float length { get; set; } = 1f;
+    public KeyframeStore<MessageEventKeyframe> events { get; set; } = new();
+    public KeyframeStore<MomentsEventKeyframe> moments { get; set; } = new();
+    public List<dynamic> tracks { get; set; } = new();
+    public GMPoint? visibleRange { get; set; } = null;
+    public bool lockOrigin { get; set; } = false;
+    public bool showBackdrop { get; set; } = true;
+    public bool showBackdropImage { get; set; } = false;
+    public string backdropImagePath { get; set; } = String.Empty;
+    public float backdropImageOpacity { get; set; } = 0.5f;
+    public int backdropWidth { get; set; } = 1366;
+    public int backdropHeight { get; set; } = 768;
+    public float backdropXOffset { get; set; } = 0f;
+    public float backdropYOffset { get; set; } = 0f;
+    public int xorigin { get; set; } = 0;
+    public int yorigin { get; set; } = 0;
+    public Dictionary<string, string> eventToFunction { get; set; } = new();
+    public AssetReference eventStubScript { get; set; }
+    public AssetReference spriteId { get; set; }
+}
+
+#region Tracks
+public class GMBaseTrack : GMResource
+{
+    public uint trackColour { get; set; } = 0U;
+    public bool inheritsTrackColour { get; set; } = true;
+    public int builtinName { get; set; } = -1;
+    public int traits { get; set; }
+    public int interpolation { get; set; } = 1;
+    public List<dynamic> tracks { get; set; } = new();
+    public List<GMEvent> events { get; set; } = new();
+    public bool isCreationTrack { get; set; }
+
+    // this actually determines if a track is visible
+    // if its empty, then visible, but if its has a InvisibleModifier, then its not
+    public List<InvisibleModifier> modifiers { get; set; } = new();
+}
+
+public class InvisibleModifier : GMResource {
+    public string resourceType { get { return "InvisibleModifier"; } }
+}
+
+public class GMGraphicTrack : GMBaseTrack {
+    public KeyframeStore<AssetSpriteKeyframe> keyframes { get; set; } = new();
+}
+
+public class GMTextTrack : GMBaseTrack {
+    public KeyframeStore<AssetTextKeyframe> keyframes { get; set; } = new();
+}
+
+public class GMSpriteFramesTrack : GMBaseTrack
+{
+    public AssetReference spriteId { get; set; }
+    public KeyframeStore<SpriteFrameKeyframe> keyframes { get; set; } = new KeyframeStore<SpriteFrameKeyframe>();
+    public string name { get; set; } = "frames";
+}
+
+public class GMGroupTrack : GMBaseTrack { }
+
+public class GMClipMaskTrack : GMBaseTrack { }
+
+public class GMClipMask_Mask : GMBaseTrack { }
+
+public class GMClipMask_Subject : GMBaseTrack { }
+
+public class GMRealTrack : GMBaseTrack {
+    public KeyframeStore<RealKeyframe> keyframes { get; set; } = new();
+}
+
+public class GMColourTrack : GMBaseTrack {
+    public KeyframeStore<ColourKeyframe> keyframes { get; set; } = new();
+}
+
+public class GMAudioTrack : GMBaseTrack {
+    public KeyframeStore<AudioKeyframe> keyframes { get; set; } = new();
+}
+
+public class GMInstanceTrack : GMBaseTrack {
+    public KeyframeStore<AssetInstanceKeyframe> keyframes { get; set; } = new();
+}
+
+public class GMSequenceTrack : GMBaseTrack {
+    public KeyframeStore<AssetSequenceKeyframe> keyframes { get; set; } = new();
+}
+#endregion
+#region Keyframes
+public class AssetSequenceKeyframe : AssetKeyframe { }
+
+public class AssetInstanceKeyframe : AssetKeyframe { }
+
+public class AssetSpriteKeyframe : AssetKeyframe { }
+
+public class AssetTextKeyframe : AssetKeyframe
+{
+    public string? Text { get; set; } = null;
+    public bool Wrap { get; set; }
+    public int Alignment { get; set; } = 0;
+}
+
+public class AnimCurveKeyframe : GMResource
+{
+    // yeah you can put anim curves inside of sequences (scary!!!)
+    public AssetReference AnimCurveId { get; set; }
+    public GMAnimCurve EmbeddedAnimCurve { get; set; }
+}
+
+public class RealKeyframe : AnimCurveKeyframe {
+    public float RealValue { get; set; }
+}
+
+public class ColourKeyframe : AnimCurveKeyframe {
+    public uint Colour { get; set; }
+}
+
+public class AudioKeyframe : AssetKeyframe {
+    public int Mode { get; set; }
+}
+
+public class KeyframeStore<T> : GMResource
+{
+    public string resourceType { get { return $"KeyframeStore<{typeof(T).Name}>"; } }
+    public List<Keyframe<T>> Keyframes { get; set; } = new();
+}
+
+public class Keyframe<T> : GMResource
+{
+    public Guid id { get; set; } = Guid.NewGuid();
+    public float Key { get; set; } = 0f;
+    public float Length { get; set; } = 1f;
+    public string resourceType { get { return $"Keyframe<{typeof(T).Name}>"; } }
+    public bool Stretch { get; set; } = false;
+    public bool Disabled { get; set; } = false;
+    public bool IsCreationKey { get; set; } = false;
+    public Dictionary<string, T> Channels { get; set; } = new();
+}
+
+public class AssetKeyframe : GMResource {
+    public AssetReference Id { get; set; }
+}
+
+public class SpriteFrameKeyframe : AssetKeyframe { }
+
+public class MessageEventKeyframe : GMResource {
+    public string[] Events { get; set; } = new string[0];
+}
+
+public class MomentsEventKeyframe : GMResource {
+    public List<string> Events { get; set; } = new();
+}
+#endregion
+
+#endregion
+#region GMNote Class
+
+public class GMNotes : GMResource
+{
+    public GMNotes(string name)
+    {
+        resourceVersion = "1.1";
+        this.name = name;
+        parent = GetParentFolder(GMAssetType.Note);
+    }
+}
+
+#endregion
+#region GMFont Class
+
+public class GMFont : GMResource
+{
+    public class GMGlyph
+    {
+        public int x { get; set; }
+        public int y { get; set; }
+        public int w { get; set; }
+        public int h { get; set; }
+        public int character { get; set; }
+        public int shift { get; set; }
+        public int offset { get; set; }
+    }
+
+    public class GMKerningPair
+    {
+        public int first { get; set; }
+        public int second { get; set; }
+        public int amount { get; set; } = -1;
+    }
+
+    public class GMFontRange
+    {
+        public int lower { get; set; }
+        public int upper { get; set; }
+    }
+
+    public GMFont(string name)
+    {
+        this.name = name;
+    }
+    public int hinting { get; set; }
+    public int glyphOperations { get; set; }
+    public int interpreter { get; set; }
+    public int pointRounding { get; set; }
+    public int applyKerning { get; set; }
+    public string fontName { get; set; }
+    public string styleName { get; set; }
+    public float size { get; set; } = 12f;
+    public bool bold { get; set; }
+    public bool italic { get; set; }
+    public int charset { get; set; }
+    public int AntiAlias { get; set; } = 1;
+    public int first { get; set; }
+    public int last { get; set; }
+    public string sampleText { get; set; } = "abcdef ABCDEF\n0123456789 .,<>\"'&!?\nthe quick brown fox jumps over the lazy dog\nTHE QUICK BROWN FOX JUMPS OVER THE LAZY DOG\nDefault character: ▯ (9647)";
+    public bool includeTTF { get; set; }
+    public string TTFName { get; set; }
+    public AssetReference textureGroupId { get; set; }
+    public int ascenderOffset { get; set; }
+    public int ascender { get; set; }
+    public int lineHeight { get; set; }
+    public Dictionary<int, GMGlyph> glyphs { get; set; } = new();
+    public List<GMKerningPair> kerningPairs { get; set; } = new();
+    public List<GMFontRange> ranges { get; set; } = new();
+    public bool regenerateBitmap { get; set; }
+    public bool canGenerateBitmap { get; set; }
+    public bool maintainGms1Font { get; set; }
+}
+
+
+#endregion
+#region GMShader Class
+
+public class GMShader : GMResource
+{
+    public GMShader(string name)
+    {
+        this.name = name;
+    }
+    public int type { get; set; } = 1; // GLSL-ES, GLSL, HLSL-11, PSSL
+    public AssetReference parent { get; set; }
+}
+
+#endregion
+#region GMExtension Class
+
+public class GMExtension : GMResource
+{
+    public GMExtension(string name)
+    {
+        this.name = name;
+        resourceVersion = "1.2";
+    }
+    public class GMExtensionOption : GMResource
+    {
+        public GMExtensionOption(string name)
+        {
+            this.name = name;
+        }
+        public AssetReference? extensionId { get; set; }
+        public Guid guid { get; set; } = Guid.NewGuid();
+        public string displayName { get; set; }
+        public string[] listItems { get; set; } = new string[0]; // make sure its created in the first place
+        public string description { get; set; }
+        public string defaultValue { get; set; } = "0";
+        public bool exportToINI { get; set; }
+        public bool hidden { get; set; }
+        public int optType { get; set; } = 1; // default to 1
+    }
+    public class GMExtensionConstant : GMResource
+    {
+        public string value { get; set; } = String.Empty;
+        public bool hidden { get; set; }
+    }
+    public class GMProxyFile : GMResource
+    {
+        public int TargetMask { get; set; }
+    }
+    public class GMExtensionFile : GMResource
+    {
+        public string filename { get; set; }
+        public string origname { get; set; } = String.Empty;
+        public string init { get; set; }
+        public string final { get; set; }
+        public int kind { get; set; }
+        public bool uncompress { get; set; } = false;
+        public List<GMExtensionFunction> functions { get; set; } = new();
+        public GMExtensionConstant[] constants { get; set; } = new GMExtensionConstant[0];
+        public GMProxyFile[] ProxyFiles { get; set; } = new GMProxyFile[0];
+        public int copyToTargets { get; set; } = -1;
+        public bool usesRunnerInterface { get; set; } = false;
+        public string[] order { get; set; } = new string[0];
+    }
+    public class GMExtensionFrameworkEntry : GMResource
+    {
+        public bool weakReference { get; set; }
+        public int embed { get; set; }
+    }
+    public class GMExtensionFunction : GMResource
+    {
+        public GMExtensionFunction(string name)
+        {
+            this.name = name;
+        }
+        public int argCount { get; set; }
+        public int[] args { get; set; } = new int[0];
+        public string documentation { get; set; } = String.Empty;
+        public string externalName { get; set; }
+        public string help { get; set; } = String.Empty;
+        public bool hidden { get; set; } = false;
+        public int kind { get; set; }
+        public int returnType { get; set; }
+    }
+    public string extensionVersion { get; set; } = "0.0.1";
+    public int copyToTargets { get; set; } = -1;
+    public bool androidProps { get; set; }
+    public bool iosProps { get; set; }
+    public bool tvosProps { get; set; }
+    public bool html5Props { get; set; }
+    public string optionsFile { get; set; }
+    public List<GMExtensionOption> options { get; set; } = new();
+    public bool exportToGame { get; set; } = true;
+    public int supportedTargets { get; set; } = -1;
+    public string packageId { get; set; } = String.Empty;
+    public string productId { get; set; } = String.Empty;
+    public string author { get; set; } = String.Empty;
+    public DateTime date { get; set; } = DateTime.Now;
+    public string license { get; set; } = String.Empty;
+    public string description { get; set; } = String.Empty;
+    public string helpfile { get; set; } = String.Empty;
+    public string installdir { get; set; } = String.Empty;
+    public List<GMExtensionFile> files { get; set; } = new();
+    public string HTML5CodeInjection { get; set; } = String.Empty;
+    public string classname { get; set; } = String.Empty;
+    // tvos stuff can be nullable for some reason
+    public string? tvosclassname { get; set; } = null;
+    public string? tvosdelegatename { get; set; } = null;
+    public string iosDelegateName { get; set; } = String.Empty;
+    public string androidClassName { get; set; } = String.Empty;
+    public string sourceDir { get; set; } = String.Empty;
+    public string androidSourceDir { get; set; } = String.Empty;
+    public string macSourceDir { get; set; } = String.Empty;
+    public string macCompilerFlags { get; set; } = String.Empty;
+    public string tvosMacCompilerFlags { get; set; } = String.Empty;
+    public string macLinkerFlags { get; set; } = String.Empty;
+    public string tvosMacLinkerFlags { get; set; } = String.Empty;
+    public string iosPlistInject { get; set; } = String.Empty;
+    public string tvosPlistInject { get; set; } = String.Empty;
+    public string androidInject { get; set; } = String.Empty;
+    public string androidManifestInject { get; set; } = String.Empty;
+    public string androidActivityInject { get; set; } = String.Empty;
+    public string gradleInject { get; set; } = String.Empty;
+    public string androidCodeInjection { get; set; } = String.Empty;
+    public bool hasConvertedCodeInjection { get; set; } = false;
+    public string ioscodeinjection { get; set; } = String.Empty;
+    public string tvoscodeinjection { get; set; } = String.Empty;
+    public GMExtensionFrameworkEntry[] iosSystemFrameworkEntries { get; set; } = new GMExtensionFrameworkEntry[0];
+    public GMExtensionFrameworkEntry[] tvosSystemFrameworkEntries { get; set; } = new GMExtensionFrameworkEntry[0];
+    public GMExtensionFrameworkEntry[] iosThirdPartyFrameworkEntries { get; set; } = new GMExtensionFrameworkEntry[0];
+    public GMExtensionFrameworkEntry[] tvosThirdPartyFrameworkEntries { get; set; } = new GMExtensionFrameworkEntry[0];
+    public string[] IncludedResources { get; set; } = new string[0];
+    public string[] androidPermissions { get; set; } = new string[0];
+    public string iosCocoaPods { get; set; } = String.Empty;
+    public string tvosCocoaPods { get; set; } = String.Empty;
+    public string iosCocoaPodDependencies { get; set; } = String.Empty;
+    public string tvosCocoaPodDependencies { get; set; } = String.Empty;
+}
+
+
+#endregion
+#region GMPath Class
+
+public class GMPath : GMResource
+{
+    public GMPath(string name)
+    {
+        this.name = name;
+    }
+
+    public int kind { get; set; }
+    public int precision { get; set; } // 1-8
+    public bool closed { get; set; }
+    public GMPathPoint[] points { get; set; } = new GMPathPoint[0];
+    public AssetReference parent { get; set; }
+
+
+    public class GMPathPoint : GMPoint
+    {
+        public GMPathPoint(float x, float y) : base(x, y) { }
+
+        public float speed { get; set; } = 100f;
+    }
+}
+
+#endregion
+#region  GMTimeline Class
+
+public class GMTimeline : GMResource
+{
+    public GMTimeline(string name)
+    {
+        this.name = name;
+    }
+    public List<GMMoment> momentList { get; set; } = new();
+
+    public class GMMoment : GMResource
+    {
+        public uint moment { get; set; }
+        public GMEvent evnt { get; set; }
+    }
+}
+
+#endregion
+#region GMTileSet Class
+
+public class GMTileSet : GMResource
+{
+    public GMTileSet(string name)
+    {
+        this.name = name;
+    }
+
+    public AssetReference? spriteId { get; set; }
+    public int tileWidth { get; set; }
+    public int tileHeight { get; set; }
+    public int tilexoff { get; set; }
+    public int tileyoff { get; set; }
+    public int tilehsep { get; set; }
+    public int tilevsep { get; set; }
+    public int out_tilehborder { get; set; }
+    public int out_tilevborder { get; set; }
+    public bool spriteNoExport { get; set; } = true;
+    public AssetReference textureGroupId { get; set; }
+    public int out_columns { get; set; }
+    public int tile_count { get; set; }
+    public GMAutoTileSet[] autoTileSets { get; set; } = new GMAutoTileSet[0];
+    public List<GMTileAnimation> tileAnimationFrames { get; set; } = new();
+    public float tileAnimationSpeed { get; set; } = 15f;
+    public TileAnimation tileAnimation { get; set; }
+    public MacroPageTiles macroPageTiles { get; set; } = new();
+    public AssetReference parent { get; set; }
+
+    public class GMAutoTileSet : GMResource
+    {
+        public string name { get; set; } = "autotile_1";
+        public List<int> tiles { get; set; } = new();
+        public bool closed_edge { get; set; }
+    }
+
+    public class GMTileAnimation : GMResource
+    {
+        public GMTileAnimation(int index)
+        {
+            name = $"animation_{index}";
+        }
+        public List<uint> frames { get; set; }
+    }
+    // the tile data
+    public class TileAnimation
+    {
+        public uint[] frameData { get; set; } = new uint[0];
+        public int SerialiseFrameCount { get; set; } = 1;
+    }
+
+    public class MacroPageTiles
+    {
+        public int SerialiseWidth { get; set; } = 0;
+        public int SerialiseHeight { get; set; } = 0;
+        public uint[] TileSerialiseData { get; set; } = new uint[0];
+    }
+}
+
+#endregion
+#region GMOptions Class
+
+public class GMMainOptions : GMResource
+{
+    public GMMainOptions()
+    {
+        name = "Main";
+        resourceVersion = "1.4";
+    }
+    public Guid option_gameguid { get; set; } = Guid.NewGuid();
+    public string option_gameid { get; set; } = "0";
+    public int option_game_speed { get; set; } = 60;
+    public bool option_mips_for_3d_textures { get; set; }
+    // https://www.reddit.com/r/pathofexile/comments/mse8lm/for_people_wondering_about_4294967295_it_is_the/
+    public uint option_draw_colour { get; set; } = uint.MaxValue;
+    public byte option_window_colour { get; set; } = byte.MaxValue;
+    public string option_steam_app_id { get; set; } = "0";
+    public bool option_collision_compatibility { get; set; }
+    public bool option_copy_on_write_enabled { get; set; }
+    public bool option_spine_licence { get; set; }
+    public string option_template_image { get; set; } = "${base_options_dir}/main/template_image.png";
+    public string option_template_icon { get; set; } = "${base_options_dir}/main/template_icon.png";
+    public string? option_template_description { get; set; } = null;
+}
+
+public class GMWindowsOptions : GMResource
+{
+    public GMWindowsOptions()
+    {
+        name = "Windows";
+        resourceVersion = "1.1";
+    }
+    public string option_windows_display_name { get; set; } = "Created with GameMaker";
+    public string option_windows_executable_name { get; set; } = "${project_name}.exe";
+    public string option_windows_version { get; set; } = "1.0.0.0";
+    public string option_windows_company_info { get; set; } = "YoYo Games Ltd";
+    public string option_windows_product_info { get; set; } = "Created with GameMaker";
+    public string option_windows_copyright_info { get; set; } = String.Empty;
+    public string option_windows_description_info { get; set; } = "A GameMaker Game";
+    public bool option_windows_display_cursor { get; set; } = true;
+    public string option_windows_icon { get; set; } = "icons/icon.ico";
+    public int option_windows_save_location { get; set; } = 0;
+    public string option_windows_splash_screen { get; set; } = "${base_options_dir}/windows/splash/splash.png";
+    public bool option_windows_use_splash { get; set; }
+    public bool option_windows_start_fullscreen { get; set; }
+    public bool option_windows_allow_fullscreen_switching { get; set; }
+    public bool option_windows_interpolate_pixels { get; set; }
+    public bool option_windows_vsync { get; set; }
+    public bool option_windows_resize_window { get; set; }
+    public bool option_windows_borderless { get; set; }
+    public int option_windows_scale { get; set; } = 0;
+    public bool option_windows_copy_exe_to_dest { get; set; }
+    public int option_windows_sleep_margin { get; set; } = 10;
+    public string option_windows_texture_page { get; set; } = "2048x2048";
+    public string option_windows_installer_finished { get; set; } = "${base_options_dir}/windows/installer/finished.bmp";
+    public string option_windows_installer_header { get; set; } = "${base_options_dir}/windows/installer/header.bmp";
+    public string option_windows_license { get; set; } = "${base_options_dir}/windows/installer/license.txt";
+    public string option_windows_nsis_file { get; set; } = "${base_options_dir}/windows/installer/nsis_script.nsi";
+    public bool option_windows_enable_steam { get; set; }
+    public bool option_windows_disable_sandbox { get; set; }
+    public bool option_windows_steam_use_alternative_launcher { get; set; }
+}
+
+#endregion
+
+#endregion
+
+#region Main Variables
+public var jsonOptions = new JsonSerializerOptions 
+{
+    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, 
+    WriteIndented = true 
+};
+
+// assetName | groupName
+public Dictionary<string, string> texGroupStuff = new();
+
+public List<string> errorList = new();
+
+public ConcurrentBag<ImageAssetData> imagesToDump = new();
+public Dictionary<string, List<string>> extensionGML = new();
+// the folder of the data.win
+public string rootDir = Path.GetDirectoryName(FilePath) + "\\";
+// for macro stuff!
+public string definitionDir = $"{Program.GetExecutableDirectory()}\\GameSpecificData\\Definitions\\";
+public string macroDir = $"{Program.GetExecutableDirectory()}\\GameSpecificData\\Underanalyzer\\";
+// the folder the project is exported to
+public string scriptDir = $"{rootDir}Exported_Project\\";
+// delete old decompiling attempt
+if (Directory.Exists(scriptDir))
+    Directory.Delete(scriptDir, true);
+
+// Get Game Executable
+public string runnerFile = GetRunnerFile(rootDir);
+
+// for the decompiler
+GlobalDecompileContext globalDecompileContext = null;
+try { globalDecompileContext = new(Data); } catch { } // YYC games sometimes cause this to fail, so account for that 
+
+Underanalyzer.Decompiler.IDecompileSettings decompilerSettings = Data.ToolInfo.DecompilerSettings;
+
+// progress bar
+public int r_num = 0;
+
+#endregion
+
+#region Main UI
+
+#region UI Settings Variables
+public static class UISettings
+{
+    public static bool DUMP, // If user continued with decompiling
+        // Main Asset Types to decompile
+        OBJT, ROOM, EXTN, SCPT, TMLN, 
+        SOND, SHDR, PATH, ACRV, SEQN, FONT, 
+        SPRT, BGND,
+        // If Fix Tileset
+        FIXTILE,
+        // Other Options
+        LOG, YYMPS, ENUM, ADDFILES, FIXAUDIO, GENROOM, 
+        // Clean GML Options
+        DSCLEAN, STRCLEAN;
+
+    // Asset Picker List and if enabled
+    public static List<string> CSTM = new List<string>();
+    public static bool CSTM_Enable = false;
+
+    // should be obvious
+    public static int CPU_Usage = 70;
+}
+#endregion
+#region Theme Class
+public static class Theme
+{
+    // If Dark Mode
+    public static bool IsDark = SettingsWindow.EnableDarkMode;
+
+    // Individual Colors
+    public static SolidColorBrush LightGrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 245, 245)); 
+    public static SolidColorBrush DarkGrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 48)); 
+    public static SolidColorBrush BG_Grey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(23, 23, 23)); 
+    public static SolidColorBrush BG_White = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
+
+    // Simple Colors
+    public static SolidColorBrush BasicWhite = System.Windows.Media.Brushes.White;
+    public static SolidColorBrush BasicBlack = System.Windows.Media.Brushes.Black;
+    public static SolidColorBrush Transparent = System.Windows.Media.Brushes.Transparent;
+
+    // Main Colors
+    public static SolidColorBrush WindowBackground = IsDark ? BG_Grey : BG_White;
+    public static SolidColorBrush WindowForeground = IsDark ? BasicWhite : BasicBlack;
+    public static SolidColorBrush ElementBackground = IsDark ? DarkGrey : LightGrey;
+    public static SolidColorBrush ButtonBrush = IsDark ? BG_Grey : LightGrey;
+
+    // Get Grid Tile Colors from Settings
+    public static SolidColorBrush GridTileLight = (SolidColorBrush)Application.Current.Resources["TransparencyGridColor1"];
+    public static SolidColorBrush GridTileDark = (SolidColorBrush)Application.Current.Resources["TransparencyGridColor2"];
+}
+#endregion
+
+#region Main UI Window
+public class UIWindow : Window
+{
+    // Get data.win in this scope
+    private readonly UndertaleData Data = ((MainWindow)Application.Current.MainWindow).Data;
+
+    private AssetPickerWindow PickerWindow;
+    private UnscrambleWindow TilesetWindow;
+
+    public UIWindow()
+	{
+		Title = "Ultimate_GMS2_Decompiler_v5";
+		// remove OS title bar
+		WindowStyle = WindowStyle.None;
+		AllowsTransparency = false;
+		ResizeMode = ResizeMode.NoResize;
+		SizeToContent = SizeToContent.WidthAndHeight;
+		WindowStartupLocation = WindowStartupLocation.CenterScreen;
+		
+		// Theme
+		Background = Theme.WindowBackground;
+		Foreground = Theme.WindowForeground;
+
+        StackPanel mainPanel = new() { Margin = new Thickness(8) };
+
+        #region Title Bar
+        DockPanel titleBar = new() 
+        { 
+            Height = 30,
+            Background = Theme.ElementBackground
+        };
+
+        TextBlock titleText = new()
+        {
+			Text = Title,
+			VerticalAlignment = VerticalAlignment.Center,
+			Margin = new Thickness(10, 0, 0, 0),
+            Foreground = Theme.WindowForeground
+        };
+
+        Button closeButton = new()
+        {
+			Content = "X",
+			Width = 40,
+			Height = 30,
+            Background = Theme.Transparent,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.Transparent,
+			HorizontalAlignment = HorizontalAlignment.Right,
+			Padding = new Thickness(0),
+			FontWeight = FontWeights.Bold
+		};
+
+		closeButton.Click += (s, e) => this.Close();
+
+        // Enable window dragging via title bar
+        titleBar.MouseLeftButtonDown += (s, e) =>
+		{
+			if (e.ButtonState == MouseButtonState.Pressed)
+				DragMove();
+		};
+
+		titleBar.Children.Add(titleText);
+		DockPanel.SetDock(closeButton, Dock.Right);
+		titleBar.Children.Add(closeButton);
+		mainPanel.Children.Insert(0, titleBar);
+        #endregion
+
+        #region Main Resource Checkboxes
+
+        mainPanel.Children.Add(new TextBlock
+		{
+			Text = "Original Script by setupwitch\n\tImproved by burnedpopcorn180",
+			Margin = new Thickness(0, 20, 0, 8)
+		});
+
+		// Resources section
+		mainPanel.Children.Add(new TextBlock
+		{
+			Text = "Select Resources to Dump:",
+			FontWeight = FontWeights.Bold,
+			Margin = new Thickness(0, 8, 0, 4)
+		});
+
+        UniformGrid resourceGrid = new() { Columns = 6 };
+        CheckBox _PRJT = CreateCheckBox("Project File", true, false);
+        CheckBox _OBJT = CreateCheckBox("Objects", true);
+        CheckBox _ROOM = CreateCheckBox("Rooms", true);
+        CheckBox _EXTN = CreateCheckBox("Extensions", true);
+        CheckBox _SCPT = CreateCheckBox("Scripts", true);
+        CheckBox _TMLN = CreateCheckBox("Timelines", true);
+        CheckBox _SOND = CreateCheckBox("Sounds", true);
+        CheckBox _SHDR = CreateCheckBox("Shaders", true);
+        CheckBox _PATH = CreateCheckBox("Paths", true);
+
+        CheckBox _ACRV = CreateCheckBox("Anim. Curves", true);
+		if (Data.AnimationCurves == null)
+		{
+			_ACRV.IsEnabled = false;
+			_ACRV.IsChecked = false;
+			_ACRV.Content = "ACRV (2.3+)";
+		}
+
+        CheckBox _SEQN = CreateCheckBox("Sequences", true);
+		if (Data.Sequences == null)
+		{
+			_SEQN.IsEnabled = false;
+			_SEQN.IsChecked = false;
+			_SEQN.Content = "SEQN (2.3+)";
+		}
+
+        CheckBox _FONT = CreateCheckBox("Fonts", true);
+        CheckBox _SPRT = CreateCheckBox("Sprites", true);
+        CheckBox _BGND = CreateCheckBox("Tilesets", true);
+
+		resourceGrid.Children.Add(_PRJT);
+		resourceGrid.Children.Add(_OBJT);
+		resourceGrid.Children.Add(_ROOM);
+		resourceGrid.Children.Add(_EXTN);
+		resourceGrid.Children.Add(_SCPT);
+		resourceGrid.Children.Add(_TMLN);
+		resourceGrid.Children.Add(_SOND);
+		resourceGrid.Children.Add(_SHDR);
+		resourceGrid.Children.Add(_PATH);
+		resourceGrid.Children.Add(_ACRV);
+		resourceGrid.Children.Add(_SEQN);
+		resourceGrid.Children.Add(_FONT);
+		resourceGrid.Children.Add(_SPRT);
+		resourceGrid.Children.Add(_BGND);
+
+		mainPanel.Children.Add(resourceGrid);
+        #endregion
+
+        #region AssetPicker Shit
+        Grid centerContainer = new()
+		{
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			Margin = new Thickness(0, 10, 0, 10)
+		};
+		centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+		centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        // CheckBox + Label
+        StackPanel leftStack = new()
+		{
+			Orientation = Orientation.Vertical,
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			Margin = new Thickness(0, 0, 16, 0) // space between left and right
+		};
+
+        CheckBox _CSTM = new()
+        {
+			Content = "Pick Assets",
+			IsChecked = false,
+			HorizontalAlignment = HorizontalAlignment.Center,
+			Margin = new Thickness(0, 0, 0, 4),
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground
+        };
+
+        TextBlock CSTMLabel = new()
+        {
+			Text = "",
+			HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = Theme.WindowForeground
+        };
+
+        leftStack.Children.Add(_CSTM);
+		leftStack.Children.Add(CSTMLabel);
+		Grid.SetColumn(leftStack, 0);
+		centerContainer.Children.Add(leftStack);
+
+        // Right side Button
+        Button pickAssetsButton = new()
+        {
+			Content = "Pick Individual Assets...",
+			Width = 150,
+			Height = 30,
+			Margin = new Thickness(0, 0, 0, 4),
+			HorizontalAlignment = HorizontalAlignment.Center,
+			VerticalAlignment = VerticalAlignment.Center,
+			IsEnabled = false,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+
+		pickAssetsButton.Click += (s, e) =>
+		{
+            PickerWindow = new AssetPickerWindow();
+            PickerWindow.Owner = this;
+            PickerWindow.ShowDialog();
+
+            // Reload Number of Assets Selected
+			CSTMLabel.Text = $"Assets Selected: {UISettings.CSTM.Count}";
+		};
+
+		Grid.SetColumn(pickAssetsButton, 1);
+		centerContainer.Children.Add(pickAssetsButton);
+
+        // bulk
+        var resourceCheckboxes = new List<CheckBox> { _OBJT, _ROOM, _EXTN, _SCPT, _TMLN, _SOND, _SHDR, _PATH, _ACRV, _SEQN, _FONT, _SPRT, _BGND };
+        // For Pick Assets CHECKBOX
+        _CSTM.Checked += (s, e) =>
+        {
+            // disable all resource checkboxes
+            resourceCheckboxes.ForEach(cb => { cb.IsChecked = false; cb.IsEnabled = false; });
+
+            // Enable Pick Assets button
+            pickAssetsButton.IsEnabled = true;
+
+            // Load Number of Assets Selected
+            CSTMLabel.Text = $"Assets Selected: {UISettings.CSTM.Count}";
+        };
+
+        _CSTM.Unchecked += (s, e) =>
+        {
+            // Re-enable all resource checkboxes
+            resourceCheckboxes.ForEach(cb => cb.IsEnabled = true);
+
+            // Disable the Pick Assets button
+            pickAssetsButton.IsEnabled = false;
+
+            // Check these if they're null first
+            _SEQN.IsEnabled = Data?.Sequences != null;
+            _SEQN.IsChecked = Data?.Sequences != null;
+            _ACRV.IsEnabled = Data?.AnimationCurves != null;
+            _ACRV.IsChecked = Data?.AnimationCurves != null;
+
+            // Check all the enabled checkboxes
+            resourceCheckboxes.Where(cb => cb.IsEnabled).ToList().ForEach(cb => cb.IsChecked = true);
+
+            // WIPE
+            CSTMLabel.Text = "";
+            UISettings.CSTM.Clear();
+        };
+        #endregion
+        #region Fix Tilesets
+        StackPanel rightStack = new()
+        {
+            Orientation = Orientation.Vertical,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(16, 0, 16, 0) // space between left and right
+        };
+        CheckBox _FIXTS = new()
+        {
+            Content = "Fix Tilesets",
+            IsChecked = false,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 4),
+            ToolTip = "Allows you to manually fix all Tileset Images\nThis is completely optional and a bit time-consuming, but is highly recommended to do so",
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground
+        };
+
+        // Right side Button
+        Button FixTSButton = new()
+        {
+            Content = "Check All Tilesets...",
+            Width = 150,
+            Height = 30,
+            Margin = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = "Opens a Window that allows you to manually fix all Tileset Images",
+            IsEnabled = false,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+
+        FixTSButton.Click += (s, e) =>
+        {
+            TilesetWindow = new UnscrambleWindow();
+            TilesetWindow.Owner = this;
+            TilesetWindow.ShowDialog();
+        };
+
+        // For Fix Tileset CHECKBOX
+        _FIXTS.Checked += (s, e) =>
+        {
+            // Enable Fix Tileset button
+            FixTSButton.IsEnabled = true;
+        };
+
+        _FIXTS.Unchecked += (s, e) =>
+        {
+            // Disable Fix Tileset button
+            FixTSButton.IsEnabled = false;
+        };
+
+        rightStack.Children.Add(_FIXTS);
+        Grid.SetColumn(rightStack, 2);
+        centerContainer.Children.Add(rightStack);
+
+        Grid.SetColumn(FixTSButton, 3);
+        centerContainer.Children.Add(FixTSButton);
+        #endregion
+
+        // Add Asset Picker and Fix Tileset elements
+        mainPanel.Children.Add(centerContainer);
+
+        #region Decompiler Settings
+        mainPanel.Children.Add(new TextBlock
+		{
+			Text = "Decompiler Settings",
+			FontWeight = FontWeights.Bold,
+			Margin = new Thickness(0, 12, 0, 4)
+		});
+
+        UniformGrid settingsGrid = new() { Columns = 4 };
+
+        CheckBox _LOG = CreateCheckBox("Log Assets");
+		_LOG.ToolTip = "Logs every Asset that gets decompiled" +
+            "\nMostly for Debugging, will clog up the logs if enabled.";
+
+        CheckBox _YYMPS = CreateCheckBox("Export as YYMPS");
+		_YYMPS.ToolTip = "Exports decompiled resources as a GameMaker Importable Package." +
+            "\nUseful for importing assets from the loaded data.win into your own GameMaker project";
+
+        CheckBox _ENUM = CreateCheckBox("Bitwise Enums");
+		_ENUM.ToolTip = "Turns Unknown Enums into Bitwise Operations.\n\nExample:\nUnknownEnum.Value_1 -> (1 << 0)";
+
+        CheckBox _DSCLEAN = CreateCheckBox("Clean DS functions", true);
+        _DSCLEAN.ToolTip = "Converts all DS functions to their accessor syntax." +
+            "\n\nExample:" +
+            "\nds_map_set(map, key, value); -> map[? key] = value;";
+
+        CheckBox _ADDFILES = CreateCheckBox("Add Datafiles", true);
+		_ADDFILES.ToolTip = "Automatically add included datafiles" +
+            "\n(Note that it will copy any external file in the same directory as the data.win)";
+
+        CheckBox _FIXA = CreateCheckBox("Fix Audio");
+		_FIXA.ToolTip = "Labels audio files with their technically correct file extension." +
+            "\nSo if a .wav file is incorrectly labelled as an .mp3 in the data.win, this setting will label it back to .wav.";
+
+        CheckBox _GENROOM = CreateCheckBox("Generate Room Name");
+		_GENROOM.ToolTip = "Simulates GameMaker asset naming behavior.";
+
+        CheckBox _STRCLEAN = CreateCheckBox("Clean String Function", Data.IsVersionAtLeast(2022, 9));
+        _STRCLEAN.ToolTip = "Convert all string() functions to literal strings." +
+
+            "\n\nNOTE: GMS2 versions older than 2022.9 do not support this" +
+            "\nUsing this WILL make force you to update to 2022.9 or newer" +
+
+            "\n\nExample:" +
+            "\nstring(\"Value: {0}\", variable); -> $\"Value: {variable}\";";
+
+        settingsGrid.Children.Add(_LOG);
+		settingsGrid.Children.Add(_YYMPS);
+		settingsGrid.Children.Add(_ENUM);
+        settingsGrid.Children.Add(_DSCLEAN);
+        settingsGrid.Children.Add(_ADDFILES);
+		settingsGrid.Children.Add(_FIXA);
+		settingsGrid.Children.Add(_GENROOM);
+        settingsGrid.Children.Add(_STRCLEAN);
+
+        mainPanel.Children.Add(settingsGrid);
+        #endregion
+        #region CPU Controls
+        Label cpuLabel = new()
+		{
+			Content = $"CPU Usage: {UISettings.CPU_Usage}%",
+			HorizontalAlignment = HorizontalAlignment.Center,
+			Margin = new Thickness(0, 10, 0, 0)
+		};
+
+        Slider cpuSlider = new()
+        {
+			Minimum = 1,
+			Maximum = 100,
+			Value = UISettings.CPU_Usage,
+			Width = 200,
+			Margin = new Thickness(0, 0, 0, 0),
+			HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = Theme.WindowForeground
+        };
+
+		cpuSlider.ValueChanged += (s, e) =>
+		{
+            UISettings.CPU_Usage = (int)cpuSlider.Value;
+			cpuLabel.Content = $"CPU Usage: {UISettings.CPU_Usage}%";
+		};
+
+        StackPanel cpuPanel = new()
+		{
+			Orientation = Orientation.Vertical,
+			HorizontalAlignment = HorizontalAlignment.Center
+		};
+
+		cpuPanel.Children.Add(cpuLabel);
+		cpuPanel.Children.Add(cpuSlider);
+		mainPanel.Children.Add(cpuPanel);
+        #endregion
+
+        #region OK Button
+        Button OKBT = new()
+        {
+			Content = "Start Dump",
+			Height = 48,
+			Margin = new Thickness(0, 10, 0, 0),
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+        // Save Options
+		OKBT.Click += (o, s) =>
+		{
+            UISettings.DUMP = true;
+
+            UISettings.OBJT = _OBJT.IsChecked == true;
+            UISettings.ROOM = _ROOM.IsChecked == true;
+            UISettings.EXTN = _EXTN.IsChecked == true;
+            UISettings.SCPT = _SCPT.IsChecked == true;
+            UISettings.TMLN = _TMLN.IsChecked == true;
+            UISettings.SOND = _SOND.IsChecked == true;
+            UISettings.SHDR = _SHDR.IsChecked == true;
+            UISettings.PATH = _PATH.IsChecked == true;
+            UISettings.ACRV = _ACRV.IsChecked == true;
+            UISettings.SEQN = _SEQN.IsChecked == true;
+            UISettings.FONT = _FONT.IsChecked == true;
+            UISettings.SPRT = _SPRT.IsChecked == true;
+            UISettings.BGND = _BGND.IsChecked == true;
+
+            UISettings.LOG = _LOG.IsChecked == true;
+            UISettings.YYMPS = _YYMPS.IsChecked == true;
+            UISettings.ENUM = _ENUM.IsChecked == true;
+            UISettings.DSCLEAN = _DSCLEAN.IsChecked == true;
+            UISettings.ADDFILES = _ADDFILES.IsChecked == true;
+            UISettings.FIXAUDIO = _FIXA.IsChecked == true;
+            UISettings.GENROOM = _GENROOM.IsChecked == true;
+            UISettings.STRCLEAN = _STRCLEAN.IsChecked == true;
+
+            UISettings.CSTM_Enable = _CSTM.IsChecked == true;
+
+            UISettings.FIXTILE = _FIXTS.IsChecked == true;
+
+            Close();
+		};
+
+        mainPanel.Children.Add(OKBT);
+        #endregion
+
+        //no scroll bar
+        Content = mainPanel;
+	}
+
+	private CheckBox CreateCheckBox(string content, bool isChecked = false, bool enabled = true)
+	{
+		return new CheckBox
+        {
+			Content = content,
+			IsChecked = isChecked,
+			IsEnabled = enabled,
+			Margin = new Thickness(4),
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground
+        };
+	}
+}
+#endregion
+#region Asset Picker Window
+public class AssetPickerWindow : Window
+{
+    // Get data.win in this scope
+    private readonly UndertaleData Data = ((MainWindow)Application.Current.MainWindow).Data;
+
+    private TreeView treeView;
+    private ListBox listBox;
+    private TextBox searchTreeBox, searchListBox;
+
+    public AssetPickerWindow()
+    {
+        Title = "Asset Picker";
+        WindowStyle = WindowStyle.None;
+        ResizeMode = ResizeMode.NoResize;
+        SizeToContent = SizeToContent.WidthAndHeight;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+
+		// Themes
+        Background = Theme.WindowBackground;
+        Foreground = Theme.WindowForeground;
+
+        #region Title Bar
+        DockPanel titleBar = new()
+        {
+            Height = 30,
+			LastChildFill = true,
+            Background = Theme.ElementBackground
+        };
+
+        TextBlock titleText = new()
+        {
+            Text = Title,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(10, 0, 0, 0),
+            Foreground = Theme.WindowForeground
+        };
+
+        Button closeButton = new()
+        {
+            Content = "X",
+            Width = 40,
+            Height = 30,
+            Background = Theme.Transparent,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.Transparent,
+            FontWeight = FontWeights.Bold,
+			HorizontalAlignment = HorizontalAlignment.Right
+        };
+        closeButton.Click += (s, e) => Close();
+        titleBar.MouseLeftButtonDown += (s, e) => { if (e.ButtonState == MouseButtonState.Pressed) DragMove(); };
+
+        titleBar.Children.Add(titleText);
+        DockPanel.SetDock(closeButton, Dock.Right);
+        titleBar.Children.Add(closeButton);
+
+        StackPanel layout = new();
+        layout.Children.Add(titleBar);
+        #endregion
+
+        Grid grid = new() { Margin = new Thickness(10) };
+
+        for (int i = 0; i < 3; i++)
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        for (int i = 0; i < 3; i++)
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        #region Left (All Assets) TreeView + SearchBox
+        // Search box for tree
+        searchTreeBox = new TextBox { Width = 200, Margin = new Thickness(0, 0, 8, 4) };
+        searchTreeBox.TextChanged += (s, e) => UpdateTree(searchTreeBox.Text);
+        Grid.SetRow(searchTreeBox, 0);
+        Grid.SetColumn(searchTreeBox, 0);
+        grid.Children.Add(searchTreeBox);
+
+        // TreeView
+        treeView = new TreeView { Height = 400, Width = 200 };
+        treeView.MouseDoubleClick += (s, e) =>
+        {
+            if (treeView.SelectedItem is TreeViewItem item && item.Parent is TreeViewItem pitem && pitem.Parent is TreeViewItem)
+            {
+                if (!UISettings.CSTM.Contains(item.Header.ToString()))
+                    UISettings.CSTM.Add(item.Header.ToString());
+                UpdateList(searchListBox.Text);
+            }
+        };
+        Grid.SetRow(treeView, 1);
+        Grid.SetColumn(treeView, 0);
+        grid.Children.Add(treeView);
+        #endregion
+        #region Arrow Buttons
+        StackPanel buttonPanel = new() { Orientation = Orientation.Vertical, Margin = new Thickness(8, 0, 8, 0) };
+
+        #region -> Button
+        Button addButton = new()
+        { 
+			Content = "->", 
+			Width = 40, 
+			Height = 32, 
+			Margin = new Thickness(0, 4, 0, 4),
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+        addButton.Click += (s, e) =>
+        {
+            if (treeView.SelectedItem is TreeViewItem item && item.Parent is TreeViewItem)
+            {
+                if (!UISettings.CSTM.Contains(item.Header.ToString()))
+                    UISettings.CSTM.Add(item.Header.ToString());
+                UpdateList(searchListBox.Text);
+            }
+        };
+        buttonPanel.Children.Add(addButton);
+        #endregion
+        #region <- Button
+        Button removeButton = new()
+        { 
+			Content = "<-", 
+			Width = 40, 
+			Height = 32,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+        removeButton.Click += (s, e) =>
+        {
+            if (listBox.SelectedItem != null)
+            {
+                UISettings.CSTM.RemoveAll(r => r == listBox.SelectedItem.ToString());
+                UpdateList(searchListBox.Text);
+            }
+        };
+        buttonPanel.Children.Add(removeButton);
+        #endregion
+
+        Grid.SetRow(buttonPanel, 1);
+        Grid.SetColumn(buttonPanel, 1);
+        grid.Children.Add(buttonPanel);
+        #endregion
+        #region Right (Selected Assets) ListBox + SearchBox
+        // Search box for list
+        searchListBox = new TextBox { Width = 200, Margin = new Thickness(0, 0, 0, 4) };
+        searchListBox.TextChanged += (s, e) => UpdateList(searchListBox.Text);
+        Grid.SetRow(searchListBox, 0);
+        Grid.SetColumn(searchListBox, 2);
+        grid.Children.Add(searchListBox);
+
+        // ListBox
+        listBox = new ListBox
+        { 
+			Width = 200, 
+			Height = 400,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground
+        };
+        listBox.MouseDoubleClick += (s, e) =>
+        {
+            if (listBox.SelectedItem != null)
+            {
+                UISettings.CSTM.RemoveAll(r => r == listBox.SelectedItem.ToString());
+                UpdateList(searchListBox.Text);
+            }
+        };
+        Grid.SetRow(listBox, 1);
+        Grid.SetColumn(listBox, 2);
+        grid.Children.Add(listBox);
+        #endregion
+        #region OK Button
+        Button okButton = new()
+        {
+            Content = "OK",
+            Width = 100,
+            Height = 32,
+            Margin = new Thickness(0, 8, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+        okButton.Click += (s, e) => Close();
+
+        Grid.SetRow(okButton, 2);
+        Grid.SetColumnSpan(okButton, 3);
+        grid.Children.Add(okButton);
+        #endregion
+
+        layout.Children.Add(grid);
+        Content = layout;
+
+        BuildInitialTree();
+        UpdateList("");
+    }
+
+    #region Helper Funcs
+    private void BuildInitialTree()
+    {
+        treeView.Items.Clear();
+        TreeViewItem root = new() { Header = "Data", IsExpanded = true };
+
+        var categories = new[]
+        {
+            "Sounds", "Sprites", "Tilesets", "Paths", "Scripts", "Shaders", "Fonts",
+            "Timelines", "Objects", "Rooms", "Extensions", "Sequences", "Animation Curves"
+        };
+        foreach (var c in categories)
+            root.Items.Add(new TreeViewItem { Header = c });
+
+        treeView.Items.Add(root);
+        UpdateTree("");
+    }
+
+    private void UpdateTree(string search)
+    {
+        foreach (TreeViewItem cat in ((TreeViewItem)treeView.Items[0]).Items)
+        {
+            cat.Items.Clear();
+            var name = cat.Header.ToString();
+
+            IEnumerable<string> items = name switch
+            {
+                "Sounds" => Data?.Sounds?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                "Sprites" => Data?.Sprites?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                "Tilesets" => Data?.Backgrounds?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                "Paths" => Data?.Paths?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+
+                // Ensures only Code entries are here
+                "Scripts" => Data?.Code?.Select(s => s?.Name?.Content)
+                    .Where(n => n != null && n.StartsWith("gml_GlobalScript_"))
+                    .Select(n => n.Substring("gml_GlobalScript_".Length)) 
+                    ?? Enumerable.Empty<string>(),
+
+                // Exclude GameMaker Internal Shaders
+                "Shaders" => Data?.Shaders?.Select(s => s?.Name?.Content)
+                    .Where(n => n != null && !n.StartsWith("__yy_") && !n.StartsWith("_filter_")) 
+                    ?? Enumerable.Empty<string>(),
+
+                "Fonts" => Data?.Fonts?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                "Timelines" => Data?.Timelines?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                "Objects" => Data?.GameObjects?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                "Rooms" => Data?.Rooms?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                "Extensions" => Data?.Extensions?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                "Sequences" => Data?.Sequences?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                "Animation Curves" => Data?.AnimationCurves?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
+                _ => Enumerable.Empty<string>()
+            };
+
+            foreach (var item in items)
+            {
+                if (item != null && item.Contains(search, StringComparison.OrdinalIgnoreCase))
+                    cat.Items.Add(new TreeViewItem { Header = item });
+            }
+        }
+    }
+
+    private void UpdateList(string search)
+    {
+        listBox.Items.Clear();
+        foreach (var item in UISettings.CSTM)
+        {
+            if (item != null && item.Contains(search, StringComparison.OrdinalIgnoreCase))
+                listBox.Items.Add(item);
+        }
+    }
+    #endregion
+}
+#endregion
+#region Fix Tileset Window
+// Save data for when Decompiling
+// and if user wants to go back into Fix TS Window with their progress intact
+public static class TilesetSaveData
+{
+    // store tile column amount
+    public static Dictionary<string, uint> TileColumnsMap = new();
+
+    // store modified images
+    public static Dictionary<string, MagickImage> TilesetImageMap = new();
+}
+
+public class UnscrambleWindow : Window
+{
+    // Get data.win in this scope
+    private readonly UndertaleData Data = ((MainWindow)Application.Current.MainWindow).Data;
+
+    private int CurrentIndex = 0;
+    private Dictionary<string, Layer.LayerTilesData> TileDataMap = new();
+    private Layer.LayerTilesData TileData => TileDataMap[CurrentBackground.Name.Content];
+    private UndertaleBackground CurrentBackground => Data.Backgrounds[CurrentIndex];
+    private uint TileColumns
+    {
+        get => TilesetSaveData.TileColumnsMap[CurrentBackground.Name.Content];
+        set => TilesetSaveData.TileColumnsMap[CurrentBackground.Name.Content] = value;
+    }
+
+    private System.Windows.Controls.TextBlock titleText;
+    private System.Windows.Controls.TextBox ColumnsText;
+    private System.Windows.Controls.Image TilesImage;
+    private Canvas TilesCanvas;
+    private DrawingBrush GridBrush;
+    private ScrollViewer TilesScroller;
+
+    private bool LowPerformance = false;
+
+    public UnscrambleWindow()
+    {
+        Title = "Unscramble Tilesets";
+        WindowStyle = WindowStyle.None;
+        ResizeMode = ResizeMode.NoResize;
+        Width = 960;
+        Height = 540;
+        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+
+        // Theme
+        Background = Theme.WindowBackground;
+        Foreground = Theme.WindowForeground;
+
+        #region Init
+        foreach (var bg in Data.Backgrounds)
+        {
+            var tsName = bg.Name.Content;
+            TileDataMap[tsName] = new Layer.LayerTilesData() { Background = bg };
+
+            if (!TilesetSaveData.TileColumnsMap.ContainsKey(tsName))
+                TilesetSaveData.TileColumnsMap[tsName] = bg.GMS2TileColumns > 0 ? bg.GMS2TileColumns : 10;
+        }
+
+        MouseLeave += Window_MouseLeave;
+        MouseUp += Tiles_MouseUp;
+        MouseMove += Tiles_MouseMove;
+
+        // layout root
+        var layout = new DockPanel();
+        #endregion
+
+        #region Title Bar
+        DockPanel titleBar = new()
+        {
+            Height = 30,
+            LastChildFill = true,
+            Background = Theme.ElementBackground
+        };
+
+        titleText = new TextBlock
+        {
+            Text = Title,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(10, 0, 0, 0),
+            Foreground = Theme.WindowForeground
+        };
+
+        Button closeButton = new()
+        {
+            Content = "X",
+            Width = 40,
+            Height = 30,
+            Background = Theme.Transparent,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.Transparent,
+            FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        closeButton.Click += (s, e) => Close();
+        titleBar.MouseLeftButtonDown += (s, e) => { if (e.ButtonState == MouseButtonState.Pressed) DragMove(); };
+
+        DockPanel.SetDock(closeButton, Dock.Right);
+        titleBar.Children.Add(closeButton);
+        titleBar.Children.Add(titleText);
+
+        DockPanel.SetDock(titleBar, Dock.Top);
+        layout.Children.Add(titleBar);
+        #endregion
+
+        // main Grid
+        Grid grid = new() { Margin = new Thickness(10) };
+        grid.RowDefinitions.Add(new RowDefinition());
+        grid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(0, GridUnitType.Auto) });
+        grid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(0, GridUnitType.Auto) });
+
+        DockPanel.SetDock(grid, Dock.Bottom);
+        layout.Children.Add(grid);
+
+        #region Canvas
+        TilesScroller = new ScrollViewer
+        {
+            Margin = new Thickness(0, 0, 0, 8),
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
+            Background = Theme.ElementBackground
+        };
+        grid.Children.Add(TilesScroller);
+
+        TilesCanvas = new Canvas();
+        TilesCanvas.MouseDown += Tiles_MouseDown;
+        TilesScroller.Content = TilesCanvas;
+
+        // grid pattern BG
+        GridBrush = new DrawingBrush()
+        {
+            Stretch = Stretch.Fill,
+            TileMode = TileMode.Tile,
+            Viewbox = new Rect(0, 0, 20, 20),
+            ViewboxUnits = BrushMappingMode.Absolute,
+            ViewportUnits = BrushMappingMode.Absolute,
+        };
+        var grp = new DrawingGroup();
+        grp.Children.Add(new GeometryDrawing(
+            Theme.GridTileLight, null, new PathGeometry
+            {
+                Figures = PathFigureCollection.Parse("M0,0 L20,0 20,20, 0,20Z")
+            }
+        ));
+        grp.Children.Add(new GeometryDrawing(
+            Theme.GridTileDark, null, new PathGeometry
+            {
+                Figures = PathFigureCollection.Parse("M0,10 L20,10 20,20, 10,20 10,0 0,0Z")
+            }
+        ));
+        GridBrush.Drawing = grp;
+        TilesCanvas.Background = GridBrush;
+
+        // Tile Image
+        TilesImage = new System.Windows.Controls.Image
+        {
+            Stretch = Stretch.None,
+            SnapsToDevicePixels = true
+        };
+        RenderOptions.SetBitmapScalingMode(TilesImage, BitmapScalingMode.NearestNeighbor);
+        TilesCanvas.Children.Add(TilesImage);
+        #endregion
+        #region Controls
+        StackPanel stack = new()
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        Grid.SetRow(stack, 1);
+        grid.Children.Add(stack);
+
+        TextBlock instructions = new()
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Text = "Adjust the number of columns until the tileset looks right:",
+            Margin = new Thickness(0, 0, 8, 0),
+            Foreground = Theme.WindowForeground
+        };
+        stack.Children.Add(instructions);
+
+        #region Minus Button
+        Button MinusButton = new()
+        {
+            Content = "-",
+            Width = 24,
+            Height = 24,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+        MinusButton.Click += (s, e) =>
+        {
+            TileColumns = Math.Max(1, TileColumns - 1);
+            ColumnsText.Text = TileColumns.ToString();
+            if (!LowPerformance)
+                RebuildCurrentTileset();
+        };
+        MinusButton.Margin = new Thickness(0, 0, 8, 0);
+        stack.Children.Add(MinusButton);
+        #endregion
+        #region Value Textbox
+        ColumnsText = new TextBox
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Width = 48,
+            Margin = new Thickness(0, 0, 8, 0)
+        };
+        stack.Children.Add(ColumnsText);
+
+        ColumnsText.TextChanged += (s, e) =>
+        {
+            if (uint.TryParse(ColumnsText.Text, out uint val))
+            {
+                TileColumns = Math.Max(1, val);
+                if (!LowPerformance)
+                    RebuildCurrentTileset();
+            }
+        };
+        #endregion
+        #region Plus Button
+        Button PlusButton = new()
+        {
+            Content = "+",
+            Width = 24,
+            Height = 24,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+        PlusButton.Click += (s, e) =>
+        {
+            TileColumns++;
+            ColumnsText.Text = TileColumns.ToString();
+            if (!LowPerformance)
+                RebuildCurrentTileset();
+        };
+        stack.Children.Add(PlusButton);
+        #endregion
+
+        TextBlock doneInstructions = new()
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Text = "Navigate Tilesets:",
+            Margin = new Thickness(16, 0, 8, 0),
+            Foreground = Theme.WindowForeground
+        };
+        stack.Children.Add(doneInstructions);
+
+        #region Previous Button
+        Button PrevButton = new()
+        {
+            Content = "<-",
+            Width = 32,
+            Height = 24,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+        PrevButton.Click += (s, e) =>
+        {
+            if (!LowPerformance)
+                RebuildCurrentTileset();
+            CurrentIndex = (CurrentIndex - 1 + Data.Backgrounds.Count) % Data.Backgrounds.Count;
+            LoadCurrentTileset();
+        };
+        stack.Children.Add(PrevButton);
+        #endregion
+        #region Next Button
+        Button NextButton = new()
+        {
+            Content = "->",
+            Width = 32,
+            Height = 24,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+        NextButton.Click += (s, e) =>
+        {
+            if (!LowPerformance)
+                RebuildCurrentTileset();
+            CurrentIndex = (CurrentIndex + 1) % Data.Backgrounds.Count;
+            LoadCurrentTileset();
+        };
+        stack.Children.Add(NextButton);
+        #endregion
+
+        #endregion
+
+        #region Low Performance Mode
+        StackPanel stack2 = new()
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        Grid.SetRow(stack2, 2);
+        grid.Children.Add(stack2);
+
+        CheckBox LowPerCheckBox = new()
+        {
+            Content = "Enable Low Performance",
+            IsChecked = false,
+            IsEnabled = true,
+            ToolTip = "Allows you to manually update the canvas whenever needed" +
+                "\nEnable this if Automatic Canvas updating is causing intense lag.",
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(4),
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground
+        };
+
+        Button ReloadButton = new()
+        {
+            Content = "Reload Canvas",
+            Width = 100,
+            Height = 24,
+            IsEnabled = false,
+            ToolTip = "Manually Reload the Canvas" +
+                "\n(Enable Low Performance Mode to use it)",
+            Margin = new Thickness(4, 4, 0, 4),
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = Theme.ElementBackground,
+            Foreground = Theme.WindowForeground,
+            BorderBrush = Theme.ButtonBrush
+        };
+
+        ReloadButton.Click += (s, e) => RebuildCurrentTileset();
+
+        LowPerCheckBox.Click += (s, e) =>
+        {
+            LowPerformance = !LowPerformance;
+            ReloadButton.IsEnabled = LowPerformance;
+        };
+
+        stack2.Children.Add(LowPerCheckBox);
+        stack2.Children.Add(ReloadButton);
+        #endregion
+
+        Content = layout;
+
+        LoadCurrentTileset();
+    }
+
+    #region Rendering and Saving Tileset Functions
+    private void LoadCurrentTileset()
+    {
+        Title = $"Unscramble Tileset [{CurrentIndex + 1}/{Data.Backgrounds.Count}] - {CurrentBackground.Name.Content}";
+        titleText.Text = Title;
+        ColumnsText.Text = TileColumns.ToString();
+        RebuildCurrentTileset();
+    }
+
+    private void RebuildCurrentTileset()
+    {
+        #region Set Variables
+        var bg = CurrentBackground;
+        var tsName = bg.Name.Content;
+        var data = TileData;
+
+        if (data.TileData == null || data.TileData.Length == 0)
+            data.TileData = new uint[(int)Math.Ceiling(bg.GMS2TileCount / (double)TileColumns)][];
+
+        data.TilesX = Math.Max(TileColumns, 1);
+        data.TilesY = (uint)Math.Ceiling((double)bg.GMS2TileCount / data.TilesX);
+
+        GridBrush.Viewport = new Rect(0, 0, bg.GMS2TileWidth, bg.GMS2TileHeight);
+
+        TilesImage.Width = data.TilesX * bg.GMS2TileWidth;
+        TilesImage.Height = data.TilesY * bg.GMS2TileHeight;
+        TilesCanvas.Width = TilesImage.Width;
+        TilesCanvas.Height = TilesImage.Height;
+        #endregion
+        #region Fill Tiles
+        data.TileData = Enumerable.Range(0, (int)data.TilesY)
+            .Select(_ => new uint[(int)data.TilesX])
+            .ToArray();
+
+        int i = 0;
+        int itemsPerTile = (int)bg.GMS2ItemsPerTileCount;
+        int count = (int)bg.GMS2TileCount * itemsPerTile;
+
+        for (int y = 0; y < data.TilesY; y++)
+        {
+            for (int x = 0; x < data.TilesX; x++)
+            {
+                if (i >= count)
+                    data.TileData[y][x] = 0;
+                else
+                    data.TileData[y][x] = bg.GMS2TileIds[i].ID;
+                i += itemsPerTile;
+            }
+        }
+        #endregion
+        #region Save Image
+        TilesImage.Source = GetTilesetImage();
+        // Convert to MagickImage and store
+        if (TilesImage.Source != null)
+            TilesetSaveData.TilesetImageMap[tsName] = ConvertTilesetToMagickImage();
+        #endregion
+    }
+    #endregion
+    #region Helper Shit
+
+    #region Mouse Funcs
+    // drag scrolling
+    private bool IsDragging = false;
+    public System.Windows.Point DrawingStart;
+    public System.Windows.Point ScrollViewStart;
+
+    private void Tiles_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        IsDragging = true;
+        DrawingStart = e.GetPosition(this as Window);
+        ScrollViewStart = new System.Windows.Point(TilesScroller.HorizontalOffset, TilesScroller.VerticalOffset);
+    }
+    private void Tiles_MouseUp(object sender, MouseButtonEventArgs e) => IsDragging = false;
+    private void Tiles_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!IsDragging) return;
+        System.Windows.Point pos = e.GetPosition(this as Window);
+        TilesScroller.ScrollToHorizontalOffset(Math.Clamp(
+            ScrollViewStart.X + -(pos.X - DrawingStart.X), 0, TilesScroller.ScrollableWidth
+        ));
+        TilesScroller.ScrollToVerticalOffset(Math.Clamp(
+            ScrollViewStart.Y + -(pos.Y - DrawingStart.Y), 0, TilesScroller.ScrollableHeight
+        ));
+    }
+    private void Window_MouseLeave(object sender, MouseEventArgs e) => IsDragging = false;
+    #endregion
+
+    private ImageSource GetTilesetImage() {
+        return (ImageSource)(new CachedTileDataLoader().Convert(new object[] { TileData }, null, null, null));
+    }
+
+    private MagickImage ConvertTilesetToMagickImage()
+    {
+        using var memoryStream = new MemoryStream();
+
+        // Encode the BitmapSource into a common format (like PNG)
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create((BitmapSource)TilesImage.Source));
+        encoder.Save(memoryStream);
+
+        // Reset stream position before reading
+        memoryStream.Position = 0;
+
+        // Create a MagickImage from the stream
+        return new MagickImage(memoryStream);
+    }
+    #endregion
+}
+#endregion
+
+// open main window
+new UIWindow().ShowDialog();
+
+// if exit
+if (!UISettings.DUMP)
+{
+    GC.Collect();
+    return;
+}
+
+#endregion
+
+#region Useful Tools
+
+// this dictionary holds all the names of the assets
+public static readonly Dictionary<GMAssetType, string> assetTypes = new()
+{
+    { GMAssetType.None, "" },
+    { GMAssetType.Room, "Room" },
+    { GMAssetType.Sprite, "Sprite" },
+    { GMAssetType.Object, "Object" },
+    { GMAssetType.Script, "Script" },
+    { GMAssetType.Sound, "Sound" },
+    { GMAssetType.AudioGroup, "AudioGroup" },
+    { GMAssetType.TileSet, "Tile Set" },
+    { GMAssetType.Note, "Note" },
+    { GMAssetType.TextureGroup, "TextureGroup" },
+    { GMAssetType.Font, "Font" },
+    { GMAssetType.Sequence, "Sequence" },
+    { GMAssetType.Shader, "Shader" },
+    { GMAssetType.Extension, "Extension" },
+    { GMAssetType.Path, "Path" },
+    { GMAssetType.AnimationCurve, "Animation Curve" },
+    { GMAssetType.Timeline, "Timeline" },
+};
+
+/// <summary>
+/// adds a string to the log file.
+/// </summary>
+/// <param name="message"></param>
+public void PushToLog(string message)
+{
+    if (UISettings.YYMPS) return;
+
+    // absolute shitfix
+    while (true)
+    {
+        try {
+            File.AppendAllText(scriptDir + "script.log", $"{message}\n");
+            return;
+        } catch { }
+    }
+}
+
+#region Create Project Resources
+/// <summary>
+/// creates a new <c>GMProject.Resource</c> inside of the exported project
+/// </summary>
+/// <param name="assetType"></param>
+/// <param name="assetName"></param>
+/// <param name="assetOrder"></param>
+public void CreateProjectResource(GMAssetType assetType, string assetName, int assetOrder)
+{
+    finalExport.resources.Enqueue(new GMProject.Resource()
+    {
+        id = new AssetReference(assetName, assetType),
+        order = assetOrder,
+        type = assetType
+    });
+}
+/// <summary>
+/// creates all project folders
+/// also organizes some assets based on texture and audio groups
+/// </summary>
+/// <returns>GMProject.GMFolder[]</returns>
+public GMProject.GMFolder[] CreateProjectFolders()
+{
+    int order = 0;
+    List<GMProject.GMFolder> folders = new()
+    {
+        // default folders
+        CreateFolder("Sprites"),
+        CreateFolder("Tile Sets"),
+        CreateFolder("Sounds"),
+        CreateFolder("Paths"),
+        CreateFolder("Scripts"),
+        CreateFolder("Shaders"),
+        CreateFolder("Fonts"),
+        CreateFolder("Timelines"),
+        CreateFolder("Objects"),
+        CreateFolder("Rooms"),
+        CreateFolder("Sequences"),
+        CreateFolder("Animation Curves"),
+        CreateFolder("Notes"),
+        CreateFolder("Extensions"),
+
+        // for things like tile data & gml_pragma.
+        CreateFolder("DecompilerGenerated"),
+        CreateFolder("GeneratedTileSprites", "DecompilerGenerated/")
+    };
+
+    if (!UISettings.YYMPS && !UISettings.CSTM_Enable)
+    {
+        // autosort textures (if texturegroups are available)
+        foreach (UndertaleTextureGroupInfo tg in Data.TextureGroupInfo)
+        {
+            if (!tg.Name.Content.ToLower().Contains("_yy_") && tg.Name.Content.ToLower() != "default")
+            {
+                if (tg.Sprites.Count > 0)
+                {
+                    if (UISettings.SPRT) folders.Add(CreateFolder(tg.Name.Content, "Sprites/"));
+                    // also organize objects with sprites in this texture group
+                    if (UISettings.OBJT) folders.Add(CreateFolder(tg.Name.Content, "Objects/"));
+                }
+                if (tg.Tilesets.Count > 0 && UISettings.BGND) 
+                    folders.Add(CreateFolder(tg.Name.Content, "Tile Sets/"));
+            }
+        }
+
+        // autosort audio (if audiogroups are available)
+        if (UISettings.SOND)
+            foreach (UndertaleAudioGroup a in Data.AudioGroups)
+                if (a.Name.Content != "audiogroup_default")
+                    folders.Add(CreateFolder(a.Name.Content, "Sounds/"));
+    }
+
+    return folders.ToArray();
+
+    GMProject.GMFolder CreateFolder(string name, string extpath = "") {
+        return new GMProject.GMFolder(name, $"folders/{extpath}{name}.yy") { order = ++order };
+    }
+}
+/// <summary>
+/// creates a file path.
+/// e.g: $"{assetname}s/{assetname}/{assetname}.yy"
+/// </summary>
+/// <param name="assetName"></param>
+/// <param name="type"></param>
+public static string CreateFilePath(string assetName, GMAssetType type)
+{
+    string asset = assetTypes[type].ToLower();
+    // dumb switch statement
+    switch (asset)
+    {
+        case "animation curve": asset = "animcurve";    break;
+        case "tile set":        asset = "tileset";      break;
+    }
+    return $"{asset}s/{assetName}/{assetName}.yy";
+}
+/// <summary>
+/// Creates a new GMNote in the project.
+/// </summary>
+/// <param name="noteName"></param>
+/// <param name="folderName"></param>
+/// <param name="noteText"></param>
+public void CreateNote(string noteName = "Note1", string folderName = "Notes", string noteText = "")
+{
+    string assetDir = $"{scriptDir}notes\\{noteName}\\";
+
+    GMNotes note = new(noteName);
+    note.parent.name = folderName;
+    note.parent.path = $"folders/{folderName}.yy";
+
+    CreateProjectResource(GMAssetType.Note, noteName, noteIndex++);
+    Directory.CreateDirectory(assetDir);
+    File.WriteAllText($"{assetDir}\\{noteName}.yy", JsonSerializer.Serialize(note, jsonOptions));
+    File.WriteAllText($"{assetDir}\\{noteName}.txt", noteText);
+}
+#endregion
+#region Get Project Resources
+/// <summary>
+/// converts numerical id to gamemaker's hex like id
+/// </summary>
+/// <returns>string</returns>
+string IdToHex(uint id)
+{
+    if (!UISettings.GENROOM)
+        return id.ToString();
+
+    // gamemaker IDE does it kinda like this
+    return $"{new Random((int)id).Next():X}";
+}
+/// <summary>
+/// returns a random colour
+/// </summary>
+/// <returns>uint</returns>
+uint GetRandomColour()
+{
+    // this turns the color enum into array and use the random class to choose a random one
+    Array values = Enum.GetValues(typeof(eColour));
+    return (uint)values.GetValue(new Random().Next(values.Length));
+}
+/// <summary>
+/// obtains the <c>tags</c> variable from any asset
+/// </summary>
+/// <param name="asset"></param>
+string[]? GetTags(dynamic asset)
+{
+    // that one obscure gamemaker feature that nobody uses
+    if (Data.Tags is null) return null;
+
+    // get the id
+    var assetTagId = UndertaleTags.GetAssetTagID(Data, asset);
+    if (Data.Tags.AssetTags.ContainsKey(assetTagId))
+    {
+        // cast it into an enumerable for use.
+        var tagList = (IEnumerable<UndertaleString>)Data.Tags.AssetTags[assetTagId];
+        // return tags list
+        return tagList.Select(t => t.Content).ToArray();
+    }
+
+    return null;
+}
+/// <summary>
+/// returns the path of the runner.
+/// </summary>
+/// <param name="fileDir"></param>
+/// <returns>file path</returns>
+string GetRunnerFile(string fileDir)
+{
+    // get all exe files in the directory
+    string[] files = Directory.GetFiles(fileDir, "*exe");
+    // loop through each file and check.
+    foreach (string file in files)
+    {
+        string lastLine = File.ReadAllLines(file).Last();
+        // these usually appear in the last line of the actual gamemaker runner.
+        if (lastLine.Contains($"name=\"YoYoGames.GameMaker.Runner\"") || lastLine.Contains("GameMaker C++ Core Runner."))
+            return file;
+    }
+
+    // If runner couldn't be found, ask user
+    bool doSearch = ScriptQuestion("The runner was not found! Would you like to point me to it please?");
+    while (doSearch)
+    {
+        System.Windows.Forms.OpenFileDialog fileDialog = new()
+        {
+            Title = "Select the Game Executable",
+            InitialDirectory = rootDir,
+            Filter = "Executable Files (*.exe)|*.exe",
+        };
+        if (fileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        {
+            // If runner is an executable
+            // don't force other check, since some executables don't have those last strings for some reason
+            if (Path.GetExtension(fileDialog.FileName) == ".exe")
+                return fileDialog.FileName;
+            else
+                doSearch = ScriptQuestion("Thats not the runner! The runner is the game executable that loads the data.win file! Would you like to try again?");
+        }
+    }
+    return String.Empty;
+}
+/// <summary>
+/// returns a folder directory for an asset inside of an <c>AssetReference</c>. e.g: $"folders/{foldername}.yy"
+/// </summary>
+/// <param name="type"></param>
+public static AssetReference GetParentFolder(GMAssetType type)
+{
+    string assetName = assetTypes[type] + "s";
+    return new AssetReference(assetName, GMAssetType.None)
+    {
+        name = assetName,
+        path = $"folders/{assetName}.yy"
+    };
+}
+/// <summary>
+/// e.g: $"folders/{folderPath}{folderName}.yy"
+/// </summary>
+/// <param name="folderName"></param>
+public static AssetReference GetFolderReference(string folderName, string folderPath = "")
+{
+    return new AssetReference()
+    {
+        name = folderName,
+        path = $"folders/{folderPath}{folderName}.yy"
+    };
+}
+/// <summary>
+/// returns an <c>AssetReference</c> based on the name of the texture group.
+/// </summary>
+/// <param name="name"></param>
+public AssetReference GetTextureGroup(string name)
+{
+    string texGroup = "default";
+    if (texGroupStuff.ContainsKey(name))
+        texGroup = texGroupStuff[name];
+
+    return new AssetReference()
+    {
+        name = texGroup,
+        path = $"texturegroups/{texGroup}"
+    };
+}
+/// <summary>
+/// finds the most likely texture page size
+/// </summary>
+string GetTexturePageSize()
+{
+    if (Data.EmbeddedTextures.Count == 0) return "2048x2048";
+
+    List<int> TexPageSizes = new() { 256, 512, 1024, 2048, 4096, 8192 };
+    Dictionary<string, int> SizesFound = TexPageSizes.ToDictionary(size => $"{size}x{size}", size => 0);
+
+    foreach (UndertaleEmbeddedTexture TexPage in Data.EmbeddedTextures)
+    {
+        int Width = TexPage.TextureData.Width;
+        int Height = TexPage.TextureData.Height;
+
+        if (TexPageSizes.Contains(Width) && TexPageSizes.Contains(Height) && Width == Height)
+            SizesFound[$"{Width}x{Height}"]++;
+    }
+
+    KeyValuePair<string, int> OrderedSizes = SizesFound.Aggregate((l, r) => l.Value > r.Value ? l : r);
+    return OrderedSizes.Value != 0 ? OrderedSizes.Key : "2048x2048";
+}
+#endregion
+#region Object Properties
+// heavily referenced from quantum
+/// <summary>
+/// translates pre-create code into object properties.
+/// </summary>
+/// <param name="eventList"></param>
+public List<GMObjectProperty> CreateObjectProperties(UndertalePointerList<UndertaleGameObject.Event> eventList)
+{
+    List<GMObjectProperty> propList = new();
+    if (eventList is null)
+        return propList;
+
+    // get the "var = value" bit from the decompiled code
+    // this also accounts for self. and multiline structs
+    Regex assignmentRegex = new(
+        @"(?:self\.)?(\w+)\s*=\s*({[\s\S]*?}|.+?);?$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.ECMAScript
+    );
+
+    if (eventList.Count >= 1 && eventList[0].Actions.Count >= 1)
+    {
+        // Dump Precreate Code
+        string dumpedCode = DumpCode(eventList[0].Actions[0].CodeId, new DecompileSettings
+        {
+            UseSemicolon = false,
+            AllowLeftoverDataOnStack = true
+        });
+
+        // if precreate is null, stop
+        if (dumpedCode is null)
+            return propList;
+
+        // go through each precreate variable
+        foreach (Match match in assignmentRegex.Matches(dumpedCode))
+        {
+            string name = match.Groups[1].Value;
+            string rawValue = Regex.Replace(match.Groups[2].Value, @"\s+", " ").Trim();// remove new lines
+
+            GMObjectProperty prop = new(name)
+            {
+                name = name,
+                value = rawValue
+            };
+
+            #region Check Property Type
+            // TODO - this sometimes does not work, as sometimes it's just a list (aka needs to be an expression)
+            // maybe store previous variables and decide if its a list using that?
+            /*
+            // List (only can check for multi-select lists)
+            Match listmatch = Regex.Match(rawValue, @"\[([^\]]+)\]");
+            if (listmatch.Success)
+            {
+                prop.varType = 6;
+                prop.value = listmatch.Groups[1].Value.Trim();
+            }
+            */
+            // String
+            if (rawValue.StartsWith("\"") && rawValue.EndsWith("\""))
+                prop.varType = 2;
+            // Boolean
+            else if (rawValue == "true" || rawValue == "false")
+                prop.varType = 3;
+            // Decimal (Real)
+            else if (Regex.IsMatch(rawValue, @"^\d+\.\d+$"))
+                prop.varType = 0;
+            // Integer or Color
+            else if (Regex.IsMatch(rawValue, @"^\d+$"))
+            {
+                if (UInt32.TryParse(rawValue, out uint colorVal) && colorVal >= 0xFF000000 && colorVal <= 0xFFFFFFFF)
+                {
+                    prop.varType = 7; // Color
+                    prop.value = $"${colorVal:X8}";
+                }
+                else
+                    prop.varType = 1; // Integer
+            }
+            // Asset (try to do last, since checking is pretty slow)
+            else if (
+                !rawValue.Contains("\"") // Stop Strings
+                && !Regex.IsMatch(rawValue, @"\W")
+                && (!char.IsDigit(rawValue[0]) || rawValue.Length > 1) // Stop Ints
+                && Data.IndexOfByName(rawValue) != -1 // Checks if value is a Game Asset
+            ) prop.varType = 5;
+            // Expression
+            else if (Regex.IsMatch(rawValue, @"[=!<>+\-*/%&|()]"))
+                prop.varType = 4;
+            // Default (Expression)
+            else
+                prop.varType = 4;
+            #endregion
+
+            propList.Add(prop);
+        }
+    }
+
+    return propList;
+}
+/// <summary>
+/// turns properties of an object into a <c>Dictionary</c>
+/// </summary>
+/// <param name="codeInput"></param>
+public static Dictionary<string, string> ObjectPropertiesToDictionary(this string codeInput)
+{
+    Dictionary<string, string> objectProperties = new();
+
+    // this assumes that you already ran FixVariableDeclarations
+    string[] lines = codeInput.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToArray();
+
+    foreach (string line in lines)
+    {
+        string[] kvp = line.Split("=").ToArray();
+        // if the property exists, add it.
+        if (kvp.Length > 1 && !objectProperties.ContainsKey(kvp[0].Trim()))
+            objectProperties.Add(kvp[0].Trim(), kvp[1].Trim());
+    }
+
+    return objectProperties;
+}
+#endregion
+#region Get Code
+/// <summary>
+/// decompiles any <c>UndertaleCode</c>
+/// </summary>
+/// <param name="code"></param>
+/// <param name="set"></param>
+/// <returns>code</returns>
+string? DumpCode(UndertaleCode code, IDecompileSettings? set = null)
+{
+    if (code is not null)
+    {
+        try
+        {
+            DecompileContext context = new(globalDecompileContext, code, (set != null ? set : decompilerSettings));
+            string dumpedCode = context.DecompileToString();
+
+            // remove "gml_Script_" from code, since that sometimes happens
+            dumpedCode = Regex.Replace(dumpedCode, "gml_Script_", "");
+
+            // Code Filters
+            #region UnknownEnum to Bitwise Converter
+            if (UISettings.ENUM)
+            {
+                // crystal didn't account for this, so i'll do it i guess
+                string uName = SettingsWindow.DecompilerSettings.UnknownEnumName;
+                string uVal = SettingsWindow.DecompilerSettings.UnknownEnumValuePattern;
+
+                //@"UnknownEnum\.Value_(m?)(\d+)"
+                dumpedCode = Regex.Replace(dumpedCode, $@"{uName}\.{uVal.Replace("{0}", "")}(m?)(\d+)", match =>
+                {
+                    string sign = match.Groups[1].Value == "m" ? "-" : "";
+                    string number = match.Groups[2].Value;
+                    return $"({sign}{number} << 0)";
+                });
+            }
+            #endregion
+            #region Fix Room Instance IDs
+            if (UISettings.GENROOM)
+            {
+                // if it has "graphic_" or "inst_"
+                dumpedCode = Regex.Replace(dumpedCode, @"(graphic_|inst_)(\d+)", match =>
+                {
+                    string prefix = match.Groups[1].Value;
+                    uint number = uint.Parse(match.Groups[2].Value);
+                    return $"{prefix}{IdToHex(number)}";
+                });
+            }
+            #endregion
+            #region Clean string() Func
+            if (UISettings.STRCLEAN)
+            {
+                dumpedCode = GMLCleaner.CleanCode(dumpedCode, @"\bstring\s*\(", args =>
+                {
+                    if (args.Count <= 1)
+                        return null;
+
+                    string formatString = args[0].Trim('"', '\'');
+
+                    for (int i = 1; i < args.Count; i++)
+                        formatString = formatString.Replace("{" + (i - 1) + "}", "{" + args[i] + "}");
+
+                    return $"$\"{formatString}\"";
+                });
+            }
+            #endregion
+            #region Clean ds_* Funcs
+            if (UISettings.DSCLEAN)
+            {
+                foreach (var accessor in GMLCleaner.AccessorMap)
+                {
+                    string pattern = $@"\b{Regex.Escape(accessor.Key)}\s*\(";
+                    var map = accessor.Value;
+
+                    dumpedCode = GMLCleaner.CleanCode(dumpedCode, pattern, args =>
+                    {
+                        if (args.Count != map.ArgCount)
+                            return null;
+
+                        string transformed = map.Symbol == "#"
+                            ? $"{args[0]}[# {args[1]}, {args[2]}]"  // Grid
+                            : $"{args[0]}[{map.Symbol} {args[1]}]"; // List/Map
+
+                        if (map.IsSetter)
+                            transformed += $" = {args[^1]}";
+
+                        return transformed;
+                    });
+                }
+            }
+            #endregion
+
+            // report any decompiler warnings and errors
+            foreach (IDecompileWarning error in context.Warnings)
+                errorList.Add($"{error.CodeEntryName} | {error.Message}");
+
+            // Spam the line
+            if (UISettings.LOG)
+                PushToLog($"'{code.Name.Content}' successfully decompiled.");
+
+            return dumpedCode;
+        }
+        catch (Exception e) {
+            errorList.Add($"{code.Name.Content} | Failed to decompile.");
+        }
+    }
+    return null;
+}
+/// <summary>
+/// makes all variable declarations on one line.
+/// </summary>
+/// <param name="s"></param>
+public static string FixVariableDeclarations(this string s)
+{
+    /*
+    This is a little algorithm to make sure all variable declarations are on one line.
+    First we check for what I call an "anchor line", basically an anchor line is
+    a line with "=" in it. which we will start a new line on.
+    everything that isnt an anchor line will be taken and put into the same line as the anchor.
+    */
+
+    StringBuilder result = new();
+    string[] lines = s.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+    bool isAnchorLine = false;
+
+    foreach (string line in lines)
+    {
+        if (line.Contains("="))
+        {
+            // make sure we dont add a new line at the start
+            if (result.Length > 0)
+                result.AppendLine();
+
+            result.Append(line);
+            isAnchorLine = true;
+        }
+        else if (isAnchorLine)
+        {
+            // if its an anchor line just append
+            result.Append(line);
+        }
+        else
+        {
+            if (result.Length > 0)
+                result.AppendLine();
+
+            result.Append(line);
+        }
+    }
+    return result.ToString();
+}
+/// <summary>
+/// Trims a certain part of the shader code to remove interal yyg stuff.
+/// </summary>
+/// <param name="input"></param>
+/// <returns>trimmedShader</returns>
+public static string TrimShader(this string input)
+{
+    var lines = input.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                    .SkipWhile(line => !line.Contains("#define _YY_GLSL")) // skip all above this line
+                    .Skip(1); // skip matching line
+
+    return String.Join("\n", lines);
+}
+#endregion
+
+// Helper Classes
+#region options.ini Parser
+public static class IniParser
+{
+    private static dynamic? GetValueType(string value)
+    {
+        if (value.StartsWith('\"')) // string
+            return value;
+        else if (value == "True" || value == "False") // boolean
+            return Convert.ToBoolean((value == "True"));
+        else if (value.Contains('.') && Single.TryParse(value, out float outputFloat)) // double/float
+            return outputFloat;
+        else if (int.TryParse(value, out int result)) // int
+            return result;
+        else
+            return value; // give up and return a string
+    }
+
+    public static Dictionary<string, Dictionary<string, dynamic>> ParseToDictionary(string filePath)
+    {
+        // obtain the data from the INI
+        string[] iniData = null;
+
+        if (File.Exists(filePath))
+            iniData = File.ReadAllLines(filePath);
+        else
+            return null;
+
+        string? section = null;
+        Dictionary<string, Dictionary<string, dynamic>> output = new();
+        foreach (string line in iniData)
+        {
+            // get a new section
+            if (line.StartsWith('[') && line.EndsWith(']'))
+            {
+                section = Regex.Replace(line, @"[\[\]]", "");
+                output[section] = new Dictionary<string, dynamic>();
+            }
+            else if (section is not null && line.Contains('='))
+            {
+                string[] splitLine = line.Split('=');
+                string key = splitLine[0];
+                string value = splitLine[1];
+
+                dynamic typedValue = GetValueType(value);
+
+                output[section][key] = typedValue;
+            }
+        }
+        return output;
+    }
+}
+
+#endregion
+#region GML Cleaner
+
+public class GMLCleaner
+{
+    #region Accessors
+    public struct AccessorMapping
+    {
+        public string Symbol;
+        public int ArgCount;
+        public bool IsSetter;
+        public AccessorMapping(string s, int c, bool set)
+        {
+            Symbol = s;
+            ArgCount = c;
+            IsSetter = set;
+        }
+    }
+
+    public static readonly Dictionary<string, AccessorMapping> AccessorMap = new()
+    {
+        { "ds_list_find_value", new AccessorMapping("|", 2, false) },
+        { "ds_list_set",        new AccessorMapping("|", 3, true)  },
+
+        { "ds_map_find_value",  new AccessorMapping("?", 2, false) },
+        { "ds_map_set",         new AccessorMapping("?", 3, true)  },
+        { "ds_map_replace",     new AccessorMapping("?", 3, true)  },
+
+        { "ds_grid_get",        new AccessorMapping("#", 3, false) },
+        { "ds_grid_set",        new AccessorMapping("#", 4, true)  }
+    };
+    #endregion
+
+    public static string CleanCode(string code, string pattern, Func<List<string>, string> formatFunc)
+    {
+        int searchPos = 0;
+        while (searchPos < code.Length)
+        {
+            // search for pattern
+            Match match = Regex.Match(code.Substring(searchPos), pattern);
+
+            // if it wasn't found, leave
+            if (!match.Success)
+                break;
+
+            int startPos = searchPos + match.Index;
+            int parenStart = startPos + match.Length - 1;
+
+            // get function information
+            var (args, endPos) = GetFunctionInfo(code, parenStart);
+
+            if (args != null)
+            {
+                // clean the function
+                string cleanedFunc = formatFunc(args);
+
+                if (cleanedFunc != null)
+                {
+                    code = code.Remove(startPos, endPos - startPos).Insert(startPos, cleanedFunc);
+                    searchPos = startPos + cleanedFunc.Length;
+                    continue;
+                }
+            }
+
+            // set pos past this for the next iteration
+            searchPos = startPos + match.Length;
+        }
+        return code;
+
+
+
+        (List<string> args, int endPos) GetFunctionInfo(string code, int parenStart)
+        {
+            List<string> args = new();
+            StringBuilder currentArg = new();
+
+            int parenDepth = 0, bracketDepth = 0;
+            bool inString = false;
+            char? quoteChar = null;
+
+            for (int i = parenStart + 1; i < code.Length; i++)
+            {
+                char c = code[i];
+
+                // skip escape quotes
+                if ((c == '"' || c == '\'') && (i == 0 || code[i - 1] != '\\'))
+                {
+                    if (!inString)
+                    {
+                        inString = true;
+                        quoteChar = c;
+                    }
+                    else if (c == quoteChar)
+                        inString = false;
+                }
+
+                if (!inString)
+                {
+                    // update depth
+                    switch (c)
+                    {
+                        case '(': parenDepth++; break;
+                        case ')': parenDepth--; break;
+                        case '[': bracketDepth++; break;
+                        case ']': bracketDepth--; break;
+                    }
+                    // if onto the next argument in function, get it
+                    if (c == ',' && parenDepth == 0 && bracketDepth == 0)
+                    {
+                        args.Add(currentArg.ToString().Trim());
+                        currentArg.Clear();
+                        continue;
+                    }
+                    // if the function has been entirely read, return values
+                    if (parenDepth < 0)
+                    {
+                        args.Add(currentArg.ToString().Trim());
+                        return (args, i + 1);
+                    }
+                }
+                currentArg.Append(c);
+            }
+            return (null, -1);
+        }
+    }
+}
+#endregion
+#region GMShape to SVG Convertor
+public static class GMShapeToSVG
+{
+    public static string Convert(GMShape vecShape)
+    {
+        StringBuilder sb = new();
+
+        float width = vecShape.maxX - vecShape.minX;
+        float height = vecShape.maxY - vecShape.minY;
+
+        sb.AppendLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{vecShape.minX} {vecShape.minY} {width} {height}\">");
+
+        foreach (var styleGroup in vecShape.styleGroups)
+        {
+            foreach (var sub in styleGroup.shapes)
+            {
+                if (sub.tris.Count == 0)
+                    continue;
+
+                // get fill color
+                string fill = "#000000";
+                float opacity = 1;
+                if (sub.fillStyle1 >= 0 && sub.fillStyle1 < styleGroup.fillStyles.Count)
+                    (fill, opacity) = RGBAtoHex(styleGroup.fillStyles[sub.fillStyle1].rgba);
+
+                // get paths
+                var loops = ExtractLoops(sub);
+                foreach (var loop in loops)
+                    sb.AppendLine($"<path d=\"{BuildPath(loop, sub.points)}\" fill=\"{fill}\" fill-opacity=\"{opacity}\" />");
+            }
+        }
+
+        sb.AppendLine("</svg>");
+        return sb.ToString();
+    }
+
+    #region Helper Funcs
+    private struct Edge
+    {
+        public int A;
+        public int B;
+
+        public Edge(int a, int b)
+        {
+            A = (a < b) ? a : b;
+            B = (a < b) ? b : a;
+        }
+    }
+
+    private static List<List<int>> ExtractLoops(GMShape.GMSubShape sub)
+    {
+        Dictionary<Edge, int> edgeCount = new();
+
+        void AddEdge(int a, int b)
+        {
+            Edge e = new(a, b);
+
+            if (!edgeCount.ContainsKey(e))
+                edgeCount[e] = 0;
+
+            edgeCount[e]++;
+        }
+
+        for (int i = 0; i < sub.tris.Count; i += 3)
+        {
+            int a = sub.tris[i];
+            int b = sub.tris[i + 1];
+            int c = sub.tris[i + 2];
+
+            AddEdge(a, b);
+            AddEdge(b, c);
+            AddEdge(c, a);
+        }
+
+        var boundary = edgeCount.Where(e => e.Value == 1).Select(e => e.Key).ToList();
+        Dictionary<int, List<int>> adjacency = new();
+
+        foreach (var e in boundary)
+        {
+            if (!adjacency.ContainsKey(e.A))
+                adjacency[e.A] = new List<int>();
+
+            if (!adjacency.ContainsKey(e.B))
+                adjacency[e.B] = new List<int>();
+
+            adjacency[e.A].Add(e.B);
+            adjacency[e.B].Add(e.A);
+        }
+
+        List<List<int>> loops = new();
+        HashSet<int> visited = new();
+
+        foreach (var start in adjacency.Keys)
+        {
+            if (visited.Contains(start))
+                continue;
+
+            List<int> loop = new();
+
+            int current = start;
+            int prev = -1;
+
+            while (true)
+            {
+                loop.Add(current);
+                visited.Add(current);
+
+                var nextCandidates = adjacency[current];
+                int next = nextCandidates.FirstOrDefault(v => v != prev);
+
+                if (next == start || next == 0 && prev != -1)
+                    break;
+
+                prev = current;
+                current = next;
+
+                if (!adjacency.ContainsKey(current))
+                    break;
+            }
+
+            loops.Add(loop);
+        }
+
+        return loops;
+    }
+
+    private static string BuildPath(List<int> loop, List<GMShape.GMSubShape.Vec2> points)
+    {
+        StringBuilder sb = new();
+
+        var p0 = points[loop[0]];
+
+        sb.Append($"M {p0.x} {p0.y} ");
+
+        for (int i = 1; i < loop.Count; i++)
+        {
+            var p = points[loop[i]];
+            sb.Append($"L {p.x} {p.y} ");
+        }
+
+        sb.Append("Z");
+
+        return sb.ToString();
+    }
+
+    private static (string, float) RGBAtoHex(uint rgba)
+    {
+        byte r = (byte)(rgba >> 24);
+        byte g = (byte)(rgba >> 16);
+        byte b = (byte)(rgba >> 8);
+        byte a = (byte)(rgba);
+
+        return ($"#{r:X2}{g:X2}{b:X2}", (float)a / 255);
+    }
+    #endregion
+}
+#endregion
+
+#endregion
+
+#region Main Resource Dumpers
+
+#region Dump Resources
+async Task DumpResources<T>(IList<T> AssetChunk, Action<T, int> DumpFunc, string AssetType, bool isEnabled)
+{
+    if (isEnabled || UISettings.CSTM_Enable)
+    {
+        var watch = Stopwatch.StartNew();
+        PushToLog($"Dumping {AssetType}s...");
+
+        await Task.Run(() => Parallel.ForEach(AssetChunk, parallelOptions, (asset, state, index) => 
+        {
+            r_num++;
+            if (asset is null) return;
+
+            // var asset is technecally of an unknown type in this context
+            // which means that we can't access any of its properties here (until it goes into the dump func)
+            // so the only way to get the name is to cast it to a common class with the name property
+            string assetName = ((UndertaleNamedResource)asset).Name.Content;
+            if (isEnabled || (UISettings.CSTM_Enable && UISettings.CSTM.Contains(assetName)))
+            {
+                SetProgressBar(null, $"Exporting {AssetType}: {assetName}", r_num, toDump);
+
+                var assetWatch = Stopwatch.StartNew();
+                if (UISettings.LOG)
+                    PushToLog($"Dumping {AssetType} '{assetName}'...");
+
+                // execute correct dump function
+                DumpFunc(asset, (int)index);
+
+                assetWatch.Stop();
+                if (UISettings.LOG)
+                    PushToLog($"{AssetType} '{assetName}' successfully dumped in {assetWatch.ElapsedMilliseconds} ms.");
+            }
+        }));
+
+        watch.Stop();
+        PushToLog($"{AssetType}s complete! Took {watch.ElapsedMilliseconds} ms");
+    }
+}
+#endregion
+
+#region Scripts
+void DumpScript(UndertaleScript s, int index)
+{
+    string scriptName = ((s?.Name?.Content != null || s.Name.Content != "") ? s.Name.Content : $"Unknown_Script_{index}");
+    string assetDir = $"{scriptDir}scripts\\{scriptName}\\";
+
+    // that one script
+    if (scriptName == "_effect_windblown_particles_script" || scriptName == "_effect_blend_script")
+        return;
+
+    string dumpedCode = DumpCode(s.Code) ?? $"function {scriptName}()\n{{\n\n}}"; // YYC fallback
+
+    Directory.CreateDirectory(assetDir);
+    GMScript dumpedScript = new(scriptName)
+    {
+        isCompatibility = !Data.IsVersionAtLeast(2, 3),
+        tags = GetTags(s)
+    };
+    File.WriteAllText($"{assetDir}{scriptName}.yy", JsonSerializer.Serialize(dumpedScript, jsonOptions));
+    File.WriteAllText($"{assetDir}{scriptName}.gml", dumpedCode);
+
+    CreateProjectResource(GMAssetType.Script, scriptName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Objects
+void DumpObject(UndertaleGameObject o, int index)
+{
+    string objectName = ((o?.Name?.Content != null || o.Name.Content != "") ? o.Name.Content : $"Unknown_Object_{index}");
+    string assetDir = $"{scriptDir}objects\\{objectName}\\";
+
+    Directory.CreateDirectory(assetDir);
+
+    GMObject dumpedObject = new(objectName)
+    {
+        spriteId = (o.Sprite is null ? null : new AssetReference(o.Sprite.Name.Content, GMAssetType.Sprite)),
+        solid = o.Solid,
+        visible = o.Visible,
+        managed = o.Managed,
+        spriteMaskId = (o.TextureMaskId is null ? null : new AssetReference(o.TextureMaskId.Name.Content, GMAssetType.Sprite)),
+        persistent = o.Persistent,
+        parentObjectId = (o.ParentId is null ? null : new AssetReference(o.ParentId.Name.Content, GMAssetType.Object)),
+        // physics stuff
+        physicsObject = o.UsesPhysics,
+        physicsSensor = o.IsSensor,
+        physicsShape = (int)o.CollisionShape,
+        physicsGroup = (int)o.Group,
+        physicsDensity = o.Density,
+        physicsRestitution = o.Restitution,
+        physicsLinearDamping = o.LinearDamping,
+        physicsAngularDamping = o.AngularDamping,
+        physicsFriction = o.Friction,
+        physicsStartAwake = o.Awake,
+        physicsKinematic = o.Kinematic,
+        physicsShapePoints = o.PhysicsVertices.Select(p => new GMPoint(p.X, p.Y)).ToArray(),
+        tags = GetTags(o)
+    };
+
+    // find parent folder based on object sprite
+    dumpedObject.parent =
+        (!UISettings.YYMPS && !UISettings.CSTM_Enable 
+        && o.Sprite != null && texGroupStuff.ContainsKey(o.Sprite.Name.Content) && texGroupStuff[o.Sprite.Name.Content].ToLower() != "default")
+        ? GetFolderReference(texGroupStuff[o.Sprite.Name.Content], "Objects/")
+        : GetParentFolder(GMAssetType.Object);
+
+    // events (also referenced from quantum)
+    for (int i = 0; i < o.Events.Count; i++)
+    {
+        var eventList = o.Events[i];
+        var parentEventList = o.ParentId?.Events[i];
+
+        if (i == (int)EventType.PreCreate)
+        {
+            // get current properties
+            List<GMObjectProperty> props = CreateObjectProperties(eventList);
+            List<GMObjectProperty> parentProps = CreateObjectProperties(parentEventList);
+
+            // these are added to the object later.
+            List<GMOverriddenProperty> overriddenprops = new();
+            List<GMObjectProperty> finalprops = new();
+
+            // Iterate through the properties of the current object
+            for (int l = 0; l < props.Count; l++)
+            {
+                GMObjectProperty prop = props[l];
+
+                // if the object has no parent, add all properties
+                if (o.ParentId is null)
+                {
+                    finalprops.Add(prop);
+                }
+                else // Object has a parent
+                {
+
+                    bool isOverridden = false;
+                    UndertaleGameObject parObject = o;
+
+                    while (parObject.ParentId is not null)
+                    {
+                        parObject = parObject.ParentId;
+                        List<GMObjectProperty> currentParentProps = CreateObjectProperties(parObject.Events[(int)EventType.PreCreate]);
+
+                        // Check if the parent has a property with the same name
+                        GMObjectProperty currentParentProp = currentParentProps.FirstOrDefault(p => p.name == prop.name);
+
+                        if (currentParentProp is not null)
+                        {
+                            // If the parent has the property and the value is different, it's overridden
+                            if (prop.value != currentParentProp.value)
+                            {
+                                overriddenprops.Add(new GMOverriddenProperty()
+                                {
+                                    value = prop.value,
+                                    propertyId = new AssetReference(parObject.Name.Content, GMAssetType.Object)
+                                    {
+                                        name = prop.name
+                                    },
+                                    objectId = new AssetReference(parObject.Name.Content, GMAssetType.Object)
+                                });
+                                isOverridden = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    // If the property is not overridden, add it to the final properties
+                    if (!isOverridden)
+                    {
+                        finalprops.Add(prop);
+                    }
+                }
+            }
+
+            // Assign the final properties and overridden properties to the dumped object
+            dumpedObject.properties = finalprops;
+            dumpedObject.overriddenProperties = overriddenprops;
+            continue;
+        }
+
+        foreach (UndertaleGameObject.Event ev in eventList)
+        {
+            AssetReference collisionReference = null;
+            int subType = (int)ev.EventSubtype;
+            // if collision event
+            if (i == (int)EventType.Collision)
+            {
+                // set subType to 0 because its a collision event
+                subType = 0;
+                UndertaleGameObject collisionObject = Data.GameObjects[(int)ev.EventSubtype];
+                if (collisionObject is not null)
+                    collisionReference = new AssetReference(collisionObject.Name.Content, GMAssetType.Object);
+            }
+            dumpedObject.eventList.Add(new GMEvent()
+            {
+                eventType = i,
+                eventNum = subType,
+                collisionObjectId = collisionReference,
+            });
+
+            if (ev.Actions.Count > 0)
+            {
+                var action = ev.Actions[0];
+                UndertaleCode code = action.CodeId;
+                string subTypeString = subType.ToString();
+                if (i == (int)EventType.Collision)
+                    subTypeString = Data.GameObjects[(int)ev.EventSubtype].Name.Content;
+
+                string fileName = $"{((EventType)i).ToString()}_{subTypeString}";
+				// Write Code
+                File.WriteAllText($"{scriptDir}objects\\{objectName}\\{fileName}.gml", DumpCode(code) ?? "");
+            }
+        }
+    }
+
+    File.WriteAllText($"{assetDir}{objectName}.yy", JsonSerializer.Serialize(dumpedObject, jsonOptions));
+
+    CreateProjectResource(GMAssetType.Object, objectName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Sounds
+void DumpSound(UndertaleSound s, int index)
+{
+    string soundName = ((s?.Name?.Content != null || s.Name.Content != "") ? s.Name.Content : $"Unknown_Sound_{index}");
+    string assetDir = $"{scriptDir}sounds\\{soundName}\\";
+    // get the last '/' in the file path.
+    int slashIndex = s.File.Content.LastIndexOf('/');
+    // dumb shit for external sound paths
+    string dumpedSoundPath = assetDir + (slashIndex != -1 ? s.File.Content.Substring(slashIndex, s.File.Content.Length - slashIndex) : s.File.Content);
+    string soundPath = rootDir + s.File.Content.Replace('/', '\\');
+
+    Directory.CreateDirectory(assetDir);
+
+    bool isExternal = File.Exists(rootDir + s.File.Content);
+
+    GMSound dumpedSound = new(soundName)
+    {
+        volume = s.Volume,
+        preload = s.Preload,
+        tags = GetTags(s)
+    };
+
+    // compression
+    if (s.Flags.HasFlag(UndertaleSound.AudioEntryFlags.IsEmbedded)) dumpedSound.compression = 0;
+    else if (s.Flags.HasFlag(UndertaleSound.AudioEntryFlags.IsCompressed)) dumpedSound.compression = 1;
+    else if (s.Flags.HasFlag(UndertaleSound.AudioEntryFlags.IsDecompressedOnLoad)) dumpedSound.compression = 2;
+    else if (isExternal) dumpedSound.compression = 3;
+
+    // handle audiogroups
+    string audioGroupPath = $"{rootDir}audiogroup{s.GroupID}.dat";
+    var audioGroupElement = Data.AudioGroups.ElementAtOrDefault(s.GroupID);
+    string audioGroupName = audioGroupElement?.Name.Content ?? "audiogroup_default";
+
+    dumpedSound.parent =
+        (!UISettings.YYMPS && !UISettings.CSTM_Enable && audioGroupName != "audiogroup_default")
+        ? GetFolderReference(audioGroupName, "Sounds/")
+        : GetParentFolder(GMAssetType.Sound);
+
+    dumpedSound.audioGroupId = new AssetReference()
+    {
+        name = audioGroupName,
+        path = $"audiogroups/{audioGroupName}"
+    };
+
+    // declare these for checking later, trimmed to 3 for ID3 checking
+    byte[] wavSignature = new byte[] { (byte)'R', (byte)'I', (byte)'F' };
+    byte[] oggSignature = new byte[] { (byte)'O', (byte)'g', (byte)'g' };
+    byte[] mp3Signature = new byte[] { (byte)'I', (byte)'D', (byte)'3' };
+    byte[] wmaSignature = new byte[] { (byte)0x30, (byte)0x26, (byte)0xB2 };
+
+    byte[] fileData;
+    // if not using audiogroup_default and is an external audiogroup
+    if (s.GroupID != 0 && File.Exists(audioGroupPath))
+    {
+        // referenced from ExportAllSounds.csx
+        try
+        {
+            UndertaleData data = null;
+            // read the audio group
+            using (FileStream stream = new(audioGroupPath, FileMode.Open, FileAccess.Read))
+                data = UndertaleIO.Read(stream);
+
+            fileData = data.EmbeddedAudio[s.AudioID].Data;
+            File.WriteAllBytes(dumpedSoundPath, fileData);
+        }
+        catch (Exception e)
+        {
+            errorList.Add($"{soundName} | An error occured while trying to load {Data.AudioGroups[s.GroupID].Name.Content}, {e}");
+            IncrementProgressParallel();
+            return;
+        }
+    }
+    else if (s.AudioFile != null)
+        File.WriteAllBytes(dumpedSoundPath, s.AudioFile.Data);
+    else if (isExternal)
+        File.Copy(soundPath, dumpedSoundPath);
+
+    if (File.Exists(dumpedSoundPath))
+        fileData = File.ReadAllBytes(dumpedSoundPath);
+    else
+    {
+        errorList.Add($"{soundName} | File: \"{dumpedSoundPath}\" does not exist.");
+        IncrementProgressParallel();
+        return;
+    }
+
+    // this array is to get the first 3 bytes of the file
+    byte[] fileSignature = new byte[3];
+
+    // copy the first 3 bytes into this array
+    if (fileData.Length > 3)
+        Array.Copy(fileData, 0, fileSignature, 0, 3);
+    else
+    {
+        errorList.Add($"{soundName} | Unable to fetch format (Sound is empty).");
+        return;
+    }
+
+    // set these for future operations
+    WaveStream ws = null;
+    string fileExt = String.Empty;
+
+    // run through every common file type
+    if (fileSignature.SequenceEqual(wavSignature)) fileExt = "wav";
+    else if (fileSignature.SequenceEqual(oggSignature)) fileExt = "ogg";
+    else if (fileSignature.SequenceEqual(mp3Signature)) fileExt = "mp3";
+    else if (fileSignature.SequenceEqual(wmaSignature)) fileExt = "wma";
+    else
+    {
+        errorList.Add($"{soundName} | Unable to fetch format.");
+        return;
+    }
+
+    if (UISettings.FIXAUDIO)
+    {
+        // rename files without extension
+        if (dumpedSoundPath.IndexOf(fileExt, 0, StringComparison.OrdinalIgnoreCase) == -1 && dumpedSoundPath.EndsWith($".{fileExt}"))
+        {
+            string newPath = Path.GetFileNameWithoutExtension(dumpedSoundPath) + $".{fileExt}";
+            File.Move(dumpedSoundPath, newPath);
+            dumpedSoundPath = newPath; // update it
+        }
+    }
+
+    try
+    {
+        ws = fileExt switch
+        {
+            "wav" => new WaveFileReader(dumpedSoundPath),
+            "ogg" => new VorbisWaveReader(dumpedSoundPath),
+            "mp3" => new Mp3FileReader(dumpedSoundPath),
+            "wma" => new MediaFoundationReader(dumpedSoundPath)
+        };
+    }
+    catch
+    {
+        errorList.Add($"{soundName} | Unable to read {fileExt} file.");
+        return;
+    }
+
+    // set the sound file name in the yy file
+    dumpedSound.soundFile = (s.File != null) ? Path.GetFileName(dumpedSoundPath) : String.Empty;
+
+    if (ws != null)
+    {
+        TimeSpan len = ws.TotalTime;
+        double hours = len.TotalHours * 3600; // hours to seconds
+        double minutes = len.TotalMinutes * 60; // minutes to seconds
+        double seconds = len.TotalSeconds;
+        double milliseconds = len.TotalMilliseconds / 1000; // ms to seconds
+
+        dumpedSound.duration = (float)(hours + minutes + seconds + milliseconds) / 4; // them all together (and divided by 4 for some reason)
+
+        // get sample rate from wavestream
+        dumpedSound.sampleRate = ws.WaveFormat.SampleRate;
+
+        // 3d sounds dont seem to decompile correctly with this method, find a more consistent way later.
+        dumpedSound.type = ws.WaveFormat.Channels - 1;
+    }
+
+    File.WriteAllText($"{assetDir}{soundName}.yy", JsonSerializer.Serialize(dumpedSound, jsonOptions));
+
+    CreateProjectResource(GMAssetType.Sound, soundName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Rooms
+void DumpRoom(UndertaleRoom r, int index)
+{
+    string roomName = ((r?.Name?.Content != null || r.Name.Content != "") ? r.Name.Content : $"Unknown_Room_{index}");
+    string assetDir = $"{scriptDir}rooms\\{roomName}\\";
+    // create the dumpedRoom folder
+    Directory.CreateDirectory(assetDir);
+    // construct the object
+    GMRoom dumpedRoom = new GMRoom(roomName)
+    {
+        views = r.Views.Select(v => new GMRoom.GMRView
+        {
+            // inherit doesnt exist, probably not compiled.
+            visible = v.Enabled,
+            xview = v.ViewX,
+            yview = v.ViewY,
+            wview = v.ViewWidth,
+            hview = v.ViewHeight,
+            xport = v.PortX,
+            yport = v.PortY,
+            wport = v.PortWidth,
+            hport = v.PortHeight,
+            hborder = v.BorderX,
+            vborder = v.BorderY,
+            hspeed = v.SpeedX,
+            vspeed = v.SpeedY,
+            objectId = (v.ObjectId is null) ? null : new AssetReference(v.ObjectId.Name.Content, GMAssetType.Object)
+        }).ToArray(),
+        tags = GetTags(r)
+    };
+
+	// add every gameobject instance (from all layers) in room to instanceCreationOrder (layer order independent)
+	foreach (UndertaleRoom.GameObject inst_obj in r.GameObjects)
+	{
+		string instanceName = $"inst_{IdToHex(inst_obj.InstanceID)}";
+		// add an entry to instanceCreationOrder
+		dumpedRoom.instanceCreationOrder.Add(new AssetReference(r.Name.Content, GMAssetType.Room) { name = instanceName});
+	}
+
+    #region layer handling
+    // layers are the hardest part of the room decompiler.
+
+    // loop through each layer
+    for (int i = 0; i < r.Layers.Count; i++)
+    {
+        UndertaleRoom.Layer layer = r.Layers[i];
+        // this is the end result layer
+        GMRoom.GMRLayerBase dumpedLayer = new();
+
+        switch (layer.LayerType)
+        {
+            case UndertaleRoom.LayerType.Path:
+                {
+                    dumpedLayer = new GMRoom.GMRPathLayer(layer.LayerName.Content);
+                    break;
+                }
+            case UndertaleRoom.LayerType.Background:
+                {
+                    dumpedLayer = new GMRoom.GMRBackgroundLayer(layer.LayerName.Content)
+                    {
+                        spriteId = (layer.BackgroundData.Sprite is null) ? null : new AssetReference(layer.BackgroundData.Sprite.Name.Content, GMAssetType.Sprite),
+                        colour = layer.BackgroundData.Color,
+                        x = layer.XOffset,
+                        y = layer.YOffset,
+                        htiled = layer.BackgroundData.TiledHorizontally,
+                        vtiled = layer.BackgroundData.TiledVertically,
+                        hspeed = layer.HSpeed,
+                        vspeed = layer.VSpeed,
+                        stretch = layer.BackgroundData.Stretch,
+                        animationFPS = layer.BackgroundData.AnimationSpeed,
+                        animationSpeedType = (int)layer.BackgroundData.AnimationSpeedType,
+                        userdefinedAnimFPS = true
+                    };
+                    break;
+                }
+            case UndertaleRoom.LayerType.Instances:
+                {
+                    GMRoom.GMRInstanceLayer newLayer = new(layer.LayerName.Content);
+                    foreach (UndertaleRoom.GameObject inst in layer.InstancesData.Instances)
+                    {
+                        // create the name of the instance, it will be used for creation code file names and the instance name itself
+                        string instanceName = $"inst_{IdToHex(inst.InstanceID)}";
+                        // code dump
+                        if (inst.CreationCode is not null)
+                        {
+                            string file_path = $"{assetDir}\\InstanceCreationCode_{instanceName}.gml";
+                            string? dumpedCode = DumpCode(inst.CreationCode);
+                            if (dumpedCode is not null)
+                                File.WriteAllText(file_path, dumpedCode);
+                        }
+
+                        List<GMOverriddenProperty> newProperties = new();
+                        if (inst.PreCreateCode is not null)
+                        {
+                            List<ObjectProperty> propData = new();
+                            void ObtainPropertyData(UndertaleGameObject o)
+                            {
+                                StringBuilder sb = new();
+                                foreach (var ev in o.Events[(int)EventType.PreCreate])
+                                {
+                                    string objectProperty = DumpCode(ev.Actions[0].CodeId, new DecompileSettings
+                                    {
+                                        IndentString = "",
+                                        MacroDeclarationsAtTop = false,
+                                        CreateEnumDeclarations = false,
+                                        UseSemicolon = false,
+                                        AllowLeftoverDataOnStack = true
+                                    });
+                                    sb.Append(objectProperty);
+                                }
+                                Dictionary<string, string> objectProperties = sb.ToString().Replace("event_inherited()", "").FixVariableDeclarations().ObjectPropertiesToDictionary();
+
+                                if (o.ParentId is not null)
+                                    ObtainPropertyData(o.ParentId);
+
+                                foreach (KeyValuePair<string, string> kvp in objectProperties)
+                                {
+                                    if (!propData.Any(p => p.Prop.Key == kvp.Key))
+                                        propData.Add(new ObjectProperty(o.Name.Content, kvp));
+                                }
+                            }
+
+                            ObtainPropertyData(inst.ObjectDefinition);
+
+                            Dictionary<string, string> currentProperties = DumpCode(inst.PreCreateCode, new DecompileSettings
+                            {
+                                IndentString = "",
+                                MacroDeclarationsAtTop = false,
+                                CreateEnumDeclarations = false,
+                                UseSemicolon = false,
+                                AllowLeftoverDataOnStack = true
+                            }).FixVariableDeclarations().ObjectPropertiesToDictionary();
+
+                            foreach (KeyValuePair<string, string> kvp in currentProperties)
+                            {
+                                // get a match
+                                ObjectProperty matchingProperty = propData.FirstOrDefault(op => op.Prop.Key == kvp.Key);
+
+                                if (matchingProperty is null)
+                                    continue;
+
+                                // add property
+                                newProperties.Add(new GMOverriddenProperty()
+                                {
+                                    value = kvp.Value,
+                                    propertyId = new AssetReference(matchingProperty.ObjName, GMAssetType.Object)
+                                    {
+                                        name = kvp.Key.Replace("self.","")
+                                    },
+                                    objectId = new AssetReference(matchingProperty.ObjName, GMAssetType.Object),
+                                });
+                            }
+                        }
+
+                        // construct the instance
+                        newLayer.instances.Add(new GMRoom.GMRInstanceLayer.GMRInstance(instanceName)
+                        {
+                            isDnd = false,
+                            objectId = (inst.ObjectDefinition is null) ? null : new AssetReference(inst.ObjectDefinition.Name.Content, GMAssetType.Object),
+                            inheritCode = false,
+                            hasCreationCode = (inst.CreationCode is not null),
+                            colour = inst.Color,
+                            rotation = inst.Rotation,
+                            scaleX = inst.ScaleX,
+                            scaleY = inst.ScaleY,
+                            imageSpeed = inst.ImageSpeed,
+                            imageIndex = inst.ImageIndex,
+                            inheritedItemId = null,
+                            frozen = false, // doesnt seem to be implemented.
+                            ignore = false, // same here?
+                            inheritItemSettings = false, // again?
+                            x = inst.X,
+                            y = inst.Y,
+                            properties = newProperties
+                        });
+                    }
+                    // push to end result
+                    dumpedLayer = newLayer;
+                    break;
+                }
+            case UndertaleRoom.LayerType.Assets:
+                {
+                    GMRoom.GMRAssetLayer newLayer = new(layer.LayerName.Content);
+                    // legacy tile stuff
+                    foreach (UndertaleRoom.Tile tileAsset in layer.AssetsData.LegacyTiles)
+                    {
+                        newLayer.assets.Add(new GMRoom.GMRAssetLayer.GMRGraphic($"graphic_{IdToHex(tileAsset.InstanceID)}")
+                        {
+                            spriteId = (tileAsset.ObjectDefinition is null) ? null : new AssetReference(tileAsset.ObjectDefinition.Name.Content, GMAssetType.Sprite),
+                            x = tileAsset.X,
+                            y = tileAsset.Y,
+                            w = tileAsset.Width,
+                            h = tileAsset.Height,
+                            u0 = tileAsset.SourceX,
+                            v0 = tileAsset.SourceY,
+                            u1 = tileAsset.SourceX + (int)tileAsset.Width,
+                            v1 = tileAsset.SourceY + (int)tileAsset.Height,
+                            colour = tileAsset.Color
+                        });
+                    }
+
+                    // normal assets
+                    foreach (UndertaleRoom.SpriteInstance spriteAsset in layer.AssetsData.Sprites)
+                    {
+                        if (spriteAsset.Sprite is null || spriteAsset is null)
+                            continue;
+
+                        newLayer.assets.Add(new GMRoom.GMRSpriteGraphic
+                        {
+                            name = spriteAsset.Name.Content,
+                            x = spriteAsset.X,
+                            y = spriteAsset.Y,
+                            spriteId = new AssetReference(spriteAsset.Sprite.Name.Content, GMAssetType.Sprite),
+                            headPosition = spriteAsset.FrameIndex,
+                            rotation = spriteAsset.Rotation,
+                            scaleX = spriteAsset.ScaleX,
+                            scaleY = spriteAsset.ScaleY,
+                            animationSpeed = spriteAsset.AnimationSpeed,
+                            colour = spriteAsset.Color,
+                            inheritedItemId = null, // probably not compiled
+                            frozen = false, // oh god this again
+                            ignore = false,
+                            inheritItemSettings = false,
+                        });
+                    }
+
+                    // push to end result
+                    dumpedLayer = newLayer;
+                    break;
+                }
+            case UndertaleRoom.LayerType.Tiles:
+                {
+                    GMRoom.GMRTileLayer newLayer = new(layer.LayerName.Content);
+                    // construct tile data, itll be for the tileset handling below
+                    GMRoom.GMRTileLayer.GMRTileData tileData = new()
+                    {
+                        SerialiseWidth = (int)layer.TilesData.TilesX,
+                        SerialiseHeight = (int)layer.TilesData.TilesY,
+                    };
+
+                    newLayer.tilesetId = (layer.TilesData.Background is null) ? null : new AssetReference(layer.TilesData.Background.Name.Content, GMAssetType.TileSet);
+                    newLayer.x = layer.XOffset;
+                    newLayer.y = layer.YOffset;
+                    newLayer.tiles = tileData;
+
+                    // obtain tile data
+                    tileData.TileSerialiseData.AddRange(layer.TilesData.TileData.SelectMany(row => row));
+
+                    dumpedLayer = newLayer;
+                    break;
+                }
+            case UndertaleRoom.LayerType.Effect:
+                {
+                    // afaik the same as the base
+                    dumpedLayer = new GMRoom.GMREffectLayer(layer.LayerName.Content);
+                    break;
+                }
+            default:
+                {
+                    dumpedLayer = new GMRoom.GMRLayerBase(layer.LayerName.Content);
+                    break;
+                }
+        }
+        // fetch these from the 'layer' variable
+        dumpedLayer.visible = layer.IsVisible;
+        dumpedLayer.depth = layer.LayerDepth;
+        dumpedLayer.effectEnabled = layer.EffectEnabled;
+        dumpedLayer.effectType = layer.EffectType?.Content;
+
+        dumpedLayer.properties = layer.EffectProperties.Select(p => new GMRoom.GMREffectProperty
+        {
+            // TODO - maybe find out better safe defaults
+            name = (p?.Name?.Content != null) ? p.Name.Content : "",
+            type = (p?.Kind != null) ? (int)p.Kind : 0,
+            value = (p?.Value?.Content != null) ? p.Value.Content : ""
+        }).ToArray();
+
+        bool isFirstLayer = (i == 0 && layer.LayerDepth == 0);
+        bool isAlignedWithPrevious = (i != 0 && r.Layers[i - 1].LayerDepth == layer.LayerDepth + 100);
+        //bool isAlignedWithNext = (i != r.Layers.Count && r.Layers[i + 1].LayerDepth == layer.LayerDepth - 100);
+        dumpedLayer.userdefinedDepth = (isFirstLayer || isAlignedWithPrevious);
+
+        dumpedLayer.inheritLayerDepth = false;
+        dumpedLayer.inheritLayerSettings = false;
+        //dumpedLayer.inheritVisibility = true;
+        //dumpedLayer.inheritSubLayers = false;
+        dumpedLayer.hierarchyFrozen = false;
+
+        dumpedLayer.gridX = r.GridWidth;
+        dumpedLayer.gridY = r.GridHeight;
+
+        dumpedRoom.layers.Add(dumpedLayer);
+    }
+    #endregion
+
+    // decompile roomCC
+    if (r.CreationCodeId is not null)
+    {
+        dumpedRoom.creationCodeFile = $"rooms/{r.Name.Content}/RoomCreationCode.gml";
+        File.WriteAllText($"{assetDir}\\RoomCreationCode.gml", DumpCode(r.CreationCodeId) ?? "");
+    }
+    // settings stuff
+    dumpedRoom.roomSettings = new GMRoom.GMRoomSettings
+    {
+        inheritRoomSettings = false,
+        Width = r.Width,
+        Height = r.Height,
+        persistent = r.Persistent
+    };
+    dumpedRoom.viewSettings = new GMRoom.GMRoomViewSettings
+    {
+        inheritViewSettings = false,
+        clearDisplayBuffer = r.Flags.HasFlag(UndertaleRoom.RoomEntryFlags.DoNotClearDisplayBuffer),
+        clearViewBackground = r.Flags.HasFlag(UndertaleRoom.RoomEntryFlags.ClearViewBackground),
+        enableViews = r.Flags.HasFlag(UndertaleRoom.RoomEntryFlags.EnableViews)
+    };
+    dumpedRoom.physicsSettings = new GMRoom.GMRoomPhysicsSettings
+    {
+        inheritPhysicsSettings = false,
+        PhysicsWorld = r.World,
+        PhysicsWorldGravityX = r.GravityX,
+        PhysicsWorldGravityY = r.GravityY,
+        PhysicsWorldPixToMetres = r.MetersPerPixel
+    };
+
+    // turn object into json
+    string json_string = JsonSerializer.Serialize(dumpedRoom, jsonOptions);
+    File.WriteAllText($"{assetDir}\\{r.Name.Content}.yy", json_string);
+
+    CreateProjectResource(GMAssetType.Room, roomName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Sprites
+void DumpSprite(UndertaleSprite s, int index)
+{
+    bool exportFrames = true;
+    string spriteName = ((s?.Name?.Content != null || s.Name.Content != "") ? s.Name.Content : $"Unknown_Sprite_{index}");
+    string assetDir = $"{scriptDir}sprites\\{spriteName}\\";
+    string layersPath = assetDir + "layers\\";
+    string layerId = Guid.NewGuid().ToString();
+
+    // kill gamemakers internal sprites
+    if (spriteName.StartsWith("_filter_") || spriteName.StartsWith("_effect_")) return;
+
+    Directory.CreateDirectory(assetDir);
+
+    if ((int)s.SSpriteType == 0) // if normal, make layers path
+        Directory.CreateDirectory(layersPath);
+
+    GMSprite dumpedSprite = new(spriteName)
+    {
+        bboxMode = (int)s.BBoxMode,
+        preMultiplyAlpha = s.Transparent,
+        edgeFiltering = s.Smooth,
+        bbox_left = s.MarginLeft,
+        bbox_right = s.MarginRight,
+        bbox_bottom = s.MarginBottom,
+        bbox_top = s.MarginTop,
+        width = (int)s.Width,
+        height = (int)s.Height,
+        type = (int)s.SSpriteType,
+        // taken from quantum (thanks)
+        collisionKind = s.SepMasks switch
+        {
+            UndertaleSprite.SepMaskType.AxisAlignedRect => 1,
+            UndertaleSprite.SepMaskType.Precise => 0,
+            UndertaleSprite.SepMaskType.RotatedRect => 5,
+        },
+        nineSlice = s.V3NineSlice is null ? null : new GMSprite.GMNineSliceData
+        {
+            enabled = s.V3NineSlice.Enabled,
+            left = s.V3NineSlice.Left,
+            right = s.V3NineSlice.Right,
+            top = s.V3NineSlice.Top,
+            bottom = s.V3NineSlice.Bottom,
+            tileMode = s.V3NineSlice.TileModes.Select(e => (int)e).ToArray()
+        },
+        tags = GetTags(s)
+    };
+
+    // find parent folder
+    dumpedSprite.parent =
+        (!UISettings.YYMPS && !UISettings.CSTM_Enable && texGroupStuff.ContainsKey(spriteName) && texGroupStuff[spriteName].ToLower() != "default")
+        ? GetFolderReference(texGroupStuff[spriteName], "Sprites/")
+        : GetParentFolder(GMAssetType.Sprite);
+
+    if (s.V2Sequence is not null)
+        dumpedSprite.sequence = SequenceDumper(s.V2Sequence, s);
+    else
+    {
+        dumpedSprite.sequence = new GMSequence(spriteName)
+        {
+            length = s.Textures.Count,
+            xorigin = s.OriginX,
+            yorigin = s.OriginY,
+            playbackSpeed = s.GMS2PlaybackSpeed,
+            playbackSpeedType = (int)s.GMS2PlaybackSpeedType,
+            spriteId = new AssetReference(spriteName, GMAssetType.Sprite),
+        };
+    }
+    // precise per frame checking
+    if (dumpedSprite.collisionKind == 0 && s.CollisionMasks.Count > 1)
+        dumpedSprite.collisionKind = 4;
+
+    // origin calculations
+    int originX = s.OriginX;
+    int originY = s.OriginY;
+    int width = (int)s.Width;
+    int height = (int)s.Height;
+    eOrigin o = eOrigin.Custom;
+
+    if (originX == 0 && originY == 0)
+        o = eOrigin.TopLeft;
+    else if (originX == width / 2 && originY == 0)
+        o = eOrigin.TopCentre;
+    else if (originX == width && originY == 0)
+        o = eOrigin.TopRight;
+    else if (originX == 0 && originY == width / 2)
+        o = eOrigin.MiddleLeft;
+    else if (originX == width / 2 && originY == height / 2)
+        o = eOrigin.MiddleCentre;
+    else if (originX == width && originY == height / 2)
+        o = eOrigin.MiddleRight;
+    else if (originX == 0 && originY == height)
+        o = eOrigin.BottomLeft;
+    else if (originX == width / 2 && originY == height)
+        o = eOrigin.BottomCentre;
+    else if (originX == width && originY == height)
+        o = eOrigin.BottomRight;
+
+    dumpedSprite.origin = o;
+
+    // if there is at least 1 frame
+    if (s.Textures.Count > 0 && s.Textures[0] is not null)
+    {
+        // thank you for the idea melia!!
+        if (s.Textures[0].Texture?.TexturePage.TextureData.Width == s.Width && s.Textures[0].Texture?.TexturePage.TextureData.Height == s.Height)
+            dumpedSprite.For3D = true;
+        // create the layer
+        dumpedSprite.layers.Add(new GMSprite.GMImageLayer(layerId));
+    }
+    else if ((int)s.SSpriteType == 3 && s.VectorShapes.Count != 0) // create layer for Vector sprites
+        dumpedSprite.layers.Add(new GMSprite.GMImageLayer(layerId));
+    else
+        exportFrames = false;
+
+    AssetReference texGroup = GetTextureGroup(spriteName);
+    // another check for For3D
+    if (texGroup.name.StartsWith("__YY__")) dumpedSprite.For3D = true;
+    else dumpedSprite.textureGroupId = texGroup;
+
+    GMSpriteFramesTrack framesTrack = new();
+
+    // function to add to framesTrack
+    void AddKeyFrame(string frameGUID, int frameNum)
+    {
+        Keyframe<SpriteFrameKeyframe> currentKeyframe = new()
+        {
+            Length = 1f,
+            Key = (float)frameNum,
+        };
+
+        currentKeyframe.Channels.Add("0", new SpriteFrameKeyframe
+        {
+            Id = new AssetReference(spriteName, GMAssetType.Sprite) { name = frameGUID },
+            name = String.Empty
+        });
+
+        framesTrack.keyframes.Keyframes.Add(currentKeyframe);
+    }
+
+    // dump frames
+    switch ((int)s.SSpriteType)
+    {
+        // Normal (Raster)
+        case 0:
+            {
+                for (int i = 0; i < s.Textures.Count; i++)
+                {
+                    UndertaleSprite.TextureEntry tex = s.Textures[i];
+                    string frameGUID = Guid.NewGuid().ToString();
+
+                    if (exportFrames)
+                    {
+                        dumpedSprite.frames.Add(new GMSprite.GMSpriteFrame(frameGUID));
+
+                        // create directory for current frame
+                        Directory.CreateDirectory($"{layersPath}{frameGUID}");
+                        // Set frames to be dumped later
+                        imagesToDump.Add(new ImageAssetData(tex.Texture, assetDir, frameGUID + ".png", spriteName));
+                        imagesToDump.Add(new ImageAssetData(tex.Texture, $"{layersPath}{frameGUID}\\", layerId + ".png", spriteName));
+                    }
+
+                    AddKeyFrame(frameGUID, i);
+                }
+            }
+            break;
+
+        // SWF
+        // (Can't test with ~2024.14, since that SWF version is too new for UTMT, so use 2022 LTS)
+        // For this, this .swf file would be $"{frameGUID}.swf", and that's all that is needed
+        // there is sometimes a sprite included, but it's usually complete garbage
+
+        // but UTMT doesn't seem to have a way to just get the original .swf
+        // and I am not making a UndertaleYYSWF to SWF convertor, that would be way too big and time-consuming
+        // and SWF is a dead filetype anyways, so yeah
+        case 1:
+            errorList.Add($"{dumpedSprite.name} | SWF sprites are not implemented, set to blank image.");
+            break;
+
+        // SPINE
+        case 2:
+            {
+                if (s.Textures.Count > 1)
+                {
+                    errorList.Add($"{dumpedSprite.name} | SPINE Sprite has more then 1 texture, please report this immediately");
+                    break;
+                }
+
+                if (s.Textures.Count == 0)
+                {
+                    errorList.Add($"{dumpedSprite.name} | SPINE Sprite has 0 textures, please report this immediately");
+                    break;
+                }
+
+                UndertaleSprite.TextureEntry tex = s.Textures[0];
+                string frameGUID = Guid.NewGuid().ToString();
+
+                if (exportFrames)
+                {
+                    dumpedSprite.frames.Add(new GMSprite.GMSpriteFrame(frameGUID));
+
+                    // Test Examples: https://en.esotericsoftware.com/spine-examples
+                    // Note that loading them is a pain
+                    // some are just unimportable, even in 2024.14
+                    // You also have to make sure the .json is named "{name}-pma.json" so it links correctly
+
+                    // Although this is in a for loop, it shouldn't break since there's only ever one frame, which is the atlas image
+
+                    // Dump SPINE Json and Atlas files
+                    File.WriteAllText($"{assetDir}{frameGUID}.json", s.SpineJSON);
+                    File.WriteAllText($"{assetDir}{frameGUID}.atlas", s.SpineAtlas);
+
+                    // Get the main texture filename from the first line in the atlas (includes file extension)
+                    string SpineTextureName = string.Empty;
+                    using (StringReader r = new(s.SpineAtlas))
+                        SpineTextureName = r.ReadLine();
+
+                    // Dump atlas texture as GM sprite frame (not used in SPINE system, only in GM UI)
+                    imagesToDump.Add(new ImageAssetData(tex.Texture, assetDir, frameGUID + ".png", spriteName));
+                    // Dump SPINE Atlas texture
+                    if (SpineTextureName != string.Empty)
+                        imagesToDump.Add(new ImageAssetData(tex.Texture, assetDir, SpineTextureName, spriteName));
+                }
+
+                AddKeyFrame(frameGUID, 0);
+            }
+            break;
+
+        // Vector (SVGs)
+        case 3:
+            {
+                // theres should only ever one, but whatever
+                for (int i = 0; i < s.VectorShapes.Count; i++)
+                {
+                    // set shit up
+                    string frameGUID = Guid.NewGuid().ToString();
+                    dumpedSprite.frames.Add(new GMSprite.GMSpriteFrame(frameGUID));
+
+                    // get current shape
+                    var rawVecShape = s.VectorShapes[i];
+
+                    GMShape vecShape = new()
+                    {
+                        maxX = rawVecShape.MaxX,
+                        maxY = rawVecShape.MaxY,
+                        minX = rawVecShape.MinX,
+                        minY = rawVecShape.MinY
+                    };
+
+                    #region Dump GM .dat file
+                    // add all the shape data
+                    foreach (var rawStyleGroup in rawVecShape.StyleGroups)
+                    {
+                        GMShape.GMStyleGroups styleGroup = new();
+
+                        // add fill color data
+                        foreach (var rawfillStyle in rawStyleGroup.FillStyles)
+                        {
+                            var fData = rawfillStyle.SolidFillData;
+                            styleGroup.fillStyles.Add(new()
+                            {
+                                // fuck this bitwise shit took a while to figure out
+                                rgba = (
+                                    ((uint)fData.Red << 24) |
+                                    ((uint)fData.Green << 16) |
+                                    ((uint)fData.Blue << 8) |
+                                    (uint)fData.Alpha)
+                            });
+                        }
+
+                        // add shape data
+                        foreach (var rawSubShape in rawStyleGroup.Subshapes)
+                        {
+                            GMShape.GMSubShape SubShape = new()
+                            {
+                                fillStyle0 = rawSubShape.FillStyleOne,
+                                fillStyle1 = rawSubShape.FillStyleTwo,
+                                lineStyle = rawSubShape.LineStyle
+                            };
+
+                            // add AAVectors
+                            foreach (var AAVec in rawSubShape.AAVectors)
+                                SubShape.AAVectors.Add(new() { x = AAVec.X, y = AAVec.Y });
+
+                            // add Points
+                            foreach (var Point in rawSubShape.Points)
+                                SubShape.points.Add(new() { x = Point.X, y = Point.Y });
+
+                            // add PointColors
+                            foreach (uint PointCol in rawSubShape.PointColors)
+                                SubShape.pointColours.Add(PointCol);
+
+                            // add Triangles
+                            foreach (int Tri in rawSubShape.Triangles)
+                                SubShape.tris.Add(Tri);
+
+                            // since UTMT puts them in a class with seperate X and Y vars
+                            // and GM puts them in a flat 2D array
+                            foreach (var AALine in rawSubShape.AALines)
+                            {
+                                SubShape.AALines.Add(AALine.X);
+                                SubShape.AALines.Add(AALine.Y);
+                            }
+
+                            styleGroup.shapes.Add(SubShape);
+                        }
+
+                        // add color fill and shape data to thing
+                        vecShape.styleGroups.Add(styleGroup);
+                    }
+
+                    // save stuff to a .dat file for some reason
+                    File.WriteAllText($"{assetDir}{frameGUID}.dat", JsonSerializer.Serialize(vecShape, jsonOptions));
+                    #endregion
+
+                    // Dump .SVG file
+                    string SVGContents = GMShapeToSVG.Convert(vecShape);
+                    File.WriteAllText($"{assetDir}{frameGUID}.svg", SVGContents);
+
+                    // Dump .SVG as PNG
+                    using (MagickImage image = new(Encoding.UTF8.GetBytes(SVGContents)))
+                        image.Write($"{assetDir}{frameGUID}.png", MagickFormat.Png);
+
+                    AddKeyFrame(frameGUID, i);
+                }
+            }
+            break;
+    }
+
+    if (s.V2Sequence is not null)
+    {
+        // fix sequence tracks
+        for (int i = 0; i < dumpedSprite.frames.Count; i++)
+        {
+            var frameName = dumpedSprite.frames[i].name;
+            // sprites should only have one track
+            dumpedSprite.sequence.tracks[0].keyframes.Keyframes[i].Channels["0"].Id.name = frameName;
+        }
+    }
+    else
+        dumpedSprite.sequence.tracks.Add(framesTrack);
+
+    File.WriteAllText($"{assetDir}{spriteName}.yy", JsonSerializer.Serialize(dumpedSprite, jsonOptions));
+    CreateProjectResource(GMAssetType.Sprite, spriteName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Fonts
+void DumpFont(UndertaleFont f, int index)
+{
+    string fontName = ((f?.Name?.Content != null || f.Name.Content != "") ? f.Name.Content : $"Unknown_Font_{index}");
+    string assetDir = $"{scriptDir}fonts\\{fontName}\\";
+
+    Directory.CreateDirectory(assetDir);
+
+    GMFont dumpedFont = new(fontName)
+    {
+        size = f.EmSize,
+        fontName = f.DisplayName.Content,
+        bold = f.Bold,
+        italic = f.Italic,
+        first = (int)f.RangeStart,
+        charset = f.Charset,
+        AntiAlias = (int)f.AntiAliasing,
+        last = (int)f.RangeEnd,
+        ascender = (int)f.Ascender,
+        lineHeight = (int)f.LineHeight,
+        ascenderOffset = (int)f.AscenderOffset,
+        maintainGms1Font = true,
+        parent = GetParentFolder(GMAssetType.Font),
+        textureGroupId = GetTextureGroup(fontName),
+        tags = GetTags(f)
+    };
+
+    // style name
+    dumpedFont.styleName = f.Bold
+        ? (f.Italic ? "Bold Italic" : "Bold")
+        : (f.Italic ? "Italic" : "Regular");
+
+    // glyph
+    dumpedFont.glyphs = f.Glyphs.ToDictionary(g => (int)g.Character, g => new GMFont.GMGlyph
+    {
+        character = (int)g.Character,
+        x = (int)g.SourceX,
+        y = (int)g.SourceY,
+        w = (int)g.SourceWidth,
+        h = (int)g.SourceHeight,
+        offset = (int)g.Offset,
+        shift = (int)g.Shift,
+    });
+
+
+    // range (heavily referenced quantum)
+    GMFont.GMFontRange fontRange = null;
+    for (int i = (int)f.RangeStart; i <= f.RangeEnd; i++)
+    {
+        if (dumpedFont.glyphs.ContainsKey(i))
+        {
+            if (fontRange is not null) dumpedFont.ranges.Add(fontRange);
+            fontRange = null;
+        }
+        else
+        {
+            if (fontRange is null)
+                fontRange = new GMFont.GMFontRange() { lower = i };
+
+            fontRange.upper = i;
+        }
+    }
+
+    if (fontRange is not null)
+        dumpedFont.ranges.Add(fontRange);
+
+    imagesToDump.Add(new ImageAssetData(f.Texture, assetDir, fontName + ".png", fontName));
+
+    File.WriteAllText($"{assetDir}{fontName}.yy", JsonSerializer.Serialize(dumpedFont, jsonOptions));
+
+    CreateProjectResource(GMAssetType.Font, fontName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Sequences
+GMSequence SequenceDumper(UndertaleSequence s, UndertaleSprite spr = null)
+{
+    var seqName = ((s?.Name?.Content != null || s.Name.Content != "") ? s.Name.Content : $"Unknown_Sequence");
+    GMSequence dumpedSequence = new(seqName)
+    {
+        playback = (int)s.Playback,
+        playbackSpeed = s.PlaybackSpeed,
+        playbackSpeedType = (int)s.PlaybackSpeedType,
+        length = s.Length,
+        xorigin = s.OriginX,
+        yorigin = s.OriginY,
+        volume = s.Volume
+    };
+
+    if (spr is not null)
+        dumpedSequence.parent = GetParentFolder(GMAssetType.Sprite);
+    else
+    {
+        dumpedSequence.parent = GetParentFolder(GMAssetType.Sequence);
+        dumpedSequence.tags = GetTags(s);
+    }
+
+    // broadcast messages!
+    foreach (UndertaleSequence.Keyframe<UndertaleSequence.BroadcastMessage> broadcastMessage in s.BroadcastMessages)
+    {
+        Keyframe<MessageEventKeyframe> currentKeyframe = new()
+        {
+            Key = broadcastMessage.Key,
+            Length = broadcastMessage.Length,
+            Stretch = broadcastMessage.Stretch,
+            Disabled = broadcastMessage.Disabled
+        };
+        foreach (var channel in broadcastMessage.Channels)
+        {
+            currentKeyframe.Channels.Add(channel.Channel.ToString(), new MessageEventKeyframe() { Events = channel.Value.Messages.Select(message => message.Content).ToArray() });
+        }
+        dumpedSequence.events.Keyframes.Add(currentKeyframe);
+    }
+
+
+    // moment!!
+    string evstubscript = String.Empty;
+    if (s.Moments is not null)
+    {
+        foreach (UndertaleSequence.Keyframe<UndertaleSequence.Moment> moment in s.Moments)
+        {
+            Keyframe<MomentsEventKeyframe> currentKeyframe = new()
+            {
+                Key = moment.Key,
+                Length = moment.Length,
+                Stretch = moment.Stretch,
+                Disabled = moment.Disabled
+            };
+            foreach (var channel in moment.Channels)
+            {
+                UndertaleString? currentEvent = null;
+                MomentsEventKeyframe mom = new();
+                if (channel.Value.Events.Count > 1)
+                    PushToLog("more than one moment in a single keyframe! report this!");
+                else if (channel.Value.Events.Count < 1)
+                    currentEvent = channel.Value.Events[0];
+                // if it exists
+                if (currentEvent is not null)
+                {
+                    UndertaleScript scriptData = Data.Scripts.ByName(currentEvent.Content);
+                    // if the script was found
+                    if (scriptData is not null)
+                        evstubscript = Regex.Replace(scriptData.Code.ParentEntry.Name.Content, "gml_Script_|gml_GlobalScript_", "");
+
+                    mom.Events.Add(Regex.Replace(currentEvent.Content, "gml_Script_|gml_GlobalScript_", ""));
+                    currentKeyframe.Channels.Add(channel.Channel.ToString(), mom);
+                }
+                dumpedSequence.moments.Keyframes.Add(currentKeyframe);
+            }
+        }
+    }
+
+    // set the stubscript
+    if (evstubscript != String.Empty)
+        dumpedSequence.eventStubScript = new AssetReference(evstubscript, GMAssetType.Script);
+
+    // eventToFunction stuff
+    dumpedSequence.eventToFunction = s.FunctionIDs.ToDictionary(e => e.ID.ToString(), f => Regex.Replace(f.FunctionName.Content, "gml_Script_|gml_GlobalScript_", ""));
+
+    // need to make this a function because tracks can appear recursively!
+    // for some reason the recursed tracks are in a normal list instead of an UndertaleSimpleList??
+    List<dynamic> DumpTracks(ICollection<UndertaleSequence.Track> tracks, uint parentColour = 69U) // any number that isnt in the color enum lol
+    {
+        List<dynamic> dumpedTracks = new();
+
+        foreach (UndertaleSequence.Track track in tracks)
+        {
+            uint colour = parentColour != 69U ? parentColour : GetRandomColour();
+
+            GMBaseTrack currentTrack = new GMBaseTrack();
+
+            // some notes:
+            // theres just a switch statement in UTMT with all of the track types lol!
+            // for some reason keyframes have a list variable inside of it containing the ACTUAL data.
+
+            switch (track.ModelName.Content) // get the name of the track type
+            {
+                case "GMAudioTrack":
+                    {
+                        currentTrack = new GMAudioTrack();
+                        var keyframes = ((UndertaleSequence.AudioKeyframes)track.Keyframes).List;
+
+                        foreach (var keyframe in keyframes)
+                        {
+                            ((GMAudioTrack)currentTrack).keyframes.Keyframes.Add(new Keyframe<AudioKeyframe>()
+                            {
+                                Key = keyframe.Key,
+                                Length = keyframe.Length,
+                                Stretch = keyframe.Stretch,
+                                Disabled = keyframe.Disabled,
+                                Channels = keyframe.Channels.ToDictionary(k => k.Channel.ToString(), k => new AudioKeyframe()
+                                {
+                                    Mode = (int)k.Value.Mode,
+                                    Id = new AssetReference(k.Value.Resource.Resource.Name.Content, GMAssetType.Sound)
+                                })
+                            });
+                        }
+
+                        break;
+                    }
+                case "GMInstanceTrack":
+                    {
+                        currentTrack = new GMInstanceTrack();
+                        var keyframes = ((UndertaleSequence.InstanceKeyframes)track.Keyframes).List;
+
+                        foreach (var keyframe in keyframes)
+                        {
+                            // if the asset is gone.
+                            if (keyframe.Channels.Any(r => r.Value.Resource.Resource is null)) break;
+
+                            ((GMInstanceTrack)currentTrack).keyframes.Keyframes.Add(new Keyframe<AssetInstanceKeyframe>()
+                            {
+                                Key = keyframe.Key,
+                                Length = keyframe.Length,
+                                Stretch = keyframe.Stretch,
+                                Disabled = keyframe.Disabled,
+                                Channels = keyframe.Channels.ToDictionary(k => k.Channel.ToString(), k => new AssetInstanceKeyframe()
+                                {
+                                    Id = new AssetReference(k.Value.Resource.Resource.Name.Content, GMAssetType.Object)
+                                })
+                            });
+
+                        }
+
+                        break;
+                    }
+                case "GMSpriteFramesTrack":
+                    {
+                        if (spr is null)
+                            errorList.Add($"{s.Name.Content} | Track type '{track.ModelName.Content}' inside normal sequence?");
+
+                        currentTrack = new GMSpriteFramesTrack();
+                        var keyframes = ((UndertaleSequence.SpriteFramesKeyframes)track.Keyframes).List;
+
+                        for (int i = 0; i < keyframes.Count; i++)
+                        {
+                            var keyframe = keyframes[i];
+
+                            (currentTrack as GMSpriteFramesTrack).keyframes.Keyframes.Add(new Keyframe<SpriteFrameKeyframe>()
+                            {
+                                Key = keyframe.Key,
+                                Length = keyframe.Length,
+                                Stretch = keyframe.Stretch,
+                                Disabled = keyframe.Disabled,
+                                Channels = keyframe.Channels.ToDictionary(k => k.Channel.ToString(), k => new SpriteFrameKeyframe()
+                                {
+                                    Id = new AssetReference(spr.Name.Content, GMAssetType.Sprite)
+                                })
+                            });
+                        }
+
+                        break;
+                    }
+                case "GMGraphicTrack":
+                    {
+                        currentTrack = new GMGraphicTrack();
+                        var keyframes = ((UndertaleSequence.GraphicKeyframes)track.Keyframes).List;
+
+                        foreach (var keyframe in keyframes)
+                        {
+                            if (keyframe.Channels.Any(r => r.Value.Resource.Resource is null)) break;
+
+                            (currentTrack as GMGraphicTrack).keyframes.Keyframes.Add(new Keyframe<AssetSpriteKeyframe>()
+                            {
+                                Key = keyframe.Key,
+                                Length = keyframe.Length,
+                                Stretch = keyframe.Stretch,
+                                Disabled = keyframe.Disabled,
+                                Channels = keyframe.Channels.ToDictionary(k => k.Channel.ToString(), k => new AssetSpriteKeyframe()
+                                {
+                                    Id = new AssetReference(k.Value.Resource.Resource.Name.Content, GMAssetType.Sprite)
+                                })
+                            });
+                        }
+
+                        break;
+                    }
+                case "GMSequenceTrack":
+                    {
+                        currentTrack = new GMSequenceTrack();
+                        var keyframes = ((UndertaleSequence.SequenceKeyframes)track.Keyframes).List;
+
+                        foreach (var keyframe in keyframes)
+                        {
+                            if (keyframe.Channels.Any(r => r.Value.Resource.Resource is null)) break;
+
+                            ((GMSequenceTrack)currentTrack).keyframes.Keyframes.Add(new Keyframe<AssetSequenceKeyframe>()
+                            {
+                                Key = keyframe.Key,
+                                Length = keyframe.Length,
+                                Stretch = keyframe.Stretch,
+                                Disabled = keyframe.Disabled,
+                                Channels = keyframe.Channels.ToDictionary(k => k.Channel.ToString(), k => new AssetSequenceKeyframe()
+                                {
+                                    Id = new AssetReference(k.Value.Resource.Resource.Name.Content, GMAssetType.Sequence)
+                                })
+                            });
+                        }
+
+                        break;
+                    }
+                case "GMRealTrack":
+                    {
+                        currentTrack = new GMRealTrack();
+                        var keyframes = ((UndertaleSequence.RealKeyframes)track.Keyframes).List;
+
+                        foreach (var keyframe in keyframes)
+                        {
+                            Keyframe<RealKeyframe> currentKeyframe = new()
+                            {
+                                Key = keyframe.Key,
+                                Length = keyframe.Length,
+                                Stretch = keyframe.Stretch,
+                                Disabled = keyframe.Disabled,
+                                name = String.Empty
+                            };
+
+                            foreach (var channel in keyframe.Channels)
+                            {
+                                // set the value lol
+                                RealKeyframe value = new()
+                                {
+                                    RealValue = channel.Value.Value,
+                                    AnimCurveId = (channel.Value.AssetAnimCurve is not null && channel.Value.AssetAnimCurve.Resource is not null ? new AssetReference(channel.Value.AssetAnimCurve.Resource.Name.Content, GMAssetType.AnimationCurve) : null),
+                                };
+                                // embedded anim curve handling
+                                if (channel.Value.IsCurveEmbedded && channel.Value.EmbeddedAnimCurve is not null)
+                                {
+                                    UndertaleAnimationCurve c = channel.Value.EmbeddedAnimCurve;
+
+                                    string curveName = char.ToUpper(track.Name.Content[0]) + track.Name.Content.Substring(1);
+
+                                    GMAnimCurve dumpedCurve = new(curveName)
+                                    {
+                                        function = (int)c.GraphType,
+                                        tags = GetTags(c)
+                                    };
+
+                                    foreach (UndertaleAnimationCurve.Channel curveChannel in c.Channels)
+                                    {
+                                        GMAnimCurve.GMAnimCurveChannel dumpedChannel = new(curveChannel.Name.Content);
+
+                                        foreach (UndertaleAnimationCurve.Channel.Point point in curveChannel.Points)
+                                        {
+                                            GMAnimCurve.GMAnimCurvePoint dumpedPoint = new(point.X, point.Value)
+                                            {
+                                                th0 = point.BezierX0,
+                                                th1 = point.BezierX1,
+                                                tv0 = point.BezierY0,
+                                                tv1 = point.BezierY1
+                                            };
+                                            dumpedChannel.points.Add(dumpedPoint);
+                                        }
+                                        dumpedCurve.channels.Add(dumpedChannel);
+                                    }
+                                    value.EmbeddedAnimCurve = dumpedCurve;
+                                }
+
+
+                                currentKeyframe.Channels.Add(channel.Channel.ToString(), value);
+                            }
+                            ((GMRealTrack)currentTrack).keyframes.Keyframes.Add(currentKeyframe);
+                        }
+
+                        break;
+                    }
+                case "GMColourTrack":
+                    {
+                        currentTrack = new GMColourTrack();
+                        var keyframes = ((UndertaleSequence.IntKeyframes)track.Keyframes).List;
+
+                        foreach (var keyframe in keyframes)
+                        {
+                            Keyframe<ColourKeyframe> currentKeyframe = new()
+                            {
+                                Key = keyframe.Key,
+                                Length = keyframe.Length,
+                                Stretch = keyframe.Stretch,
+                                Disabled = keyframe.Disabled
+                            };
+
+                            foreach (var channel in keyframe.Channels)
+                            {
+                                // set the value lol
+                                ColourKeyframe value = new()
+                                {
+                                    // cast into uint
+                                    Colour = unchecked((uint)channel.Value.Value),
+                                    AnimCurveId = (channel.Value.AssetAnimCurve is not null && channel.Value.AssetAnimCurve.Resource is not null ? new AssetReference(channel.Value.AssetAnimCurve.Resource.Name.Content, GMAssetType.AnimationCurve) : null)
+                                };
+
+                                // embedded anim curve handling
+                                if (channel.Value.IsCurveEmbedded && channel.Value.EmbeddedAnimCurve is not null)
+                                {
+                                    UndertaleAnimationCurve c = channel.Value.EmbeddedAnimCurve;
+
+                                    string curveName = char.ToUpper(track.Name.Content[0]) + track.Name.Content.Substring(1);
+
+                                    GMAnimCurve dumpedCurve = new(curveName)
+                                    {
+                                        function = (int)c.GraphType,
+                                        tags = GetTags(c)
+                                    };
+
+                                    foreach (UndertaleAnimationCurve.Channel curveChannel in c.Channels)
+                                    {
+                                        GMAnimCurve.GMAnimCurveChannel dumpedChannel = new(curveChannel.Name.Content);
+
+                                        foreach (UndertaleAnimationCurve.Channel.Point point in curveChannel.Points)
+                                        {
+                                            GMAnimCurve.GMAnimCurvePoint dumpedPoint = new(point.X, point.Value)
+                                            {
+                                                th0 = point.BezierX0,
+                                                th1 = point.BezierX1,
+                                                tv0 = point.BezierY0,
+                                                tv1 = point.BezierY1
+                                            };
+                                            dumpedChannel.points.Add(dumpedPoint);
+                                        }
+                                        dumpedCurve.channels.Add(dumpedChannel);
+                                    }
+                                    value.EmbeddedAnimCurve = dumpedCurve;
+                                }
+
+                                currentKeyframe.Channels.Add(channel.Channel.ToString(), value);
+                            }
+                            ((GMColourTrack)currentTrack).keyframes.Keyframes.Add(currentKeyframe);
+                        }
+
+                        break;
+                    }
+                case "GMTextTrack":
+                    {
+                        currentTrack = new GMTextTrack();
+                        var keyframes = ((UndertaleSequence.TextKeyframes)track.Keyframes).List;
+
+                        foreach (var keyframe in keyframes)
+                        {
+                            Keyframe<AssetTextKeyframe> currentKeyframe = new()
+                            {
+                                Key = keyframe.Key,
+                                Length = keyframe.Length,
+                                Stretch = keyframe.Stretch,
+                                Disabled = keyframe.Disabled,
+                                Channels = keyframe.Channels.ToDictionary(k => k.Channel.ToString(), k => new AssetTextKeyframe()
+                                {
+                                    Text = k.Value.Text.Content,
+                                    Wrap = k.Value.Wrap,
+                                    // idk about alignment lol
+                                    Id = new AssetReference(Data.Fonts[k.Value.FontIndex].Name.Content, GMAssetType.Font)
+                                })
+                            };
+                            ((GMTextTrack)currentTrack).keyframes.Keyframes.Add(currentKeyframe);
+                        }
+                        break;
+                    }
+                // lets do the ones with no data afaik.
+                case "GMGroupTrack":
+                    currentTrack = new GMGroupTrack()
+                    {
+                        builtinName = 0
+                    };
+                    break;
+                // clip mask tracks
+                case "GMClipMaskTrack":
+                    currentTrack = new GMClipMaskTrack()
+                    {
+                        builtinName = 11
+                    };
+                    break;
+                case "GMClipMask_Mask":
+                    currentTrack = new GMClipMask_Mask()
+                    {
+                        builtinName = 12
+                    };
+                    break;
+                case "GMClipMask_Subject":
+                    currentTrack = new GMClipMask_Subject()
+                    {
+                        builtinName = 13
+                    };
+                    break;
+                default:
+                    errorList.Add($"{s.Name.Content} | Track type '{track.ModelName.Content}' unimplemented. Defaulting to GMRealTrack");
+                    currentTrack = new GMRealTrack();
+                    break;
+            }
+
+            // Track Visibility
+            // if Tags list is empty, then visible
+            // if Tags list has one entry (with value 1), then not visible
+            // (UTMT, should this be a bool instead of a List<int>?)
+            if (track.Tags != null && track.Tags.Count > 0 && track.Tags[0] == 1)
+                currentTrack.modifiers.Add(new InvisibleModifier());
+
+            currentTrack.trackColour = colour;
+            currentTrack.isCreationTrack = track.IsCreationTrack;
+            if (currentTrack.builtinName == -1)
+                currentTrack.builtinName = (int)track.BuiltinName;
+            currentTrack.name = track.Name.Content;
+
+            currentTrack.tracks = DumpTracks(track.Tracks, colour);
+
+            dumpedTracks.Add(currentTrack);
+        }
+        return dumpedTracks;
+    }
+
+    // start the recursion!
+    dumpedSequence.tracks = DumpTracks(s.Tracks);
+
+    return dumpedSequence;
+}
+void DumpSequence(UndertaleSequence s, int index)
+{
+    string sequenceName = ((s?.Name?.Content != null || s.Name.Content != "") ? s.Name.Content : $"Unknown_Sequence_{index}");
+    string assetDir = $"{scriptDir}sequences\\{sequenceName}\\";
+
+    Directory.CreateDirectory(assetDir);
+
+    GMSequence dumpedSequence = SequenceDumper(s);
+
+    File.WriteAllText($"{assetDir}{sequenceName}.yy", JsonSerializer.Serialize(dumpedSequence, jsonOptions));
+
+    CreateProjectResource(GMAssetType.Sequence, sequenceName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Shaders
+void DumpShader(UndertaleShader s, int index)
+{
+    string shaderName = ((s?.Name?.Content != null || s.Name.Content != "") ? s.Name.Content : $"Unknown_Shader_{index}");
+    string assetDir = $"{scriptDir}shaders\\{shaderName}\\";
+
+    // kill gamemaker internal shaders
+    if (shaderName.StartsWith("__yy_") || shaderName.StartsWith("_filter_"))
+        return;
+
+    Directory.CreateDirectory(assetDir);
+
+    string vertexPath = $"{assetDir}{shaderName}.vsh";
+    string fragmentPath = $"{assetDir}{shaderName}.fsh";
+
+    GMShader dumpedShader = new(shaderName)
+    {
+        parent = GetParentFolder(GMAssetType.Shader),
+        type = s.Type switch
+        {
+            UndertaleShader.ShaderType.GLSL_ES => 1,
+            UndertaleShader.ShaderType.GLSL => 2,
+            // idk about HLSL_9
+            UndertaleShader.ShaderType.HLSL11 => 3,
+            UndertaleShader.ShaderType.PSSL => 4,
+            // I believe the rest are GMS1
+        },
+        tags = GetTags(s)
+    };
+
+    string vertexSrc = s.GLSL_ES_Vertex.Content.TrimShader();
+    string fragmentSrc = s.GLSL_ES_Fragment.Content.TrimShader();
+
+    File.WriteAllText(vertexPath, vertexSrc);
+    File.WriteAllText(fragmentPath, fragmentSrc);
+    File.WriteAllText($"{assetDir}{shaderName}.yy", JsonSerializer.Serialize(dumpedShader, jsonOptions));
+
+    CreateProjectResource(GMAssetType.Shader, shaderName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Extensions
+void DumpExtension(UndertaleExtension e, int index)
+{
+    string extensionName = ((e?.Name?.Content != null || e.Name.Content != "") ? e.Name.Content : $"Unknown_Extension_{index}");
+    string assetDir = $"{scriptDir}extensions\\{extensionName}\\";
+
+    Directory.CreateDirectory(assetDir);
+
+    GMExtension dumpedExtension = new(extensionName)
+    {
+        classname = e.ClassName.Content,
+        parent = GetParentFolder(GMAssetType.Extension)
+    };
+
+    foreach (UndertaleExtensionFile extFile in e.Files)
+    {
+        string fileName = extFile.Filename.Content;
+
+        GMExtension.GMExtensionFile dumpedFile = new()
+        {
+            filename = fileName,
+            // not sure about origname
+            init = extFile.InitScript.Content,
+            final = extFile.CleanupScript.Content,
+            kind = (int)extFile.Kind
+        };
+
+        switch ((int)extFile.Kind)
+        {
+            case 2: // GML
+                string code = String.Empty;
+                if (extensionGML.ContainsKey(extensionName))
+                {
+                    code = String.Join('\n', extensionGML[extensionName]);
+                    for (int i = 0; i < extensionGML[extensionName].Count; i++)
+                    {
+                        string firstLine = extensionGML[extensionName][i].Split('\n')[0];
+                        int lineIndex = "#define ".Length;
+                        string funcName = firstLine.Substring(lineIndex, firstLine.Length - lineIndex);
+
+                        // arg count
+                        Regex regex = new Regex(@"argument(\d+)");
+
+                        int argCount = regex.Matches(extensionGML[extensionName][i])
+                            .Cast<Match>()
+                            .Select(m => int.Parse(m.Groups[1].Value))
+                            .DefaultIfEmpty(0) // Handle case where no matches are found
+                            .Max();
+
+                        if (extensionGML[extensionName][i].Contains("argument["))
+                            argCount = -1;
+
+                        dumpedFile.functions.Add(
+                            new GMExtension.GMExtensionFunction(funcName)
+                            {
+                                externalName = funcName,
+                                kind = 11, // taken from gameframe, might not be right.
+                                returnType = 2, // asl taken from gameframe
+                                argCount = argCount,
+                                args = new int[0]
+                            });
+                    }
+                    extensionGML[extensionName].Clear();
+                }
+
+
+                File.WriteAllText(assetDir + fileName, code);
+                break;
+            case 1:
+            case 3:
+            case 4:
+            case 5:
+                // copy if the file exists.
+                if (File.Exists(rootDir + fileName))
+                    File.Copy(rootDir + fileName, assetDir + fileName);
+                else
+                    PushToLog($"File: '{rootDir + fileName}' does not exist");
+
+                foreach (UndertaleExtensionFunction fn in extFile.Functions)
+                {
+                    dumpedFile.functions.Add(
+                        new GMExtension.GMExtensionFunction(fn.Name.Content)
+                        {
+                            externalName = fn.ExtName.Content,
+                            kind = (int)fn.Kind,
+                            returnType = (int)fn.RetType,
+                            argCount = fn.Arguments.Count,
+                            args = fn.Arguments.Select(f => (int)f.Type).ToArray(),
+                        });
+                }
+                break;
+        }
+
+        dumpedExtension.files.Add(dumpedFile);
+    }
+
+    foreach (UndertaleExtensionOption opt in e.Options)
+    {
+        string optionName = opt.Name.Content;
+        GMExtension.GMExtensionOption dumpedOption = new(optionName)
+        {
+            displayName = optionName,
+            optType = (int)opt.Kind,
+        };
+        if (iniData?.ContainsKey(extensionName) == true && iniData[extensionName]?.ContainsKey(optionName) == true)
+        {
+            dynamic iniValue = iniData[extensionName][optionName];
+            dumpedOption.exportToINI = true;
+            dumpedOption.defaultValue = iniValue.ToString();
+        }
+
+        dumpedExtension.options.Add(dumpedOption);
+    }
+
+    File.WriteAllText($"{assetDir}{extensionName}.yy", JsonSerializer.Serialize(dumpedExtension, jsonOptions));
+
+    CreateProjectResource(GMAssetType.Extension, extensionName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Paths
+void DumpPath(UndertalePath p, int index)
+{
+    string pathName = ((p?.Name?.Content != null || p.Name.Content != "") ? p.Name.Content : $"Unknown_Path_{index}");
+    string assetDir = $"{scriptDir}paths\\{pathName}\\";
+
+    Directory.CreateDirectory(assetDir);
+
+    GMPath dumpedPath = new(pathName)
+    {
+        kind = Convert.ToInt32(p.IsSmooth),
+        precision = (int)p.Precision,
+        closed = p.IsClosed,
+        parent = GetParentFolder(GMAssetType.Path),
+        tags = GetTags(p)
+    };
+
+    dumpedPath.points = p.Points.Select(point => new GMPath.GMPathPoint(point.X, point.Y) { speed = point.Speed }).ToArray();
+
+    File.WriteAllText($"{assetDir}{pathName}.yy", JsonSerializer.Serialize(dumpedPath, jsonOptions));
+
+    CreateProjectResource(GMAssetType.Path, pathName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Anim Curves
+void DumpAnimCurve(UndertaleAnimationCurve c, int index)
+{
+    string curveName = ((c?.Name?.Content != null || c.Name.Content != "") ? c.Name.Content : $"Unknown_AnimCurve_{index}");
+    string assetDir = $"{scriptDir}animcurves\\{curveName}\\";
+
+    Directory.CreateDirectory(assetDir);
+
+    GMAnimCurve dumpedCurve = new(curveName)
+    {
+        function = (int)c.GraphType,
+        parent = GetParentFolder(GMAssetType.AnimationCurve),
+        tags = GetTags(c)
+    };
+
+    foreach (UndertaleAnimationCurve.Channel channel in c.Channels)
+    {
+        GMAnimCurve.GMAnimCurveChannel dumpedChannel = new(channel.Name.Content);
+
+        dumpedChannel.points = channel.Points.Select(p => new GMAnimCurve.GMAnimCurvePoint(p.X, p.Value)
+        {
+            th0 = p.BezierX0,
+            th1 = p.BezierX1,
+            tv0 = p.BezierY0,
+            tv1 = p.BezierY1
+        }).ToList();
+        dumpedCurve.channels.Add(dumpedChannel);
+    }
+
+    File.WriteAllText($"{assetDir}{curveName}.yy", JsonSerializer.Serialize(dumpedCurve, jsonOptions));
+
+    CreateProjectResource(GMAssetType.AnimationCurve, curveName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Tile Sets
+void DumpTileSet(UndertaleBackground t, int index)
+{
+    string tilesetName = ((t?.Name?.Content != null || t.Name.Content != "") ? t.Name.Content : $"Unknown_Tileset_{index}");
+    string spriteName = "_decompiled_" + tilesetName;
+    string assetDir = $"{scriptDir}tilesets\\{tilesetName}\\";
+    string spriteassetDir = $"{scriptDir}sprites\\{spriteName}\\";
+    string layersPath = spriteassetDir + "layers\\";
+
+    Directory.CreateDirectory(spriteassetDir);
+    Directory.CreateDirectory(assetDir);
+    Directory.CreateDirectory(layersPath);
+
+    GMTileSet dumpedTileset = new(tilesetName)
+    {
+        // copied this chunk from quantum
+        tileWidth = (int)t.GMS2TileWidth,
+        tileHeight = (int)t.GMS2TileHeight,
+        tilexoff = 0,
+        tileyoff = 0,
+        tilehsep = 0,
+        tilevsep = 0,
+        tileAnimation = new GMTileSet.TileAnimation(),
+        out_tilehborder = (int)t.GMS2OutputBorderX,
+        out_tilevborder = (int)t.GMS2OutputBorderY,
+        spriteNoExport = true,
+        out_columns = (int)t.GMS2TileColumns,
+        tile_count = (int)t.GMS2TileCount,
+        spriteId = (t.Texture is null ? null : new AssetReference(spriteName, GMAssetType.Sprite)),
+        textureGroupId = GetTextureGroup(t.Name.Content),
+        tags = GetTags(t)
+    };
+
+    // find parent folder
+    dumpedTileset.parent =
+        (!UISettings.YYMPS && !UISettings.CSTM_Enable && texGroupStuff.ContainsKey(tilesetName) && texGroupStuff[tilesetName].ToLower() != "default")
+        ? GetFolderReference(texGroupStuff[tilesetName], "Tile Sets/")
+        : GetParentFolder(GMAssetType.TileSet);
+
+    dumpedTileset.tileAnimation.frameData = t.GMS2TileIds.Select(t => t.ID).ToArray();
+
+    dumpedTileset.tileAnimation.SerialiseFrameCount = (int)t.GMS2ItemsPerTileCount;
+    dumpedTileset.tileAnimationSpeed = 1 / ((float)t.GMS2FrameLength / 1000000);
+
+    // tile animation
+    List<uint> IDStorage = new List<uint>(); // temp storage for frame IDs
+    List<uint> ignoredIds = new List<uint>();
+    foreach (var tile in t.GMS2TileIds)
+    {
+        if (dumpedTileset.tileAnimation.SerialiseFrameCount > 1)
+        {
+            IDStorage.Add(tile.ID);
+
+            if (dumpedTileset.tileAnimation.SerialiseFrameCount <= IDStorage.Count)
+            {
+                bool hasDistinctFrames = IDStorage.Distinct().Count() > 1;
+                bool isNotIgnored = !ignoredIds.Any(ignoreId => IDStorage.Contains(ignoreId));
+
+                if (hasDistinctFrames && isNotIgnored)
+                {
+                    // Found an animation
+                    dumpedTileset.tileAnimationFrames.Add(new GMTileSet.GMTileAnimation(dumpedTileset.tileAnimationFrames.Count + 1)
+                    {
+                        frames = new List<uint>(IDStorage)
+                    });
+
+                    ignoredIds.AddRange(IDStorage);
+                }
+
+                IDStorage.Clear();
+            }
+        }
+    }
+
+    if (t.Texture is not null)
+    {
+        // tileset still needs the shit broken sprite here for some reason
+        imagesToDump.Add(new ImageAssetData(t.Texture, assetDir, "output_tileset.png", tilesetName));
+
+        MagickImage finalResult = null;
+        MagickReadSettings settings = new()
+        {
+            BackgroundColor = MagickColors.Transparent,
+            Width = (uint)dumpedTileset.tileWidth,
+            Height = (uint)dumpedTileset.tileHeight
+        };
+
+        // Get actually good tileset sprites
+        if (UISettings.FIXTILE 
+            && TilesetSaveData.TilesetImageMap.ContainsKey(t.Name.Content)
+            && TilesetSaveData.TilesetImageMap[t.Name.Content] != null)
+        {
+            finalResult = TilesetSaveData.TilesetImageMap[t.Name.Content];
+
+            // remove checkerboard tile
+            finalResult.Composite(new MagickImage("xc:none", settings), 0, 0, CompositeOperator.Over);
+        }
+        // or don't if user is too lazy to do it manually i guess
+        else
+        {
+            TextureWorker worker = new();
+            var image = worker.GetTextureFor(t.Texture, tilesetName);
+            worker.Dispose();
+
+            var tiledImage = image.CropToTiles(
+                (uint)(dumpedTileset.tileWidth + ((int)t.GMS2OutputBorderX * 2)),
+                (uint)(dumpedTileset.tileHeight + ((int)t.GMS2OutputBorderY * 2))
+            ).ToList();
+            image.Dispose();
+
+            // set the geometry to the tileset dimensions
+            MagickGeometry geometry = new((uint)dumpedTileset.tileWidth, (uint)dumpedTileset.tileHeight);
+            // remove checkerboard tile
+            tiledImage[0] = new MagickImage("xc:none", settings);
+            // iterate through each tile, fixing the padding by setting the tileset to the correct dimensions.
+            for (int i = 0; i <= tiledImage.Count - 1; i++)
+                tiledImage[i].Extent(geometry, Gravity.Center, MagickColors.Transparent);
+
+            using MagickImageCollection exportedImage = new();
+            // construct the image by each tile.
+            foreach (var tile in tiledImage)
+                exportedImage.Add(tile);
+
+            MontageSettings ms = new()
+            {
+                Geometry = geometry,
+                TileGeometry = new MagickGeometry((uint)dumpedTileset.out_columns, 0),
+                BackgroundColor = MagickColors.None,
+                Gravity = Gravity.Center
+            };
+
+            // save the image to a file when complete.
+            using (var result = exportedImage.Montage(ms))
+                finalResult = (MagickImage)result.Clone();
+
+            exportedImage.Dispose();
+        }
+
+        GMSprite dumpedSprite = new(spriteName)
+        {
+            origin = 0, // dont need to obtain it for tilesets
+            preMultiplyAlpha = t.Transparent,
+            edgeFiltering = t.Smooth,
+            bbox_left = 0,
+            bbox_right = (int)finalResult.Width,
+            bbox_bottom = (int)finalResult.Height,
+            bbox_top = 0,
+            width = (int)finalResult.Width,
+            height = (int)finalResult.Height,
+            sequence = new GMSequence(spriteName)
+            {
+                length = 1,
+                xorigin = 0,
+                yorigin = 0,
+                playbackSpeed = 1,
+                playbackSpeedType = 1,
+                spriteId = new AssetReference(spriteName, GMAssetType.Sprite)
+            },
+            parent = GetFolderReference("GeneratedTileSprites", "DecompilerGenerated/"),
+            textureGroupId = dumpedTileset.textureGroupId
+        };
+
+        GMSpriteFramesTrack framesTrack = new()
+        {
+            builtinName = 0
+        };
+
+        string frameGUID = Guid.NewGuid().ToString();
+        string layerGUID = Guid.NewGuid().ToString();
+
+        dumpedSprite.layers.Add(new GMSprite.GMImageLayer(layerGUID));
+
+        Directory.CreateDirectory(layersPath + frameGUID);
+
+        dumpedSprite.frames.Add(new GMSprite.GMSpriteFrame(frameGUID));
+
+        Keyframe<SpriteFrameKeyframe> currentKeyframe = new()
+        {
+            Length = 1f,
+            Key = (float)0,
+        };
+
+        currentKeyframe.Channels.Add("0", new SpriteFrameKeyframe
+        {
+            Id = new AssetReference(spriteName, GMAssetType.Sprite)
+            {
+                name = frameGUID
+            },
+            name = String.Empty
+        });
+
+        framesTrack.keyframes.Keyframes.Add(currentKeyframe);
+        dumpedSprite.sequence.tracks.Add(framesTrack);
+
+        // save tileset sprite
+        TextureWorker.SaveImageToFile(finalResult, $"{spriteassetDir}{frameGUID}.png");
+        TextureWorker.SaveImageToFile(finalResult, $"{layersPath}{frameGUID}\\{layerGUID}.png");
+
+        // cleanup
+        finalResult.Dispose();
+
+        File.WriteAllText($"{spriteassetDir}\\{spriteName}.yy", JsonSerializer.Serialize(dumpedSprite, jsonOptions));
+
+        CreateProjectResource(GMAssetType.Sprite, spriteName, Data.Sprites.Count + index);
+
+        IncrementProgressParallel();
+    }
+
+    File.WriteAllText($"{assetDir}\\{tilesetName}.yy", JsonSerializer.Serialize(dumpedTileset, jsonOptions));
+
+    CreateProjectResource(GMAssetType.TileSet, tilesetName, index);
+
+    IncrementProgressParallel();
+}
+#endregion
+#region Timeline
+void DumpTimeline(UndertaleTimeline t, int index)
+{
+    string timelineName = ((t?.Name?.Content != null || t.Name.Content != "") ? t.Name.Content : $"Unknown_Timeline_{index}");
+    string assetDir = $"{scriptDir}timelines\\{timelineName}\\";
+    string finalCode = String.Empty;
+
+    Directory.CreateDirectory(assetDir);
+
+    GMTimeline dumpedTimeline = new(timelineName)
+    {
+        parent = GetParentFolder(GMAssetType.Timeline),
+        tags = GetTags(t)
+    };
+
+    foreach (UndertaleTimeline.UndertaleTimelineMoment moment in t.Moments)
+    {
+        GMTimeline.GMMoment currentMoment = new()
+        {
+            moment = moment.Step,
+            evnt = new GMEvent()
+            {
+                eventNum = (int)moment.Step
+            }
+        };
+        dumpedTimeline.momentList.Add(currentMoment);
+
+        foreach (UndertaleGameObject.EventAction ev in moment.Event)
+            finalCode = DumpCode(ev.CodeId);
+
+        if (finalCode != String.Empty)
+            File.WriteAllText(assetDir + $"moment_{moment.Step}.gml", finalCode);
+    }
+
+    File.WriteAllText($"{assetDir}\\{timelineName}.yy", JsonSerializer.Serialize(dumpedTimeline, jsonOptions));
+
+    CreateProjectResource(GMAssetType.Timeline, timelineName, Data.Timelines.Count + index);
+
+    IncrementProgressParallel();
+
+}
+#endregion
+
+#region TexGroups
+void DumpTexGroup(UndertaleTextureGroupInfo t)
+{
+    if (t.Name.Content.ToLower().StartsWith("__yy__") || t.Name.Content.ToLower().StartsWith("_yy_"))
+        return;
+
+    string texGroupName = t.Name.Content;
+    GMProject.GMTextureGroup dumpedTexGroup = new(texGroupName);
+
+    string lType = "default";
+    // LoadType is an enum
+    if ((int)t.LoadType != 0) // if external
+    {
+        dumpedTexGroup.directory = t.Directory.Content;
+        lType = "dynamicpages";
+    }
+    dumpedTexGroup.loadType = lType;
+
+    string compressionFormat = "png";
+
+    if (t.TexturePages.Count > 0)
+    {
+        var texPage = t.TexturePages[0];
+
+        // compression
+        if (texPage.Resource.TextureData.FormatQOI) compressionFormat = "qoi";
+        else if (texPage.Resource.TextureData.FormatBZ2) compressionFormat = "bz2";
+
+        dumpedTexGroup.isScaled = Convert.ToBoolean(texPage.Resource.Scaled);
+        dumpedTexGroup.mipsToGenerate = (int)texPage.Resource.GeneratedMips;
+    }
+
+    dumpedTexGroup.compressFormat = compressionFormat;
+
+    // add these to the dictionary. the texture group stores the assets so all we need to do is fetch the name of them and reference them.
+    foreach (var asset in t.Sprites)
+		if (asset?.Resource?.Name.Content != null)
+			texGroupStuff.Add(asset.Resource.Name.Content, dumpedTexGroup.name);
+
+    foreach (var asset in t.Tilesets)
+		if (asset?.Resource?.Name.Content != null)
+			texGroupStuff.Add(asset.Resource.Name.Content, dumpedTexGroup.name);
+
+    foreach (var asset in t.Fonts)
+		if (asset?.Resource?.Name.Content != null)
+			texGroupStuff.Add(asset.Resource.Name.Content, dumpedTexGroup.name);
+
+    finalExport.TextureGroups.Add(dumpedTexGroup);
+}
+async Task DumpTexGroups()
+{
+    var watch = Stopwatch.StartNew();
+    foreach (UndertaleTextureGroupInfo tg in Data.TextureGroupInfo)
+    {
+        DumpTexGroup(tg);
+        if (UISettings.LOG)
+            PushToLog($"'{tg.Name.Content}' successfully dumped.");
+    }
+    watch.Stop();
+    PushToLog($"Texture Groups complete! Took {watch.ElapsedMilliseconds} ms");
+}
+#endregion
+
+async Task DumpDatafiles()
+{
+    if (!UISettings.ADDFILES)
+        return;
+
+    // just in case
+    Directory.CreateDirectory(scriptDir + "datafiles\\");
+
+    // Get all files and subdirectories
+    foreach (var file in Directory.GetFiles(rootDir, "*", SearchOption.AllDirectories))
+    {
+        // Skip these files                                                                 //also get rid of sounds because yeah
+        if (new[] { ".dll", ".exe", ".ini", ".win", ".unx", ".droid", ".ios", ".dat", ".yytex", ".mp3", ".ogg", ".wav" }.Contains(Path.GetExtension(file).ToLower()))
+            continue;
+
+        string relativePath = Path.GetRelativePath(rootDir, file);
+        string destinationFile = Path.Combine(scriptDir + "datafiles\\", relativePath);
+
+        // Skip "Exported_Project" or "Export_YYMPS" directories and files within them
+        string dirName = Path.GetDirectoryName(file);
+        if (dirName.Contains("Exported_Project") || dirName.Contains("Export_YYMPS"))
+            continue;
+
+        // Ensure it exists
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile));
+
+        // Copy the file
+        File.Copy(file, destinationFile, true);
+
+        // add to yyp
+        int folderpos = destinationFile.IndexOf("datafiles");
+        string trimmedfolder = destinationFile.Substring(folderpos);
+        finalExport.IncludedFiles.Add(new GMProject.GMIncludedFile(Path.GetFileName(destinationFile))
+        {
+            filePath = Path.GetDirectoryName(trimmedfolder).Replace("\\", "/")
+        });
+    }
+}
+async Task DumpTextures()
+{
+    var watch = Stopwatch.StartNew();
+    using (TextureWorker tw = new())
+    {
+        await Task.Run(() => Parallel.ForEach(imagesToDump, parallelOptions, imageData =>
+        {
+            SetProgressBar(null, $"Dumping Texture: {imageData.spriteName}", imgsdumped++, imagesToDump.Count);
+            imageData.Dump(tw);
+        }));
+    }
+    watch.Stop();
+    PushToLog($"All Textures complete! Took {watch.ElapsedMilliseconds} ms");
+}
+
+async Task DumpOptions()
+{
+    // don't do this shit if YYMPS
+    if (UISettings.YYMPS)
+        return;
+
+    // we're only doing main and windows, cant really test all others.
+    string mainOptionsDirectory = $"{scriptDir}options\\main\\";
+    string windowsOptionsDirectory = $"{scriptDir}options\\windows\\";
+    var info = Data.GeneralInfo;
+    var optionInfo = Data.Options;
+    // lets start with main.
+    Directory.CreateDirectory(mainOptionsDirectory);
+
+    GMMainOptions dumpedMainOptions = new()
+    {
+        option_gameid = info.GameID.ToString(),
+        option_game_speed = (int)info.GMS2FPS,
+        option_window_colour = (byte)optionInfo.WindowColor,
+        option_steam_app_id = info.SteamAppID.ToString(),
+        // at the beginning of 2022, yyg updated the collision system, I dont know the exact runtime, so im just going to assume 2022.1.
+        option_collision_compatibility = optionInfo.Info.HasFlag(UndertaleOptions.OptionsFlags.FastCollisionCompatibility) || Data.IsVersionAtLeast(2022, 1),
+        option_copy_on_write_enabled = optionInfo.Info.HasFlag(UndertaleOptions.OptionsFlags.EnableCopyOnWrite),
+    };
+
+    // now lets go to windows options.
+    Directory.CreateDirectory(windowsOptionsDirectory);
+
+    GMWindowsOptions dumpedWindowsOptions = new()
+    {
+        option_windows_display_name = info.DisplayName.Content,
+        option_windows_executable_name = info.Name.Content == rData.name ? "{project_name}.exe" : $"{rData.name}.exe",
+        option_windows_version = rData.version,
+        option_windows_company_info = rData.companyName,
+        option_windows_product_info = rData.productName,
+        option_windows_copyright_info = rData.copyright,
+        option_windows_description_info = rData.description,
+        option_windows_display_cursor = optionInfo.Info.HasFlag(UndertaleOptions.OptionsFlags.ShowCursor),
+        option_windows_save_location = Convert.ToInt32(info.Info.HasFlag(UndertaleGeneralInfo.InfoFlags.UseAppDataSaveLocation)),
+        option_windows_start_fullscreen = optionInfo.Info.HasFlag(UndertaleOptions.OptionsFlags.FullScreen),
+        option_windows_allow_fullscreen_switching = optionInfo.Info.HasFlag(UndertaleOptions.OptionsFlags.ScreenKey),
+        option_windows_interpolate_pixels = optionInfo.Info.HasFlag(UndertaleOptions.OptionsFlags.InterpolatePixels),
+        option_windows_vsync = info.Info.HasFlag(UndertaleGeneralInfo.InfoFlags.SyncVertex1), // theres like 3 of these SyncVertex flags, I'm just going to do the first one.
+        option_windows_resize_window = info.Info.HasFlag(UndertaleGeneralInfo.InfoFlags.Sizeable),
+        option_windows_borderless = info.Info.HasFlag(UndertaleGeneralInfo.InfoFlags.BorderlessWindow),
+        option_windows_scale = Convert.ToInt32(info.Info.HasFlag(UndertaleGeneralInfo.InfoFlags.Scale)),
+        option_windows_texture_page = GetTexturePageSize(),
+        option_windows_enable_steam = info.Info.HasFlag(UndertaleGeneralInfo.InfoFlags.SteamEnabled),
+        option_windows_disable_sandbox = optionInfo.Info.HasFlag(UndertaleOptions.OptionsFlags.DisableSandbox)
+    };
+
+    // constants in the data file.
+    foreach (UndertaleOptions.Constant con in Data.Options.Constants)
+    {
+        if (con.Name.Content.Contains("SleepMargin"))
+            dumpedWindowsOptions.option_windows_sleep_margin = Int32.Parse(con.Value.Content);
+
+        if (con.Name.Content.Contains("DrawColour"))
+            dumpedMainOptions.option_draw_colour = UInt32.Parse(con.Value.Content);
+    }
+
+    // icon handling
+    if (rData?.iconData != null)
+    {
+        string iconsDir = windowsOptionsDirectory + "icons\\";
+        Directory.CreateDirectory(iconsDir);
+
+        rData.DumpIcon(iconsDir + "icon.ico"); // 256x256 Windows Icon
+        rData.DumpIcon(mainOptionsDirectory + "template_icon.png", 172, 172); // 172x172 Icon for GM UI
+    }
+
+    // splash screen handling
+    string splashScreenPath = $"{rootDir}splash.png";
+    if (File.Exists(splashScreenPath))
+    {
+        dumpedWindowsOptions.option_windows_use_splash = true;
+        dumpedWindowsOptions.option_windows_splash_screen = "splash/splash.png";
+
+        Directory.CreateDirectory(windowsOptionsDirectory + "splash");
+        File.Copy(splashScreenPath, windowsOptionsDirectory + dumpedWindowsOptions.option_windows_splash_screen);
+    }
+
+    File.WriteAllText(mainOptionsDirectory + "options_main.yy", JsonSerializer.Serialize(dumpedMainOptions, jsonOptions));
+    File.WriteAllText(windowsOptionsDirectory + "options_windows.yy", JsonSerializer.Serialize(dumpedWindowsOptions, jsonOptions));
+
+    finalExport.Options.Add(new AssetReference { name = dumpedMainOptions.name, path = $"options/main/options_main.yy" });
+    finalExport.Options.Add(new AssetReference { name = dumpedWindowsOptions.name, path = $"options/windows/options_windows.yy" });
+}
+#endregion
+
+#region Main Program
+
+#region Initialize Variables
+// create Exported_Project folder
+Directory.CreateDirectory(scriptDir);
+
+// scuffed CPU usage limiter
+double usageLimit = Math.Clamp((float)UISettings.CPU_Usage, 0f, 100f);
+int processorCount = Environment.ProcessorCount;
+int threadsToUse = Math.Clamp((int)Math.Floor(processorCount * (usageLimit / 100)), 1, processorCount);
+ParallelOptions parallelOptions = new()
+{
+    MaxDegreeOfParallelism = threadsToUse
+};
+
+// obtain info from the runner
+RunnerData rData = new(runnerFile);
+
+GMProject finalExport = new(Data.GeneralInfo.Name.Content)
+{
+    isEcma = (Data.GeneralInfo.Info.HasFlag(UndertaleGeneralInfo.InfoFlags.JavaScriptMode)),
+    AudioGroups = Data.AudioGroups.Select(ag => new GMProject.GMAudioGroup(ag?.Name?.Content)).ToArray(),
+    Folders = CreateProjectFolders()
+};
+
+// room nodes
+finalExport.RoomOrderNodes =
+    (UISettings.CSTM.Count > 0 && UISettings.CSTM_Enable)
+    ? Data.GeneralInfo.RoomOrder.Where(r => UISettings.CSTM.Contains(r.Resource.Name.Content)).Select(r => new GMProject.RoomOrderNode(r.Resource.Name.Content)).ToArray()
+    : Data.GeneralInfo.RoomOrder.Select(r => new GMProject.RoomOrderNode(r.Resource.Name.Content)).ToArray();
+
+finalExport.MetaData.IDEVersion = $"{Data.GeneralInfo.Major}.{Data.GeneralInfo.Minor}.{Data.GeneralInfo.Release}.{Data.GeneralInfo.Build}";
+
+// add compile config if the data.win's isn't Default
+if (Data.GeneralInfo.Config.Content != "Default" && !UISettings.YYMPS)
+    finalExport.configs.children = [new GMProject.BuildConfig() { name = Data.GeneralInfo.Config.Content }];
+else if (UISettings.YYMPS) // remove entire element if YYMPS
+    finalExport.configs = null;
+
+// parse the options.ini file, some extension options export to it.
+var iniData = IniParser.ParseToDictionary(rootDir + "options.ini");
+#endregion
+#region Initialize Dumping
+SetUMTConsoleText("Initializing...");
+
+// get amount of assets to dump
+public int toDump =
+  // account for custom pick
+  ((UISettings.CSTM.Count > 0 && UISettings.CSTM_Enable) ? UISettings.CSTM.Count :
+  // else if normal
+  (UISettings.OBJT ? Data.GameObjects.Count : 0) +
+   (UISettings.SOND ? Data.Sounds.Count : 0) +
+    (UISettings.ROOM ? Data.Rooms.Count : 0) +
+     (UISettings.SPRT ? Data.Sprites.Count : 0) +
+      (UISettings.FONT ? Data.Fonts.Count : 0) +
+       (UISettings.SHDR ? Data.Shaders.Count : 0) +
+        (UISettings.EXTN ? Data.Extensions.Count : 0) +
+         (UISettings.PATH ? Data.Paths.Count : 0) +
+          (UISettings.ACRV ? Data.AnimationCurves.Count : 0) +
+           (UISettings.BGND ? (Data.Backgrounds.Count * 2) : 0) +
+            (UISettings.SEQN ? Data.Sequences.Count : 0) +
+             (UISettings.TMLN ? Data.Timelines.Count : 0));
+
+// doing this before main operation because its needed
+await DumpTexGroups();
+
+// for DumpScripts & the progress bar
+public List<UndertaleScript> scriptsToDump = new();
+foreach (UndertaleScript scr in Data.Scripts)
+{
+    if (scr is null || (scr.Code?.ParentEntry is not null || (scr.Code is null && scr.Name.Content.StartsWith("gml_Script")) || scr.Name.Content.StartsWith("gml_Room")))
+        continue;
+    else if (scr.Name.Content.StartsWith("gml_Script"))
+    {
+        // a common naming convention for extension functions are to have the name of the extension in the function, lets find that.
+        string functionNameId = scr.Name.Content.Replace("gml_Script_", "");
+        int index = functionNameId.IndexOf('_');
+        string correctExtension = "DecompiledGMLExtension";
+        foreach (UndertaleExtension ext in Data.Extensions)
+        {
+            string extName = ext.Name.Content.ToLower();
+            if (extName.Contains(functionNameId.ToLower().Substring(0, index)))
+            {
+                correctExtension = extName;
+                break;
+            }
+        }
+        if (!extensionGML.ContainsKey(correctExtension))
+            extensionGML[correctExtension] = new List<string>();
+        extensionGML[correctExtension].Add($"#define {functionNameId}\n{DumpCode(scr.Code, new DecompileSettings() { UnknownArgumentNamePattern = "argument{0}", AllowLeftoverDataOnStack = true })}");
+        continue;
+    }
+    scriptsToDump.Add(scr);
+}
+toDump += (UISettings.SCPT ? scriptsToDump.Count : 0);
+#endregion
+
+var totalTime = Stopwatch.StartNew();
+
+#region Dump Main Assets
+SetProgressBar(null, "Exporting Assets...", 0, toDump);
+StartProgressBarUpdater();
+SetUMTConsoleText("Running Decompiler...");
+
+await Task.WhenAll(
+    DumpDatafiles(),
+    DumpOptions(),
+
+    DumpResources<UndertaleScript>(scriptsToDump, (a, i) => DumpScript(a, i), "Script", UISettings.SCPT),
+    DumpResources<UndertaleGameObject>(Data.GameObjects, (a, i) => DumpObject(a, i), "Object", UISettings.OBJT),
+    DumpResources<UndertaleSound>(Data.Sounds, (a, i) => DumpSound(a, i), "Sound", UISettings.SOND),
+    DumpResources<UndertaleRoom>(Data.Rooms, (a, i) => DumpRoom(a, i), "Room", UISettings.ROOM),
+    DumpResources<UndertaleSprite>(Data.Sprites, (a, i) => DumpSprite(a, i), "Sprite", UISettings.SPRT),
+    DumpResources<UndertaleFont>(Data.Fonts, (a, i) => DumpFont(a, i), "Font", UISettings.FONT),
+    DumpResources<UndertaleSequence>(Data.Sequences, (a, i) => DumpSequence(a, i), "Sequence", UISettings.SEQN),
+    DumpResources<UndertaleShader>(Data.Shaders, (a, i) => DumpShader(a, i), "Shader", UISettings.SHDR),
+    DumpResources<UndertaleExtension>(Data.Extensions, (a, i) => DumpExtension(a, i), "Extension", UISettings.EXTN),
+    DumpResources<UndertalePath>(Data.Paths, (a, i) => DumpPath(a, i), "Path", UISettings.PATH),
+    DumpResources<UndertaleAnimationCurve>(Data.AnimationCurves, (a, i) => DumpAnimCurve(a, i), "Animation Curve", UISettings.ACRV),
+    DumpResources<UndertaleBackground>(Data.Backgrounds, (a, i) => DumpTileSet(a, i), "Tileset", UISettings.BGND),
+    DumpResources<UndertaleTimeline>(Data.Timelines, (a, i) => DumpTimeline(a, i), "Timeline", UISettings.TMLN)
+);
+
+await StopProgressBarUpdater();
+HideProgressBar();
+#endregion
+#region Dump Textures
+public int imgsdumped = 0;
+if (imagesToDump.Count > 0)
+{
+    SetProgressBar(null, "Dumping Textures...", imgsdumped, imagesToDump.Count);
+    StartProgressBarUpdater();
+
+    await DumpTextures();
+
+    await StopProgressBarUpdater();
+    HideProgressBar();
+}
+#endregion
+#region Dump Decompiled Extension
+if (UISettings.EXTN && extensionGML.ContainsKey("DecompiledGMLExtension")) 
+{
+    string extensionName = "DecompiledExtension";
+    string extensionDir = $"{scriptDir}extensions\\{extensionName}\\";
+
+    Directory.CreateDirectory(extensionDir);
+    // create gml func extension
+    GMExtension gmlExtension = new(extensionName)
+    {
+        classname = extensionName,
+        parent = new AssetReference(extensionName, GMAssetType.Extension)
+        {
+            name = "DecompilerGenerated",
+            path = "folders/DecompilerGenerated.yy"
+        }
+    };
+    GMExtension.GMExtensionFile extensionFile = new() { filename = extensionName + "GML" };
+
+    foreach (string func in extensionGML["DecompiledGMLExtension"])
+    {
+        string firstLine = func.Split('\n')[0];
+        int index = "#define ".Length;
+        string funcName = firstLine.Substring(index, firstLine.Length - index);
+
+        if (funcName.Contains("init"))
+            extensionFile.init = funcName;
+
+        // arg count
+        Regex regex = new(@"argument(\d+)");
+
+        int argCount = regex.Matches(func)
+            .Cast<Match>()
+            .Select(m => int.Parse(m.Groups[1].Value))
+            .DefaultIfEmpty(0) // Handle case where no matches are found
+            .Max();
+
+        if (func.Contains("argument["))
+            argCount = -1;
+
+        extensionFile.functions.Add(
+            new GMExtension.GMExtensionFunction(funcName)
+            {
+                externalName = funcName,
+                kind = 11, // taken from gameframe, might not be right.
+                returnType = 2, // asl taken from gameframe
+                argCount = argCount,
+                args = new int[0]
+            });
+    }
+    gmlExtension.files.Add(extensionFile);
+
+    File.WriteAllText($"{extensionDir}{extensionName}.yy", JsonSerializer.Serialize(gmlExtension, jsonOptions));
+    File.WriteAllText($"{extensionDir}{extensionName}GML.gml", String.Join('\n', extensionGML["DecompiledGMLExtension"]));
+
+    CreateProjectResource(GMAssetType.Extension, extensionName, Data.Extensions.Count + 1);
+}
+#endregion
+#region README Note
+public int noteIndex = 0; // for the order
+string readMeMessage =
+$@"A Decompilation of {Data.GeneralInfo.DisplayName.Content}
+
+Original GameMaker Version: {finalExport.MetaData.IDEVersion}";
+
+// if compiled with config
+if (Data.GeneralInfo.Config.Content != "Default" && !UISettings.YYMPS)
+{
+    readMeMessage += $@"
+
+NOTE:
+This game was complied with the ""{Data.GeneralInfo.Config.Content}"" config
+Make sure to look out for any config specific macro usage
+
+Examples of macros in decompiled code: 
+
+|   #macro DEBUG false
+|   #macro {Data.GeneralInfo.Config.Content}:DEBUG true
+|
+|   // somewhere in code...
+|   if (true && otherCondition)
+|
+|   // might actually be
+|   if (DEBUG && otherCondition)
+
+Learn more here
+https://manual.gamemaker.io/beta/en/GameMaker_Language/GML_Overview/Variables/Constants.htm#:~:text=Configuration%20Override";
+}
+
+readMeMessage += @"
+
+--------------------------------------------------------
+Project Decompiled by Ultimate_GMS2_Decompiler_v5.csx
+	Improved by burnedpopcorn180
+		Original Version by setupwitch
+";
+// create the readme
+if (!UISettings.YYMPS)
+    CreateNote("README", "DecompilerGenerated", readMeMessage);
+#endregion
+
+// Custom Stuff
+#region Extract Asset Order Note
+if (!UISettings.YYMPS)
+{
+    string asset_text = "Generated by Ultimate_GMS2_Decompiler_v5.csx";
+
+    asset_text += "\n\nThis is a List of All Asset IDs";
+    asset_text += "\nas the Decompiler often has to use an Asset's ID";
+    asset_text += "\nbecause it can only GUESS what is an Asset and what is just a Number";
+
+    asset_text += "\n\nAssets Found:\n";
+
+    #region Asset Count
+    asset_text += $"\nSprites: {(Data?.Sprites?.Count ?? 0)}";
+    asset_text += $"\nObjects: {(Data?.GameObjects?.Count ?? 0)}";
+    asset_text += $"\nRooms: {(Data?.Rooms?.Count ?? 0)}";
+    asset_text += $"\nSounds: {(Data?.Sounds?.Count ?? 0)}";
+    asset_text += $"\nBackgrounds: {(Data?.Backgrounds?.Count ?? 0)}";
+    asset_text += $"\nShaders: {(Data?.Shaders?.Count ?? 0)}";
+    asset_text += $"\nAnimation Curves: {(Data?.AnimationCurves?.Count ?? 0)}";
+    asset_text += $"\nSequences: {(Data?.Sequences?.Count ?? 0)}";
+    asset_text += $"\nTimelines: {(Data?.Timelines?.Count ?? 0)}";
+    asset_text += $"\nPaths: {(Data?.Paths?.Count ?? 0)}";
+    asset_text += $"\nFonts: {(Data?.Fonts?.Count ?? 0)}";
+    #endregion
+
+    asset_text += "\n\n";//spacer
+
+    #region Asset Chunks
+    void AddAssetChunk(dynamic? Chunk, string Header, string Type)
+    {
+        asset_text += ($"\n--------------------- {Header} ---------------------");
+
+        var Index = 0;
+        if (Chunk != null && Chunk.Count > 0)
+        {
+            foreach (var Asset in Chunk)
+            {
+                if (Asset is null) continue;
+                asset_text += $"\n{Index++} - {Asset.Name.Content}";
+            }
+
+            // if there was some assets, leave entire function
+            if (Index != 0) return;
+        }
+
+        // if chunk was empty and no assets were found
+        asset_text += $"\nNo {Type} could be Found";
+    }
+
+    AddAssetChunk(Data?.Sprites, "SPRITES", "Sprites");
+    AddAssetChunk(Data?.GameObjects, "OBJECTS", "Objects");
+    AddAssetChunk(Data?.Rooms, "ROOMS", "Rooms");
+    AddAssetChunk(Data?.Sounds, "SOUNDS", "Sounds");
+    AddAssetChunk(Data?.Backgrounds, "BACKGROUNDS", "Backgrounds");
+    AddAssetChunk(Data?.Shaders, "SHADERS", "Shaders");
+    AddAssetChunk(Data?.AnimationCurves, "ANIMATION CURVES", "Animation Curves");
+    AddAssetChunk(Data?.Sequences, "SEQUENCES", "Sequences");
+    AddAssetChunk(Data?.Timelines, "TIMELINES", "Timelines");
+    AddAssetChunk(Data?.Paths, "PATHS", "Paths");
+    AddAssetChunk(Data?.Fonts, "FONTS", "Fonts");
+    #endregion
+
+    // make it
+    CreateNote("Asset_Order", "DecompilerGenerated", asset_text);
+}
+
+#endregion
+#region Create GlobalInit Script
+
+if (UISettings.SCPT
+    // add anyways if any rooms, objects, or scripts were decompiled using asset picker
+    // kinda hacky, but not really, and idc
+    || Directory.Exists(scriptDir + "scripts")
+    || Directory.Exists(scriptDir + "rooms")
+    || Directory.Exists(scriptDir + "objects")
+)
+{
+    GMScript globalInitScript = new("_GLOBAL_INIT")
+    {
+        parent = GetFolderReference("DecompilerGenerated")
+    };
+    string assetDir = $"{scriptDir}scripts\\{globalInitScript.name}\\";
+    string globalInitCode = $"// Generated by Ultimate_GMS2_Decompiler_v5.csx\n";
+
+    #region gml_pragma shit
+    foreach (UndertaleGlobalInit g in Data.GlobalInitScripts)
+    {
+        if (scriptsToDump.Any(s => s.Code == g.Code))
+            continue;
+
+        string dumpedCode = DumpCode(g.Code, new DecompileSettings
+        {
+            MacroDeclarationsAtTop = false,
+            CreateEnumDeclarations = false,
+            UseSemicolon = false,
+            AllowLeftoverDataOnStack = true
+        }) ?? "";
+        // from quantum
+        dumpedCode = dumpedCode.Replace("'", "'+\"'\"+@'").TrimEnd();
+        globalInitCode += $"gml_pragma(\"global\", @'{dumpedCode}');\n";
+    }
+    Directory.CreateDirectory(assetDir);
+    #endregion
+    #region Extract All Enums
+    // YYC check
+    if (Data?.Code != null)
+    {
+        // EnumSetName, <EntryVal, EntryName>
+        Dictionary<string, Dictionary<long, string>> EnumSets = new();
+        DecompileSettings dSettings = new()
+        {
+            MacroDeclarationsAtTop = true,
+            CreateEnumDeclarations = true,
+        };
+
+        // Check all Code Entries for Enums
+        foreach (UndertaleCode code in Data.Code)
+        {
+            // check only if code entry is valid
+            if (code.ParentEntry == null && code != null)
+            {
+                DecompileContext context = new(globalDecompileContext, code, dSettings);
+                BlockNode rootBlock = (BlockNode)context.DecompileToAST();
+                foreach (IStatementNode stmt in rootBlock.Children)
+                {
+                    // also account for bitwise unknown enum setting
+                    if (stmt is EnumDeclNode decl && !(UISettings.ENUM && decl.Enum.Name == SettingsWindow.DecompilerSettings.UnknownEnumName))
+                    {
+                        // add enum set if not there already
+                        if (!EnumSets.ContainsKey(decl.Enum.Name))
+                            EnumSets.Add(decl.Enum.Name, new Dictionary<long, string>());
+                        // add each enum entry and its value
+                        foreach (GMEnumValue val in decl.Enum.Values)
+                            EnumSets[decl.Enum.Name].TryAdd(val.Value, val.Name);
+                    }
+                }
+            }
+        }
+
+        globalInitCode += "\n// GameSpecificData Enums\n";
+
+        foreach (string EnumSetName in EnumSets.Keys)
+        {
+            // get enum set
+            Dictionary<long, string> EnumEntries = EnumSets[EnumSetName];
+            // get every enum entries' values
+            List<long> SortedValues = EnumEntries.Keys.ToList();
+            // order the values properly
+            SortedValues.Sort();
+
+            // Add Enum Declaration
+            globalInitCode += $"\nenum {EnumSetName}\n{{\n";
+
+            long expectedValue = 0;
+            foreach (long val in SortedValues)
+            {
+                // for negative values
+                string name = string.Format(EnumEntries[val], val.ToString().Replace("-", "m"));
+
+                // if in order, ex: 1, 2, 3
+                if (val == expectedValue)
+                {
+                    globalInitCode += $"\t{(name)},\n";
+                    if (expectedValue != long.MaxValue)
+                        expectedValue++;
+                }
+                // else if not in order, like: 1, 2, 5
+                // then make it = 5 to account for it
+                else
+                {
+                    globalInitCode += $"\t{(name)} = {(val)},\n";
+                    expectedValue = val + (expectedValue != long.MaxValue ? 1 : 0);
+                }
+            }
+            globalInitCode += "}\n";
+        }
+    }
+    #endregion
+
+    File.WriteAllText($"{assetDir}{globalInitScript.name}.yy", JsonSerializer.Serialize(globalInitScript, jsonOptions));
+    File.WriteAllText($"{assetDir}{globalInitScript.name}.gml", globalInitCode);
+
+    CreateProjectResource(GMAssetType.Script, "_GLOBAL_INIT", Data.Scripts.Count + 1);
+
+    PushToLog("Created GlobalInit Script.");
+}
+#endregion
+
+#region Finish Export
+void CreateYYP() 
+{
+    // order all of the resources correctly and Make YYP
+    finalExport.resources = new ConcurrentQueue<GMProject.Resource>(finalExport.resources.OrderBy(asset => asset.order));
+    string yypStr = JsonSerializer.Serialize(finalExport, jsonOptions);
+    File.WriteAllText($"{scriptDir}{finalExport.name}.yyp", yypStr);
+}
+
+// YYMPS Packages are literally just normal GameMaker Projects
+// that are compressed as a ZIP file with the .yymps file extension
+// and with some additional metadata in the .yyp and an extra metadata.json
+// to tell gamemaker that its a package rather than a full project
+// so yeah
+#region YYMPS Maker
+if (UISettings.YYMPS)
+{
+    // metadata.json
+    var metadata = new
+    {
+        package_id = "Package",
+        display_name = "Package",
+        version = "1.0.0",
+        package_type = "asset",
+        ide_version = finalExport.MetaData.IDEVersion
+    };
+    string metadataString = JsonSerializer.Serialize(metadata, jsonOptions);
+    File.WriteAllText($"{scriptDir}metadata.json", metadataString);
+
+    // Add MetaData to YYP
+    finalExport.MetaData.PackageType = "Asset";
+    finalExport.MetaData.PackageName = "Package";
+    finalExport.MetaData.PackageID = "Package";
+    finalExport.MetaData.PackagePublisher = "Package";
+    finalExport.MetaData.PackageVersion = "1.0.0";
+
+    // Make YYP
+    CreateYYP();
+
+    // Make final YYMPS directory
+    string yympsfolder = $"{rootDir}/Export_YYMPS/";
+    Directory.CreateDirectory(yympsfolder);
+
+    // YYMPS Compression
+    string yymps = yympsfolder + $"{finalExport.name}.yymps";
+
+    // if previous yymps exists with the same name, DELETE IT OFF THE FACE OF THE EARTH
+    if (File.Exists(yymps))
+        File.Delete(yymps);
+
+    // Compress to YYMPS
+    ZipFile.CreateFromDirectory(scriptDir, yymps);
+
+    // delete the original directory
+    Directory.Delete(scriptDir, true);
+
+    // Wait until the directory is fully deleted
+    // because bad stuffs happen if the script finished and its not completely deleted
+    while (Directory.Exists(scriptDir))
+        await Task.Delay(1000); // wait 1000 ms before next check
+}
+#endregion
+else
+{
+    CreateYYP();
+
+    // add error log if not a yymps
+    if (errorList.Count > 0)
+        File.WriteAllLines(scriptDir + "errors.log", errorList);
+}
+#endregion
+
+totalTime.Stop();
+PushToLog($"All assets complete! Took {totalTime.ElapsedMilliseconds} ms");
+
+ScriptMessage($"Script done with {errorList.Count} error{(errorList.Count == 1 ? "" : "s")}!" + (!UISettings.YYMPS ? "\n\nDouble Check that all necessary files/folders are in the 'datafiles' directory!" : ""));
+
+Process.Start("explorer.exe", (!UISettings.YYMPS ? scriptDir : $"{rootDir}Export_YYMPS\\"));
+
+GC.Collect();
+
+#endregion
