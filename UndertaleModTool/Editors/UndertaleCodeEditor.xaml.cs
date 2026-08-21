@@ -1723,29 +1723,66 @@ namespace UndertaleModTool
             if (items.Count == 0)
                 return;
 
+            // Never create the completion window for an editor that isn't connected to a
+            // presentation source (e.g. during tab teardown); showing a Window under such
+            // conditions crashes inside WPF window creation.
+            if (PresentationSource.FromVisual(editor.TextArea) is null || Window.GetWindow(editor.TextArea) is null)
+                return;
+
             List<ICompletionData> dataList = new List<ICompletionData>(items.Count);
             foreach (GmlCompletionItem item in items)
                 dataList.Add(new GmlCompletionData(item));
 
-            CompletionWindow window = new(editor.TextArea)
+            CompletionWindow window;
+            try
             {
-                MaxHeight = 320,
-                CloseAutomatically = true
-            };
-            window.CompletionList.IsFiltering = true;
-            foreach (ICompletionData completionData in dataList)
-                window.CompletionList.CompletionData.Add(completionData);
+                window = new CompletionWindow(editor.TextArea)
+                {
+                    MaxHeight = 320,
+                    CloseAutomatically = true
+                };
+                window.CompletionList.IsFiltering = true;
+                foreach (ICompletionData completionData in dataList)
+                    window.CompletionList.CompletionData.Add(completionData);
 
-            // Show the typed word in gray inside the completion box
-            int wordStart = caret;
-            string docText = code;
-            while (wordStart > 0 && wordStart - 1 < docText.Length && IsWordChar(docText[wordStart - 1]))
-                wordStart--;
-            window.StartOffset = wordStart;
+                // Show the typed word in gray inside the completion box
+                int wordStart = caret;
+                string docText = code;
+                while (wordStart > 0 && wordStart - 1 < docText.Length && IsWordChar(docText[wordStart - 1]))
+                    wordStart--;
+                window.StartOffset = wordStart;
 
-            _completionWindow = window;
-            window.Closed += (s2, e2) => _completionWindow = null;
-            window.Show();
+                _completionWindow = window;
+                window.Closed += (s2, e2) => _completionWindow = null;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine("UndertaleCodeEditor: failed to build completion window: " + ex);
+                CloseCompletionWindow();
+                return;
+            }
+
+            // Show the window outside of the text-input call stack. Creating the HWND while
+            // WPF is still dispatching the WM_CHAR transaction can fail inside
+            // Window.CreateSourceWindow (NullReferenceException), taking down the whole app.
+            // Deferring the call lets input processing finish first, and any residual failure
+            // is contained instead of crashing on every keystroke.
+            window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    if (!ReferenceEquals(_completionWindow, window))
+                        return; // superseded or closed meanwhile
+                    window.Show();
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine("UndertaleCodeEditor: failed to show completion window: " + ex);
+                    if (ReferenceEquals(_completionWindow, window))
+                        _completionWindow = null;
+                    try { window.Close(); } catch { /* already closing */ }
+                }
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         private void UpdateFolding()
