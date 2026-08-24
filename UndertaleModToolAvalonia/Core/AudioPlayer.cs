@@ -21,7 +21,9 @@ public class AudioPlayer : IDisposable
 
     static void EnsureInitialized()
     {
-        if (initialized)
+        // Short-circuit only while the shared mixer is still alive; if it was ever torn down,
+        // run initialization again instead of reusing a dead handle.
+        if (initialized && mixer != IntPtr.Zero)
             return;
         initialized = true;
 
@@ -140,7 +142,11 @@ public class AudioPlayer : IDisposable
         // If those are null, nothing happens. They also don't call the track stopped callback.
         Mixer.DestroyTrack(track);
         Mixer.DestroyAudio(audio);
-        Mixer.Quit();
+
+        // NOTE: deliberately no Mixer.Quit() here! The mixer device is shared by every player
+        // (static `mixer`) and must outlive individual tracks. Quitting it when the first track
+        // stopped left all later playbacks using a dead handle - and because EnsureInitialized()
+        // is latched, nothing ever recreated it ("audio only plays the first time" on Android).
 
         if (trackStoppedCallbackHandle.IsAllocated)
             trackStoppedCallbackHandle.Free();
