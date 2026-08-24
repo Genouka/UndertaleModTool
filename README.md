@@ -1,30 +1,37 @@
 # UndertaleModTool (Genouka Fork)
 
-![GitHub Release](https://img.shields.io/github/v/release/genouka/UndertaleModTool?style=flat)
-![GitHub Repo stars](https://img.shields.io/github/stars/genouka/UndertaleModTool?style=flat)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/genouka/UndertaleModTool/total) [![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/svg-badge.svg)](https://hosted.weblate.org/engage/qiuutmtv4/)
+![GitHub Release](https://img.shields.io/github/v/release/genouka/UndertaleModTool?style=flat) [![GitHub](https://img.shields.io/github/license/genouka/UndertaleModTool?logo=github)](https://github.com/UnderminersTeam/UndertaleModTool/blob/master/LICENSE.txt)
+![GitHub Repo stars](https://img.shields.io/github/stars/genouka/UndertaleModTool?style=flat) [![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/svg-badge.svg)](https://hosted.weblate.org/engage/qiuutmtv4/) [![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126) [![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200)
 
-[![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126)[![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200)
+**This is an unofficial fork of UndertaleModTool!**
 
-[Participate in localizing translations on Weblate!](https://hosted.weblate.org/engage/qiuutmtv4/)
+**这是一个非官方的UndertaleModTool分支。**
 
-**This is an unofficial fork of UndertaleModTool! 这是一个非官方的UndertaleModTool分支。**
+This repository maintains versions for four platforms: Windows, Linux, MacOS, and Android. 
 
-This repository maintains versions for four platforms: Windows, Linux, MacOS, and Android. 本仓库同时维护 Windows、Linux、MacOS、Android 四个平台的版本。
+本仓库同时维护 Windows、Linux、MacOS、Android 四个平台的版本。
 
-|        Releases(发布包)        | URL(链接) 	                                                                                    |
-|:----------------------------:|----------------------------------------------------------------------------------------------|
-| Nightly Version(最新版) | [下载(Download)](https://github.com/Genouka/UndertaleModTool/releases/tag/nightly)                             |
-| Stable Version(稳定版) | [下载(Download)](https://github.com/Genouka/UndertaleModTool/releases)                             |
-|  Test Build(测试构建)   | [下载(Download)](https://github.com/Genouka/UndertaleModTool/actions/workflows/build_test_apk.yml) |
+## Download / 下载
 
-Download the latest release of this fork from the [releases page](https://github.com/GenOuka/UndertaleModTool/releases). 在[releases页面](https://github.com/GenOuka/UndertaleModTool/releases)下载本fork项目的最新版本。
+|  Releases (发布包)   | Link / State (链接/状态) 	                                                                                                                                                       |
+|:-----------------:|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   Stable (稳定版)    | [![Latest Stable Release](https://img.shields.io/github/downloads/genouka/UndertaleModTool/latest/total)](https://github.com/genouka/UndertaleModTool/releases/latest)       |
+|   Nightly (每夜版)   | [![Latest Stable Release](https://img.shields.io/github/downloads/genouka/UndertaleModTool/nightly/total)](https://github.com/genouka/UndertaleModTool/releases/tag/nightly) |
+| Test Build (测试构建) | [下载(Download)](https://github.com/Genouka/UndertaleModTool/actions/workflows/build_test_apk.yml)                                                                             |
 
-[QQ群](https://qm.qq.com/q/V1LyuIu3IY) [哔哩哔哩](https://space.bilibili.com/3493116076100126)
+If you are looking for the official version instead of the version I forked, please go to [here](https://github.com/UnderminersTeam/UndertaleModTool/)
+
+如果你在找官方的版本而不是我Fork的版本，请前往[这里](https://github.com/UnderminersTeam/UndertaleModTool/)
+
+[QQ群](https://qm.qq.com/q/V1LyuIu3IY) |  [哔哩哔哩](https://space.bilibili.com/3493116076100126)
 
 ## What do I change?/我做了什么修改？
 
+- Avalonia App for Windows/Linux/MacOS/Android 跨平台支持
+
 - Add the support of multi-language and localization. 添加多语言和本地化支持
+  
+  [Participate in localizing translations on Weblate!](https://hosted.weblate.org/engage/qiuutmtv4/)
   
   ![Preview](images/preview/image-2.png)
 
@@ -94,13 +101,27 @@ Download the latest release of this fork from the [releases page](https://github
 
   ![Preview](images/preview/img.png)
 
-- Real-time static error checking 实时静态错误检查
+- Real-time static error checking and parameter matching checking 实时静态错误检查和参数匹配检查
 
   ![Preview](images/preview/img_1.png)
 
-- Avalonia App for Linux/MacOS/Android 跨平台支持
+- Code editor dual-color theme and its settings 代码编辑器双色主题及其设置
 
+    ![Preview](images/preview/img_2.png)
+    
+    ![Preview](images/preview/img_3.png)
 
+- Better context menu 更好的上下文菜单
+
+  ![Preview](images/preview/img_4.png)
+
+  ![Preview](images/preview/img_5.png)
+
+- Auto check for updates (can close) 自动检查更新功能（可以关闭）
+
+- A more detailed and accurate code analyzer (type propagation and constant folding) 更详细准确的代码分析器（类型传播和常量展开）
+
+- Actively synchronize upstream code, usually no longer than a week 积极同步上游代码，通常不会超过一周
 
 ## 鸣谢/Thanks
 如果没有以下项目作为基础，本项目将永远不会诞生！
