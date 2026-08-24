@@ -8,6 +8,7 @@ namespace UndertaleModToolAvalonia;
 public class AudioPlayer : IDisposable
 {
     static Action<Action> mainThreadAction = null!;
+    static Action<string>? reportError;
 
     static IntPtr mixer = IntPtr.Zero;
     static bool initialized;
@@ -48,26 +49,48 @@ public class AudioPlayer : IDisposable
         // SDL/SDL_mixer are initialized lazily on first playback. On Android the SDL Java bridge
         // needs an Activity context (installed by the Android host) before any SDL call that may
         // use Android file I/O can succeed, and that context only exists once the Activity is up.
-        EnsureInitialized();
-        // Don't allow this be deallocated until the sound stops.
         trackStoppedCallback = new(OnTrackStoppped);
+
+        // Every failure is reported as a dialog instead of being thrown: the callers construct
+        // this player from async void handlers, where an exception would crash the whole app.
+        // A failed player simply stays inert - it holds only zero handles, so Stop()/Dispose()
+        // remain safe to call.
+        try
+        {
+            Start(data);
+        }
+        catch (Exception e)
+        {
+            ReportError(e.Message);
+
+            if (trackStoppedCallbackHandle.IsAllocated)
+                trackStoppedCallbackHandle.Free();
+        }
+    }
+
+    void Start(byte[] data)
+    {
+        EnsureInitialized();
+
+        // Don't allow this be deallocated until the sound stops.
         trackStoppedCallbackHandle = GCHandle.Alloc(trackStoppedCallback);
 
         // Load audio
         GCHandle dataHandle = GCHandle.Alloc(data, GCHandleType.Pinned);
-
-        IntPtr io = SDL.IOFromConstMem(dataHandle.AddrOfPinnedObject(), (nuint)data.Length);
-        if (io == IntPtr.Zero)
-            throw new InvalidOperationException($"{SDL.GetError()}");
-
-        audio = Mixer.LoadAudioIO(mixer, io, predecode: true, closeio: true);
-
-        dataHandle.Free();
-
-        if (audio == IntPtr.Zero)
+        try
         {
-            // TODO: Show some kind of error
-            return;
+            IntPtr io = SDL.IOFromConstMem(dataHandle.AddrOfPinnedObject(), (nuint)data.Length);
+            if (io == IntPtr.Zero)
+                throw new InvalidOperationException($"{SDL.GetError()}");
+
+            audio = Mixer.LoadAudioIO(mixer, io, predecode: true, closeio: true);
+
+            if (audio == IntPtr.Zero)
+                throw new InvalidOperationException($"{SDL.GetError()}");
+        }
+        finally
+        {
+            dataHandle.Free();
         }
 
         // Create track and play
@@ -85,9 +108,26 @@ public class AudioPlayer : IDisposable
             throw new InvalidOperationException($"{SDL.GetError()}");
     }
 
-    public static void Init(Action<Action> _mainThreadAction)
+    /// <summary>
+    /// Installs the thread-marshaling hook and the error dialog hook used by all players.
+    /// </summary>
+    public static void Init(Action<Action> _mainThreadAction, Action<string>? _reportError = null)
     {
         mainThreadAction = _mainThreadAction;
+        reportError = _reportError;
+    }
+
+    static void ReportError(string message)
+    {
+        Action<string>? handler = reportError;
+        if (handler is null)
+            return;
+
+        Action<Action> marshal = mainThreadAction;
+        if (marshal is not null)
+            marshal(() => handler(message));
+        else
+            handler(message);
     }
 
     public void Stop()

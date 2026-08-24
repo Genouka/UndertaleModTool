@@ -124,7 +124,13 @@ public partial class MainViewModel : ObservableObject
     {
         ServiceProvider = serviceProvider;
 
-        AudioPlayer.Init(f => Dispatcher.UIThread.Post(f));
+        AudioPlayer.Init(
+            f => Dispatcher.UIThread.Post(f),
+            // Audio failures (SDL init, decode, playback) are reported as a message dialog
+            // instead of escaping the async void play handlers and crashing the app.
+            message => View?.MessageDialog(
+                $"{LocalizationSource.GetString("Msg_FailedPlayAudio")}\n{message}",
+                title: LocalizationSource.GetString("Msg_AudioFailure")).WaitOnDispatcherFrame());
 
         DataExplorer = new(this);
 
