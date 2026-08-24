@@ -11,6 +11,10 @@ This repository maintains versions for four platforms: Windows, Linux, MacOS, an
 
 本仓库同时维护 Windows、Linux、MacOS、Android 四个平台的版本。
 
+[Participate in localizing translations on Weblate!](https://hosted.weblate.org/engage/qiuutmtv4/)
+
+[在 Weblate 平台参与本地化翻译!](https://hosted.weblate.org/engage/qiuutmtv4/)
+
 ## Download / 下载
 
 |  Releases (发布包)   | Link / State (链接/状态) 	                                                                                                                                                       |
