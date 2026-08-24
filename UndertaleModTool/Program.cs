@@ -50,7 +50,7 @@ namespace UndertaleModTool
                         UseShellExecute = true
                     };
                     Process.Start(processStartInfo);
-                }catch(Exception ignored){}
+                }catch{ }
             }
         }
         private static void GlobalUnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e)
@@ -70,7 +70,7 @@ namespace UndertaleModTool
                     UseShellExecute = true
                 };
                 Process.Start(processStartInfo);
-            }catch(Exception ignored){}
+            }catch{ }
         }
 
         private static void GlobalThreadExceptionHandler(object sender, System.Threading.ThreadExceptionEventArgs e)
@@ -89,7 +89,7 @@ namespace UndertaleModTool
                     UseShellExecute = true
                 };
                 Process.Start(processStartInfo);
-            }catch(Exception ignored){}
+            }catch{ }
         }
     }
 }
