@@ -42,6 +42,11 @@ public class AvaloniaAndroidApp : AvaloniaAndroidApplication<App>
         // Make the scripting engine reference the plain (non-AOT) DLL copies packaged into the APK
         // assets: they are extracted to internal storage before the first script run.
         ScriptAssemblyExtractor.Install();
+
+        // The import/export services build their scratch ("Packager") folders under ExePath, which
+        // on Android would resolve to the read-only /system/bin; point them at the app's cache
+        // directory instead.
+        ImportExportService.PlatformCacheDirectoryProvider = () => CacheDir?.AbsolutePath;
     }
 
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Microsoft.CodeAnalysis;
 using UndertaleModLib;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
@@ -34,7 +35,27 @@ public partial class ImportExportService
     protected UndertaleData Data => mainVM.Data ?? throw new InvalidOperationException("No data file loaded.");
     protected ProjectContext? Project => mainVM.Project;
     protected string? FilePath => mainVM.DataPath;
-    protected string? ExePath => Path.GetDirectoryName(Environment.ProcessPath);
+    /// <summary>
+    /// Platform hook supplying a writable application cache directory. On Android there is no
+    /// executable directory (<c>Environment.ProcessPath</c> points into the read-only
+    /// <c>/system/bin</c>), so the import/export services derive their scratch folders (the
+    /// "Packager" working directories) from the app's cache directory instead. Wired by the
+    /// Android head at startup.
+    /// </summary>
+    public static Func<string?>? PlatformCacheDirectoryProvider { get; set; }
+
+    protected string? ExePath {
+        get
+        {
+            if (OperatingSystem.IsAndroid())
+            {
+                return PlatformCacheDirectoryProvider?.Invoke()
+                    ?? Environment.GetEnvironmentVariable("TMPDIR")
+                    ?? Path.GetTempPath();
+            }
+            return Path.GetDirectoryName(Environment.ProcessPath);
+        }
+    }
 
     protected void EnsureDataLoaded()
     {
