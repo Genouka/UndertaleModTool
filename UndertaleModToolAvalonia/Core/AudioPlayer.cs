@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using SDL3;
@@ -12,6 +13,12 @@ public class AudioPlayer : IDisposable
 
     static IntPtr mixer = IntPtr.Zero;
     static bool initialized;
+
+    // Every live player, so platform lifecycles (Android OnPause/OnDestroy) can stop all playback
+    // or tear the shared audio stack down. Mutations happen on the UI thread in practice; the lock
+    // just makes the list itself airtight.
+    static readonly List<AudioPlayer> activePlayers = [];
+    static readonly object activePlayersLock = new();
 
     IntPtr audio;
     IntPtr track;
@@ -108,6 +115,11 @@ public class AudioPlayer : IDisposable
 
         if (!Mixer.SetTrackStoppedCallback(track, trackStoppedCallback, IntPtr.Zero))
             throw new InvalidOperationException($"{SDL.GetError()}");
+
+        lock (activePlayersLock)
+        {
+            activePlayers.Add(this);
+        }
     }
 
     /// <summary>
@@ -117,6 +129,58 @@ public class AudioPlayer : IDisposable
     {
         mainThreadAction = _mainThreadAction;
         reportError = _reportError;
+    }
+
+    /// <summary>
+    /// Stops every player that is currently playing. Called from platform lifecycle hooks
+    /// (e.g. Android's <c>OnPause</c>) so preview audio does not keep playing in the background -
+    /// unlike the full SDLActivity, the context shim used on Android does not pause SDL audio
+    /// devices automatically. Must be called from the UI thread, like every other teardown path.
+    /// </summary>
+    public static void StopAll()
+    {
+        AudioPlayer[] players;
+        lock (activePlayersLock)
+        {
+            players = [.. activePlayers];
+        }
+
+        foreach (AudioPlayer player in players)
+        {
+            player.Stop();
+        }
+    }
+
+    /// <summary>
+    /// Stops all playback and tears the shared SDL audio stack down completely. Called when the
+    /// host platform goes away for good (e.g. an Android activity that is finishing, while its
+    /// SDL context is still valid). Any player created afterwards transparently re-initializes
+    /// everything.
+    /// </summary>
+    public static void Shutdown()
+    {
+        StopAll();
+
+        lock (activePlayersLock)
+        {
+            if (!initialized && mixer == IntPtr.Zero)
+                return;
+
+            if (mixer != IntPtr.Zero)
+            {
+                Mixer.DestroyMixer(mixer);
+                mixer = IntPtr.Zero;
+            }
+
+            Mixer.Quit();
+
+            if ((SDL.WasInit(SDL.InitFlags.Audio) & SDL.InitFlags.Audio) != 0)
+            {
+                SDL.QuitSubSystem(SDL.InitFlags.Audio);
+            }
+
+            initialized = false;
+        }
     }
 
     static void ReportError(string message)
@@ -153,6 +217,11 @@ public class AudioPlayer : IDisposable
 
         track = IntPtr.Zero;
         audio = IntPtr.Zero;
+
+        lock (activePlayersLock)
+        {
+            activePlayers.Remove(this);
+        }
 
         GC.SuppressFinalize(this);
     }

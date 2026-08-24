@@ -62,8 +62,23 @@ public class MainActivity : AvaloniaMainActivity
         StoragePermissionHelper.OnRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
+    protected override void OnPause()
+    {
+        // Stop preview audio when the app leaves the foreground. The full SDLActivity pauses SDL
+        // audio devices on lifecycle events automatically, but this app only uses the context shim,
+        // so nothing would pause it for us (and previews have no business playing in background).
+        AudioPlayer.StopAll();
+
+        base.OnPause();
+    }
+
     protected override void OnDestroy()
     {
+        // Tear the shared SDL audio stack down while the activity (SDL.Context) is still alive;
+        // a later launch within the same process re-initializes everything transparently.
+        if (IsFinishing)
+            AudioPlayer.Shutdown();
+
         SDL.Context = null;
         base.OnDestroy();
     }
