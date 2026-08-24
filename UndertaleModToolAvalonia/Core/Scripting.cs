@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -88,15 +91,39 @@ public class Scripting
                 options = options
                     .AddReferences(references)
                     .WithMetadataResolver(ScriptMetadataResolver.Default.WithSearchPaths(ScriptAssembliesDirectory));
+
+                // Roslyn's scripting engine always converts two assemblies to metadata references
+                // through Assembly.Location: the core library (typeof(object).Assembly) and the
+                // globals-type host assembly (IScriptInterface's UndertaleModLib). On Android those
+                // locations are fabricated paths inside the APK (e.g. "/System.Private.CoreLib.dll")
+                // and do not exist on disk, which crashed compilation with FileNotFoundException no
+                // matter how many explicit references were supplied. Redirect every such conversion
+                // to the extracted plain DLL copies instead (Roslyn >= 4.4 provides
+                // ScriptOptions.WithCreateFromFileFunc for exactly this purpose).
+                options = TryUseFileBasedAssemblyReferences(options, ScriptAssembliesDirectory);
             }
             else
             {
                 options = options.AddReferences("System.Core", "UndertaleModLib");
             }
 
-            Script<object?> script = CSharpScript.Create(text, options, typeof(IScriptInterface));
+            Script<object?> script;
+            ImmutableArray<Diagnostic> diagnostics;
 
-            ImmutableArray<Diagnostic> diagnostics = await Task.Run(() => script.Compile());
+            try
+            {
+                script = CSharpScript.Create(text, options, typeof(IScriptInterface));
+                diagnostics = await Task.Run(() => script.Compile());
+            }
+            catch (Exception e)
+            {
+                // Compilation infrastructure failures (e.g. missing reference assemblies on
+                // platforms that don't support scripting) must surface as a dialog, not escape the
+                // async void command handler and crash the whole app.
+                await MainVM.View!.MessageDialog(e.ToString(), title: LocalizationSource.GetString("Msg_ScriptCompilationError"));
+
+                return null;
+            }
 
             IEnumerable<Diagnostic> errors = diagnostics.Where((Diagnostic diagnostic) => diagnostic.Severity == DiagnosticSeverity.Error);
             if (errors.Any())
@@ -133,6 +160,99 @@ public class Scripting
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Redirects Roslyn's implicit "Assembly → metadata reference" conversions (used for the core
+    /// library <c>typeof(object).Assembly</c> and for the globals-type host assembly) away from
+    /// <see cref="Assembly.Location"/> — a fabricated in-APK path like "/System.Private.CoreLib.dll"
+    /// on Android — to the plain DLL copies inside <paramref name="assembliesDirectory"/>.
+    /// Roslyn exposes <c>ScriptOptions.WithCreateFromFileFunc</c> for exactly this purpose; it is
+    /// internal and its return type is inaccessible, so the delegate is assembled via expression
+    /// trees and the hook is skipped silently if unavailable.
+    /// </summary>
+    private static ScriptOptions TryUseFileBasedAssemblyReferences(ScriptOptions options, string assembliesDirectory)
+    {
+        try
+        {
+            PropertyInfo? property = typeof(ScriptOptions).GetProperty(
+                "CreateFromFileFunc",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            MethodInfo? withFunc = typeof(ScriptOptions).GetMethod(
+                "WithCreateFromFileFunc",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+            if (property is null || withFunc is null || !property.CanWrite ||
+                withFunc.GetParameters().Length != 1 ||
+                withFunc.GetParameters()[0].ParameterType != property.PropertyType)
+            {
+                return options;
+            }
+
+            // Delegate shape (Roslyn >= 5.x): Func<string path, PEStreamOptions, MetadataReferenceProperties, MetadataImageReference>.
+            ParameterExpression pathParameter = Expression.Parameter(typeof(string), "path");
+            ParameterExpression optionsParameter = Expression.Parameter(typeof(PEStreamOptions), "peStreamOptions");
+            ParameterExpression propertiesParameter = Expression.Parameter(typeof(MetadataReferenceProperties), "properties");
+
+            MethodInfo createReference = typeof(Scripting).GetMethod(
+                nameof(CreateScriptAssemblyReference),
+                BindingFlags.NonPublic | BindingFlags.Static,
+                binder: null,
+                [typeof(string), typeof(PEStreamOptions), typeof(MetadataReferenceProperties), typeof(string)],
+                modifiers: null)!;
+
+            MethodCallExpression body = Expression.Call(
+                createReference,
+                pathParameter,
+                optionsParameter,
+                propertiesParameter,
+                Expression.Constant(assembliesDirectory));
+
+            LambdaExpression lambda = Expression.Lambda(
+                property.PropertyType,
+                Expression.Convert(body, property.PropertyType.GetGenericArguments()[^1]),
+                pathParameter,
+                optionsParameter,
+                propertiesParameter);
+
+            object? result = withFunc.Invoke(options, [lambda.Compile()]);
+            return result as ScriptOptions ?? options;
+        }
+        catch
+        {
+            return options;
+        }
+    }
+
+    /// <summary>
+    /// Body of the <c>CreateFromFileFunc</c> delegate: resolves <paramref name="path"/> against the
+    /// extracted script-assembly copies when the original location does not exist on disk and
+    /// returns an in-memory metadata reference. The actual return value is Roslyn's internal
+    /// <c>MetadataImageReference</c>, hence the <see cref="object"/> signature.
+    /// </summary>
+    private static object CreateScriptAssemblyReference(string path,
+                                                        PEStreamOptions _,
+                                                        MetadataReferenceProperties properties,
+                                                        string assembliesDirectory)
+    {
+        string localCandidate = Path.Combine(assembliesDirectory, Path.GetFileName(path));
+        if (File.Exists(localCandidate))
+        {
+            path = localCandidate;
+        }
+        // Otherwise keep Roslyn's original location, which is valid on platforms where real
+        // on-disk assemblies exist.
+
+        Stream stream = File.OpenRead(path);
+        try
+        {
+            return MetadataReference.CreateFromStream(stream, properties, null, path);
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
     }
 }
 
