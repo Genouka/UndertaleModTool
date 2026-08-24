@@ -214,7 +214,8 @@ jobs:
     - name: Create zip for stable release Avalonia Android
       shell: pwsh
       run: |
-        Remove-Item -Path ./Avalonia-Android-${{ matrix.rid }}/com.undertalemodtool.avalonia.android.apk -ErrorAction SilentlyContinue
+        # The APK stays inside the zip so the app can update itself on Android (it extracts the
+        # APK from the downloaded build and hands it to the system package installer).
         7z a -tzip ${{ matrix.filename }}.zip ./Avalonia-Android-${{ matrix.rid }}/* -mx9
     - name: Upload artifact
       uses: actions/upload-artifact@v7

@@ -597,6 +597,12 @@
   <data name="Msg_UpdateNotSupported" xml:space="preserve">
     <value>此平台不支持自动更新。</value>
   </data>
+  <data name="Msg_AndroidInstallPermission" xml:space="preserve">
+    <value>安装更新需要允许本应用“安装未知应用”。请在打开的系统设置中授权后重试。</value>
+  </data>
+  <data name="Msg_UpdatePackageMissing" xml:space="preserve">
+    <value>在下载的更新中未找到可安装的安装包，即将打开发布页面。</value>
+  </data>
   <data name="GML_Title" xml:space="preserve">
     <value>设置 - GML 编译器/反编译器</value>
   </data>

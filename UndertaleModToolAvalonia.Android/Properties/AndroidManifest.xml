@@ -13,6 +13,9 @@
 	<uses-permission android:name="android.permission.MANAGE_MEDIA" />
 	<uses-permission android:name="android.permission.MANAGE_DOCUMENTS" />
 	<uses-permission android:name="android.permission.INTERNET" />
+	<!-- In-app updates: lets the app start the system installer for a downloaded update APK
+	     (the user still has to allow "install unknown apps" for this app). -->
+	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 	<queries>
 		<intent>
 			<action android:name="android.intent.action.VIEW" />
@@ -22,7 +25,20 @@
 			<action android:name="android.intent.action.VIEW" />
 			<data android:scheme="https"/>
 		</intent>
+		<intent>
+			<action android:name="android.intent.action.VIEW" />
+			<data android:mimeType="application/vnd.android.package-archive"/>
+		</intent>
 	</queries>
-	
-	<application android:label="QiuUTMTv5" />
+
+	<!-- Serves the downloaded update APK to the system package installer (content:// URI). -->
+	<application android:label="QiuUTMTv5">
+		<provider android:name="androidx.core.content.FileProvider"
+		          android:authorities="${applicationId}.fileprovider"
+		          android:exported="false"
+		          android:grantUriPermissions="true">
+			<meta-data android:name="android.support.FILE_PROVIDER_PATHS"
+			           android:resource="@xml/file_paths" />
+		</provider>
+	</application>
 </manifest>

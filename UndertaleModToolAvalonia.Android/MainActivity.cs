@@ -50,6 +50,10 @@ public class MainActivity : AvaloniaMainActivity
         View decorView = Window!.DecorView;
         PlatformHaptics.LongPressFeedback = () => RunOnUiThread(() => decorView.PerformHapticFeedback(FeedbackConstants.LongPress));
         PlatformHaptics.TapFeedback = () => RunOnUiThread(() => decorView.PerformHapticFeedback(FeedbackConstants.VirtualKey));
+
+        // Wire the in-app updater: report the installed package's last update time as the local
+        // build date, and hand downloaded update APKs to the system package installer.
+        ApkUpdateInstaller.Install();
     }
 
     public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)

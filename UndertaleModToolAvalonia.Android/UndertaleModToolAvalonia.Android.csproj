@@ -54,6 +54,7 @@
         <AndroidResource Include="Resources\values\styles.xml" />
         <AndroidResource Include="Resources\values-night\colors.xml" />
         <AndroidResource Include="Resources\values-night\styles.xml" />
+        <AndroidResource Include="Resources\xml\file_paths.xml" />
     </ItemGroup>
 
     <!--

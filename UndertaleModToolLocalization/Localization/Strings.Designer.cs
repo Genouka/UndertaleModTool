@@ -10036,6 +10036,15 @@ namespace UndertaleModTool.Localization {
         }
         
         /// <summary>
+        ///   查找类似 Installing updates requires the &quot;install unknown apps&quot; permission for this app. Please grant it in the opened system settings and try again. 的本地化字符串。
+        /// </summary>
+        public static string Msg_AndroidInstallPermission {
+            get {
+                return ResourceManager.GetString("Msg_AndroidInstallPermission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 ASM compilation error - UndertaleModToolAvalonia v{0} 的本地化字符串。
         /// </summary>
         public static string Msg_ASMCompilationError {
@@ -14026,6 +14035,15 @@ namespace UndertaleModTool.Localization {
         public static string Msg_UpdateNotSupported {
             get {
                 return ResourceManager.GetString("Msg_UpdateNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 No installable package was found in the downloaded build. The releases page will be opened instead. 的本地化字符串。
+        /// </summary>
+        public static string Msg_UpdatePackageMissing {
+            get {
+                return ResourceManager.GetString("Msg_UpdatePackageMissing", resourceCulture);
             }
         }
         

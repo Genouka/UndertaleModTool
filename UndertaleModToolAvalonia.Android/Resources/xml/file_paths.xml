@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Whitelisted paths shared through the FileProvider (see AndroidManifest.xml).
+     ApkUpdateInstaller stages update APKs into cache/updates before installing them. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+	<cache-path name="updates" path="updates/" />
+</paths>

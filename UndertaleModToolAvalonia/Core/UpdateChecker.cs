@@ -38,9 +38,19 @@ public static class UpdateChecker
     public sealed record UpdateInfo(long RunId, DateTime UpdatedAt, string ArtifactName,
         string ReleasePageUrl, string ReleaseDownloadUrl, string NightlyLinkDownloadUrl);
 
-    /// <summary>Whether self-updating makes sense on the current platform (not Android/iOS).</summary>
+    /// <summary>
+    /// Whether checking for updates makes sense on the current platform. Android is supported too:
+    /// the downloaded update APK is handed to the system package installer (see
+    /// <see cref="PlatformUpdateInstaller"/>), only iOS has no support.
+    /// </summary>
     public static bool IsSupportedPlatform
-        => OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS();
+        => OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || OperatingSystem.IsAndroid();
+
+    /// <summary>
+    /// Optional platform override for the local build date, used where <see cref="Environment.ProcessPath"/>
+    /// does not point to a real file with a meaningful timestamp (e.g. an installed APK on Android).
+    /// </summary>
+    public static Func<DateTime>? LocalBuildTimeUtcOverride;
 
     /// <summary>Returns the name of the nightly artifact that matches the current platform, or null.</summary>
     public static string? GetArtifactName()
@@ -53,6 +63,10 @@ public static class UpdateChecker
             return RuntimeInformation.ProcessArchitecture == Architecture.Arm64
                 ? "UndertaleModToolAvalonia_nightly-macOS"
                 : "UndertaleModToolAvalonia_nightly-macOS-x86";
+        if (OperatingSystem.IsAndroid())
+            return RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+                ? "UndertaleModToolAvalonia_nightly-Android-arm64"
+                : "UndertaleModToolAvalonia_nightly-Android-x64";
         return null;
     }
 
@@ -118,11 +132,20 @@ public static class UpdateChecker
     /// <summary>Returns whether the given build is at least <see cref="NewerThanMinutes"/> minutes newer than the local install.</summary>
     public static bool IsNewerThanLocal(UpdateInfo info)
     {
-        string? localExe = Environment.ProcessPath;
-        if (localExe is null)
-            return true;
+        DateTime localUtc;
+        if (LocalBuildTimeUtcOverride is not null)
+        {
+            localUtc = LocalBuildTimeUtcOverride();
+        }
+        else
+        {
+            string? localExe = Environment.ProcessPath;
+            if (localExe is null)
+                return true;
 
-        DateTime localDate = File.GetLastWriteTime(localExe);
-        return info.UpdatedAt.ToLocalTime().Subtract(localDate).TotalMinutes > NewerThanMinutes;
+            localUtc = File.GetLastWriteTime(localExe).ToUniversalTime();
+        }
+
+        return info.UpdatedAt.Subtract(localUtc).TotalMinutes > NewerThanMinutes;
     }
 }

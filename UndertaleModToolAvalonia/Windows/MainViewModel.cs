@@ -1248,6 +1248,14 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         ILoaderWindow? loader = null;
         try
         {
+            // Android builds can't replace their own files - they hand the update APK
+            // to the system package installer instead of running a self-updater.
+            if (OperatingSystem.IsAndroid())
+            {
+                await UpdateAppAndroidAsync(info);
+                return;
+            }
+
             // Prepare the temp folder the updater will work from.
             string tempFolder = Path.Join(Path.GetTempPath(), "UndertaleModToolAvalonia");
             Directory.CreateDirectory(tempFolder);
@@ -1334,6 +1342,69 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         finally
         {
             updateInProgress = false;
+        }
+    }
+
+    /// <summary>
+    /// Android update flow: the app can't replace its own installed files, so download the build
+    /// zip, extract the update APK and hand it to the system package installer (which replaces the
+    /// app once the user confirms). This app instance keeps running in case the user cancels.
+    /// </summary>
+    async Task UpdateAppAndroidAsync(UpdateChecker.UpdateInfo info)
+    {
+        if (PlatformUpdateInstaller.InstallPackageAsync is null)
+            return;
+
+        ILoaderWindow? loader = View!.LoaderOpen();
+        try
+        {
+            loader.SetMessage(LocalizationSource.GetString("Main_Downloading"));
+            loader.SetMaximum(1000);
+
+            // Download the update, showing progress in a loader window.
+            string tempFolder = Path.Join(Path.GetTempPath(), "UndertaleModToolAvalonia");
+            Directory.CreateDirectory(tempFolder);
+            string downloadOutput = Path.Join(tempFolder, "Update.zip.zip");
+
+            using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) })
+            {
+                if (!await DownloadUpdateAsync(client, info, downloadOutput, loader))
+                {
+                    await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"),
+                        LocalizationSource.GetString("Msg_CheckInternetConnection")));
+                    return;
+                }
+            }
+
+            // Extract the downloaded zip (single or double zipped) and locate the update APK.
+            loader.SetStatus(LocalizationSource.GetString("Msg_ExtractingUpdate"));
+            string updateFolder = Path.Join(tempFolder, "Update");
+            if (Directory.Exists(updateFolder))
+                Directory.Delete(updateFolder, true);
+            await Task.Run(() => ExtractUpdateZip(downloadOutput, updateFolder));
+
+            string? apkPath = Directory.EnumerateFiles(updateFolder, "*.apk", SearchOption.AllDirectories).FirstOrDefault();
+            if (apkPath is null)
+            {
+                // Older releases shipped without an APK inside the zip - fall back to the releases page.
+                await View!.MessageDialog(LocalizationSource.GetString("Msg_UpdatePackageMissing"));
+                await View!.LaunchUriAsync(new Uri(info.ReleasePageUrl));
+                return;
+            }
+
+            loader.Close();
+            loader = null;
+
+            if (!await PlatformUpdateInstaller.InstallPackageAsync(apkPath))
+            {
+                // The platform side has opened the system settings to grant the permission first.
+                await View!.MessageDialog(LocalizationSource.GetString("Msg_AndroidInstallPermission"));
+                return;
+            }
+        }
+        finally
+        {
+            loader?.Close();
         }
     }
 
