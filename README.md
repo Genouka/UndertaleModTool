@@ -6,9 +6,11 @@
 
 [![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126)[![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200)
 
+[Participate in localizing translations on Weblate!](https://hosted.weblate.org/engage/qiuutmtv4/)
+
 **This is an unofficial fork of UndertaleModTool! 这是一个非官方的UndertaleModTool分支。**
 
-本仓库同时维护 Windows、Linux、MacOS、Android 四个平台的版本。
+This repository maintains versions for four platforms: Windows, Linux, MacOS, and Android. 本仓库同时维护 Windows、Linux、MacOS、Android 四个平台的版本。
 
 |        Releases(发布包)        | URL(链接) 	                                                                                    |
 |:----------------------------:|----------------------------------------------------------------------------------------------|
