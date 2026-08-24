@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest]
-        configuration: [Release]
+        configuration: [Debug]
         bundled: [true]
         singlefile: [true, false]
         include:
@@ -68,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        configuration: [Release]
+        configuration: [Debug]
         bundled: [true]
         target: [linux-x64, osx-arm64, osx-x64, win-x64]
         include:
@@ -158,7 +158,7 @@ jobs:
       run: dotnet restore UndertaleModToolAvalonia.Desktop
     - name: Publish ${{ matrix.rid }} Avalonia GUI
       run: |
-        dotnet publish UndertaleModToolAvalonia.Desktop -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ${{ matrix.filename }}
+        dotnet publish UndertaleModToolAvalonia.Desktop -c Debug -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true --output ${{ matrix.filename }}
     - name: Copy external files
       run: |
         cp ./README.md ./${{ matrix.filename }}/
@@ -205,7 +205,7 @@ jobs:
       run: dotnet workload install android
     - name: Publish Avalonia Android APK
       run: |
-        dotnet publish UndertaleModToolAvalonia.Android -c Release -r ${{ matrix.rid }} --self-contained true -p:AndroidSdkDirectory="$env:ANDROID_HOME" --output ${{ github.workspace }}\Avalonia-Android-${{ matrix.rid }}
+        dotnet publish UndertaleModToolAvalonia.Android -c Debug -r ${{ matrix.rid }} --self-contained true -p:AndroidSdkDirectory="$env:ANDROID_HOME" --output ${{ github.workspace }}\Avalonia-Android-${{ matrix.rid }}
     - name: Copy external files
       shell: pwsh
       run: |
