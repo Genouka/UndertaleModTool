@@ -100,6 +100,7 @@ public class AudioPlayer : IDisposable
         // If those are null, nothing happens. They also don't call the track stopped callback.
         Mixer.DestroyTrack(track);
         Mixer.DestroyAudio(audio);
+        Mixer.Quit();
 
         if (trackStoppedCallbackHandle.IsAllocated)
             trackStoppedCallbackHandle.Free();

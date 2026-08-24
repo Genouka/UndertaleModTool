@@ -23,6 +23,8 @@ public class MainActivity : AvaloniaMainActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+        base.OnCreate(savedInstanceState);
+        
         // SDL3 on Android resolves its Android context (asset manager, file IO, etc.) through
         // SDLActivity.getContext(), which just returns SDL.getContext(). Apps that host SDL inside
         // a non-SDL activity (like Avalonia's) must register the real activity context here so SDL
@@ -31,8 +33,6 @@ public class MainActivity : AvaloniaMainActivity
         SDL.SetupJNI();
         SDL.Initialize();
         SDL.Context = this;
-
-        base.OnCreate(savedInstanceState);
 
         // Avalonia.Android's accessibility bridge crashes when a screen-reader/accessibility service
         // walks the automation tree (a provider cached for a peer that conditionally exposes it, e.g.
