@@ -40,7 +40,7 @@
                 <Separator />
                 
                 <Label>
-                    <TextBlock FontWeight="Bold">{l:Loc AnimCurve_SelectedChannelProperties} (<TextBlock Text="{Binding ChannelSelected.Name.Content}"/>)</TextBlock>
+                    <TextBlock FontWeight="Bold"><TextBlock Text="{l:Loc AnimCurve_SelectedChannelProperties}"></TextBlock> (<TextBlock Text="{Binding ChannelSelected.Name.Content}"/>)</TextBlock>
                 </Label>
 
                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">

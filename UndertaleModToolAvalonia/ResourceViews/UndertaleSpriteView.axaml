@@ -18,7 +18,13 @@
                 <Label Content="{l:Loc Common_Name}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding Sprite.Name}" />
 
-                <Label>{l:Loc Editor_Sprite_Width} / {l:Loc Editor_Sprite_Height}</Label>
+                <Label>
+                    <TextBlock>
+                        <Run Text="{l:Loc Editor_Sprite_Width}"/>
+                        <Run Text=" / "></Run>
+                        <Run Text="{l:Loc Editor_Sprite_Height}"/>
+                    </TextBlock>
+                </Label>
                 <Grid ColumnDefinitions="1*,1*">
                     <TextBox Grid.Column="0" Text="{Binding Sprite.Width}" />
                     <TextBox Grid.Column="1" Text="{Binding Sprite.Height}" />
