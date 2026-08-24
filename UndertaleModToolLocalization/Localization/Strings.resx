@@ -5268,10 +5268,10 @@ It's highly recommended to restart the application.</value>
     <value>Check for functions with possibly mismatched argument counts</value>
   </data>
   <data name="Editor_ArgMismatchTooFew" xml:space="preserve">
-    <value>Possible argument count mismatch: &quot;{0}&quot; requires at least {1}, but {2} were provided</value>
+    <value>Possible argument count mismatch: "{0}" requires at least {1}, but {2} were provided</value>
   </data>
   <data name="Editor_ArgMismatchTooMany" xml:space="preserve">
-    <value>Possible argument count mismatch: &quot;{0}&quot; expects {1} argument(s), but {2} were provided</value>
+    <value>Possible argument count mismatch: "{0}" expects {1} argument(s), but {2} were provided</value>
   </data>
   <data name="Editor_WarningsFound" xml:space="preserve">
     <value>Warnings found: {0}</value>
@@ -6156,7 +6156,7 @@ It's highly recommended to restart the application.</value>
     <value>About</value>
   </data>
   <data name="Msg_AboutBody1" xml:space="preserve">
-    <value>by the Underminers team</value>
+    <value>by the Underminers team,luizzeroxis,Genouka</value>
   </data>
   <data name="Msg_AboutBody2" xml:space="preserve">
     <value>Licensed under the GNU General Public License Version 3.</value>
@@ -6279,7 +6279,8 @@ It's highly recommended to restart the application.</value>
     <value>Save to the project's designated data file for saving?</value>
   </data>
   <data name="Msg_AboutUndertaleModTool" xml:space="preserve">
-    <value>UndertaleModTool v{0} </value>
+    <value>QiuUTMTv5 v{0} </value>
+    <comment>Only used in Avalonia</comment>
   </data>
   <data name="Msg_NewMod" xml:space="preserve">
     <value>New</value>

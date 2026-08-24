@@ -1116,14 +1116,15 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
     public async void HelpGitHub()
     {
-        await View!.LaunchUriAsync(new Uri("https://github.com/UnderminersTeam/UndertaleModTool"));
+        await View!.LaunchUriAsync(new Uri("https://github.com/Genouka/UndertaleModTool"));
     }
 
     public async void HelpAbout()
     {
+        // About Window
         await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_AboutUndertaleModTool"), App.VersionString) +
             LocalizationSource.GetString("Msg_AboutBody1") +
-            "\nhttps://github.com/UnderminersTeam/UndertaleModTool" +
+            "\nhttps://github.com/Genouka/UndertaleModTool" +
             "\n" + LocalizationSource.GetString("Msg_AboutBody2") +
             "\n" +
             "\n" + string.Format(LocalizationSource.GetString("Msg_AboutBody3"), App.InformationalVersionString)
