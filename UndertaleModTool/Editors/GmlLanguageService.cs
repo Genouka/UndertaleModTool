@@ -344,14 +344,7 @@ namespace UndertaleModTool.Editors
                 // Skip string/char literals (treat backticks as strings too)
                 if (c == '"' || c == '\'' || c == '`')
                 {
-                    char quote = c;
-                    i++;
-                    while (i < len)
-                    {
-                        if (code[i] == '\\') { i += 2; continue; }
-                        if (code[i] == quote) { i++; break; }
-                        i++;
-                    }
+                    i = SkipStringLiteral(code, i);
                     continue;
                 }
                 // Identifiers
@@ -376,6 +369,24 @@ namespace UndertaleModTool.Editors
             return diagnostics ?? (IReadOnlyList<GmlDiagnostic>)Array.Empty<GmlDiagnostic>();
         }
 
+        // Skips a string literal starting at index i (which must be the quote character).
+        // Handles backslash escape sequences; returns the index just past the closing
+        // quote, or the end of the text if the string is unterminated.
+        private static int SkipStringLiteral(string code, int i)
+        {
+            char quote = code[i];
+            i++;
+            int len = code.Length;
+            while (i < len)
+            {
+                char ch = code[i];
+                if (ch == '\\') { i += 2; continue; }
+                if (ch == quote) return i + 1;
+                i++;
+            }
+            return i;
+        }
+
         private static void CheckFunctionCall(string code, string functionName, int wordStart,
                                               ref int openParenIndex, ref List<GmlDiagnostic> diagnostics)
         {
@@ -386,6 +397,25 @@ namespace UndertaleModTool.Editors
             while (scan < code.Length && depth > 0)
             {
                 char ch = code[scan];
+                // Skip string literals so their contents never affect nesting
+                if (ch == '"' || ch == '\'' || ch == '`')
+                {
+                    scan = SkipStringLiteral(code, scan);
+                    continue;
+                }
+                // Skip comments
+                if (ch == '/' && scan + 1 < code.Length && code[scan + 1] == '/')
+                {
+                    while (scan < code.Length && code[scan] != '\n') scan++;
+                    continue;
+                }
+                if (ch == '/' && scan + 1 < code.Length && code[scan + 1] == '*')
+                {
+                    scan += 2;
+                    while (scan + 1 < code.Length && !(code[scan] == '*' && code[scan + 1] == '/')) scan++;
+                    scan += 2;
+                    continue;
+                }
                 if (ch == '(' || ch == '[' || ch == '{') depth++;
                 else if (ch == ')')
                 {
@@ -411,9 +441,31 @@ namespace UndertaleModTool.Editors
             int argCount = 0;
             bool hasContent = false;
             int nesting = 0;
-            for (int k = startIndex + 1; k < closeIndex; k++)
+            for (int k = startIndex + 1; k < closeIndex;)
             {
                 char ch = code[k];
+                // String literal: counts as argument content, but commas inside
+                // it must not be treated as argument separators
+                if (ch == '"' || ch == '\'' || ch == '`')
+                {
+                    hasContent = true;
+                    k = Math.Min(SkipStringLiteral(code, k), closeIndex);
+                    continue;
+                }
+                // Skip line/block comments
+                if (ch == '/' && k + 1 < closeIndex && code[k + 1] == '/')
+                {
+                    while (k < closeIndex && code[k] != '\n') k++;
+                    continue;
+                }
+                if (ch == '/' && k + 1 < closeIndex && code[k + 1] == '*')
+                {
+                    k += 2;
+                    while (k + 1 < closeIndex && !(code[k] == '*' && code[k + 1] == '/')) k++;
+                    k = Math.Min(k + 2, closeIndex);
+                    continue;
+                }
+                k++;
                 if (char.IsWhiteSpace(ch)) continue;
                 hasContent = true;
                 if (ch == '(' || ch == '[' || ch == '{') nesting++;
