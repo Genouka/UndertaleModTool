@@ -113,7 +113,11 @@ public class Scripting
             try
             {
                 script = CSharpScript.Create(text, options, typeof(IScriptInterface));
-                diagnostics = await Task.Run(() => script.Compile());
+
+                // Compile on a dedicated large-stack thread: Roslyn's binder recurses deeply and
+                // .NET thread pool workers (especially under Mono/Android) have small stacks,
+                // which ended in a native stack-overflow SIGSEGV inside libmonosgen.
+                diagnostics = await RunOnDedicatedThread(() => script.Compile());
             }
             catch (Exception e)
             {
@@ -160,6 +164,37 @@ public class Scripting
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Runs <paramref name="func"/> on a dedicated background thread with a large stack.
+    /// Roslyn compilation recurses deeply while binding symbols, and .NET thread pool workers
+    /// (particularly under Mono on Android) provide far smaller stacks than desktop main
+    /// threads - deep recursion there ends in an uncatchable native stack-overflow SIGSEGV.
+    /// A dedicated thread reserves the needed stack without touching the thread pool.
+    /// </summary>
+    static Task<T> RunOnDedicatedThread<T>(Func<T> func, int maxStackSize = 64 * 1024 * 1024)
+    {
+        TaskCompletionSource<T> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Thread thread = new(() =>
+        {
+            try
+            {
+                completion.SetResult(func());
+            }
+            catch (Exception e)
+            {
+                completion.SetException(e);
+            }
+        }, maxStackSize)
+        {
+            IsBackground = true,
+            Name = "UMT.ScriptCompile",
+        };
+        thread.Start();
+
+        return completion.Task;
     }
 
     /// <summary>
