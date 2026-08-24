@@ -112,6 +112,20 @@
                     
                     <StackPanel Grid.Column="0">
                         <CheckBox IsChecked="{Binding EnableDarkMode}" Content="{loc:Loc Settings_EnableDarkMode}" ToolTip="{loc:Loc Settings_EnableDarkModeToolTip}"/>
+                        <Grid ToolTip="{loc:Loc Settings_CodeEditorThemeToolTip}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{loc:Loc Settings_CodeEditorTheme}" VerticalAlignment="Center" Margin="3"/>
+                            <local:ComboBoxDark x:Name="CodeEditorThemeComboBox" Grid.Column="1" Margin="3" MinWidth="160" HorizontalAlignment="Left"
+                                                SelectionChanged="CodeEditorThemeComboBox_SelectionChanged">
+                                <ComboBoxItem Content="{loc:Loc Settings_CodeEditorTheme_FollowApp}" Tag="FollowApp"/>
+                                <ComboBoxItem Content="{loc:Loc Settings_CodeEditorTheme_Light}" Tag="Light"/>
+                                <ComboBoxItem Content="{loc:Loc Settings_CodeEditorTheme_Dark}" Tag="Dark"/>
+                                <ComboBoxItem Content="{loc:Loc Settings_CodeEditorTheme_InverseApp}" Tag="InverseApp"/>
+                            </local:ComboBoxDark>
+                        </Grid>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{loc:Loc Settings_TransparencyGridColors}"/>
                             <local:TextBoxDark Width="80" Text="{Binding TransparencyGridColor1}" />

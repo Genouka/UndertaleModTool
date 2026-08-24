@@ -5105,6 +5105,24 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Settings_EnableDarkModeToolTip" xml:space="preserve">
     <value>是否启用暗色模式主题。</value>
   </data>
+  <data name="Settings_CodeEditorTheme" xml:space="preserve">
+    <value>代码编辑器主题：</value>
+  </data>
+  <data name="Settings_CodeEditorThemeToolTip" xml:space="preserve">
+    <value>代码编辑器使用亮色还是暗色主题，可独立于主程序的暗色模式设置。</value>
+  </data>
+  <data name="Settings_CodeEditorTheme_FollowApp" xml:space="preserve">
+    <value>跟随程序主题</value>
+  </data>
+  <data name="Settings_CodeEditorTheme_Light" xml:space="preserve">
+    <value>亮色</value>
+  </data>
+  <data name="Settings_CodeEditorTheme_Dark" xml:space="preserve">
+    <value>暗色</value>
+  </data>
+  <data name="Settings_CodeEditorTheme_InverseApp" xml:space="preserve">
+    <value>与程序主题相反</value>
+  </data>
   <data name="Settings_GMLSettings" xml:space="preserve">
     <value>GML 编译器/反编译器设置</value>
   </data>

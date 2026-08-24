@@ -715,12 +715,21 @@ namespace UndertaleModTool
                 ApplyBackgroundTransparency(true);
 
             // Re-apply the code editor theme to every open window
+            ApplyCodeEditorThemes();
+        }
+
+        /// <summary>
+        /// Re-applies the theme of every currently open code editor,
+        /// resolved from the code editor theme setting.
+        /// </summary>
+        public static void ApplyCodeEditorThemes()
+        {
             foreach (Window w in Application.Current.Windows)
             {
                 if (w is not IWindowHost host)
                     continue;
                 UndertaleCodeEditor codeEditor = FindVisualChild<UndertaleCodeEditor>(host.DataEditor);
-                codeEditor?.ApplyTheme(enable);
+                codeEditor?.ApplyTheme(Settings.IsCodeEditorDark);
             }
         }
         private static void SetDarkTitleBarForWindows(bool enable)

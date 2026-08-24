@@ -329,7 +329,7 @@ namespace UndertaleModTool
             DecompiledSearchReplacePanel.Initialize(DecompiledEditor.TextArea);
             DecompiledEditor.FontSize = ZoomFontSize;
 
-            LoadGMLHighlighting(Settings.Instance?.EnableDarkMode ?? false);
+            LoadGMLHighlighting(Settings.IsCodeEditorDark);
 
             DecompiledEditor.Options.ConvertTabsToSpaces = true;
 
@@ -360,7 +360,7 @@ namespace UndertaleModTool
             DisassemblySearchReplacePanel.Initialize(DisassemblyEditor.TextArea);
             DisassemblyEditor.FontSize = ZoomFontSize;
 
-            LoadVMASMHighlighting(Settings.Instance?.EnableDarkMode ?? false);
+            LoadVMASMHighlighting(Settings.IsCodeEditorDark);
 
             textArea = DisassemblyEditor.TextArea;
             _disassemblyNameGenerator = new NameGenerator(this, textArea);
@@ -379,7 +379,7 @@ namespace UndertaleModTool
                     _disassemblyModifiedRenderer.MarkDirty();
             };
 
-            ApplyEditorTheme(Settings.Instance?.EnableDarkMode ?? false);
+            ApplyEditorTheme(Settings.IsCodeEditorDark);
 
             _foldingTimer = new System.Windows.Threading.DispatcherTimer
             {
@@ -472,6 +472,8 @@ namespace UndertaleModTool
 
         private void ApplyEditorTheme(bool isDark)
         {
+            ApplyEditorBackground();
+
             void ApplyTo(TextEditor editor)
             {
                 editor.Foreground = isDark
@@ -901,7 +903,7 @@ namespace UndertaleModTool
             }
 
             StackPanel panel = new() { MaxWidth = 320 };
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            bool isDarkMode = Settings.IsCodeEditorDark;
             Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
             Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
 
@@ -1073,7 +1075,7 @@ namespace UndertaleModTool
             }
 
             StackPanel panel = new() { MaxWidth = 320 };
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            bool isDarkMode = Settings.IsCodeEditorDark;
             Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
             Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
 
@@ -1152,7 +1154,7 @@ namespace UndertaleModTool
             if (perArgTypes is null || argIndex >= perArgTypes.Length || perArgTypes[argIndex] is not IMacroType argType)
                 return hoverContent;
 
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            bool isDarkMode = Settings.IsCodeEditorDark;
             Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
             Brush typeBrush = isDarkMode
                 ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
@@ -1209,7 +1211,7 @@ namespace UndertaleModTool
             if (description.Length > 120)
                 description = description.Substring(0, 117) + "...";
 
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            bool isDarkMode = Settings.IsCodeEditorDark;
             Brush typeBrush = isDarkMode
                 ? new SolidColorBrush(Color.FromRgb(78, 201, 176))
                 : new SolidColorBrush(Color.FromRgb(0, 128, 0));
@@ -1389,7 +1391,7 @@ namespace UndertaleModTool
 
         private Border CreateHoverBorder(UIElement content)
         {
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            bool isDarkMode = Settings.IsCodeEditorDark;
             Brush bgBrush = isDarkMode
                 ? new SolidColorBrush(Color.FromRgb(45, 45, 48))
                 : new SolidColorBrush(Color.FromRgb(240, 240, 240));
@@ -1410,7 +1412,7 @@ namespace UndertaleModTool
 
         private Border BuildBuiltinFunctionHover(string nameText)
         {
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            bool isDarkMode = Settings.IsCodeEditorDark;
             Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
             Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
             Brush paramBrush = isDarkMode
@@ -1523,7 +1525,7 @@ namespace UndertaleModTool
 
         private Border BuildBuiltinVariableHover(string nameText)
         {
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            bool isDarkMode = Settings.IsCodeEditorDark;
             Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
             Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
             Brush typeBrush = isDarkMode
@@ -1590,7 +1592,7 @@ namespace UndertaleModTool
 
         private Border BuildBuiltinConstantHover(string nameText)
         {
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            bool isDarkMode = Settings.IsCodeEditorDark;
             Brush textBrush = isDarkMode ? Brushes.White : Brushes.Black;
             Brush subTextBrush = isDarkMode ? Brushes.LightGray : Brushes.DarkGray;
             Brush typeBrush = isDarkMode
@@ -1652,9 +1654,24 @@ namespace UndertaleModTool
 
         public void SetBackgroundTransparency(bool enable)
         {
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            _editorBackgroundTransparent = enable;
+            ApplyEditorBackground();
+        }
+
+        /// <summary>
+        /// Whether the editor backgrounds are currently semi-transparent (custom background image active).
+        /// </summary>
+        private bool _editorBackgroundTransparent;
+
+        /// <summary>
+        /// Applies the editor background brush for the current code editor theme
+        /// (opaque unless a custom background image is active).
+        /// </summary>
+        private void ApplyEditorBackground()
+        {
+            bool isDarkMode = Settings.IsCodeEditorDark;
             Brush bg;
-            if (enable)
+            if (_editorBackgroundTransparent)
             {
                 // Semi-transparent: dark mode = dark tint, light mode = white tint
                 bg = isDarkMode
@@ -1677,7 +1694,7 @@ namespace UndertaleModTool
             ApplyToEditor(DisassemblyEditor);
 
             // Make the TabControl content panel transparent so background image shows through
-            CodeModeTabs.SetBackgroundTransparency(enable);
+            CodeModeTabs.SetBackgroundTransparency(_editorBackgroundTransparent);
         }
 
         private void InitializeIntellisense()
@@ -2244,7 +2261,7 @@ namespace UndertaleModTool
         private void UndertaleCodeEditor_Loaded(object sender, RoutedEventArgs e)
         {
             // Make sure the colors match the theme if it changed while this editor was hidden
-            ApplyTheme(Settings.Instance?.EnableDarkMode ?? false);
+            ApplyTheme(Settings.IsCodeEditorDark);
             FillInCodeViewer();
         }
         private void FillInCodeViewer(bool overrideFirst = false)
@@ -3469,7 +3486,7 @@ namespace UndertaleModTool
                 highlighterInst = textAreaInst.GetService(typeof(IHighlighter)) as IHighlighter;
                 textEditorInst = textAreaInst.GetService(typeof(TextEditor)) as TextEditor;
 
-                UpdateBrushTheme(Settings.Instance?.EnableDarkMode ?? false);
+                UpdateBrushTheme(Settings.IsCodeEditorDark);
             }
 
             /// <summary>
@@ -3945,7 +3962,7 @@ namespace UndertaleModTool
             private static readonly Dictionary<string, Brush> _darkBrushes = new();
             private static readonly Dictionary<string, Brush> _lightBrushes = new();
 
-            private static bool IsDark => Settings.Instance?.EnableDarkMode ?? true;
+            private static bool IsDark => Settings.IsCodeEditorDark;
 
             public static ImageSource GetIcon(string kind)
             {

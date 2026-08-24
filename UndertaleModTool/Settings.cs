@@ -13,6 +13,22 @@ using UndertaleModTool.Localization;
 
 namespace UndertaleModTool
 {
+    /// <summary>
+    /// Theme mode of the code editor (independently of the main app theme).
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<CodeEditorThemeKind>))]
+    public enum CodeEditorThemeKind
+    {
+        /// <summary>Match the main app dark mode setting.</summary>
+        FollowApp,
+        /// <summary>Always use the light editor theme.</summary>
+        Light,
+        /// <summary>Always use the dark editor theme.</summary>
+        Dark,
+        /// <summary>Use the opposite of the main app dark mode setting.</summary>
+        InverseApp
+    }
+
     public class Settings
     {
         public static readonly string AppDataFolder = Path.Join(
@@ -56,6 +72,7 @@ namespace UndertaleModTool
         public string BackgroundStretchMode { get; set; } = "UniformToFill";
 
         public bool EnableDarkMode { get; set; } = false;
+        public CodeEditorThemeKind CodeEditorTheme { get; set; } = CodeEditorThemeKind.FollowApp;
         public bool TabMultiLine { get; set; } = false;
         public bool ShowDebuggerOption { get; set; } = false;
         public DecompilerSettings DecompilerSettings { get; set; }
@@ -82,6 +99,27 @@ namespace UndertaleModTool
         public string Language { get; set; } = "en";
 
         public static Settings Instance { get; private set; }
+
+        /// <summary>
+        /// Whether the code editor should currently use its dark theme,
+        /// resolved from the code editor theme setting and the app dark mode setting.
+        /// </summary>
+        public static bool IsCodeEditorDark
+        {
+            get
+            {
+                if (Instance is null)
+                    return false;
+
+                return Instance.CodeEditorTheme switch
+                {
+                    CodeEditorThemeKind.Light => false,
+                    CodeEditorThemeKind.Dark => true,
+                    CodeEditorThemeKind.InverseApp => !Instance.EnableDarkMode,
+                    _ => Instance.EnableDarkMode
+                };
+            }
+        }
 
         public static JsonSerializerOptions JsonOptions = new()
         {

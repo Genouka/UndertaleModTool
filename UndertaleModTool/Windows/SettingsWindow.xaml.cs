@@ -348,6 +348,8 @@ namespace UndertaleModTool
                     break;
                 }
             }
+
+            CodeEditorThemeComboBox.SelectedIndex = (int)Settings.Instance.CodeEditorTheme;
         }
 
         private void Window_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -372,6 +374,19 @@ namespace UndertaleModTool
                     var culture = new CultureInfo(lang);
                     LocalizationSource.Instance.CurrentCulture = culture;
                 }
+            }
+        }
+
+        private void CodeEditorThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CodeEditorThemeComboBox?.SelectedItem is ComboBoxItem item
+                && Enum.TryParse(item.Tag as string, out CodeEditorThemeKind theme)
+                && Settings.Instance is not null)
+            {
+                Settings.Instance.CodeEditorTheme = theme;
+                Settings.Save();
+
+                MainWindow.ApplyCodeEditorThemes();
             }
         }
 

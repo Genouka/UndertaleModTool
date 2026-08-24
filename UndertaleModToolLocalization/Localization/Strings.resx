@@ -5105,6 +5105,24 @@ It's highly recommended to restart the application.</value>
   <data name="Settings_EnableDarkModeToolTip" xml:space="preserve">
     <value>Whether to enable the dark mode theme.</value>
   </data>
+  <data name="Settings_CodeEditorTheme" xml:space="preserve">
+    <value>Code editor theme:</value>
+  </data>
+  <data name="Settings_CodeEditorThemeToolTip" xml:space="preserve">
+    <value>Whether the code editor uses a light or dark theme, independently of the main app dark mode setting.</value>
+  </data>
+  <data name="Settings_CodeEditorTheme_FollowApp" xml:space="preserve">
+    <value>Follow app theme</value>
+  </data>
+  <data name="Settings_CodeEditorTheme_Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Settings_CodeEditorTheme_Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings_CodeEditorTheme_InverseApp" xml:space="preserve">
+    <value>Opposite of app theme</value>
+  </data>
   <data name="Settings_GMLSettings" xml:space="preserve">
     <value>GML compiler/decompiler settings</value>
   </data>

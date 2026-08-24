@@ -44,7 +44,7 @@ namespace UndertaleModTool
             }
 
             // Apply the theme colors to the editor chrome (hardcoded in XAML for the dark theme)
-            bool isDarkMode = Settings.Instance.EnableDarkMode;
+            bool isDarkMode = Settings.IsCodeEditorDark;
             editor.Foreground = isDarkMode
                 ? new SolidColorBrush(Color.FromRgb(0xC0, 0xC0, 0xC0))
                 : new SolidColorBrush(Colors.Black);
@@ -53,14 +53,19 @@ namespace UndertaleModTool
                 : new SolidColorBrush(Color.FromRgb(0x2B, 0x2B, 0x2B));
 
             // Apply background transparency if custom background is active
+            Brush bg;
             if (Settings.Instance is not null && !string.IsNullOrEmpty(Settings.Instance.BackgroundImagePath))
             {
-                var bg = isDarkMode
+                bg = isDarkMode
                     ? new SolidColorBrush(Color.FromArgb(200, 32, 32, 32))
                     : new SolidColorBrush(Color.FromArgb(200, 255, 255, 255));
-                editor.Background = bg;
-                editor.TextArea.Background = bg;
             }
+            else
+            {
+                bg = isDarkMode ? shaderEditorDefaultDarkBg : shaderEditorDefaultLightBg;
+            }
+            editor.Background = bg;
+            editor.TextArea.Background = bg;
 
             var srcString = editor.DataContext as UndertaleString;
             if (srcString is null)

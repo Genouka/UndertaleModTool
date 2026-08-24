@@ -17043,6 +17043,60 @@ namespace UndertaleModTool.Localization {
         }
         
         /// <summary>
+        ///   查找类似 Code editor theme: 的本地化字符串。
+        /// </summary>
+        public static string Settings_CodeEditorTheme {
+            get {
+                return ResourceManager.GetString("Settings_CodeEditorTheme", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Follow app theme 的本地化字符串。
+        /// </summary>
+        public static string Settings_CodeEditorTheme_FollowApp {
+            get {
+                return ResourceManager.GetString("Settings_CodeEditorTheme_FollowApp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Dark 的本地化字符串。
+        /// </summary>
+        public static string Settings_CodeEditorTheme_Dark {
+            get {
+                return ResourceManager.GetString("Settings_CodeEditorTheme_Dark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Light 的本地化字符串。
+        /// </summary>
+        public static string Settings_CodeEditorTheme_Light {
+            get {
+                return ResourceManager.GetString("Settings_CodeEditorTheme_Light", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Opposite of app theme 的本地化字符串。
+        /// </summary>
+        public static string Settings_CodeEditorTheme_InverseApp {
+            get {
+                return ResourceManager.GetString("Settings_CodeEditorTheme_InverseApp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Whether the code editor uses a light or dark theme, independently of the main app dark mode setting. 的本地化字符串。
+        /// </summary>
+        public static string Settings_CodeEditorThemeToolTip {
+            get {
+                return ResourceManager.GetString("Settings_CodeEditorThemeToolTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Enable dark mode 的本地化字符串。
         /// </summary>
         public static string Settings_EnableDarkMode {

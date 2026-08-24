@@ -106,7 +106,7 @@ namespace UndertaleModTool.Editors
                     segmentsToDraw.Add(new KeyValuePair<TextSegment, bool>(segment, false));
             }
 
-            bool isDark = Settings.Instance?.EnableDarkMode ?? true;
+            bool isDark = Settings.IsCodeEditorDark;
 
             // Compute the visible offset range (if the visual lines are valid)
             int visibleStart = int.MinValue;
