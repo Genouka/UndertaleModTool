@@ -2,6 +2,22 @@ name: Bug Report
 description: Something not behaving the way it should? Let us know!
 labels: ["bug"]
 body:
+- type: dropdown
+  attributes:
+    label: Platform
+    description: Which platform/version of UndertaleModTool does the bug occur on?
+    options:
+      - Windows (WPF)
+      - Avalonia-Windows
+      - Avalonia-Linux
+      - Avalonia-MacOS (ARM64)
+      - Avalonia-MacOS (Intel)
+      - Avalonia-Android (ARM64)
+      - Avalonia-Android (x64)
+      - CLI
+      - Other
+  validations:
+    required: true
 - type: textarea
   attributes:
     label: Describe the bug
