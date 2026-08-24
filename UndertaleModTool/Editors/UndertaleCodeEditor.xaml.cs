@@ -289,6 +289,13 @@ namespace UndertaleModTool
         private int _hoverSectionStart = -1;
         private int _hoverSectionLength = 0;
         private int _lastHoverOffset = -1;
+
+        /// <summary>
+        /// Offset where a click-through of the hover tooltip happened; the tooltip must
+        /// not re-open there until the mouse moves to another offset (otherwise it would
+        /// pop up right above the context menu opened by the click).
+        /// </summary>
+        private int _hoverSuppressOffset = -1;
         private const int HoverDelayMs = 250;
 
         // Intellisense state
@@ -301,12 +308,18 @@ namespace UndertaleModTool
         private int _diagnosticsGeneration;
         private readonly List<CodeEditorResultEntry> _resultEntries = new();
         private CancellationTokenSource _diagnosticsCancellation;
+        private IEnumerable<object> _pendingTokenItems;
 
         public UndertaleCodeEditor()
         {
             InitializeComponent();
 
             ApplySettingsToEditors();
+
+            DecompiledEditor.TextArea.ContextMenuOpening += EditorContextMenuOpening;
+            DisassemblyEditor.TextArea.ContextMenuOpening += EditorContextMenuOpening;
+            DecompiledEditor.TextArea.PreviewMouseRightButtonDown += (_, _) => _pendingTokenItems = null;
+            DisassemblyEditor.TextArea.PreviewMouseRightButtonDown += (_, _) => _pendingTokenItems = null;
 
             // Apply background transparency if custom background is active
             if (Settings.Instance is not null && !string.IsNullOrEmpty(Settings.Instance.BackgroundImagePath))
@@ -385,6 +398,39 @@ namespace UndertaleModTool
             InitializeHoverPopup();
             InitializeIntellisense();
             ApplyAutoDiagnosticsState();
+        }
+
+        private void EditorContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            e.Handled = true;
+
+            TextArea textArea = (TextArea)sender;
+
+            ContextMenuDark menu = new()
+            {
+                PlacementTarget = textArea,
+                Placement = PlacementMode.MousePoint
+            };
+            menu.Items.Add(new MenuItemDark() { Command = ApplicationCommands.Cut, CommandTarget = textArea });
+            menu.Items.Add(new MenuItemDark() { Command = ApplicationCommands.Copy, CommandTarget = textArea });
+            menu.Items.Add(new MenuItemDark() { Command = ApplicationCommands.Paste, CommandTarget = textArea });
+
+            IEnumerable<object> tokenItems = _pendingTokenItems;
+            _pendingTokenItems = null;
+            if (tokenItems != null)
+            {
+                foreach (object item in tokenItems)
+                    menu.Items.Add(item);
+                if (menu.Items.Count > 3)
+                    menu.Items.Insert(3, new Separator());
+            }
+
+            menu.IsOpen = true;
+        }
+
+        internal void SetPendingTokenItems(IEnumerable<object> tokenItems)
+        {
+            _pendingTokenItems = tokenItems;
         }
 
         private void LoadGMLHighlighting(bool isDark)
@@ -644,6 +690,15 @@ namespace UndertaleModTool
 
             int currentOffset = GetOffsetFromMousePosition(_hoverTextArea);
 
+            // After a click-through of an open tooltip, keep it closed while the mouse
+            // stays on the same spot (e.g. while its context menu is being used).
+            if (_hoverSuppressOffset >= 0)
+            {
+                if (currentOffset == _hoverSuppressOffset || currentOffset < 0)
+                    return;
+                _hoverSuppressOffset = -1;
+            }
+
             if (_hoverPopup.IsOpen && _hoverSectionStart >= 0 && currentOffset >= 0)
             {
                 if (currentOffset >= _hoverSectionStart && currentOffset < _hoverSectionStart + _hoverSectionLength)
@@ -663,6 +718,7 @@ namespace UndertaleModTool
         {
             _hoverTextArea = null;
             _lastHoverOffset = -1;
+            _hoverSuppressOffset = -1;
             _hoverTimer.Stop();
             CloseHoverPopup();
         }
@@ -708,6 +764,15 @@ namespace UndertaleModTool
             _hoverSectionStart = sectionStart;
             _hoverSectionLength = sectionLength;
             _hoverPopup.Child = hoverContent;
+            if (hoverContent is FrameworkElement hoverContentRoot)
+            {
+                // The tooltip lives in its own popup window, so a mouse press over it would
+                // be swallowed by that window instead of reaching the editor (breaking e.g.
+                // the right-click menus on numbers/identifiers). Replay such presses on the
+                // editor (see HoverPopupChild_PreviewMouseDown).
+                hoverContentRoot.AddHandler(Mouse.PreviewMouseDownEvent,
+                    new MouseButtonEventHandler(HoverPopupChild_PreviewMouseDown), true);
+            }
             _hoverPopup.IsOpen = true;
         }
 
@@ -718,6 +783,44 @@ namespace UndertaleModTool
             _hoverSectionStart = -1;
             _hoverSectionLength = 0;
             _lastHoverOffset = -1;
+        }
+
+        /// <summary>
+        /// A mouse press over the visible hover tooltip would normally be eaten by the
+        /// tooltip's popup window. Close the tooltip and replay the press on the editor,
+        /// so context menus (right-click on numbers/names) and caret placement keep working.
+        /// </summary>
+        private void HoverPopupChild_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            TextArea textArea = _hoverTextArea;
+
+            int clickedOffset = textArea != null ? GetOffsetFromMousePosition(textArea) : -1;
+            CloseHoverPopup();
+            _hoverSuppressOffset = clickedOffset;
+
+            TextView view = textArea?.TextView;
+            if (view == null)
+                return;
+
+            var replayArgs = new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, e.ChangedButton)
+            {
+                RoutedEvent = Mouse.MouseDownEvent,
+                Source = view
+            };
+            view.RaiseEvent(replayArgs);
+
+            if (!replayArgs.Handled && e.ChangedButton == Input.MouseButton.Left)
+            {
+                // Let AvalonEdit's selection handler place the caret / start a selection
+                var selectionArgs = new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, e.ChangedButton)
+                {
+                    RoutedEvent = UIElement.MouseLeftButtonDownEvent,
+                    Source = textArea
+                };
+                textArea.RaiseEvent(selectionArgs);
+            }
+
+            e.Handled = true;
         }
 
         private Border BuildHoverContent(TextArea textArea, int offset, UndertaleData data, ref int sectionStart, ref int sectionLength)
@@ -3136,6 +3239,7 @@ namespace UndertaleModTool
         public class NumberGenerator : VisualLineElementGenerator
         {
             private readonly IHighlighter highlighterInst;
+            private readonly TextEditor textEditorInst;
             private readonly UndertaleCodeEditor codeEditorInst;
 
             // <offset, length>
@@ -3146,6 +3250,7 @@ namespace UndertaleModTool
                 this.codeEditorInst = codeEditorInst;
 
                 highlighterInst = textAreaInst.GetService(typeof(IHighlighter)) as IHighlighter;
+                textEditorInst = textAreaInst.GetService(typeof(TextEditor)) as TextEditor;
             }
 
             public override void StartGeneration(ITextRunConstructionContext context)
@@ -3156,8 +3261,9 @@ namespace UndertaleModTool
                 if (docLine.Length != 0)
                 {
                     int line = docLine.LineNumber;
-                    var highlighter = highlighterInst;
-                    
+                    var highlighter = textEditorInst?.TextArea.GetService(typeof(IHighlighter)) as IHighlighter
+                                      ?? highlighterInst;
+
                     HighlightedLine highlighted;
                     try
                     {
@@ -3207,7 +3313,7 @@ namespace UndertaleModTool
 
                 var line = new ClickVisualLineText(numText, CurrentContext.VisualLine, numLength);
                 
-                line.Clicked += (text, inNewTab) =>
+                line.Clicked += (text, button) =>
                 {
                     if (int.TryParse(text, out int id))
                     {
@@ -3247,7 +3353,7 @@ namespace UndertaleModTool
                                 possibleObjects.Add(data.AudioGroups[id]);
                         }
 
-                        ContextMenuDark contextMenu = new();
+                        List<object> menuItems = new List<object>();
                         foreach (UndertaleObject obj in possibleObjects)
                         {
                             if (obj is null)
@@ -3277,7 +3383,7 @@ namespace UndertaleModTool
                                     codeEditorInst.DecompiledChanged = true;
                                 }
                             };
-                            contextMenu.Items.Add(item);
+                            menuItems.Add(item);
                         }
                         if (id > 0x00050000)
                         {
@@ -3292,7 +3398,7 @@ namespace UndertaleModTool
                                     codeEditorInst.DecompiledChanged = true;
                                 }
                             };
-                            contextMenu.Items.Add(item);
+                            menuItems.Add(item);
                         }
                         BuiltinList list = mainWindow.Data.BuiltinList;
                         var myKey = list.Constants.FirstOrDefault(x => x.Value == (double)id).Key;
@@ -3309,11 +3415,19 @@ namespace UndertaleModTool
                                     codeEditorInst.DecompiledChanged = true;
                                 }
                             };
-                            contextMenu.Items.Add(item);
+                            menuItems.Add(item);
                         }
-                        contextMenu.Items.Add(new MenuItemDark() { Header = id + " " + LocalizationSource.GetString("Editor_Number"), IsEnabled = false });
+                        menuItems.Add(new MenuItemDark() { Header = id + " " + LocalizationSource.GetString("Editor_Number"), IsEnabled = false });
 
-                        contextMenu.IsOpen = true;
+                        if (button == Input.MouseButton.Right)
+                            codeEditorInst.SetPendingTokenItems(menuItems);
+                        else
+                        {
+                            ContextMenuDark tokenMenu = new();
+                            foreach (object item in menuItems)
+                                tokenMenu.Items.Add(item);
+                            tokenMenu.IsOpen = true;
+                        }
                     }
                 };
 
@@ -3345,8 +3459,6 @@ namespace UndertaleModTool
             private SolidColorBrush InstanceBrush;
             private SolidColorBrush LocalBrush;
 
-            private static ContextMenuDark contextMenu;
-
             // <offset, length>
             private readonly Dictionary<int, int> lineNameSections = new();
 
@@ -3358,20 +3470,6 @@ namespace UndertaleModTool
                 textEditorInst = textAreaInst.GetService(typeof(TextEditor)) as TextEditor;
 
                 UpdateBrushTheme(Settings.Instance?.EnableDarkMode ?? false);
-
-                var menuItem = new MenuItemDark()
-                {
-                    Header = LocalizationSource.GetString("Menu_OpenInNewTab")
-                };
-                menuItem.Click += (sender, _) =>
-                {
-                    mainWindow.ChangeSelection((sender as FrameworkElement).DataContext, true);
-                };
-                contextMenu = new()
-                {
-                    Items = { menuItem },
-                    Placement = PlacementMode.MousePoint
-                };
             }
 
             /// <summary>
@@ -3577,8 +3675,14 @@ namespace UndertaleModTool
 
                         if (button == Input.MouseButton.Right)
                         {
-                            contextMenu.DataContext = val;
-                            contextMenu.IsOpen = true;
+                            MenuItemDark menuItem = new()
+                            {
+                                Header = LocalizationSource.GetString("Menu_OpenInNewTab"),
+                                DataContext = val
+                            };
+                            menuItem.Click += (sender2, _) =>
+                                mainWindow.ChangeSelection((sender2 as FrameworkElement).DataContext, true);
+                            codeEditorInst?.SetPendingTokenItems(new object[] { menuItem });
                         }
                         else
                             mainWindow.ChangeSelection(val, button == Input.MouseButton.Middle);
