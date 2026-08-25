@@ -41,6 +41,17 @@ public class ImageViewer : Control
     public ImageViewer()
     {
         ClipToBounds = true;
+
+        // Image lookups never block the UI thread; when a texture page finishes decoding in the
+        // background, repaint so it shows up.
+        AttachedToVisualTree += (_, _) => mainVM.ImageCache.ImageLoaded += OnImageLoaded;
+        DetachedFromVisualTree += (_, _) => mainVM.ImageCache.ImageLoaded -= OnImageLoaded;
+    }
+
+    void OnImageLoaded()
+    {
+        if (Image is UndertaleTexturePageItem or GMImage)
+            Invalidate();
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

@@ -58,10 +58,17 @@ public class RoomRenderer
         public readonly List<IRenderCommand> RenderCommands = [];
 
         readonly MainViewModel mainVM = App.Services.GetRequiredService<MainViewModel>();
+        readonly Action? onImageReady;
+        readonly bool waitForImages;
 
-        public RenderCommandsBuilder(UndertaleRoom room)
+        // onImageReady: invoked (on the UI thread) whenever an image that was still loading in the
+        // background becomes available, so the caller can repaint. waitForImages: block until all
+        // needed images are decoded - only valid off the UI thread (used by exports).
+        public RenderCommandsBuilder(UndertaleRoom room, Action? onImageReady = null, bool waitForImages = false)
         {
             Room = room;
+            this.onImageReady = onImageReady;
+            this.waitForImages = waitForImages;
 
             if (!(Room.Flags.HasFlag(UndertaleRoom.RoomEntryFlags.IsGMS2) || Room.Flags.HasFlag(UndertaleRoom.RoomEntryFlags.IsGM2024_13)))
             {
@@ -110,6 +117,15 @@ public class RoomRenderer
             }
         }
 
+        IImage? GetCachedImage(UndertaleTexturePageItem texture)
+            => mainVM.ImageCache.GetCachedImageFromTexturePageItem(texture, onImageReady, waitForImages);
+
+        IImage? GetCachedImage(UndertaleRoom.Tile tile)
+            => mainVM.ImageCache.GetCachedImageFromTile(tile, onImageReady, waitForImages);
+
+        IImage? GetCachedImage(GMImage image)
+            => mainVM.ImageCache.GetCachedImageFromGMImage(image, onImageReady, waitForImages);
+
         void AddBackgroundColor(uint color)
         {
             RenderCommands.Add(new BackgroundColorRenderCommand(
@@ -132,7 +148,7 @@ public class RoomRenderer
                     if (texture is null)
                         continue;
 
-                    IImage? image = mainVM.ImageCache.GetCachedImageFromTexturePageItem(texture);
+                    IImage? image = GetCachedImage(texture);
                     if (image is null)
                         continue;
 
@@ -169,7 +185,7 @@ public class RoomRenderer
             IOrderedEnumerable<UndertaleRoom.Tile> orderedRoomTiles = roomTiles.OrderByDescending(x => x.TileDepth);
             foreach (UndertaleRoom.Tile roomTile in orderedRoomTiles)
             {
-                IImage? image = mainVM.ImageCache.GetCachedImageFromTile(roomTile);
+                IImage? image = GetCachedImage(roomTile);
                 if (image is null)
                     continue;
 
@@ -205,7 +221,7 @@ public class RoomRenderer
                 if (texture is null)
                     continue;
 
-                IImage? image = mainVM.ImageCache.GetCachedImageFromTexturePageItem(texture);
+                IImage? image = GetCachedImage(texture);
                 if (image is null)
                     continue;
 
@@ -243,7 +259,7 @@ public class RoomRenderer
                 if (texture is null)
                     continue;
 
-                IImage? image = mainVM.ImageCache.GetCachedImageFromTexturePageItem(texture);
+                IImage? image = GetCachedImage(texture);
                 if (image is null)
                     continue;
 
@@ -284,7 +300,7 @@ public class RoomRenderer
             if (texture is null)
                 return;
 
-            IImage? image = mainVM.ImageCache.GetCachedImageFromTexturePageItem(texture);
+            IImage? image = GetCachedImage(texture);
             if (image is null)
                 return;
 
@@ -325,7 +341,7 @@ public class RoomRenderer
             if (gmImage is null)
                 return;
 
-            IImage? image = mainVM.ImageCache.GetCachedImageFromGMImage(gmImage);
+            IImage? image = GetCachedImage(gmImage);
             if (image is null)
                 return;
 

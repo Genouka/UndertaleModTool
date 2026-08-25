@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using ImageMagick;
+using Microsoft.Extensions.DependencyInjection;
 using UndertaleModLib.Models;
 using UndertaleModLib.Util;
 
@@ -52,8 +53,14 @@ public static class ImportExport
         // NOTE: This is a CPU bitmap, unlike the rendering done for the UI preview.
         using MagickImage image = new(MagickColors.Transparent, room.Width, room.Height);
 
-        RoomRenderer renderer = new();
-        renderer.RenderCommands(new RoomRenderer.RenderCommandsBuilder(room).RenderCommands, image);
+        // Warm the image cache in the background, then render on a worker thread (with blocking
+        // image loads) so the UI thread is never stalled by texture decoding.
+        await App.Services.GetRequiredService<MainViewModel>().ImageCache.PreloadAsync(room);
+        await Task.Run(() =>
+        {
+            RoomRenderer renderer = new();
+            renderer.RenderCommands(new RoomRenderer.RenderCommandsBuilder(room, waitForImages: true).RenderCommands, image);
+        });
 
         image.Format = MagickFormat.Png;
         await image.WriteAsync(stream);

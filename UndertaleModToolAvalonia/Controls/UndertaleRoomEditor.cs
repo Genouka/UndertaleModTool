@@ -110,6 +110,11 @@ public class UndertaleRoomEditor : Control
         vm = (DataContext as UndertaleRoomViewModel)!;
         vm?.Room.SetupRoom();
 
+        // Warm the texture page cache in the background so entering the room doesn't stall the UI
+        // thread; images pop in as they finish decoding (Render repaints via onImageReady).
+        if (vm is not null)
+            _ = vm.MainVM.ImageCache.PreloadAsync(vm.Room);
+
         translation = new(0, 0);
         scaling = 1;
     }
@@ -763,7 +768,7 @@ public class UndertaleRoomEditor : Control
             using (context.PushTransform(Matrix.CreateScale(scaling, scaling)))
             {
                 var roomItems = Updater.MakeRoomItems(vm.Room);
-                var renderCommands = new RoomRenderer.RenderCommandsBuilder(vm.Room).RenderCommands;
+                var renderCommands = new RoomRenderer.RenderCommandsBuilder(vm.Room, InvalidateVisual).RenderCommands;
 
                 rendererInstance.RenderCommands(renderCommands, context);
 
