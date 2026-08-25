@@ -128,9 +128,12 @@ public partial class MainViewModel : ObservableObject
             f => Dispatcher.UIThread.Post(f),
             // Audio failures (SDL init, decode, playback) are reported as a message dialog
             // instead of escaping the async void play handlers and crashing the app.
-            message => View?.MessageDialog(
+            // Fire-and-forget: this callback already runs on the UI thread (posted by
+            // AudioPlayer.ReportError), and blocking it here would need nested message loops,
+            // which the Android dispatcher does not support.
+            message => _ = View?.MessageDialog(
                 $"{LocalizationSource.GetString("Msg_FailedPlayAudio")}\n{message}",
-                title: LocalizationSource.GetString("Msg_AudioFailure")).WaitOnDispatcherFrame());
+                title: LocalizationSource.GetString("Msg_AudioFailure")));
 
         DataExplorer = new(this);
 

@@ -183,7 +183,14 @@ public class Scripting
 
             try
             {
-                ScriptState<object?> state = await script.RunAsync(scripting);
+                // Execute the script off the UI thread: scripts block inside synchronous dialog
+                // calls (ScriptMessage, PromptChooseDirectory, ...). Blocking the UI thread itself
+                // is impossible on Android - its dispatcher supports no nested message loops
+                // (PushFrame throws PlatformNotSupportedException) - and the UI must stay free
+                // anyway for the Android SAF pickers to launch their intent and deliver results.
+                // The big stack also covers deeply recursive decompiler calls made by scripts.
+                ScriptState<object?> state = await RunOnDedicatedThread(
+                    () => script.RunAsync(scripting).GetAwaiter().GetResult());
                 return state.ReturnValue;
             }
             catch (ScriptException e)
@@ -348,8 +355,9 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public void Dispose()
     {
-        loaderWindow?.Close();
-        loaderWindow = null;
+        // Runs on whatever thread the script ended on; closing the simulated window touches the
+        // visual tree, so it must be marshaled to the UI thread.
+        Dispatcher.UIThread.Invoke(CloseLoaderWindow);
     }
 
     public UndertaleData? Data => mainVM.Data;
@@ -377,6 +385,28 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     public bool IsAppClosed => throw new NotImplementedException();
 
     public Action<Action> MainThreadAction => Dispatcher.UIThread.Invoke;
+
+    /// <summary>
+    /// Shows a dialog on the UI thread and blocks the caller until it is dismissed. Scripts run
+    /// off the UI thread (see <see cref="Scripting.RunScript"/>), while windows must be created
+    /// and shown there; blocking is only legal from a non-UI thread. On the UI thread itself
+    /// (desktop) nested dispatcher frames are pumped instead, as before.
+    /// </summary>
+    static TResult ShowDialogBlocking<TResult>(Func<Task<TResult>> dialog)
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+            return dialog().WaitOnDispatcherFrame();
+
+        return Dispatcher.UIThread.InvokeAsync(dialog).GetAwaiter().GetResult();
+    }
+
+    static void ShowDialogBlocking(Func<Task> dialog)
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+            dialog().WaitOnDispatcherFrame();
+        else
+            Dispatcher.UIThread.InvokeAsync(dialog).GetAwaiter().GetResult();
+    }
 
     public void AddProgress(int amount)
     {
@@ -415,7 +445,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public void EnableUI()
     {
-        mainVM.IsEnabled = true;
+        Dispatcher.UIThread.Invoke(() => mainVM.IsEnabled = true);
     }
 
     public string GetDecompiledText(string codeName, GlobalDecompileContext? context = null, IDecompileSettings? settings = null)
@@ -447,6 +477,11 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     }
 
     public void HideProgressBar()
+    {
+        Dispatcher.UIThread.Invoke(CloseLoaderWindow);
+    }
+
+    void CloseLoaderWindow()
     {
         loaderWindow?.Close();
         loaderWindow = null;
@@ -484,18 +519,18 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public bool MakeNewDataFile()
     {
-        mainVM.NewData();
+        Dispatcher.UIThread.Invoke(() => mainVM.NewData());
         return true;
     }
 
     public string? PromptChooseDirectory()
     {
-        // Pump the dispatcher while waiting (never Task.Run + .Result from the UI thread): the
-        // Android SAF pickers need the main thread to launch their intent and deliver the result.
-        IReadOnlyList<IStorageFolder>? folders = mainVM.View!.OpenFolderDialog(new()
+        // The dialog is shown on the UI thread while this (script) thread blocks: the Android SAF
+        // pickers need the main thread to launch their intent and deliver the result.
+        IReadOnlyList<IStorageFolder>? folders = ShowDialogBlocking(() => mainVM.View!.OpenFolderDialog(new()
         {
             Title = LocalizationSource.GetString("Msg_SelectDirectory"),
-        }).WaitOnDispatcherFrame();
+        }));
 
         if (folders is null || folders.Count != 1)
             return null;
@@ -506,11 +541,11 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     public string? PromptLoadFile(string? defaultExt, string? filter)
     {
         // TODO: filter
-        var files = mainVM.View!.OpenFileDialog(new FilePickerOpenOptions()
+        var files = ShowDialogBlocking(() => mainVM.View!.OpenFileDialog(new FilePickerOpenOptions()
         {
             Title = LocalizationSource.GetString("Msg_LoadFile"),
             FileTypeFilter = FilePickerFileTypes.All,
-        }).WaitOnDispatcherFrame();
+        }));
 
         if (files is null || files.Count != 1)
             return null;
@@ -521,12 +556,12 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     public string? PromptSaveFile(string defaultExt, string filter)
     {
         // TODO: filter
-        var file = mainVM.View!.SaveFileDialog(new FilePickerSaveOptions()
+        var file = ShowDialogBlocking(() => mainVM.View!.SaveFileDialog(new FilePickerSaveOptions()
         {
             Title = LocalizationSource.GetString("Msg_SaveFile"),
             FileTypeChoices = FilePickerFileTypes.All,
             DefaultExtension = defaultExt,
-        }).WaitOnDispatcherFrame();
+        }));
 
         if (file is null)
             return null;
@@ -541,38 +576,38 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public void ScriptError(string error, string? title = null, bool SetConsoleText = true)
     {
-        mainVM.View!.MessageDialog(error, title ?? LocalizationSource.GetString("Common_Error")).WaitOnDispatcherFrame();
+        ShowDialogBlocking(() => mainVM.View!.MessageDialog(error, title ?? LocalizationSource.GetString("Common_Error")));
 
         if (SetConsoleText)
         {
-            mainVM.CommandTextBoxText = error;
+            Dispatcher.UIThread.Invoke(() => mainVM.CommandTextBoxText = error);
         }
     }
 
     public string? ScriptInputDialog(string title, string label, string defaultInput, string cancelText, string submitText, bool isMultiline, bool preventClose)
     {
         // TODO: cancelText, submitText, preventClose
-        return mainVM.View!.TextBoxDialog(label, defaultInput, title: title, isMultiline: isMultiline).WaitOnDispatcherFrame();
+        return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultInput, title: title, isMultiline: isMultiline));
     }
 
     public void ScriptMessage(string message)
     {
-        mainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptMessageTitle")).WaitOnDispatcherFrame();
+        ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptMessageTitle")));
     }
 
     public void ScriptOpenURL(string url)
     {
-        mainVM.View!.LaunchUriAsync(new(url)).Wait();
+        ShowDialogBlocking(() => mainVM.View!.LaunchUriAsync(new(url)));
     }
 
     public bool ScriptQuestion(string message)
     {
-        return mainVM.View!.MessageDialog(message, LocalizationSource.GetString("Msg_ScriptQuestionTitle"), MessageWindow.Buttons.YesNo).WaitOnDispatcherFrame() == MessageWindow.Result.Yes;
+        return ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, LocalizationSource.GetString("Msg_ScriptQuestionTitle"), MessageWindow.Buttons.YesNo)) == MessageWindow.Result.Yes;
     }
 
     public void ScriptWarning(string message)
     {
-        mainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptWarningTitle")).WaitOnDispatcherFrame();
+        ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptWarningTitle")));
     }
 
     public void SetFinishedMessage(bool isFinishedMessageEnabled)
@@ -616,18 +651,18 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public void SetUMTConsoleText(string message)
     {
-        mainVM.CommandTextBoxText = message;
+        Dispatcher.UIThread.Invoke(() => mainVM.CommandTextBoxText = message);
     }
 
     public string? SimpleTextInput(string title, string label, string defaultValue, bool allowMultiline, bool showDialog = true)
     {
         // TODO: showDialog
-        return mainVM.View!.TextBoxDialog(label, defaultValue, title: title, isMultiline: allowMultiline).WaitOnDispatcherFrame();
+        return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultValue, title: title, isMultiline: allowMultiline));
     }
 
     public void SimpleTextOutput(string title, string label, string message, bool allowMultiline)
     {
-        mainVM.View!.TextBoxDialog(label, message, title: title, isMultiline: allowMultiline, isReadOnly: true).WaitOnDispatcherFrame();
+        ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, message, title: title, isMultiline: allowMultiline, isReadOnly: true));
     }
 
     public void StartProgressBarUpdater()
