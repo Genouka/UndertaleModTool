@@ -5153,6 +5153,12 @@ It's highly recommended to restart the application.</value>
   <data name="Settings_RememberWindowPlacementsToolTip" xml:space="preserve">
     <value>Whether to remember the last window position and size.</value>
   </data>
+  <data name="Settings_CodeEditorShowCutCopyPaste" xml:space="preserve">
+    <value>Show Cut/Copy/Paste in code editor context menu</value>
+  </data>
+  <data name="Settings_CodeEditorShowCutCopyPasteToolTip" xml:space="preserve">
+    <value>Whether the code editor context menu shows the Cut, Copy and Paste commands.</value>
+  </data>
   <data name="Settings_ShowDebuggerOptionToolTip" xml:space="preserve">
     <value>Whether to show the "Run game under GMS debugger" option in the File menu.</value>
   </data>

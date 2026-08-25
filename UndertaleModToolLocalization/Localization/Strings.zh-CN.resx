@@ -5153,6 +5153,12 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Settings_RememberWindowPlacementsToolTip" xml:space="preserve">
     <value>是否记住上次窗口位置和大小。</value>
   </data>
+  <data name="Settings_CodeEditorShowCutCopyPaste" xml:space="preserve">
+    <value>在代码编辑器右键菜单中显示剪切、复制和粘贴</value>
+  </data>
+  <data name="Settings_CodeEditorShowCutCopyPasteToolTip" xml:space="preserve">
+    <value>是否在代码编辑器的右键菜单中显示"剪切"、"复制"和"粘贴"命令。</value>
+  </data>
   <data name="Settings_ShowDebuggerOptionToolTip" xml:space="preserve">
     <value>是否在文件菜单中显示"在 GMS 调试器下运行游戏"选项。</value>
   </data>

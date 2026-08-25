@@ -126,6 +126,7 @@
                                 <ComboBoxItem Content="{loc:Loc Settings_CodeEditorTheme_InverseApp}" Tag="InverseApp"/>
                             </local:ComboBoxDark>
                         </Grid>
+                        <CheckBox IsChecked="{Binding CodeEditorShowCutCopyPaste}" Content="{loc:Loc Settings_CodeEditorShowCutCopyPaste}" ToolTip="{loc:Loc Settings_CodeEditorShowCutCopyPasteToolTip}"/>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{loc:Loc Settings_TransparencyGridColors}"/>
                             <local:TextBoxDark Width="80" Text="{Binding TransparencyGridColor1}" />

@@ -81,6 +81,8 @@ namespace UndertaleModTool
 
         public bool ShowNullEntriesInResourceTree { get; set; } = false;
 
+        public bool CodeEditorShowCutCopyPaste { get; set; } = true;
+
         public WindowPlacementExtensions.WindowPlacement? MainWindowPlacement { get; set; } = null;
         public bool RememberWindowPlacements { get; set; } = false;
 

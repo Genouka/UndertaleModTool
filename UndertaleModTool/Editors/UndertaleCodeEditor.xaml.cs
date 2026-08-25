@@ -411,21 +411,28 @@ namespace UndertaleModTool
                 PlacementTarget = textArea,
                 Placement = PlacementMode.MousePoint
             };
-            menu.Items.Add(new MenuItemDark() { Command = ApplicationCommands.Cut, CommandTarget = textArea });
-            menu.Items.Add(new MenuItemDark() { Command = ApplicationCommands.Copy, CommandTarget = textArea });
-            menu.Items.Add(new MenuItemDark() { Command = ApplicationCommands.Paste, CommandTarget = textArea });
 
             IEnumerable<object> tokenItems = _pendingTokenItems;
             _pendingTokenItems = null;
+
+            if (Settings.Instance?.CodeEditorShowCutCopyPaste ?? true)
+            {
+                menu.Items.Add(new MenuItemDark() { Command = ApplicationCommands.Cut, CommandTarget = textArea });
+                menu.Items.Add(new MenuItemDark() { Command = ApplicationCommands.Copy, CommandTarget = textArea });
+                menu.Items.Add(new MenuItemDark() { Command = ApplicationCommands.Paste, CommandTarget = textArea });
+            }
+
+            bool hasEditItems = menu.Items.Count > 0;
             if (tokenItems != null)
             {
                 foreach (object item in tokenItems)
                     menu.Items.Add(item);
-                if (menu.Items.Count > 3)
+                if (hasEditItems && menu.Items.Count > 3)
                     menu.Items.Insert(3, new Separator());
             }
 
-            menu.IsOpen = true;
+            if (menu.Items.Count > 0)
+                menu.IsOpen = true;
         }
 
         internal void SetPendingTokenItems(IEnumerable<object> tokenItems)

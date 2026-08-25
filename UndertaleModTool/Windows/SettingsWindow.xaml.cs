@@ -282,6 +282,16 @@ namespace UndertaleModTool
             }
         }
 
+        public static bool CodeEditorShowCutCopyPaste
+        {
+            get => Settings.Instance.CodeEditorShowCutCopyPaste;
+            set
+            {
+                Settings.Instance.CodeEditorShowCutCopyPaste = value;
+                Settings.Save();
+            }
+        }
+
         public static bool RecompileAllCodeSourcesOnProjectSave
         {
             get => Settings.Instance.RecompileAllCodeSourcesOnProjectSave;
