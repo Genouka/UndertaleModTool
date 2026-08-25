@@ -65,6 +65,9 @@ public partial class EditableDataGrid : UserControl
             // HACK: Hack to make it so a temporary deselection when moving items doesn't stop the repeat button.
             Dispatcher.UIThread.Post(() =>
             {
+                if (DataGridControl is null || ItemsSource is null)
+                    return;
+
                 RemoveButton.IsEnabled = (DataGridControl.SelectedIndex != -1);
                 MoveUpButton.IsEnabled = (DataGridControl.SelectedIndex > 0);
                 MoveDownButton.IsEnabled = (DataGridControl.SelectedIndex < ItemsSource.Count - 1);
