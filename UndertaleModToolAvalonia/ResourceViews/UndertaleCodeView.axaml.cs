@@ -116,6 +116,7 @@ public partial class UndertaleCodeView : UserControl
     int _hoverSectionStart = -1;
     int _hoverSectionLength = 0;
     int _lastHoverOffset = -1;
+    int _pressSuppressedOffset = -1;
     const int HoverDelayMs = 250;
 
     // Results panel
@@ -1573,11 +1574,21 @@ public partial class UndertaleCodeView : UserControl
 
     // ---------- Hover ----------
 
+    // TEMPORARY hover diagnostics (remove after debugging)
+    internal static void HoverDbg(string msg)
+    {
+        try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "UTMT_HoverDebug.log"),
+            $"{DateTime.Now:HH:mm:ss.fff} {msg}\n"); } catch { }
+    }
+
     private void InitializeHoverPopup()
     {
+        // A plain native popup without light dismiss: like WPF's StaysOpen tooltip. Neither a
+        // native popup HWND nor an in-window light-dismiss overlay may swallow input here.
+        // Closing is handled explicitly (offset change / scroll / any press), see below.
         _hoverPopup = new Popup
         {
-            IsLightDismissEnabled = true,
+            IsLightDismissEnabled = false,
             Placement = PlacementMode.Pointer,
             PlacementTarget = GMLTextEditor
         };
@@ -1593,8 +1604,50 @@ public partial class UndertaleCodeView : UserControl
         ASMTextEditor.TextArea.PointerMoved += TextArea_PointerMoved;
         ASMTextEditor.TextArea.PointerExited += TextArea_PointerExited;
 
+        // Tunnel stage so a press is seen even when a visual line element (number/name click)
+        // handles it first; any press inside an editor dismisses the hover popup immediately.
+        GMLTextEditor.TextArea.AddHandler(InputElement.PointerPressedEvent, TextArea_PointerPressedCloseHover, RoutingStrategies.Tunnel);
+        ASMTextEditor.TextArea.AddHandler(InputElement.PointerPressedEvent, TextArea_PointerPressedCloseHover, RoutingStrategies.Tunnel);
+
         GMLTextEditor.TextArea.TextView.ScrollOffsetChanged += (s, e) => { _hoverTimer.Stop(); CloseHoverPopup(); };
         ASMTextEditor.TextArea.TextView.ScrollOffsetChanged += (s, e) => { _hoverTimer.Stop(); CloseHoverPopup(); };
+    }
+
+    private TopLevel? _globalDismissTopLevel;
+
+    private void HookGlobalDismiss(TextEditor editor)
+    {
+        var topLevel = TopLevel.GetTopLevel(editor);
+        if (topLevel == null || _globalDismissTopLevel != null)
+            return;
+        _globalDismissTopLevel = topLevel;
+        topLevel.AddHandler(InputElement.PointerPressedEvent, GlobalDismissPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    private void UnhookGlobalDismiss()
+    {
+        if (_globalDismissTopLevel == null)
+            return;
+        _globalDismissTopLevel.RemoveHandler(InputElement.PointerPressedEvent, GlobalDismissPointerPressed);
+        _globalDismissTopLevel = null;
+    }
+
+    private void GlobalDismissPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        UnhookGlobalDismiss();
+        _hoverTimer?.Stop();
+        CloseHoverPopup();
+    }
+
+    private void TextArea_PointerPressedCloseHover(object? sender, PointerPressedEventArgs e)
+    {
+        _hoverTimer?.Stop();
+        CloseHoverPopup();
+        // Suppress the tooltip until the pointer moves to a different offset, so it does not
+        // pop back up over a click target or an opened context menu while the mouse is still.
+        if (sender is TextArea textArea)
+            _pressSuppressedOffset = GetOffsetFromPointer(e, textArea);
+        _lastHoverOffset = -1;
     }
 
     private void TextArea_PointerMoved(object? sender, PointerEventArgs e)
@@ -1615,12 +1668,22 @@ public partial class UndertaleCodeView : UserControl
 
         int currentOffset = GetOffsetFromPointer(e, textArea);
 
+        // After a press, do not show the tooltip again until the pointer reaches a different offset.
+        if (_pressSuppressedOffset >= 0)
+        {
+            if (currentOffset == _pressSuppressedOffset)
+                return;
+            _pressSuppressedOffset = -1;
+        }
+
         if (_hoverPopup!.IsOpen && _hoverSectionStart >= 0 && currentOffset >= 0)
         {
             if (currentOffset >= _hoverSectionStart && currentOffset < _hoverSectionStart + _hoverSectionLength)
                 return;
         }
 
+        // High report-rate mice emit many moves per character cell; only restart the delay timer
+        // when the offset actually changed, otherwise the popup can never appear.
         if (currentOffset == _lastHoverOffset && _hoverTimer!.IsEnabled)
             return;
 
@@ -1634,11 +1697,15 @@ public partial class UndertaleCodeView : UserControl
 
     private void TextArea_PointerExited(object? sender, PointerEventArgs e)
     {
+        // Only reset pending hover state; do not close an already visible popup here. When the
+        // native popup window appears under the stationary cursor, Win32 raises a synthetic
+        // pointer leave immediately afterwards, which used to close the tooltip the moment it
+        // opened. The popup is dismissed by offset change / scroll / press instead.
         _hoverEditor = null;
         _hoverPendingOffset = -1;
         _lastHoverOffset = -1;
+        _pressSuppressedOffset = -1;
         _hoverTimer?.Stop();
-        CloseHoverPopup();
     }
 
     private int GetOffsetFromPointer(PointerEventArgs e, TextArea textArea)
@@ -1666,40 +1733,63 @@ public partial class UndertaleCodeView : UserControl
             return;
 
         TextEditor? editor = _hoverEditor;
-        if (editor == null) return;
+        if (editor == null) { HoverDbg("tick: no editor"); return; }
 
         if (DataContext is not UndertaleCodeViewModel vm)
+        {
+            HoverDbg("tick: DataContext not VM");
             return;
+        }
         UndertaleData? data = vm.MainVM.Data;
-        if (data == null) return;
+        if (data == null) { HoverDbg("tick: no data"); return; }
 
         int offset = _hoverPendingOffset;
-        if (offset < 0 || offset >= editor.Document.TextLength) return;
+        if (offset < 0 || offset >= editor.Document.TextLength)
+        {
+            HoverDbg($"tick: bad offset {offset} (len={editor.Document.TextLength})");
+            return;
+        }
 
-        int sectionStart = -1, sectionLength = 0;
-        var hoverContent = BuildHoverContent(editor, offset, data, ref sectionStart, ref sectionLength);
-        if (hoverContent == null) return;
+        try
+        {
+            int sectionStart = -1, sectionLength = 0;
+            var hoverContent = BuildHoverContent(editor, offset, data, ref sectionStart, ref sectionLength);
+            if (hoverContent == null)
+            {
+                HoverDbg($"tick: content null at offset {offset}");
+                return;
+            }
 
-        _hoverSectionStart = sectionStart;
-        _hoverSectionLength = sectionLength;
-        _hoverPopup.Child = hoverContent;
-        _hoverPopup.PlacementTarget = editor;
-        _hoverPopup.IsOpen = true;
+            _hoverSectionStart = sectionStart;
+            _hoverSectionLength = sectionLength;
+            _hoverPopup.Child = hoverContent;
+            _hoverPopup.PlacementTarget = editor;
+            HookGlobalDismiss(editor);
+            _hoverPopup.IsOpen = true;
+            HoverDbg($"tick: POPUP OPENED section=[{sectionStart}..{sectionStart + sectionLength})");
+        }
+        catch (Exception ex)
+        {
+            HoverDbg("tick: EXCEPTION " + ex);
+        }
     }
 
     private void CloseHoverPopup()
     {
+        UnhookGlobalDismiss();
         if (_hoverPopup != null && _hoverPopup.IsOpen)
             _hoverPopup.IsOpen = false;
         _hoverSectionStart = -1;
         _hoverSectionLength = 0;
-        _lastHoverOffset = -1;
+        // Note: _lastHoverOffset intentionally kept here so that the pointer-moved handler can
+        // suppress timer restarts for repeated moves over the same offset (high report-rate
+        // mice emit several moves per character cell). It is reset when the pointer leaves.
     }
 
     private Border? BuildHoverContent(TextEditor editor, int offset, UndertaleData data, ref int sectionStart, ref int sectionLength)
     {
         IHighlighter? highlighter = editor.TextArea.TextView.GetService(typeof(IHighlighter)) as IHighlighter;
-        if (highlighter == null) return null;
+        if (highlighter == null) { HoverDbg("build: no highlighter"); return null; }
 
         int lineNum = editor.Document.GetLineByOffset(offset).LineNumber;
         HighlightedLine highlighted;
@@ -1707,8 +1797,9 @@ public partial class UndertaleCodeView : UserControl
         {
             highlighted = highlighter.HighlightLine(lineNum);
         }
-        catch
+        catch (Exception ex)
         {
+            HoverDbg("build: HighlightLine threw " + ex.Message);
             return null;
         }
 
@@ -1726,6 +1817,7 @@ public partial class UndertaleCodeView : UserControl
                 continue;
 
             string sectionText = editor.Document.GetText(section.Offset, section.Length);
+            HoverDbg($"build: matched section '{section.Color.Name}' text='{sectionText}'");
 
             if (section.Color.Name == "Number")
             {
@@ -1742,6 +1834,8 @@ public partial class UndertaleCodeView : UserControl
             }
         }
 
+        var names = string.Join(",", highlighted.Sections.Select(s => s.Color?.Name));
+        HoverDbg($"build: no matching section at offset {offset} (sections: {names})");
         return null;
     }
 
