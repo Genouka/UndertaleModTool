@@ -45,6 +45,46 @@ public class Scripting
     /// </summary>
     public static Action? PrepareScriptAssemblies { get; set; }
 
+    /// <summary>
+    /// Name prefixes of the assemblies that scripts may bind against. The Android assembly
+    /// extractor dumps every linked assembly (the whole Avalonia/Skia/SDL/interop stack included)
+    /// next to the app, but scripts never use those; feeding all of them to the compiler balloons
+    /// its metadata graph - a real problem on memory-constrained devices, and it deepens the
+    /// binder's recursion during compilation.
+    /// </summary>
+    static readonly string[] ScriptReferencePrefixes =
+    [
+        // Base class libraries and dynamic-language support.
+        "System",
+        "mscorlib",
+        "netstandard",
+        "Microsoft.CSharp",
+        // The mod tool itself: engine, decompiler, localization, UI globals (IScriptInterface).
+        "UndertaleModLib",
+        "Underanalyzer",
+        "UndertaleModToolAvalonia",
+        "UndertaleModToolLocalization",
+        // Texture import/export (ImageMagick wrapper) and zip support.
+        "Magick.NET",
+        "ImageMagick",
+        "ICSharpCode.SharpZipLib",
+        "Newtonsoft",
+    ];
+
+    static bool IsScriptReferenceCandidate(string path)
+    {
+        string name = Path.GetFileNameWithoutExtension(path);
+        foreach (string prefix in ScriptReferencePrefixes)
+        {
+            if (name.Equals(prefix, StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith(prefix + ".", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Scripting(IServiceProvider serviceProvider)
     {
         MainVM = serviceProvider.GetRequiredService<MainViewModel>();
@@ -81,12 +121,13 @@ public class Scripting
 
             if (!string.IsNullOrEmpty(ScriptAssembliesDirectory) && Directory.Exists(ScriptAssembliesDirectory))
             {
-                // Reference every DLL next to the app directly, and let #r / name-based references
-                // resolve from that directory: the default resolver only looks at the trusted
-                // platform assemblies, which on Android are stored inside the APK and cannot be
-                // resolved from the filesystem.
+                // Reference the relevant DLLs next to the app directly, and let #r / name-based
+                // references resolve from that directory: the default resolver only looks at the
+                // trusted platform assemblies, which on Android are stored inside the APK and
+                // cannot be resolved from the filesystem.
                 IEnumerable<MetadataReference> references = Directory
                     .EnumerateFiles(ScriptAssembliesDirectory, "*.dll", SearchOption.TopDirectoryOnly)
+                    .Where(IsScriptReferenceCandidate)
                     .Select(path => MetadataReference.CreateFromFile(path));
                 options = options
                     .AddReferences(references)
@@ -449,12 +490,14 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public string? PromptChooseDirectory()
     {
-        IReadOnlyList<IStorageFolder> folders = Task.Run(() => mainVM.View!.OpenFolderDialog(new()
+        // Pump the dispatcher while waiting (never Task.Run + .Result from the UI thread): the
+        // Android SAF pickers need the main thread to launch their intent and deliver the result.
+        IReadOnlyList<IStorageFolder>? folders = mainVM.View!.OpenFolderDialog(new()
         {
             Title = LocalizationSource.GetString("Msg_SelectDirectory"),
-        })).Result;
+        }).WaitOnDispatcherFrame();
 
-        if (folders.Count != 1)
+        if (folders is null || folders.Count != 1)
             return null;
 
         return folders[0].TryGetLocalPath();
@@ -463,13 +506,13 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     public string? PromptLoadFile(string? defaultExt, string? filter)
     {
         // TODO: filter
-        var files = Task.Run(() => mainVM.View!.OpenFileDialog(new FilePickerOpenOptions()
+        var files = mainVM.View!.OpenFileDialog(new FilePickerOpenOptions()
         {
             Title = LocalizationSource.GetString("Msg_LoadFile"),
             FileTypeFilter = FilePickerFileTypes.All,
-        })).Result;
+        }).WaitOnDispatcherFrame();
 
-        if (files.Count != 1)
+        if (files is null || files.Count != 1)
             return null;
 
         return files[0].TryGetLocalPath();
@@ -478,12 +521,12 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     public string? PromptSaveFile(string defaultExt, string filter)
     {
         // TODO: filter
-        var file = Task.Run(() => mainVM.View!.SaveFileDialog(new FilePickerSaveOptions()
+        var file = mainVM.View!.SaveFileDialog(new FilePickerSaveOptions()
         {
             Title = LocalizationSource.GetString("Msg_SaveFile"),
             FileTypeChoices = FilePickerFileTypes.All,
             DefaultExtension = defaultExt,
-        })).Result;
+        }).WaitOnDispatcherFrame();
 
         if (file is null)
             return null;
