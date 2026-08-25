@@ -37,9 +37,10 @@ public static class ApkUpdateInstaller
         {
             PackageInfo? info = Application.Context.PackageManager?
                 .GetPackageInfo(Application.Context.PackageName!, (PackageInfoFlags)0);
-            long unixSeconds = info is null ? 0
+            // LastUpdateTime/FirstInstallTime are milliseconds since the Unix epoch.
+            long unixMilliseconds = info is null ? 0
                 : info.LastUpdateTime != 0 ? info.LastUpdateTime : info.FirstInstallTime;
-            return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
+            return DateTimeOffset.FromUnixTimeMilliseconds(unixMilliseconds).UtcDateTime;
         };
 
         PlatformUpdateInstaller.InstallPackageAsync = InstallAsync;
