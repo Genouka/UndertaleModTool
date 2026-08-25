@@ -91,11 +91,7 @@
                     <NativeMenuItem Header="{l:Loc Menu_Edit_FindReferences}" Command="{Binding ToolsFindReferences}"/>
                 </NativeMenu>
             </NativeMenuItem>
-            <NativeMenuItem Header="{l:Loc Menu_Scripts}">
-                <NativeMenu>
-                    <NativeMenuItem Header="{l:Loc Menu_Scripts_RunOther}" Command="{Binding ScriptsRunOtherScript}" />
-                </NativeMenu>
-            </NativeMenuItem>
+            <NativeMenuItem Header="{l:Loc Menu_Scripts}" />
             <NativeMenuItem Header="{l:Loc Menu_Project}">
                 <NativeMenu>
                     <NativeMenuItem Header="{l:Loc Menu_Project_New}" Command="{Binding ProjectNew}"/>

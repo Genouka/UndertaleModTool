@@ -27,4 +27,12 @@
     <ItemGroup>
         <ProjectReference Include="..\UndertaleModToolAvalonia\UndertaleModToolAvalonia.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+        <!-- Built-in utility scripts, shared with the WPF UndertaleModTool project; the
+             BuiltInScripts menu loads them from "{exe directory}/Scripts". -->
+        <Content Include="..\UndertaleModTool\Scripts\**\*.csx"
+                 CopyToOutputDirectory="PreserveNewest"
+                 Link="Scripts\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
 </Project>

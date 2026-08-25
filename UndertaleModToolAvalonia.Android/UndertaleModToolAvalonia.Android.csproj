@@ -97,4 +97,24 @@
         </ItemGroup>
     </Target>
 
+    <!--
+        Built-in utility scripts (the Scripts folder shared with the WPF UndertaleModTool project),
+        packaged under assets/Scripts with their folder structure preserved. At runtime
+        BuiltInScriptExtractor copies them into internal storage and points the BuiltInScripts menu
+        at that copy - there is no executable directory to read from on Android.
+
+        Hooked before _ComputeAndroidAssetsPaths like BundleScriptAssembliesToAssets, so the asset
+        entries always reach the aapt2 packaging. The transform runs inside a target because
+        well-known metadata (%(RecursiveDir)/%(Filename)) of glob items only expands there.
+    -->
+    <Target Name="BundleBuiltInScriptsToAssets" BeforeTargets="_ComputeAndroidAssetsPaths">
+        <ItemGroup>
+            <_BuiltInCsx Include="..\UndertaleModTool\Scripts\**\*.csx" />
+        </ItemGroup>
+        <ItemGroup Condition="'@(_BuiltInCsx)' != ''">
+            <AndroidAsset Include="@(_BuiltInCsx)"
+                          Link="Assets\Scripts\%(_BuiltInCsx.RecursiveDir)%(_BuiltInCsx.Filename)%(_BuiltInCsx.Extension)" />
+        </ItemGroup>
+    </Target>
+
 </Project>

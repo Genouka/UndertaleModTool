@@ -766,10 +766,45 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
 
         string? filePath = files[0].TryGetLocalPath();
-        await Scripting.RunScript(text, filePath);
+        await Scripting.RunScript(WithLineDirective(text, filePath), filePath);
 
         CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(filePath) ?? "Script");
     }
+
+    /// <summary>
+    /// Runs a built-in script from the shared <c>Scripts</c> folder, mirroring the WPF tool's
+    /// <c>MenuItem_RunBuiltinScript_Item_Click</c>.
+    /// </summary>
+    public async void ScriptsRunBuiltinScript(string path)
+    {
+        if (!File.Exists(path))
+            path = Paths.TryJoinVerifyWithinDirectory(BuiltInScripts.GetRootDirectory(), path) ?? "";
+
+        if (!File.Exists(path))
+        {
+            await View!.MessageDialog(LocalizationSource.GetString("Msg_ScriptFileNotExist"),
+                title: LocalizationSource.GetString("Common_Error"));
+            return;
+        }
+
+        string text;
+        using (StreamReader streamReader = new(path))
+        {
+            text = streamReader.ReadToEnd();
+        }
+
+        await Scripting.RunScript(WithLineDirective(text, path), path);
+
+        CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(path));
+    }
+
+    /// <summary>
+    /// Prefixes a #line directive like the WPF version does ("#line 1 &lt;path&gt;"), so compiler
+    /// diagnostics carry the real file path and line numbers instead of pointing at the synthetic
+    /// script submission.
+    /// </summary>
+    static string WithLineDirective(string text, string? filePath)
+        => filePath is not null ? $"#line 1 \"{filePath}\"\n" + text : text;
 
     void ClearProject()
     {

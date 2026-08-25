@@ -101,9 +101,6 @@ public partial class MenuBarCompat : UserControl
             gesture: new KeyGesture(Key.F, modifier | KeyModifiers.Shift)));
         tools.Items.Add(Item("Menu_Edit_FindReferences", command: new RelayCommand(vm.ToolsFindReferences)));
 
-        NativeMenu scripts = new();
-        scripts.Items.Add(Item("Menu_Scripts_RunOther", command: new RelayCommand(vm.ScriptsRunOtherScript)));
-
         NativeMenu project = new();
         project.Items.Add(Item("Menu_Project_New", command: new RelayCommand(vm.ProjectNew)));
         project.Items.Add(Item("Menu_Project_Open", command: new RelayCommand(vm.ProjectOpen)));
@@ -180,7 +177,7 @@ public partial class MenuBarCompat : UserControl
         menu.Items.Add(Item("Menu_Import", submenu: importMenu));
         menu.Items.Add(Item("Menu_Export", submenu: exportMenu));
         menu.Items.Add(Item("Menu_Tools", submenu: tools));
-        menu.Items.Add(Item("Menu_Scripts", submenu: scripts));
+        menu.Items.Add(Item("Menu_Scripts", submenu: BuiltInScripts.BuildRootMenu(vm)));
         menu.Items.Add(Item("Menu_Project", submenu: project));
         menu.Items.Add(Item("Menu_Help", submenu: help));
 

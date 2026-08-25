@@ -43,6 +43,11 @@ public class AvaloniaAndroidApp : AvaloniaAndroidApplication<App>
         // assets: they are extracted to internal storage before the first script run.
         ScriptAssemblyExtractor.Install();
 
+        // Extract the built-in utility scripts (assets/Scripts) into internal storage and point
+        // the Scripts menu at them. Synchronous, because the menu is built once when the activity
+        // UI is created - which still happens after this method completes.
+        BuiltInScriptExtractor.Install();
+
         // The import/export services build their scratch ("Packager") folders under ExePath, which
         // on Android would resolve to the read-only /system/bin; point them at the app's cache
         // directory instead.
