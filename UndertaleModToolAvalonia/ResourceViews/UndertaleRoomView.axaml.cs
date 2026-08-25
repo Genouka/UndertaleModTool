@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Interactivity;
@@ -12,9 +13,20 @@ namespace UndertaleModToolAvalonia;
 
 public partial class UndertaleRoomView : UserControl
 {
+    // Below this width (in DIPs) the tree/properties panels are collapsed and can only be shown
+    // as semi-transparent overlays via the toolbar toggle buttons.
+    const double NarrowLayoutThreshold = 900;
+
+    bool treeOverlayOpen;
+    bool propertiesOverlayOpen;
+    GridLength savedSideWidth = new(2, GridUnitType.Star);
+
     public UndertaleRoomView()
     {
         InitializeComponent();
+
+        SizeChanged += (_, _) => UpdatePanelsLayout();
+        UpdatePanelsLayout();
 
         DataContextChanged += (_, _) =>
         {
@@ -33,6 +45,82 @@ public partial class UndertaleRoomView : UserControl
             }
         };
     }
+
+    #region Side panel placement (inline vs semi-transparent overlay)
+
+    void TreeOverlayButton_Click(object? sender, RoutedEventArgs e)
+    {
+        treeOverlayOpen = !treeOverlayOpen;
+        UpdatePanelsLayout();
+    }
+
+    void PropertiesOverlayButton_Click(object? sender, RoutedEventArgs e)
+    {
+        propertiesOverlayOpen = !propertiesOverlayOpen;
+        UpdatePanelsLayout();
+    }
+
+    void TreeOverlayClose_Click(object? sender, RoutedEventArgs e)
+    {
+        treeOverlayOpen = false;
+        UpdatePanelsLayout();
+    }
+
+    void PropertiesOverlayClose_Click(object? sender, RoutedEventArgs e)
+    {
+        propertiesOverlayOpen = false;
+        UpdatePanelsLayout();
+    }
+
+    // Moves a panel between its inline host (left column) and its overlay host (over the editor),
+    // collapsing the left column entirely while an overlay is open or there isn't enough
+    // horizontal space.
+    void UpdatePanelsLayout()
+    {
+        bool narrow = Bounds.Width > 0 && Bounds.Width < NarrowLayoutThreshold;
+        bool showSide = !narrow && !treeOverlayOpen && !propertiesOverlayOpen;
+
+        ColumnDefinition sideColumn = RootGrid.ColumnDefinitions[0];
+        if (showSide)
+        {
+            if (sideColumn.Width.IsAbsolute && sideColumn.Width.Value == 0)
+                sideColumn.Width = savedSideWidth;
+        }
+        else
+        {
+            if (!sideColumn.Width.IsAbsolute || sideColumn.Width.Value > 0)
+                savedSideWidth = sideColumn.Width;
+            sideColumn.Width = new GridLength(0);
+        }
+        SideSplitter.IsVisible = showSide;
+
+        PlacePanel(TreeInlineHost, TreeOverlayContent, TreePanel, treeOverlayOpen);
+        PlacePanel(PropertiesInlineHost, PropertiesOverlayContent, PropertiesScroll, propertiesOverlayOpen);
+
+        TreeOverlayHost.IsVisible = treeOverlayOpen;
+        PropertiesOverlayHost.IsVisible = propertiesOverlayOpen;
+
+        // Offset the properties overlay so both overlays don't overlap when opened together.
+        double leftOffset = treeOverlayOpen ? TreeOverlayHost.Width + 16 : 8;
+        PropertiesOverlayHost.Margin = new Thickness(leftOffset, 8, 8, 8);
+
+        TreeOverlayButton.IsChecked = treeOverlayOpen;
+        PropertiesOverlayButton.IsChecked = propertiesOverlayOpen;
+    }
+
+    static void PlacePanel(Border inlineHost, Border overlayContent, Control content, bool toOverlay)
+    {
+        Border target = toOverlay ? overlayContent : inlineHost;
+        if (target.Child == content)
+            return;
+
+        if (content.Parent is Border parent)
+            parent.Child = null;
+
+        target.Child = content;
+    }
+
+    #endregion
 
     private void MoveUp_Click(object? sender, RoutedEventArgs e)
     {

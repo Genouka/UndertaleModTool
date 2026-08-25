@@ -147,6 +147,12 @@ public partial class SettingsFile
     public uint DefaultRoomGridWidth { get; set; } = 20;
     public uint DefaultRoomGridHeight { get; set; } = 20;
 
+    /// <summary>
+    /// Show the room editor's debug overlay (pointer/view info, render time, hovered items).
+    /// Disabled by default since it is only useful for diagnosing editor issues.
+    /// </summary>
+    public bool ShowRoomEditorDebugInfo { get; set; } = false;
+
     public bool EnableSelectAnyLayerByDefault { get; set; } = true;
 
     public bool EnableProjectBackup { get; set; } = true;

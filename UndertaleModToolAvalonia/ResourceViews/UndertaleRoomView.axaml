@@ -82,12 +82,13 @@
                                           ParticleSystemInstanceMenu="{StaticResource ParticleSystemInstanceMenu}"
                                           TextItemInstanceMenu="{StaticResource TextItemInstanceMenu}" />
         <l:ZoomConverter x:Key="ZoomConverter" />
+        <l:ZoomLogConverter x:Key="ZoomLogConverter" />
     </UserControl.Resources>
     
-    <Grid ColumnDefinitions="2*,Auto,5*" RowDefinitions="1*">
+    <Grid x:Name="RootGrid" ColumnDefinitions="2*,Auto,5*" RowDefinitions="1*">
         <Grid Grid.Column="0" ColumnDefinitions="1*" RowDefinitions="1*,Auto,1*">
-            <Grid Grid.Row="0">
-                <Grid RowDefinitions="1*,Auto">
+            <Border Grid.Row="0" x:Name="TreeInlineHost">
+                <Grid x:Name="TreePanel" RowDefinitions="1*,Auto">
                     <!-- TreeView -->
                     <TreeView Grid.Row="0" Name="RoomItemsTreeView" SelectedItem="{Binding RoomTreeItemsSelectedItem}">
                         <TreeView.Styles>
@@ -185,11 +186,11 @@
                         <RepeatButton Click="MoveDown_Click" >↓</RepeatButton>
                     </StackPanel>
                 </Grid>
-            </Grid>
+            </Border>
             <GridSplitter Grid.Row="1" />
-            <Grid Grid.Row="2">
+            <Border Grid.Row="2" x:Name="PropertiesInlineHost">
                 <!-- Properties -->
-                <ScrollViewer>
+                <ScrollViewer x:Name="PropertiesScroll">
                     <ContentControl Content="{Binding PropertiesContent}">
                         <ContentControl.DataTemplates>
                             <DataTemplate DataType="undertalem:UndertaleRoom">
@@ -848,29 +849,144 @@
                         </ContentControl.DataTemplates>
                     </ContentControl>
                 </ScrollViewer>
-            </Grid>
+            </Border>
         </Grid>
-        <GridSplitter Grid.Column="1" />
-        <Grid Grid.Column="2" RowDefinitions="Auto,1*">
-            <Grid Grid.Row="0" ColumnDefinitions="1*,Auto">
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Button Command="{Binding SaveAsImage}">Save as image</Button>
-                    <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" />
+        <GridSplitter x:Name="SideSplitter" Grid.Column="1" />
+
+        <!-- Editor column -->
+        <Grid Grid.Column="2" RowDefinitions="Auto,1*,Auto">
+            <!-- Top bar: overlay toggles on the left, function buttons (as icons) on the right -->
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,1*,Auto" Margin="0,0,0,4">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+                    <ToggleButton x:Name="TreeOverlayButton"
+                                  Click="TreeOverlayButton_Click"
+                                  ToolTip.Tip="Toggle tree view overlay"
+                                  Padding="6,4">
+                        <Panel Width="18" Height="18">
+                            <Rectangle Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" RadiusX="2.5" RadiusY="2.5" />
+                            <Line StartPoint="6.5,1" EndPoint="6.5,17" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" />
+                        </Panel>
+                    </ToggleButton>
+                    <ToggleButton x:Name="PropertiesOverlayButton"
+                                  Click="PropertiesOverlayButton_Click"
+                                  ToolTip.Tip="Toggle properties overlay"
+                                  Padding="6,4">
+                        <Panel Width="18" Height="18">
+                            <Line StartPoint="1,4.5" EndPoint="17,4.5" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" />
+                            <Line StartPoint="1,9" EndPoint="17,9" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" />
+                            <Line StartPoint="1,13.5" EndPoint="17,13.5" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" />
+                            <Ellipse Width="6" Height="6" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Left" Margin="7.5,1.5,0,0" />
+                            <Ellipse Width="6" Height="6" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Left" Margin="2.5,6,0,0" />
+                            <Ellipse Width="6" Height="6" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Left" Margin="10,10.5,0,0" />
+                        </Panel>
+                    </ToggleButton>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <ToggleButton IsChecked="{Binding IsLocked}">Lock</ToggleButton>
-                    <ToggleButton IsChecked="{Binding IsSelectAnyLayerEnabled}">Select any layer</ToggleButton>
-                    <ToggleButton IsChecked="{Binding IsGridEnabled}">Grid</ToggleButton>
-                    <TextBox Text="{Binding GridWidth}" Width="32" />
-                    <TextBox Text="{Binding GridHeight}" Width="32" />
-                    <Panel Width="8" />
-                    <TextBox Text="{Binding Zoom, Converter={StaticResource ZoomConverter}}" Width="100"/>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                    <Button Command="{Binding SaveAsImage}"
+                            ToolTip.Tip="Save as image"
+                            Padding="6,4">
+                        <Path Width="18" Height="18" Stretch="Uniform"
+                              Fill="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                              Data="M3,3 L13,3 L17,7 L17,17 L3,17 Z M5,3 L5,8 L12,8 L12,3 M5,10 L14,10 L14,17 L5,17 Z" />
+                    </Button>
+                    <ToggleButton IsChecked="{Binding IsLocked}"
+                                  ToolTip.Tip="Lock"
+                                  Padding="6,4">
+                        <Panel Width="18" Height="18">
+                            <Path Data="M6,8 L6,5 A3,3 0 0 1 12,5 L12,8"
+                                  Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                  StrokeThickness="1.5" />
+                            <Rectangle Width="12" Height="8" RadiusX="1.5" RadiusY="1.5"
+                                       Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5"
+                                       VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                        </Panel>
+                    </ToggleButton>
+                    <ToggleButton IsChecked="{Binding IsSelectAnyLayerEnabled}"
+                                  ToolTip.Tip="Select any layer"
+                                  Padding="6,4">
+                        <Path Width="18" Height="18" Stretch="Uniform"
+                              Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5"
+                              Data="M9,2.5 L15.5,6 L9,9.5 L2.5,6 Z M2.5,9.75 L9,13.25 L15.5,9.75 M2.5,13.25 L9,16.75 L15.5,13.25" />
+                    </ToggleButton>
+                    <ToggleButton IsChecked="{Binding IsGridEnabled}"
+                                  ToolTip.Tip="Grid"
+                                  Padding="6,4">
+                        <Panel Width="18" Height="18">
+                            <Rectangle Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" RadiusX="2" RadiusY="2" />
+                            <Line StartPoint="6.5,1" EndPoint="6.5,17" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1" />
+                            <Line StartPoint="11.5,1" EndPoint="11.5,17" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1" />
+                            <Line StartPoint="1,6.5" EndPoint="17,6.5" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1" />
+                            <Line StartPoint="1,11.5" EndPoint="17,11.5" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1" />
+                        </Panel>
+                    </ToggleButton>
                 </StackPanel>
             </Grid>
-            <!-- View -->
+
+            <!-- View + semi-transparent overlays -->
             <Panel Grid.Row="1">
                 <l:UndertaleRoomEditor />
+
+                <Border x:Name="TreeOverlayHost"
+                        IsVisible="False"
+                        HorizontalAlignment="Left"
+                        Width="330"
+                        Margin="8"
+                        CornerRadius="8"
+                        Padding="8"
+                        Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1"
+                        BoxShadow="0 4 16 0 #40000000"
+                        Opacity="0.94"
+                        ZIndex="10">
+                    <Grid RowDefinitions="Auto,1*">
+                        <Grid Grid.Row="0" ColumnDefinitions="1*,Auto" Margin="0,0,0,6">
+                            <TextBlock FontWeight="Bold" VerticalAlignment="Center" Text="Tree view" />
+                            <Button Grid.Column="1" Click="TreeOverlayClose_Click" Padding="6,0" Content="✕" />
+                        </Grid>
+                        <Border Grid.Row="1" x:Name="TreeOverlayContent" MinHeight="200" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="PropertiesOverlayHost"
+                        IsVisible="False"
+                        HorizontalAlignment="Left"
+                        Width="340"
+                        Margin="8"
+                        CornerRadius="8"
+                        Padding="8"
+                        Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="1"
+                        BoxShadow="0 4 16 0 #40000000"
+                        Opacity="0.94"
+                        ZIndex="11">
+                    <Grid RowDefinitions="Auto,1*">
+                        <Grid Grid.Row="0" ColumnDefinitions="1*,Auto" Margin="0,0,0,6">
+                            <TextBlock FontWeight="Bold" VerticalAlignment="Center" Text="Properties" />
+                            <Button Grid.Column="1" Click="PropertiesOverlayClose_Click" Padding="6,0" Content="✕" />
+                        </Grid>
+                        <Border Grid.Row="1" x:Name="PropertiesOverlayContent" MinHeight="200" />
+                    </Grid>
+                </Border>
             </Panel>
+
+            <!-- Bottom bar: status text on the left, grid size and zoom slider on the right -->
+            <Grid Grid.Row="2" ColumnDefinitions="Auto,1*,Auto" Margin="0,4,0,0">
+                <TextBlock Grid.Column="0" Text="{Binding StatusText}" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBox Text="{Binding GridWidth}" Width="40" ToolTip.Tip="Grid width" />
+                    <TextBox Text="{Binding GridHeight}" Width="40" ToolTip.Tip="Grid height" />
+                    <!-- Logarithmic scale: slider center = 100% (range 5% .. 3200%), dragging snaps up to whole percents -->
+                    <Slider Minimum="0" Maximum="1"
+                            Value="{Binding Zoom, Converter={StaticResource ZoomLogConverter}}"
+                            Width="140" VerticalAlignment="Center"
+                            ToolTip.Tip="Zoom" />
+                    <TextBlock Text="{Binding Zoom, Converter={StaticResource ZoomConverter}, Mode=OneWay}"
+                               VerticalAlignment="Center" MinWidth="48" TextAlignment="Right" />
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

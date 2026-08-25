@@ -5822,6 +5822,9 @@ It's highly recommended to restart the application.</value>
   <data name="Settings_EnableSelectAnyLayerByDefault" xml:space="preserve">
     <value>Enable selection of any layer by default</value>
   </data>
+  <data name="Settings_ShowRoomEditorDebugInfo" xml:space="preserve">
+    <value>Show room editor debug information</value>
+  </data>
   <data name="Settings_EnableProjectBackup" xml:space="preserve">
     <value>Enable backup and restoring of files in the destination folder of projects</value>
   </data>

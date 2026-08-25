@@ -51,6 +51,8 @@
 
                 <CheckBox Content="{l:Loc Settings_EnableSelectAnyLayerByDefault}"
                           IsChecked="{Binding MainVM.Settings.EnableSelectAnyLayerByDefault}"/>
+                <CheckBox Content="{l:Loc Settings_ShowRoomEditorDebugInfo}"
+                          IsChecked="{Binding MainVM.Settings.ShowRoomEditorDebugInfo}"/>
                 <CheckBox Content="{l:Loc Settings_EnableProjectBackup}"
                           IsChecked="{Binding MainVM.Settings.EnableProjectBackup}"/>
                 <CheckBox Content="{l:Loc Settings_RecompileOnSave}"

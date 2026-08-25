@@ -5822,6 +5822,9 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Settings_EnableSelectAnyLayerByDefault" xml:space="preserve">
     <value>默认允许选择任意图层</value>
   </data>
+  <data name="Settings_ShowRoomEditorDebugInfo" xml:space="preserve">
+    <value>显示房间编辑器调试信息</value>
+  </data>
   <data name="Settings_EnableProjectBackup" xml:space="preserve">
     <value>在项目目标文件夹中启用文件备份与恢复</value>
   </data>

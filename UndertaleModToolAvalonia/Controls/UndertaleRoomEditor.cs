@@ -822,9 +822,9 @@ public class UndertaleRoomEditor : Control
             stopWatch.Stop();
             customDrawOperationTime = Math.Ceiling(stopWatch.Elapsed.TotalMilliseconds);
 
-#if DEBUG
-            RenderDebugText(context);
-#endif
+            // Hidden by default; can be enabled in the settings.
+            if (vm.MainVM.Settings?.ShowRoomEditorDebugInfo == true)
+                RenderDebugText(context);
         }
 
         TopLevel topLevel = TopLevel.GetTopLevel(this)!;
