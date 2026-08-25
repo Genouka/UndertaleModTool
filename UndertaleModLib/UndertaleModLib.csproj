@@ -28,8 +28,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.9.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="5.9.0" />
+    <!-- Pinned to 5.3.x: Roslyn >= 5.6 calls Volatile.ReadBarrier() on .NET 10, whose [Intrinsic]
+         is not implemented by the Mono JIT/interpreter used on Android - the self-referential
+         managed fallback recurses into itself and ends in StackOverflowException even for an
+         empty script (dotnet/runtime#130265, fixed by PR #124538 in a future .NET 10 servicing
+         release). Bump once the fixed SDK/workload is required. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.3.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="5.3.0" />
     <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" PrivateAssets="All" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
   </ItemGroup>
