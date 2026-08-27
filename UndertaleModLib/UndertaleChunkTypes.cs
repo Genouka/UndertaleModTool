@@ -70,10 +70,10 @@ namespace UndertaleModLib
                 // Find chunk instance, or create one if not already created (when errors occur during object counting)
                 if (!reader.undertaleData.FORM.Chunks.TryGetValue(name, out UndertaleChunk chunk))
                 {
-                    if (!UndertaleChunkFORM.ChunkConstructors.TryGetValue(name, out Func<UndertaleChunk> instantiator))
+                    if (reader.undertaleData.IsWad || !UndertaleChunkFORM.ChunkConstructors.TryGetValue(name, out Func<UndertaleChunk> instantiator))
                     {
-                        // Treat unknown chunks as raw unsupported data (e.g. GMRT .wad format chunks like PRJT, RREF)
-                        reader.SubmitWarning($"Unknown chunk \"{name}\", treating as raw data");
+                        // GMRT .wad format: store every chunk as raw data, since its internal
+                        // layout is a different serialization the data.win parsers cannot read.
                         var unsupportedChunk = new UndertaleUnsupportedChunk();
                         unsupportedChunk.SetName(name);
                         chunk = unsupportedChunk;
@@ -170,9 +170,9 @@ namespace UndertaleModLib
 
                 // Create chunk instance
                 UndertaleChunk chunk;
-                if (!UndertaleChunkFORM.ChunkConstructors.TryGetValue(name, out Func<UndertaleChunk> instantiator))
+                if (reader.undertaleData.IsWad || !UndertaleChunkFORM.ChunkConstructors.TryGetValue(name, out Func<UndertaleChunk> instantiator))
                 {
-                    // Treat unknown chunks as raw unsupported data (e.g. GMRT .wad format chunks like PRJT, RREF)
+                    // GMRT .wad format: store every chunk as raw data
                     var unsupportedChunk = new UndertaleUnsupportedChunk();
                     unsupportedChunk.SetName(name);
                     chunk = unsupportedChunk;

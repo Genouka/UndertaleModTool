@@ -100,6 +100,15 @@ namespace UndertaleModLib
         public UndertaleChunkFORM FORM;
 
         /// <summary>
+        /// Whether this data file is a GMRT runtime asset package (<c>.wad</c> file).
+        /// These use the same FORM container as a regular <c>data.win</c>, but ship without a
+        /// <c>GEN8</c> chunk and replace several chunks (<c>PRJT</c>, <c>RREF</c>). Their internal
+        /// chunk layout is a different (component-based) serialization that is not yet fully
+        /// understood, so chunks are preserved as raw data on load.
+        /// </summary>
+        public bool IsWad { get; set; }
+
+        /// <summary>
         /// General info of the data file.
         /// </summary>
         public UndertaleGeneralInfo GeneralInfo => FORM.GEN8?.Object;

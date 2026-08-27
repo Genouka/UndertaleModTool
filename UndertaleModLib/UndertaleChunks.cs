@@ -187,6 +187,16 @@ namespace UndertaleModLib
 
                 reader.Position = startPos;
             }
+            else
+            {
+                // No GEN8 chunk: this is a GMRT .wad runtime asset package. Its internal
+                // chunk layout is a different (component-based) serialization that the data.win
+                // parsers do not understand, so every chunk is preserved as raw data instead.
+                if (chunkInfoList.Exists(c => c.name == "PRJT") || chunkInfoList.Exists(c => c.name == "RREF"))
+                {
+                    reader.undertaleData.IsWad = true;
+                }
+            }
 
             // Read object counts for all chunks
             while (reader.Position < startPos + Length)
@@ -198,7 +208,7 @@ namespace UndertaleModLib
                 if (chunk.Name != "GEN8")
                 {
                     Chunks.Add(chunk.Name, chunk);
-                    ChunksTypeDict.Add(chunk.GetType(), chunk);
+                    ChunksTypeDict[chunk.GetType()] = chunk;
                 }
             }
 
