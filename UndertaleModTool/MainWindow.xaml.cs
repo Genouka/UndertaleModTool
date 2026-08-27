@@ -30,6 +30,7 @@ using UndertaleModLib.Models;
 using UndertaleModLib.ModelsDebug;
 using UndertaleModLib.Scripting;
 using UndertaleModLib.Util;
+using UndertaleModLib.Wad;
 using UndertaleModTool.Windows;
 using UndertaleModTool.Localization;
 using System.IO.Pipes;
@@ -1064,6 +1065,29 @@ namespace UndertaleModTool
             }
 
             _ = DoOpenDialog();
+        }
+
+        // Opens a GameMaker runtime asset package (*.wad, GMRT 2023+) in its dedicated
+        // chunk browser (WadEditor). Independent from the project/data.win loading path.
+        private void Command_OpenWad(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog dialog = new()
+            {
+                Title = "Open GameMaker WAD file",
+                Filter = "WAD files (*.wad)|*.wad|All files (*.*)|*.*",
+            };
+            if (dialog.ShowDialog(this) != true)
+                return;
+            try
+            {
+                UndertaleWadFile wad = UndertaleWadFile.Load(dialog.FileName);
+                OpenInTab(wad, true, Path.GetFileName(dialog.FileName));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Could not open the WAD file:\n{ex.Message}",
+                    "UndertaleModTool", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private const int MaxRecentFiles = 10;

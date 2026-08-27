@@ -10,6 +10,7 @@
         xmlns:locmod="clr-namespace:UndertaleModTool.Localization;assembly=UndertaleModToolLocalization"
         xmlns:undertale="clr-namespace:UndertaleModLib.Models;assembly=UndertaleModLib"
         xmlns:undertalelib="clr-namespace:UndertaleModLib;assembly=UndertaleModLib"
+        xmlns:wad="clr-namespace:UndertaleModLib.Wad;assembly=UndertaleModLib"
         xmlns:scol="clr-namespace:System.Collections;assembly=mscorlib"
         xmlns:cmod="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         mc:Ignorable="d"
@@ -90,6 +91,7 @@
                 <local:MenuItemDark Header="{loc:Loc Menu_File}">
                     <MenuItem Header="{loc:Loc Menu_File_New}" Command="New" InputGestureText="Ctrl+N"/>
                     <MenuItem Header="{loc:Loc Menu_File_Open}" Command="Open" InputGestureText="Ctrl+O"/>
+                    <MenuItem Header="Open WAD File…" Click="Command_OpenWad" InputGestureText="Ctrl+Shift+O"/>
                     <local:MenuItemDark x:Name="RecentFilesItem" Header="{loc:Loc Menu_File_RecentFiles}" SubmenuOpened="RecentFilesItem_SubmenuOpened">
                         <MenuItem Header="{loc:Loc Menu_File_RecentFiles_None}" IsEnabled="False"/>
                     </local:MenuItemDark>
@@ -837,6 +839,10 @@
                                 </DataTemplate>
                                 <DataTemplate DataType="{x:Type undertale:UndertaleParticleSystemEmitter}">
                                     <local:UndertaleParticleSystemEmitterEditor/>
+                                </DataTemplate>
+
+                                <DataTemplate DataType="{x:Type wad:UndertaleWadFile}">
+                                    <local:WadEditor/>
                                 </DataTemplate>
                             </ContentControl.Resources>
                         </ContentControl>
