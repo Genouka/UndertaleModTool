@@ -1,0 +1,82 @@
+<local:DataUserControl x:Class="UndertaleModTool.WadRoomEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:UndertaleModTool"
+             xmlns:wad="clr-namespace:UndertaleModLib.Wad;assembly=UndertaleModLib"
+             mc:Ignorable="d"
+             d:DesignHeight="560" d:DesignWidth="900"
+             d:DataContext="{d:DesignInstance wad:WadRoomEntry}">
+    <DockPanel Margin="12">
+        <Grid DockPanel.Dock="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Margin="3" FontWeight="Bold"/>
+            <local:TextBoxDark Grid.Row="0" Grid.Column="1" Margin="3"
+                               Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Size" Margin="3"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Margin="3"><Run Text="{Binding Width, Mode=OneWay}"/><Run Text=" × "/><Run Text="{Binding Height, Mode=OneWay}"/> (read-only: viewport sized by the games' camera)</TextBlock>
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Creation code" Margin="3"/>
+            <TextBlock Grid.Row="2" Grid.Column="1" Margin="3" Text="{Binding CreationCodeRef, StringFormat='0x{0:X8}'}"/>
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Flags 0-3" Margin="3"/>
+            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="3">
+                <local:TextBoxDark Width="110" Text="{Binding Flag0, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+                <local:TextBoxDark Width="110" Text="{Binding Flag1, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+                <local:TextBoxDark Width="110" Text="{Binding Flag2, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+                <local:TextBoxDark Width="110" Text="{Binding Flag3, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+            </StackPanel>
+        </Grid>
+
+        <Separator Margin="0,6"/>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Margin="3" FontWeight="Bold" Text="Views"/>
+                <DataGrid ItemsSource="{Binding Views}" AutoGenerateColumns="False" IsReadOnly="True"
+                          HeadersVisibility="Column" GridLinesVisibility="None"
+                          CanUserAddRows="False" CanUserDeleteRows="False" MaxHeight="220" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Port" Width="*" Binding="{Binding Wview}"/>
+                        <DataGridTextColumn Header="×" Width="*" Binding="{Binding Hview}"/>
+                        <DataGridTextColumn Header="Object" Width="*" Binding="{Binding ViewObjectRef, StringFormat='0x{0:X8}'}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                <TextBlock Margin="3" FontWeight="Bold" Text="Instances"/>
+                <DataGrid ItemsSource="{Binding Instances}" AutoGenerateColumns="False" IsReadOnly="True"
+                          HeadersVisibility="Column" GridLinesVisibility="None"
+                          CanUserAddRows="False" CanUserDeleteRows="False" MaxHeight="220" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}"/>
+                        <DataGridTextColumn Header="Object" Width="*" Binding="{Binding ObjectRef, StringFormat='0x{0:X8}'}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Margin="3" FontWeight="Bold" Text="Layers"/>
+                <DataGrid ItemsSource="{Binding Layers}" AutoGenerateColumns="False" IsReadOnly="True"
+                          HeadersVisibility="Column" GridLinesVisibility="None"
+                          CanUserAddRows="False" CanUserDeleteRows="False" MaxHeight="180" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Width="*" Binding="{Binding Name}"/>
+                        <DataGridTextColumn Header="Kind" Width="*" Binding="{Binding Kind}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</local:DataUserControl>

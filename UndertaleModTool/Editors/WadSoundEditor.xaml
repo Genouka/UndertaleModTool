@@ -1,0 +1,55 @@
+<local:DataUserControl x:Class="UndertaleModTool.WadSoundEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:UndertaleModTool"
+             xmlns:wad="clr-namespace:UndertaleModLib.Wad;assembly=UndertaleModLib"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance wad:WadSondEntry}">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Margin="3" FontWeight="Bold"/>
+        <TextBlock Grid.Row="0" Grid.Column="1" Margin="3" Text="{Binding Name}"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Format code" Margin="3"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Margin="3" Text="{Binding FormatCode, StringFormat='0x{0:X8}'}">
+            <TextBlock.ToolTip>
+                <TextBlock Text="0/1 legacy · 100 streamed-new · 101 compressed-new · 103 uncompressed-new"/>
+            </TextBlock.ToolTip>
+        </TextBlock>
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Audio file" Margin="3"/>
+        <TextBlock Grid.Row="2" Grid.Column="1" Margin="3" Text="{Binding FileName}"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Volume" Margin="3"/>
+        <local:TextBoxDark Grid.Row="3" Grid.Column="1" Margin="3"
+                           Text="{Binding Volume, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Unknown float" Margin="3"/>
+        <TextBlock Grid.Row="4" Grid.Column="1" Margin="3" Text="{Binding UnknownFloat}"/>
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Zero 0" Margin="3"/>
+        <TextBlock Grid.Row="5" Grid.Column="1" Margin="3" Text="{Binding Zero0}"/>
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Zero 1" Margin="3"/>
+        <TextBlock Grid.Row="6" Grid.Column="1" Margin="3" Text="{Binding Zero1}"/>
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Zero 2" Margin="3"/>
+        <TextBlock Grid.Row="7" Grid.Column="1" Margin="3" Text="{Binding Zero2}"/>
+        <TextBlock Grid.Row="8" Grid.Column="0" Text="Zero 3" Margin="3"/>
+        <TextBlock Grid.Row="8" Grid.Column="1" Margin="3" Text="{Binding Zero3}"/>
+        <TextBlock Grid.Row="9" Grid.Column="0" Text="Zero 4" Margin="3"/>
+        <TextBlock Grid.Row="9" Grid.Column="1" Margin="3" Text="{Binding Zero4}"/>
+    </Grid>
+</local:DataUserControl>

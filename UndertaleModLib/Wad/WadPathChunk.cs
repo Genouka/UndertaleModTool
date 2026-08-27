@@ -64,10 +64,10 @@ namespace UndertaleModLib.Wad
     public sealed class WadPathEntry
     {
         public uint NameRef { get; internal set; }
-        public string Name { get; internal set; }
-        public int Kind { get; internal set; }
-        public bool Closed { get; internal set; }
-        public int Precision { get; internal set; }
+        public string Name { get; set; }
+        public int Kind { get; set; }
+        public bool Closed { get; set; }
+        public int Precision { get; set; }
         public IReadOnlyList<WadPathPoint> Points { get; internal set; }
         public Exception Error { get; internal set; }
     }

@@ -31,6 +31,7 @@ using UndertaleModLib.ModelsDebug;
 using UndertaleModLib.Scripting;
 using UndertaleModLib.Util;
 using UndertaleModLib.Wad;
+using UndertaleModTool.Wad;
 using UndertaleModTool.Windows;
 using UndertaleModTool.Localization;
 using System.IO.Pipes;
@@ -496,7 +497,7 @@ namespace UndertaleModTool
                 string arg = args[1];
                 if (File.Exists(arg))
                 {
-                    await LoadFile(arg, true, isLaunch || isSpecialLaunch);
+                    await OpenFileGeneric(arg, true, isLaunch || isSpecialLaunch);
                 }
                 else if (arg == "deleteTempFolder") // if was launched from UndertaleModToolUpdater
                 {
@@ -964,10 +965,10 @@ namespace UndertaleModTool
                         if (this.ShowQuestion(string.Format(LocalizationSource.GetString("Msg_RunScriptQuestion"), filepath)) == MessageBoxResult.Yes)
                             await RunScript(filepath);
                     }
-                    else if (FileAssociations.Extensions.Contains(fileext) || fileext == ".dat" /* audiogroup */)
+                    else if (FileAssociations.Extensions.Contains(fileext) || fileext == ".dat" /* audiogroup */ || fileext.Equals(".wad", StringComparison.OrdinalIgnoreCase))
                     {
                         if (this.ShowQuestion(string.Format(LocalizationSource.GetString("Msg_OpenDataFileQuestion"), filepath)) == MessageBoxResult.Yes)
-                            await LoadFile(filepath, true);
+                            await OpenFileGeneric(filepath, true);
                     }
                     // else, do something?
                 }
@@ -984,7 +985,7 @@ namespace UndertaleModTool
 
             if (dlg.ShowDialog(this) == true)
             {
-                await LoadFile(dlg.FileName, true);
+                await OpenFileGeneric(dlg.FileName, true);
                 return true;
             }
             return false;
@@ -1067,27 +1068,112 @@ namespace UndertaleModTool
             _ = DoOpenDialog();
         }
 
-        // Opens a GameMaker runtime asset package (*.wad, GMRT 2023+) in its dedicated
-        // chunk browser (WadEditor). Independent from the project/data.win loading path.
-        private void Command_OpenWad(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Single open-file dispatch used by every entry point (Open menu / Ctrl+O,
+        /// recent files, drag&amp;drop, command line): wad asset packages go to the wad
+        /// path, everything else goes to the regular data.win loading pipeline.
+        /// </summary>
+        private async Task OpenFileGeneric(string filePath, bool preventClose = false, bool onlyGeneralInfo = false)
         {
-            OpenFileDialog dialog = new()
-            {
-                Title = "Open GameMaker WAD file",
-                Filter = "WAD files (*.wad)|*.wad|All files (*.*)|*.*",
-            };
-            if (dialog.ShowDialog(this) != true)
+            if (string.Equals(Path.GetExtension(filePath), ".wad", StringComparison.OrdinalIgnoreCase))
+                OpenWadFile(filePath);
+            else
+                await LoadFile(filePath, preventClose, onlyGeneralInfo);
+        }
+
+        /// <summary>
+        /// Central wad open path: parses the file, registers it in the recent-files list,
+        /// populates the main tree view with the chunk structure (chunk categories →
+        /// entry leaves) and hosts the file in a regular tab. All open entry points
+        /// (menu, recent files, drag&amp;drop, command line) route through here.
+        /// </summary>
+        public void OpenWadFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
                 return;
+
+            UndertaleWadFile wad;
             try
             {
-                UndertaleWadFile wad = UndertaleWadFile.Load(dialog.FileName);
-                OpenInTab(wad, true, Path.GetFileName(dialog.FileName));
+                wad = UndertaleWadFile.Load(filePath);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(this, $"Could not open the WAD file:\n{ex.Message}",
                     "UndertaleModTool", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
             }
+
+            CurrentWadDocument?.Dispose();
+            CurrentWadDocument = new WadDocument(wad);
+            CanSave = true;
+            CanSafelySave = true;
+            AddRecentFile(filePath);
+            PopulateWadTree(wad);
+            OpenInTab(wad, true, Path.GetFileName(filePath));
+        }
+
+        /// <summary>Document of the currently opened wad (editing + name catalog).</summary>
+        public WadDocument CurrentWadDocument { get; private set; }
+
+        // Applies the pending wad edits (byte patches + STRG appends, .bak backup next
+        // to the file). Shared by the generic Save (Ctrl+S) and the closing flow.
+        private void SaveWad()
+        {
+            if (CurrentWadDocument is null)
+                return;
+            try
+            {
+                CurrentWadDocument.Session.Save();
+                MessageBox.Show(this, "WAD file saved. (A .bak backup of the previous file was kept next to it.)",
+                    "UndertaleModTool", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Could not save the WAD file:\n{ex.Message}",
+                    "UndertaleModTool", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Builds the "WAD — <file>" root of the main tree: one category node per chunk
+        // (tagged with its chunk view model) with the chunk entries as leaves. Leaf
+        // selection feeds the standard Highlighted -> OpenInTab flow, so the tree double
+        // click opens entry editors exactly like the in-editor entry lists do.
+        private void PopulateWadTree(UndertaleWadFile wad)
+        {
+            foreach (TreeViewItem stale in MainTree.Items.Cast<TreeViewItem>().Where(i => (i.Tag as string) == "WadRoot").ToList())
+                MainTree.Items.Remove(stale);
+
+            WadFileViewModel viewModel = new();
+            viewModel.Attach(wad);
+
+            TreeViewItem root = new()
+            {
+                Header = $"{Path.GetFileName(wad.FilePath)} [WAD]",
+                Tag = "WadRoot",
+                IsExpanded = true
+            };
+            foreach (WadChunkViewModel chunk in viewModel.Chunks)
+            {
+                ResourceListTreeViewItem category = new()
+                {
+                    Header = $"{chunk.Name} ({chunk.Entries.Count:N0})",
+                    ItemsSource = chunk.Entries,
+                    DefaultItemTemplate = WadEntryTreeTemplate,
+                    Tag = chunk
+                };
+                root.Items.Add(category);
+            }
+            MainTree.Items.Add(root);
+        }
+
+        private static readonly DataTemplate WadEntryTreeTemplate = BuildWadEntryTreeTemplate();
+
+        private static DataTemplate BuildWadEntryTreeTemplate()
+        {
+            FrameworkElementFactory factory = new(typeof(TextBlock));
+            factory.SetBinding(TextBlock.TextProperty, new Binding(nameof(WadEntryViewModel.Name)));
+            return new DataTemplate { VisualTree = factory };
         }
 
         private const int MaxRecentFiles = 10;
@@ -1188,11 +1274,19 @@ namespace UndertaleModTool
                     return;
             }
 
-            await LoadFile(filePath, true);
+            await OpenFileGeneric(filePath, true);
         }
 
         private async void Command_Save(object sender, ExecutedRoutedEventArgs e)
         {
+            // With a wad asset package open, the generic Save (Ctrl+S / File→Save)
+            // applies the wad edits instead of the data.win pipeline.
+            if (CurrentWadDocument is not null)
+            {
+                SaveWad();
+                return;
+            }
+
             if (CanSave)
             {
                 if (!CanSafelySave)
@@ -1836,6 +1930,14 @@ namespace UndertaleModTool
         {
             if (e.NewValue is TreeViewItem)
             {
+                // WAD chunk categories: the tree item carries the chunk view model in its
+                // Tag; picking it selects the chunk editor (works without data.win loaded).
+                if (e.NewValue is TreeViewItem wadTvi && wadTvi.Tag is WadChunkViewModel wadChunkVm)
+                {
+                    Highlighted = wadChunkVm;
+                    return;
+                }
+
                 string item = (e.NewValue as TreeViewItem).Name?.ToString();
                 string header = (e.NewValue as TreeViewItem).Header?.ToString();
 
@@ -1868,6 +1970,19 @@ namespace UndertaleModTool
 
         private void MainTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            OpenHighlightedContent();
+        }
+
+        // Wad entry leaves: open the dedicated per-entry editor when one exists, otherwise
+        // fall back to the generic one — same rule as the chunk editor.
+        private void OpenHighlightedContent()
+        {
+            if (Highlighted is WadEntryViewModel wadEntry && wadEntry.Payload is not null
+                && HasEditorForAsset(wadEntry.Payload))
+            {
+                OpenInTab(wadEntry.Payload, true, wadEntry.Name ?? wadEntry.Summary);
+                return;
+            }
             OpenInTab(Highlighted);
         }
         private void MainTree_MouseDown(object sender, MouseButtonEventArgs e)
@@ -1900,7 +2015,7 @@ namespace UndertaleModTool
         {
             if (e.Key == Key.Return)
             {
-                OpenInTab(Highlighted);
+                OpenHighlightedContent();
             }
         }
 

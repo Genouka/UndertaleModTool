@@ -207,6 +207,14 @@ namespace UndertaleModTool
                     ? "WAD"
                     : System.IO.Path.GetFileName(wadFile.FilePath);
             }
+            else if (obj is UndertaleModTool.Wad.WadChunkViewModel chunkVm)
+            {
+                title = chunkVm.Title;
+            }
+            else if (obj is UndertaleModTool.Wad.WadEntryViewModel entryVm)
+            {
+                title = entryVm.Name ?? entryVm.Summary ?? "entry";
+            }
             else
             {
                 Debug.WriteLine($"Could not handle type {obj.GetType()}");

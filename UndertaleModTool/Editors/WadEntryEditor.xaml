@@ -1,0 +1,28 @@
+<local:DataUserControl x:Class="UndertaleModTool.WadEntryEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:UndertaleModTool"
+             xmlns:wadvm="clr-namespace:UndertaleModTool.Wad"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance wadvm:WadEntryViewModel}">
+    <DockPanel Margin="8">
+        <!-- Entry identity -->
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="15"/>
+            <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Foreground="#999" Margin="0,2,0,0"/>
+        </StackPanel>
+
+        <!-- Reflected fields -->
+        <ListView ItemsSource="{Binding Properties}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Field" Width="220" DisplayMemberBinding="{Binding Name}"/>
+                    <GridViewColumn Header="Value" Width="480" DisplayMemberBinding="{Binding ValueText}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </DockPanel>
+</local:DataUserControl>

@@ -140,10 +140,10 @@ namespace UndertaleModLib.Wad
     public sealed class WadObjtEntry
     {
         public uint NameRef { get; internal set; }
-        public string Name { get; internal set; }
-        public uint ParentIndex { get; internal set; }
-        public bool Persistent { get; internal set; }
-        public bool Visible { get; internal set; }
+        public string Name { get; set; }
+        public uint ParentIndex { get; set; }
+        public bool Persistent { get; set; }
+        public bool Visible { get; set; }
         public IReadOnlyList<WadObjtEvent> Events { get; internal set; }
         public uint ComponentSectionOffset { get; internal set; }
         public List<WadObjtComponent> Components { get; } = new();
@@ -160,7 +160,7 @@ namespace UndertaleModLib.Wad
     public sealed class WadObjtComponent
     {
         public uint NameRef { get; internal set; }
-        public string Name { get; internal set; }
+        public string Name { get; set; }
         public uint EntryOffset { get; internal set; }
         public WadObjtPayload Payload { get; internal set; }
         public byte[] RawPayload { get; internal set; }

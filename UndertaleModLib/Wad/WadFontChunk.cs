@@ -68,12 +68,12 @@ namespace UndertaleModLib.Wad
     public sealed class WadFontEntry
     {
         public uint NameRef { get; internal set; }
-        public string Name { get; internal set; }
+        public string Name { get; set; }
         public uint FontNameRef { get; internal set; }
         public string FontName { get; internal set; }
-        public float Size { get; internal set; }
-        public bool Bold { get; internal set; }
-        public bool Italic { get; internal set; }
+        public float Size { get; set; }
+        public bool Bold { get; set; }
+        public bool Italic { get; set; }
         /// <summary>antiAlias&lt;&lt;24 | first | charSet&lt;&lt;16</summary>
         public uint PackedChars { get; internal set; }
         public uint Last { get; internal set; }

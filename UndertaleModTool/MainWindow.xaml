@@ -11,6 +11,7 @@
         xmlns:undertale="clr-namespace:UndertaleModLib.Models;assembly=UndertaleModLib"
         xmlns:undertalelib="clr-namespace:UndertaleModLib;assembly=UndertaleModLib"
         xmlns:wad="clr-namespace:UndertaleModLib.Wad;assembly=UndertaleModLib"
+        xmlns:wadvm="clr-namespace:UndertaleModTool.Wad"
         xmlns:scol="clr-namespace:System.Collections;assembly=mscorlib"
         xmlns:cmod="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         mc:Ignorable="d"
@@ -91,7 +92,6 @@
                 <local:MenuItemDark Header="{loc:Loc Menu_File}">
                     <MenuItem Header="{loc:Loc Menu_File_New}" Command="New" InputGestureText="Ctrl+N"/>
                     <MenuItem Header="{loc:Loc Menu_File_Open}" Command="Open" InputGestureText="Ctrl+O"/>
-                    <MenuItem Header="Open WAD File…" Click="Command_OpenWad" InputGestureText="Ctrl+Shift+O"/>
                     <local:MenuItemDark x:Name="RecentFilesItem" Header="{loc:Loc Menu_File_RecentFiles}" SubmenuOpened="RecentFilesItem_SubmenuOpened">
                         <MenuItem Header="{loc:Loc Menu_File_RecentFiles_None}" IsEnabled="False"/>
                     </local:MenuItemDark>
@@ -842,7 +842,140 @@
                                 </DataTemplate>
 
                                 <DataTemplate DataType="{x:Type wad:UndertaleWadFile}">
-                                    <local:WadEditor/>
+                                    <local:WadFileEditor/>
+                                </DataTemplate>
+
+                                <!-- WAD editors (Editors/Wad*Editor.xaml, same layout conventions as the
+                                     Undertale*Editor.xaml family): the root WadFileEditor opens
+                                     chunk view models in their own tabs, every concrete chunk VM
+                                     maps to the shared WadChunkEditor, and double-clicking an
+                                     entry opens its dedicated per-entry editor (or the generic
+                                     WadEntryEditor), all through MainWindow's standard
+                                     tab/history/editor hosting. -->
+                                <DataTemplate DataType="{x:Type wadvm:WadStrgChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadPrjtChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadRrefChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadTagsChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadEmbeddedImagesChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadAudoChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadTxTrChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadTpagChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadTginChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadRoomChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadSeqnChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadAcrvChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadTmlnChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadPathChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadPsysChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadShdrChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadObjtChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadOptnChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadUilrChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadExtnChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadFedsChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadScriptChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadSprtChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadBgndChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadSondChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadAgrpChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadFontChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadRawChunkViewModel}">
+                                    <local:WadChunkEditor/>
+                                </DataTemplate>
+
+                                <!-- Dedicated per-entry editors (read-only field layouts). The
+                                     WadChunkEditor opens the entry model directly when an editor
+                                     exists, otherwise the generic WadEntryEditor via the wrapper
+                                     view model. -->
+                                <DataTemplate DataType="{x:Type wad:WadSprtEntry}">
+                                    <local:WadSpriteEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadSondEntry}">
+                                    <local:WadSoundEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadBgndEntry}">
+                                    <local:WadBackgroundEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadRoomEntry}">
+                                    <local:WadRoomEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadObjtEntry}">
+                                    <local:WadGameObjectEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadSeqnEntry}">
+                                    <local:WadSequenceEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadShdrEntry}">
+                                    <local:WadShaderEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadTextureEntry}">
+                                    <local:WadTextureEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadPathEntry}">
+                                    <local:WadPathEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadTmlnEntry}">
+                                    <local:WadTimelineEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wad:WadFontEntry}">
+                                    <local:WadFontEditor/>
+                                </DataTemplate>
+                                <DataTemplate DataType="{x:Type wadvm:WadEntryViewModel}">
+                                    <local:WadEntryEditor/>
                                 </DataTemplate>
                             </ContentControl.Resources>
                         </ContentControl>

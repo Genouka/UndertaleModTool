@@ -1,0 +1,34 @@
+<local:DataUserControl x:Class="UndertaleModTool.WadTimelineEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:UndertaleModTool"
+             xmlns:wad="clr-namespace:UndertaleModLib.Wad;assembly=UndertaleModLib"
+             mc:Ignorable="d"
+             d:DesignHeight="420" d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance wad:WadTmlnEntry}">
+    <DockPanel Margin="12">
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Name" Margin="3" FontWeight="Bold" Width="120"/>
+                <TextBlock Text="{Binding Name}" Margin="3"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Moments" Margin="3" FontWeight="Bold" Width="120"/>
+                <TextBlock Text="{Binding Moments.Count}" Margin="3"/>
+            </StackPanel>
+        </StackPanel>
+
+        <DataGrid ItemsSource="{Binding Moments}" AutoGenerateColumns="False" IsReadOnly="True"
+                  HeadersVisibility="Column" GridLinesVisibility="None"
+                  CanUserAddRows="False" CanUserDeleteRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Frame" Width="100" Binding="{Binding Frame}"/>
+                <DataGridTextColumn Header="Event type" Width="120" Binding="{Binding EventType}"/>
+                <DataGridTextColumn Header="Event number" Width="120" Binding="{Binding EventNum}"/>
+                <DataGridTextColumn Header="Script index" Width="*" Binding="{Binding ScriptIndex}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</local:DataUserControl>

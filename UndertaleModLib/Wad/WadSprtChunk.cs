@@ -117,25 +117,25 @@ namespace UndertaleModLib.Wad
     public sealed class WadSprtEntry
     {
         public uint NameRef { get; internal set; }
-        public string Name { get; internal set; }
-        public int Width { get; internal set; }
-        public int Height { get; internal set; }
-        public int BBoxLeft { get; internal set; }
-        public int BBoxRight { get; internal set; }
-        public int BBoxBottom { get; internal set; }
-        public int BBoxTop { get; internal set; }
-        public bool Transparent { get; internal set; }
-        public bool Smooth { get; internal set; }
-        public bool Preload { get; internal set; }
-        public int BBoxMode { get; internal set; }
-        public uint ColCheck { get; internal set; }
-        public int XOrig { get; internal set; }
-        public int YOrig { get; internal set; }
-        public uint Marker1 { get; internal set; }
-        public uint Marker2 { get; internal set; }
-        public int SpriteType { get; internal set; }
-        public float PlaybackSpeed { get; internal set; }
-        public int PlaybackSpeedType { get; internal set; }
+        public string Name { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public int BBoxLeft { get; set; }
+        public int BBoxRight { get; set; }
+        public int BBoxBottom { get; set; }
+        public int BBoxTop { get; set; }
+        public bool Transparent { get; set; }
+        public bool Smooth { get; set; }
+        public bool Preload { get; set; }
+        public int BBoxMode { get; set; }
+        public uint ColCheck { get; set; }
+        public int XOrig { get; set; }
+        public int YOrig { get; set; }
+        public uint Marker1 { get; set; }
+        public uint Marker2 { get; set; }
+        public int SpriteType { get; set; }
+        public float PlaybackSpeed { get; set; }
+        public int PlaybackSpeedType { get; set; }
         /// <summary>Absolute offset of the nine-slice data (0 = absent).</summary>
         public uint NineSliceOffset { get; internal set; }
         /// <summary>Absolute offset of the embedded sequence data (0 = absent).</summary>

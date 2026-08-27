@@ -98,23 +98,23 @@ namespace UndertaleModLib.Wad
     public sealed class WadBgndEntry
     {
         public uint NameRef { get; internal set; }
-        public string Name { get; internal set; }
-        public bool Transparent { get; internal set; }
-        public bool Smooth { get; internal set; }
-        public bool Preload { get; internal set; }
+        public string Name { get; set; }
+        public bool Transparent { get; set; }
+        public bool Smooth { get; set; }
+        public bool Preload { get; set; }
         /// <summary>TPAG record offset of the image (0xFFFFFFFF when no image is set).</summary>
         public uint ImageRef { get; internal set; }
         public uint Unknown0 { get; internal set; }
-        public int TileWidth { get; internal set; }
-        public int TileHeight { get; internal set; }
-        public int TileHSep { get; internal set; }
-        public int TileVSep { get; internal set; }
-        public int TileBorderX { get; internal set; }
-        public int TileBorderY { get; internal set; }
-        public int Columns { get; internal set; }
-        public int Frames { get; internal set; }
-        public int TileCount { get; internal set; }
-        public int SpriteIndex { get; internal set; }
+        public int TileWidth { get; set; }
+        public int TileHeight { get; set; }
+        public int TileHSep { get; set; }
+        public int TileVSep { get; set; }
+        public int TileBorderX { get; set; }
+        public int TileBorderY { get; set; }
+        public int Columns { get; set; }
+        public int Frames { get; set; }
+        public int TileCount { get; set; }
+        public int SpriteIndex { get; set; }
         public uint FrameLengthLo { get; internal set; }
         public uint FrameLengthHi { get; internal set; }
         public uint UnknownConst { get; internal set; }

@@ -284,14 +284,14 @@ namespace UndertaleModLib.Wad
     /// <summary>One room entry.</summary>
     public sealed class WadRoomEntry
     {
-        public string Name { get; internal set; }
+        public string Name { get; set; }
         public uint CreationCodeRef { get; internal set; }
         public int Width { get; internal set; }
         public int Height { get; internal set; }
-        public uint Flag0 { get; internal set; }
-        public uint Flag1 { get; internal set; }
-        public uint Flag2 { get; internal set; }
-        public uint Flag3 { get; internal set; }
+        public uint Flag0 { get; set; }
+        public uint Flag1 { get; set; }
+        public uint Flag2 { get; set; }
+        public uint Flag3 { get; set; }
         public IReadOnlyList<WadRoomView> Views { get; internal set; }
         public IReadOnlyList<WadRoomInstance> Instances { get; internal set; }
         public IReadOnlyList<WadRoomLayer> Layers { get; internal set; }
@@ -322,7 +322,7 @@ namespace UndertaleModLib.Wad
     /// <summary>A room instance (52 bytes).</summary>
     public sealed class WadRoomInstance
     {
-        public string Name { get; internal set; }
+        public string Name { get; set; }
         public int X { get; internal set; }
         public int Y { get; internal set; }
         public uint ObjectRef { get; internal set; }
@@ -341,7 +341,7 @@ namespace UndertaleModLib.Wad
     public sealed class WadRoomLayer
     {
         public int Index { get; internal set; }
-        public string Name { get; internal set; }
+        public string Name { get; set; }
         public uint SortValue { get; internal set; }
         public uint Kind { get; internal set; }
         public string TypeName { get; internal set; }
@@ -369,7 +369,7 @@ namespace UndertaleModLib.Wad
     /// interpretation is per component name, see the runner's component handlers).</summary>
     public sealed class WadComponent
     {
-        public string Name { get; internal set; }
+        public string Name { get; set; }
         public uint EntryOffset { get; internal set; }
     }
 }

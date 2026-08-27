@@ -1,0 +1,90 @@
+<local:DataUserControl x:Class="UndertaleModTool.WadChunkEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:UndertaleModTool"
+             xmlns:wadvm="clr-namespace:UndertaleModTool.Wad"
+             mc:Ignorable="d"
+             d:DesignHeight="560" d:DesignWidth="1000"
+             d:DataContext="{d:DesignInstance wadvm:WadSprtChunkViewModel}">
+    <DockPanel>
+        <!-- Chunk header -->
+        <Border DockPanel.Dock="Top" BorderBrush="#555" BorderThickness="0,0,0,1" Padding="6,4">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" Margin="0,0,12,0"/>
+                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Foreground="#999" Margin="0,0,12,0"/>
+                    <TextBlock Text="{Binding KindText}" VerticalAlignment="Center" Foreground="#999"/>
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Info}" Margin="0,4,0,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,18,0">
+                                <TextBlock Text="{Binding Label}" Foreground="#888"/>
+                                <TextBlock Text="{Binding Value, StringFormat=': {0}'}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <Grid Margin="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" MinWidth="240"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="4*" MinWidth="280"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Entries -->
+            <TextBlock Grid.Column="0" Grid.Row="0"
+                       Text="{Binding Entries.Count, StringFormat='Entries — {0:N0} — double-click to open an entry editor'}"
+                       FontWeight="Bold" Margin="2,0,0,4"/>
+            <DataGrid x:Name="EntriesGrid" Grid.Column="0" Grid.Row="1"
+                      ItemsSource="{Binding Entries}" SelectedItem="{Binding SelectedEntry}"
+                      AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
+                      HeadersVisibility="Column" GridLinesVisibility="None"
+                      CanUserAddRows="False" CanUserDeleteRows="False"
+                      MouseDoubleClick="EntriesGrid_MouseDoubleClick">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="#" Width="44" Binding="{Binding Index}"/>
+                    <DataGridTextColumn Header="Name" Width="2*" Binding="{Binding Name}"/>
+                    <DataGridTextColumn Header="Summary" Width="3*" Binding="{Binding Summary}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Details of the selected entry -->
+            <TabControl Grid.Column="2" Grid.Row="1" Grid.RowSpan="2">
+                <TabItem Header="Properties">
+                    <ListView ItemsSource="{Binding Properties}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Property" Width="190" DisplayMemberBinding="{Binding Name}"/>
+                                <GridViewColumn Header="Value" Width="440" DisplayMemberBinding="{Binding ValueText}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </TabItem>
+                <TabItem Header="Raw bytes">
+                    <TextBox Text="{Binding HexText, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas, Courier New"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             TextWrapping="NoWrap" Margin="4"/>
+                </TabItem>
+                <TabItem Header="Strings (STRG)">
+                    <TextBox Text="{Binding StringsText, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas, Courier New"
+                             VerticalScrollBarVisibility="Auto" TextWrapping="NoWrap" Margin="4"/>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </DockPanel>
+</local:DataUserControl>

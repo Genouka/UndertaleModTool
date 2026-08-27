@@ -68,13 +68,13 @@ namespace UndertaleModLib.Wad
     public sealed class WadSondEntry
     {
         public uint NameRef { get; internal set; }
-        public string Name { get; internal set; }
-        public uint FormatCode { get; internal set; }
+        public string Name { get; set; }
+        public uint FormatCode { get; set; }
         public uint Zero0 { get; internal set; }
         public uint FileNameRef { get; internal set; }
         public string FileName { get; internal set; }
         public uint Zero1 { get; internal set; }
-        public float Volume { get; internal set; }
+        public float Volume { get; set; }
         public uint Zero2 { get; internal set; }
         public uint Zero3 { get; internal set; }
         public uint Zero4 { get; internal set; }

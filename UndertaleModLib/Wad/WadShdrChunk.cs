@@ -80,7 +80,7 @@ namespace UndertaleModLib.Wad
     public sealed class WadShdrEntry
     {
         public uint NameRef { get; internal set; }
-        public string Name { get; internal set; }
+        public string Name { get; set; }
         public uint VertexBlobOffset { get; internal set; }
         public uint MetaABlobOffset { get; internal set; }
         public uint ScalarA { get; internal set; }

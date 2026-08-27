@@ -264,15 +264,15 @@ namespace UndertaleModLib.Wad
     {
         /// <summary>Absolute offset of the name string record.</summary>
         public uint NameRef { get; internal set; }
-        public int Playback { get; internal set; }
-        public float PlaybackSpeed { get; internal set; }
-        public int PlaybackSpeedType { get; internal set; }
-        public float Length { get; internal set; }
-        public int Xorigin { get; internal set; }
-        public int Yorigin { get; internal set; }
-        public float Volume { get; internal set; }
-        public float Width { get; internal set; }
-        public float Height { get; internal set; }
+        public int Playback { get; set; }
+        public float PlaybackSpeed { get; set; }
+        public int PlaybackSpeedType { get; set; }
+        public float Length { get; set; }
+        public int Xorigin { get; set; }
+        public int Yorigin { get; set; }
+        public float Volume { get; set; }
+        public float Width { get; set; }
+        public float Height { get; set; }
         public WadSeqnKeyframeStore Events { get; internal set; }
         public WadSeqnTracks Tracks { get; internal set; }
         public WadSeqnEventToFunction EventToFunction { get; internal set; }
@@ -282,7 +282,7 @@ namespace UndertaleModLib.Wad
         /// entry offset).</summary>
         public uint ParseEndOffset { get; internal set; }
 
-        public string Name { get; internal set; }
+        public string Name { get; set; }
     }
 
     public sealed class WadSeqnKeyframeStore
@@ -293,7 +293,7 @@ namespace UndertaleModLib.Wad
     public sealed class WadSeqnKeyframe
     {
         public float Key { get; internal set; }
-        public float Length { get; internal set; }
+        public float Length { get; set; }
         public int Stretch { get; internal set; }
         public bool Disabled { get; internal set; }
         public IReadOnlyList<WadSeqnKeyframeChannel> Channels { get; internal set; }

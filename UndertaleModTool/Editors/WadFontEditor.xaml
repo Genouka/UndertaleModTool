@@ -1,0 +1,45 @@
+<local:DataUserControl x:Class="UndertaleModTool.WadFontEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:UndertaleModTool"
+             xmlns:wad="clr-namespace:UndertaleModLib.Wad;assembly=UndertaleModLib"
+             mc:Ignorable="d"
+             d:DesignHeight="400" d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance wad:WadFontEntry}">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Margin="3" FontWeight="Bold"/>
+        <local:TextBoxDark Grid.Row="0" Grid.Column="1" Margin="3"
+                           Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Font name" Margin="3"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Margin="3" Text="{Binding FontName}"/>
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Size" Margin="3"/>
+        <local:TextBoxDark Grid.Row="2" Grid.Column="1" Margin="3"
+                           Text="{Binding Size, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Bold" Margin="3"/>
+        <CheckBox Grid.Row="3" Grid.Column="1" Margin="3" VerticalAlignment="Center"
+                  IsChecked="{Binding Bold, Mode=TwoWay}"/>
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Italic" Margin="3"/>
+        <CheckBox Grid.Row="4" Grid.Column="1" Margin="3" VerticalAlignment="Center"
+                  IsChecked="{Binding Italic, Mode=TwoWay}"/>
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Packed chars" Margin="3"/>
+        <TextBlock Grid.Row="5" Grid.Column="1" Margin="3" Text="{Binding PackedChars}"/>
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Trailing field" Margin="3"/>
+        <TextBlock Grid.Row="6" Grid.Column="1" Margin="3" Text="{Binding Last, StringFormat='0x{0:X8}'}"/>
+    </Grid>
+</local:DataUserControl>
