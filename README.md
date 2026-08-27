@@ -21,7 +21,6 @@ This repository maintains versions for four platforms: Windows, Linux, MacOS, an
 |:-----------------:|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 |   Stable (稳定版)    | [![Latest Stable Release](https://img.shields.io/github/downloads/genouka/UndertaleModTool/latest/total)](https://github.com/genouka/UndertaleModTool/releases/latest)       |
 |   Nightly (每夜版)   | [![Latest Stable Release](https://img.shields.io/github/downloads/genouka/UndertaleModTool/nightly/total)](https://github.com/genouka/UndertaleModTool/releases/tag/nightly) |
-| Test Build (测试构建) | [下载(Download)](https://github.com/Genouka/UndertaleModTool/actions/workflows/build_test_apk.yml)                                                                             |
 
 If you are looking for the official version instead of the version I forked, please go to [here](https://github.com/UnderminersTeam/UndertaleModTool/)
 
