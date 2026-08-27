@@ -127,6 +127,8 @@ If you are looking for the official version instead of the version I forked, ple
 
 - Actively synchronize upstream code, usually no longer than a week 积极同步上游代码，通常不会超过一周
 
+- GMRT VM Support. 支持GMRT VM。
+
 ## 鸣谢/Thanks
 如果没有以下项目作为基础，本项目将永远不会诞生！
 
