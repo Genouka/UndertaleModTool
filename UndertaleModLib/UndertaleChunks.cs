@@ -146,7 +146,8 @@ namespace UndertaleModLib
                 }
             }
 
-            if (reader.undertaleData.IsVersionAtLeast(2023, 1) &&
+            if (reader.undertaleData.GeneralInfo != null &&
+                reader.undertaleData.IsVersionAtLeast(2023, 1) &&
                 reader.undertaleData.GeneralInfo.Branch == UndertaleGeneralInfo.BranchType.Pre2022_0)
             {
                 reader.undertaleData.SetLTS(true);
@@ -159,18 +160,26 @@ namespace UndertaleModLib
 
             long startPos = reader.Position;
             reader.AllChunkNames = new List<string>();
+
+            // First pass: scan to find all chunk names and calculate offsets
+            List<(string name, long offset, uint length)> chunkInfoList = new();
             while (reader.Position < reader.Length)
             {
+                long chunkOffset = reader.Position;
                 string chunkName = reader.ReadChars(4);
-                reader.AllChunkNames.Add(chunkName);
                 uint length = reader.ReadUInt32();
+                reader.AllChunkNames.Add(chunkName);
+                chunkInfoList.Add((chunkName, chunkOffset, length));
                 reader.Position += length;
             }
             reader.Position = startPos;
 
-            // Read some basic data from GEN8 for version info, etc.
-            if (reader.AllChunkNames[0] == "GEN8")
+            // Find GEN8 chunk regardless of position (may not be first in GMRT .wad format)
+            int gen8Index = chunkInfoList.FindIndex(c => c.name == "GEN8");
+            if (gen8Index >= 0)
             {
+                // Seek to GEN8 and read basic version data
+                reader.Position = chunkInfoList[gen8Index].offset;
                 UndertaleChunkGEN8 gen8Chunk = new();
                 gen8Chunk.UnserializeGeneralData(reader);
                 Chunks.Add(gen8Chunk.Name, gen8Chunk);

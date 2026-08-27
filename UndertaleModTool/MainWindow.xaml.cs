@@ -282,8 +282,8 @@ namespace UndertaleModTool
         };
 
         // Filters for all data files, and for only main data files
-        private static string DataFileFilter => LocalizationSource.GetString("Filter_DataFiles") + "|*.win;*.unx;*.ios;*.droid;audiogroup*.dat|" + LocalizationSource.GetString("Filter_AllFiles") + "|*";
-        private static string MainDataFileFilter => LocalizationSource.GetString("Filter_MainDataFiles") + "|*.win;*.unx;*.ios;*.droid|" + LocalizationSource.GetString("Filter_AllFiles") + "|*";
+        private static string DataFileFilter => LocalizationSource.GetString("Filter_DataFiles") + "|*.win;*.unx;*.ios;*.droid;*.wad;audiogroup*.dat|" + LocalizationSource.GetString("Filter_AllFiles") + "|*";
+        private static string MainDataFileFilter => LocalizationSource.GetString("Filter_MainDataFiles") + "|*.win;*.unx;*.ios;*.droid;*.wad|" + LocalizationSource.GetString("Filter_AllFiles") + "|*";
 
         public MainWindow()
         {

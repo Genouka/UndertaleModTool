@@ -18,7 +18,7 @@ public static class FilePickerFileTypes
 
     static readonly FilePickerFileType DataSingle = new(LocalizationSource.GetString("RefType_GameMakerDataFiles"))
     {
-        Patterns = ["*.win", "*.unx", "*.ios", "*.droid", "audiogroup*.dat"],
+        Patterns = ["*.win", "*.unx", "*.ios", "*.droid", "*.wad", "audiogroup*.dat"],
     };
 
     static readonly FilePickerFileType PNGSingle = new(LocalizationSource.GetString("RefType_PngFiles"))

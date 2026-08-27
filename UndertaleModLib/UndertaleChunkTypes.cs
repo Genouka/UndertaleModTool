@@ -72,10 +72,18 @@ namespace UndertaleModLib
                 {
                     if (!UndertaleChunkFORM.ChunkConstructors.TryGetValue(name, out Func<UndertaleChunk> instantiator))
                     {
-                        throw new IOException($"Unknown chunk \"{name}\"");
+                        // Treat unknown chunks as raw unsupported data (e.g. GMRT .wad format chunks like PRJT, RREF)
+                        reader.SubmitWarning($"Unknown chunk \"{name}\", treating as raw data");
+                        var unsupportedChunk = new UndertaleUnsupportedChunk();
+                        unsupportedChunk.SetName(name);
+                        chunk = unsupportedChunk;
+                        reader.undertaleData.FORM.Chunks[name] = chunk;
                     }
-                    chunk = instantiator();
-                    reader.undertaleData.FORM.Chunks[name] = chunk;
+                    else
+                    {
+                        chunk = instantiator();
+                        reader.undertaleData.FORM.Chunks[name] = chunk;
+                    }
                 }
                 Util.DebugUtil.Assert(chunk.Name == name,
                                       $"Chunk name mismatch: expected \"{name}\", got \"{chunk.Name}\".");
@@ -85,7 +93,29 @@ namespace UndertaleModLib
                 reader.SubmitMessage("Reading chunk " + chunk.Name);
                 EnsureLengthOperation lenReader = reader.EnsureLengthFromHere(chunk.Length);
                 reader.CopyChunkToBuffer(length);
-                chunk.UnserializeChunk(reader);
+                long chunkContentStart = reader.Position;
+                try
+                {
+                    chunk.UnserializeChunk(reader);
+                }
+                catch (Exception parseEx)
+                {
+                    // If parsing fails (e.g. GMRT .wad format has different chunk layouts),
+                    // fall back to storing raw data and advance past the chunk
+                    reader.SwitchReaderType(false);
+                    reader.SubmitWarning($"Failed to parse chunk \"{name}\": {parseEx.Message}, storing as raw data");
+
+                    // Go back to chunk content start and read raw data
+                    reader.Position = chunkContentStart;
+                    byte[] rawData = reader.ReadBytes((int)chunk.Length);
+
+                    var unsupportedChunk = new UndertaleUnsupportedChunk();
+                    unsupportedChunk.SetName(name);
+                    unsupportedChunk.Length = chunk.Length;
+                    unsupportedChunk.RawData = rawData;
+                    chunk = unsupportedChunk;
+                    reader.undertaleData.FORM.Chunks[name] = chunk;
+                }
 
                 // Process padding
                 reader.SwitchReaderType(false);
@@ -96,7 +126,7 @@ namespace UndertaleModLib
                     // These versions introduced new padding
                     // all chunks now start on 16-byte boundaries
                     // (but the padding is included with length of previous chunk)
-                    if (generalInfo.Major >= 2 || (generalInfo.Major == 1 && generalInfo.Build >= 9999))
+                    if (generalInfo != null && (generalInfo.Major >= 2 || (generalInfo.Major == 1 && generalInfo.Build >= 9999)))
                     {
                         int e = reader.undertaleData.PaddingAlignException;
                         uint pad = (e == -1 ? 16 : (uint)e);
@@ -139,20 +169,41 @@ namespace UndertaleModLib
                 uint length = reader.ReadUInt32();
 
                 // Create chunk instance
+                UndertaleChunk chunk;
                 if (!UndertaleChunkFORM.ChunkConstructors.TryGetValue(name, out Func<UndertaleChunk> instantiator))
                 {
-                    throw new IOException($"Unknown chunk \"{name}\"");
+                    // Treat unknown chunks as raw unsupported data (e.g. GMRT .wad format chunks like PRJT, RREF)
+                    var unsupportedChunk = new UndertaleUnsupportedChunk();
+                    unsupportedChunk.SetName(name);
+                    chunk = unsupportedChunk;
                 }
-                UndertaleChunk chunk = instantiator();
-                Util.DebugUtil.Assert(chunk.Name == name,
-                                      $"Chunk name mismatch: expected \"{name}\", got \"{chunk.Name}\".");
+                else
+                {
+                    chunk = instantiator();
+                    Util.DebugUtil.Assert(chunk.Name == name,
+                                          $"Chunk name mismatch: expected \"{name}\", got \"{chunk.Name}\".");
+                }
                 chunk.Length = length;
 
                 // Count objects in chunk
                 long chunkStart = reader.Position;
                 reader.SubmitMessage("Counting objects of chunk " + chunk.Name);
                 reader.CopyChunkToBuffer(length);
-                uint count = chunk.UnserializeObjectCount(reader);
+                uint count;
+                try
+                {
+                    count = chunk.UnserializeObjectCount(reader);
+                }
+                catch (Exception)
+                {
+                    // If counting fails (e.g. GMRT .wad format has different chunk layouts),
+                    // treat as unsupported and count 0 objects
+                    count = 0;
+                    var unsupportedChunk = new UndertaleUnsupportedChunk();
+                    unsupportedChunk.SetName(name);
+                    unsupportedChunk.Length = length;
+                    chunk = unsupportedChunk;
+                }
 
                 // Advance beyond chunk length (parts of the chunk may have been skipped)
                 reader.SwitchReaderType(false);
@@ -390,9 +441,14 @@ namespace UndertaleModLib
         internal override uint UnserializeObjectCount(UndertaleReader reader) => 0;
     }
 
-    public abstract class UndertaleUnsupportedChunk : UndertaleChunk
+    public class UndertaleUnsupportedChunk : UndertaleChunk
     {
+        private string _name = "????";
+        public override string Name => _name;
         public byte[] RawData;
+
+        public void SetName(string name) => _name = name;
+
         internal override void SerializeChunk(UndertaleWriter writer)
         {
             writer.Write(RawData);

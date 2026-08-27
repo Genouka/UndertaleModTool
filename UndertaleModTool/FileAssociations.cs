@@ -10,7 +10,7 @@ internal class FileAssociations
     /// <summary>
     /// All file extensions used by GameMaker WADs.
     /// </summary>
-    public static readonly IReadOnlyList<string> Extensions = new string[] { ".win", ".unx", ".ios", ".droid", ".3ds", ".symbian" };
+    public static readonly IReadOnlyList<string> Extensions = new string[] { ".win", ".unx", ".ios", ".droid", ".3ds", ".symbian", ".wad" };
 
     // Windows imports
     [DllImport("shell32.dll")]

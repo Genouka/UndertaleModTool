@@ -133,7 +133,7 @@ public partial class Program : IScriptInterface
 
         Argument<FileInfo> dataFileArgument = new("datafile")
         {
-            Description = "Path to the data.win/.ios/.droid/.unx file"
+            Description = "Path to the data.win/.ios/.droid/.unx/.wad file"
         };
 
         // Setup new command

@@ -8,7 +8,7 @@ namespace UndertaleModMcp.Tools;
 [McpServerToolType]
 public class DataFileTools
 {
-    [McpServerTool, Description("Load a GameMaker Studio data file (data.win, data.unx, data.ios, data.droid) into memory for editing")]
+    [McpServerTool, Description("Load a GameMaker Studio data file (data.win, data.unx, data.ios, data.droid, .wad) into memory for editing")]
     public static string LoadDataFile(
         [Description("Full path to the GameMaker data file")] string filePath,
         GameDataSession session)

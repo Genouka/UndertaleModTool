@@ -49,7 +49,7 @@ namespace UndertaleModTool.Windows
             OpenFileDialog dlg = new()
             {
                 DefaultExt = "win",
-                Filter = LocalizationSource.GetString("ImportFile_FileFilter") + "|*.win;*.unx;*.ios;*.droid|All files|*.*"
+                Filter = LocalizationSource.GetString("ImportFile_FileFilter") + "|*.win;*.unx;*.ios;*.droid;*.wad|All files|*.*"
             };
 
             if (dlg.ShowDialog() == true)
