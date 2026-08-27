@@ -8,6 +8,28 @@
         mc:Ignorable="d"
         Title="{loc:Loc Dialog_ImportFromFile}" Height="650" Width="700"
         IsVisibleChanged="Window_IsVisibleChanged" WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <Style x:Key="SearchBoxStyle" TargetType="TextBox">
+            <Style.Resources>
+                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                    <VisualBrush.Visual>
+                        <Label Content="{loc:Loc Common_FilterByName}" Foreground="Gray" FontSize="12"/>
+                    </VisualBrush.Visual>
+                </VisualBrush>
+            </Style.Resources>
+            <Style.Triggers>
+                <Trigger Property="Text" Value="">
+                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                </Trigger>
+                <Trigger Property="Text" Value="{x:Null}">
+                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="Background" Value="{x:Null}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -46,11 +68,15 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Label Content="{loc:Loc ImportFile_AvailableResources}" FontWeight="Bold" FontSize="13"/>
-                <ListBox Name="AvailableList" Grid.Row="1" SelectionMode="Extended"
+                <local:TextBoxDark x:Name="AvailableSearchBox" Grid.Row="1" Style="{StaticResource SearchBoxStyle}"
+                                   ToolTip="{loc:Loc Common_Search}" TextChanged="AvailableSearchBox_TextChanged"
+                                   FontSize="12" VerticalContentAlignment="Center" Margin="0,2,0,2"/>
+                <ListBox Name="AvailableList" Grid.Row="2" SelectionMode="Extended"
                          MouseDoubleClick="AvailableList_MouseDoubleClick" 
                          Margin="0,2,0,2">
                     <ListBox.Background>
@@ -62,7 +88,7 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0">
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0">
                     <local:ButtonDark Content="{loc:Loc ImportFile_SelectAll}" Click="SelectAllButton_Click" Width="70" Height="24" FontSize="11"/>
                     <local:ButtonDark Content="{loc:Loc ImportFile_DeselectAll}" Click="DeselectAllButton_Click" Width="75" Height="24" FontSize="11" Margin="5,0,0,0"/>
                 </StackPanel>
@@ -73,10 +99,14 @@
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Label Content="{loc:Loc ImportFile_SelectedForImport}" FontWeight="Bold" FontSize="13"/>
-                <ListBox Name="SelectedList" Grid.Row="1" AllowDrop="True" Drop="SelectedList_Drop"
+                <local:TextBoxDark x:Name="SelectedSearchBox" Grid.Row="1" Style="{StaticResource SearchBoxStyle}"
+                                   ToolTip="{loc:Loc Common_Search}" TextChanged="SelectedSearchBox_TextChanged"
+                                   FontSize="12" VerticalContentAlignment="Center" Margin="0,2,0,2"/>
+                <ListBox Name="SelectedList" Grid.Row="2" AllowDrop="True" Drop="SelectedList_Drop"
                          DragOver="SelectedList_DragOver" MouseDoubleClick="SelectedList_MouseDoubleClick" Margin="0,2,0,0">
                     <ListBox.Background>
                         <DynamicResource ResourceKey="{x:Static SystemColors.ControlLightBrushKey}"/>

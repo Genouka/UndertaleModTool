@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using UndertaleModLib.Project;
 using UndertaleModTool.Localization;
@@ -20,6 +21,8 @@ namespace UndertaleModTool.Windows
         private CrossFileImporter _importer;
         private ObservableCollection<ResourceDisplayItem> _availableItems = new();
         private ObservableCollection<ResourceDisplayItem> _selectedItems = new();
+        private readonly ListCollectionView _availableView;
+        private readonly ListCollectionView _selectedView;
         private List<ResourceInfo> _allResources;
 
         public bool ImportCompleted { get; private set; }
@@ -39,9 +42,30 @@ namespace UndertaleModTool.Windows
             InitializeComponent();
 
             _importer = new CrossFileImporter(targetData, mainWindow.MainThreadAction);
-            AvailableList.ItemsSource = _availableItems;
-            SelectedList.ItemsSource = _selectedItems;
+            _availableView = new ListCollectionView(_availableItems);
+            _selectedView = new ListCollectionView(_selectedItems);
+            AvailableList.ItemsSource = _availableView;
+            SelectedList.ItemsSource = _selectedView;
             ImportButton.IsEnabled = false;
+        }
+
+        private void AvailableSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ApplyFilter(_availableView, AvailableSearchBox.Text);
+        }
+
+        private void SelectedSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ApplyFilter(_selectedView, SelectedSearchBox.Text);
+        }
+
+        private static void ApplyFilter(ICollectionView view, string filterText)
+        {
+            string normalized = filterText?.Trim();
+            view.Filter = string.IsNullOrEmpty(normalized)
+                ? null
+                : (obj) => obj is ResourceDisplayItem item &&
+                           item.DisplayName.IndexOf(normalized, StringComparison.CurrentCultureIgnoreCase) >= 0;
         }
 
         private async void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -105,6 +129,8 @@ namespace UndertaleModTool.Windows
 
         private void PopulateResourceLists()
         {
+            AvailableSearchBox.Text = "";
+            SelectedSearchBox.Text = "";
             _availableItems.Clear();
             _selectedItems.Clear();
 
@@ -126,7 +152,8 @@ namespace UndertaleModTool.Windows
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
         {
-            List<ResourceDisplayItem> toMove = _availableItems.ToList();
+            // Only move the items currently visible through the search filter
+            List<ResourceDisplayItem> toMove = _availableView.Cast<ResourceDisplayItem>().ToList();
             foreach (ResourceDisplayItem item in toMove)
             {
                 _availableItems.Remove(item);
@@ -137,7 +164,8 @@ namespace UndertaleModTool.Windows
 
         private void DeselectAllButton_Click(object sender, RoutedEventArgs e)
         {
-            List<ResourceDisplayItem> toMove = _selectedItems.ToList();
+            // Only move the items currently visible through the search filter
+            List<ResourceDisplayItem> toMove = _selectedView.Cast<ResourceDisplayItem>().ToList();
             foreach (ResourceDisplayItem item in toMove)
             {
                 _selectedItems.Remove(item);
