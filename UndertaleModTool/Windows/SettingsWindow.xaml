@@ -99,6 +99,7 @@
                         <CheckBox IsChecked="{Binding ShowNullEntriesInResourceTree}" Content="{loc:Loc Settings_ShowNullEntries}" ToolTip="{loc:Loc Settings_ShowNullEntriesToolTip}"/>
                         <CheckBox IsChecked="{Binding RecompileAllCodeSourcesOnProjectSave}" Content="{loc:Loc Settings_RecompileOnSave}" ToolTip="{loc:Loc Settings_RecompileOnSaveToolTip}"/>
                         <CheckBox IsChecked="{Binding ChangeTrackingEnabled}" Content="{loc:Loc Settings_ChangeTracking}" ToolTip="{loc:Loc Settings_ChangeTrackingToolTip}"/>
+                        <CheckBox IsChecked="{Binding ShowEditorPointerInfo}" Content="{loc:Loc Settings_ShowEditorPointerInfo}" ToolTip="{loc:Loc Settings_ShowEditorPointerInfoToolTip}"/>
                     </StackPanel>
                 </Grid>
 

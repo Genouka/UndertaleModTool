@@ -109,6 +109,14 @@ namespace UndertaleModLib
         public bool IsWad { get; set; }
 
         /// <summary>
+        /// Map from each <see cref="UndertaleObject"/> instance read from the file to the absolute
+        /// file offset (address/pointer) at which it is stored. Populated while loading a data file.
+        /// The editor UI uses this to display exact pointer information for objects.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        public Dictionary<UndertaleObject, uint> ObjectAddressMap { get; set; } = new();
+
+        /// <summary>
         /// General info of the data file.
         /// </summary>
         public UndertaleGeneralInfo GeneralInfo => FORM.GEN8?.Object;

@@ -93,6 +93,7 @@ namespace UndertaleModTool
                 _currentTab = value;
                 OnPropertyChanged();
                 OnPropertyChanged("Selected");
+                UpdatePointerInfoVisibility();
             }
         }
         public int CurrentTabIndex { get; set; } = 0;
@@ -106,6 +107,31 @@ namespace UndertaleModTool
                 OnPropertyChanged();
                 OpenInTab(value);
             } 
+        }
+
+        /// <summary>
+        /// Exact pointer (file offset) information for the currently selected object, shown in a bar
+        /// above the editor when the relevant setting is enabled and the selection has a known address.
+        /// Returns null when it should be hidden (setting disabled, Wad data, or no address available).
+        /// </summary>
+        public string PointerInfo
+        {
+            get
+            {
+                if (Selected is not UndertaleObject obj
+                    || Data is null
+                    || Data.IsWad
+                    || Settings.Instance is null
+                    || !Settings.Instance.ShowEditorPointerInfo)
+                {
+                    return null;
+                }
+
+                if (Data.ObjectAddressMap.TryGetValue(obj, out uint address) && address != 0)
+                    return address.ToString("X8");
+
+                return null;
+            }
         }
 
         /// <summary>
@@ -201,6 +227,15 @@ namespace UndertaleModTool
         public void RaiseOnSelectedChanged()
         {
             OnPropertyChanged("Selected");
+            UpdatePointerInfoVisibility();
+        }
+
+        /// <summary>
+        /// Re-evaluates and re-notifies the pointer info bar text/visibility.
+        /// </summary>
+        public void UpdatePointerInfoVisibility()
+        {
+            OnPropertyChanged("PointerInfo");
         }
 
         Window IWindowHost.Window => this;
@@ -1681,6 +1716,7 @@ namespace UndertaleModTool
                         OnPropertyChanged("Data");
                         OnPropertyChanged("FilePath");
                         OnPropertyChanged("IsGMS2");
+                        UpdatePointerInfoVisibility();
 
                         BackgroundsItemsList.Header = IsGMS2 == Visibility.Visible ? LocalizationSource.GetString("Main_TileSets") : LocalizationSource.GetString("Main_BackgroundsTileSets");
 

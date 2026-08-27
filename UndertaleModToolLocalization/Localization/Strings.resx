@@ -4707,6 +4707,18 @@ It can't be displayed.</value>
   <data name="Settings_ChangeTrackingToolTip" xml:space="preserve">
     <value>Whether to track and highlight modified code entries in the resource tree and code editor.</value>
   </data>
+  <data name="Settings_ShowEditorPointerInfo" xml:space="preserve">
+    <value>Show pointer info in editors</value>
+  </data>
+  <data name="Settings_ShowEditorPointerInfoToolTip" xml:space="preserve">
+    <value>Whether to display the exact file offset (pointer) of the currently selected object above its editor. Hidden by default.</value>
+  </data>
+  <data name="Editor_PointerInfo" xml:space="preserve">
+    <value>Pointer:</value>
+  </data>
+  <data name="Editor_PointerInfoToolTip" xml:space="preserve">
+    <value>The exact file offset of this object, shown in hexadecimal.</value>
+  </data>
   <data name="TabTitle_AnimationCurve" xml:space="preserve">
     <value>Animation Curve</value>
   </data>

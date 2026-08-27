@@ -4707,6 +4707,18 @@ UndertaleModTool的32位（x86）版本已过时。</value>
   <data name="Settings_ChangeTrackingToolTip" xml:space="preserve">
     <value>是否在资源树和代码编辑器中追踪并高亮显示已修改的代码条目。</value>
   </data>
+  <data name="Settings_ShowEditorPointerInfo" xml:space="preserve">
+    <value>在编辑器中显示指针信息</value>
+  </data>
+  <data name="Settings_ShowEditorPointerInfoToolTip" xml:space="preserve">
+    <value>是否在当前对象编辑器的上方显示其确切的文件偏移量（指针）。默认隐藏。</value>
+  </data>
+  <data name="Editor_PointerInfo" xml:space="preserve">
+    <value>指针：</value>
+  </data>
+  <data name="Editor_PointerInfoToolTip" xml:space="preserve">
+    <value>此对象在文件中的确切偏移量，以十六进制显示。</value>
+  </data>
   <data name="TabTitle_AnimationCurve" xml:space="preserve">
     <value>动画曲线</value>
   </data>

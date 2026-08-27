@@ -352,6 +352,9 @@ namespace UndertaleModLib
             // Process any errors that may have occurred during object counting
             ProcessObjectCountingErrors(poolSize);
 
+            // Retain the object -> address map so editors can display exact pointer information
+            data.ObjectAddressMap = new Dictionary<UndertaleObject, uint>(objectPoolRev);
+
             return data;
         }
 

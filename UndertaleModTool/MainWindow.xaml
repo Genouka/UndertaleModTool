@@ -607,6 +607,7 @@
                 <Grid Grid.Column="2" Grid.RowSpan="2" x:Name="EditorPanel">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -707,7 +708,16 @@
                             </local:ButtonDark>
                         </StackPanel>
                     </Grid>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
+                    <Border Grid.Row="1" Padding="8,4,8,4"
+                            Visibility="{Binding PointerInfo, Mode=OneWay, Converter={StaticResource VisibleIfNotNull}}"
+                            Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{loc:Loc Editor_PointerInfo}" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Margin="6,0,0,0" Text="{Binding PointerInfo, Mode=OneWay}" FontFamily="Consolas" VerticalAlignment="Center"
+                                       ToolTip="{loc:Loc Editor_PointerInfoToolTip}" />
+                        </StackPanel>
+                    </Border>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
                                   x:Name="EditorScrollViewer">
                         <ContentControl Margin="10" Content="{Binding Selected, Mode=OneWay}" Name="DataEditor">
                             <ContentControl.Resources>

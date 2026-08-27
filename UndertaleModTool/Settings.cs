@@ -90,6 +90,12 @@ namespace UndertaleModTool
 
         public bool ChangeTrackingEnabled { get; set; } = true;
 
+        /// <summary>
+        /// Whether the editors should display exact file pointer (address) information for the
+        /// currently selected object. Hidden by default.
+        /// </summary>
+        public bool ShowEditorPointerInfo { get; set; } = false;
+
         public List<string> RecentFiles { get; set; } = new();
 
         public bool CodeEditorWordWrap { get; set; } = true;
