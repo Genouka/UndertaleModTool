@@ -2,6 +2,7 @@
 
 ![GitHub Release](https://img.shields.io/github/v/release/genouka/UndertaleModTool?style=flat) [![GitHub](https://img.shields.io/github/license/genouka/UndertaleModTool?logo=github)](https://github.com/UnderminersTeam/UndertaleModTool/blob/master/LICENSE.txt)
 ![GitHub Repo stars](https://img.shields.io/github/stars/genouka/UndertaleModTool?style=flat) [![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/svg-badge.svg)](https://hosted.weblate.org/engage/qiuutmtv4/) [![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126) [![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FGenouka%2FUndertaleModTool.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FGenouka%2FUndertaleModTool?ref=badge_shield)
 
 **This is an unofficial fork of UndertaleModTool!**
 
@@ -144,3 +145,7 @@ Without the following projects as a foundation, this project would never have be
 
 Wechat/微信:
 ![mm_reward_qrcode](https://github.com/user-attachments/assets/8f442af8-fba5-41fb-ac19-0977744520a0)
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FGenouka%2FUndertaleModTool.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FGenouka%2FUndertaleModTool?ref=badge_large)
