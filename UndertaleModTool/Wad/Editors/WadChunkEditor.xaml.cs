@@ -40,5 +40,37 @@ namespace UndertaleModTool
                 main.OpenInTab(entry, true, title);
             }
         }
+
+        // --------------------------------------------------------------- raw edit (raw_edit)
+
+        private WadChunkViewModel ChunkViewModel => DataContext as WadChunkViewModel;
+
+        private void ApplyRawEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (ChunkViewModel?.ApplyRawEdit() == true)
+            {
+                // The read-only preview reflects the applied buffer immediately.
+                System.Windows.MessageBox.Show(Application.Current.MainWindow,
+                    "Chunk marked raw_edit. It will be saved verbatim without re-checking its fields.",
+                    "Raw edit", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void ClearRawEdit_Click(object sender, RoutedEventArgs e)
+        {
+            ChunkViewModel?.ClearRawEdit();
+        }
+
+        private void ReloadRawEdit_Click(object sender, RoutedEventArgs e)
+        {
+            ChunkViewModel?.ReloadRawEdit();
+        }
+
+        private void RawHex_GotFocus(object sender, RoutedEventArgs e)
+        {
+            // Ensure the buffer is populated on first focus.
+            if (ChunkViewModel is { } vm && string.IsNullOrEmpty(vm.RawEditHex))
+                vm.ReloadRawEdit();
+        }
     }
 }

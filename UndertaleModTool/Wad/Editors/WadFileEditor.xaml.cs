@@ -27,7 +27,12 @@ namespace UndertaleModTool
             if (DataContext is not UndertaleWadFile wad)
                 return;
             _viewModel ??= new WadFileViewModel();
-            _viewModel.Attach(wad);
+            // Carry the shared byte-level edit session so chunk raw_edit works from this
+            // root editor too (the document's session is keyed to this exact wad instance).
+            WadEditSession session = null;
+            if (Application.Current.MainWindow is MainWindow main && ReferenceEquals(main.CurrentWadDocument?.Wad, wad))
+                session = main.CurrentWadDocument.Session;
+            _viewModel.Attach(wad, session);
             DataContext = _viewModel;
         }
 

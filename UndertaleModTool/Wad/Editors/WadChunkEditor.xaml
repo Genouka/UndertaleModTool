@@ -75,7 +75,26 @@
                         </ListView.View>
                     </ListView>
                 </TabItem>
-                <TabItem Header="Raw bytes">
+                <TabItem Header="Edit raw (raw_edit)">
+                    <DockPanel Margin="4">
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+                            <Button Content="Apply raw edit" Click="ApplyRawEdit_Click" Margin="0,0,6,0"
+                                    Padding="10,3" ToolTip="Write the edited payload as the chunk's raw bytes and mark it raw_edit. On save the chunk is written verbatim without re-checking its fields."/>
+                            <Button Content="Clear raw_edit" Click="ClearRawEdit_Click" Margin="0,0,6,0"
+                                    Padding="10,3" ToolTip="Remove the raw_edit mark; revert to model-based field saving."/>
+                            <Button Content="Reload" Click="ReloadRawEdit_Click" Padding="10,3"
+                                    ToolTip="Reload the buffer from the current working bytes (discards unsaved edits)."/>
+                            <TextBlock Text="{Binding RawEditStatus}" Foreground="#c9875f" VerticalAlignment="Center"
+                                       Margin="14,0,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <TextBox Text="{Binding RawEditHex, UpdateSourceTrigger=PropertyChanged}"
+                                 FontFamily="Consolas, Courier New"
+                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                                 TextWrapping="NoWrap" AcceptsReturn="True" SpellCheck.IsEnabled="False"
+                                 GotFocus="RawHex_GotFocus"/>
+                    </DockPanel>
+                </TabItem>
+                <TabItem Header="Hex preview">
                     <TextBox Text="{Binding HexText, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas, Courier New"
                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                              TextWrapping="NoWrap" Margin="4"/>

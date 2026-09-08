@@ -33,8 +33,29 @@ namespace UndertaleModLib.Wad
         private long _appendBase;
         private int _appendedBytes;
 
+        /// <summary>
+        /// Raw-edit region: chunk name -> authoritative payload bytes. A chunk present here
+        /// is "raw_edit"-marked: <see cref="CaptureChanges"/> skips the model-vs-file comparison
+        /// (the modification check) for it and <see cref="Save"/> writes these bytes verbatim.
+        /// </summary>
+        private readonly Dictionary<string, byte[]> _rawChunks = new();
+
+        /// <summary>
+        /// Explicitly-repointed pointer fields, keyed by absolute file offset. When a field
+        /// was precisely repointed via <see cref="RepointU32"/>, the string-rename path
+        /// (<see cref="CaptureName"/>) must not fight it by appending a replacement record.
+        /// </summary>
+        private readonly HashSet<long> _explicitPointers = new();
+
+        /// <summary>
+        /// Patches queued by <see cref="RepointU32"/>. Kept separate from <see cref="_pending"/>
+        /// so that <see cref="CaptureChanges"/> (which clears <c>_pending</c>) does not discard
+        /// a precise pointer edit recorded before the capture cycle.
+        /// </summary>
+        private readonly List<OffsetPatch> _explicitPatches = new();
+
         public UndertaleWadFile Wad => _wad;
-        public bool HasChanges => _pending.Count > 0 || _appends.Count > 0;
+        public bool HasChanges => _pending.Count > 0 || _appends.Count > 0 || _rawChunks.Count > 0 || _explicitPatches.Count > 0;
 
         public WadEditSession(UndertaleWadFile wad)
         {
@@ -82,6 +103,62 @@ namespace UndertaleModLib.Wad
         public void PatchBool(string chunkName, int entryIndex, int fieldOffset, bool value)
             => PatchU32(chunkName, entryIndex, fieldOffset, value ? 1U : 0U);
 
+        // ------------------------------------------------------ precise pointer control
+
+        /// <summary>
+        /// Precisely repoints a pointer/offset u32 field of an entry to an explicit absolute
+        /// file offset (no STRG append is performed, unlike <see cref="PatchStringRef"/>).
+        /// Marked as an explicit pointer so <see cref="CaptureName"/> will not overwrite it
+        /// with an appended-string repoint for the same field.
+        /// </summary>
+        public void RepointU32(string chunkName, int entryIndex, int fieldOffset, uint value)
+        {
+            long fileOffset = EntryLocation(chunkName, entryIndex) + fieldOffset;
+            _explicitPointers.Add(fileOffset);
+            // Stored separately from _pending so CaptureChanges (which clears _pending)
+            // does not discard this precise edit.
+            _explicitPatches.Add(new OffsetPatch { FileOffset = fileOffset, Bytes = BitConverter.GetBytes(value) });
+        }
+
+        // ------------------------------------------------------- raw chunk ("raw_edit")
+
+        /// <summary>Absolute offset of the chunk's payload.</summary>
+        private long ChunkDataOffset(string chunkName)
+        {
+            if (!TryGetHeader(chunkName, out WadChunkHeader header))
+                throw new KeyNotFoundException($"Chunk '{chunkName}' not found.");
+            return header.DataOffset;
+        }
+
+        /// <summary>
+        /// Marks chunk <paramref name="chunkName"/> as <c>raw_edit</c> and stores its raw
+        /// payload bytes verbatim. The payload length must match the chunk on disk. Once marked,
+        /// <see cref="Save"/> writes these bytes without re-checking the parsed model
+        /// (<see cref="CaptureChanges"/> skips the chunk).
+        /// </summary>
+        public void SetChunkRaw(string chunkName, byte[] raw)
+        {
+            if (raw is null)
+                throw new ArgumentNullException(nameof(raw));
+            if (string.Equals(chunkName, "STRG", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The string pool (STRG) cannot be raw-edited; it is managed through string renames.");
+            if (!TryGetHeader(chunkName, out WadChunkHeader header))
+                throw new KeyNotFoundException($"Chunk '{chunkName}' not found.");
+            if (raw.Length != checked((int)header.Length))
+                throw new ArgumentException($"Chunk '{chunkName}' payload is {header.Length} bytes; a raw edit must keep the same length (got {raw.Length}).");
+            _rawChunks[chunkName] = (byte[])raw.Clone();
+        }
+
+        /// <summary>True when the chunk carries the <c>raw_edit</c> mark (its bytes are authoritative).</summary>
+        public bool IsChunkRawEdited(string chunkName) => _rawChunks.ContainsKey(chunkName);
+
+        /// <summary>The stored raw-edit payload for a marked chunk (null if not raw_edit).</summary>
+        public byte[] GetChunkRaw(string chunkName)
+            => _rawChunks.TryGetValue(chunkName, out byte[] raw) ? (byte[])raw.Clone() : null;
+
+        /// <summary>Removes the <c>raw_edit</c> mark and stored bytes for a chunk (reverts to model-based saving).</summary>
+        public void ClearChunkRaw(string chunkName) => _rawChunks.Remove(chunkName);
+
         /// <summary>
         /// Renames a string-referenced field: the new string record is appended to the end
         /// of the STRG payload and the u32 reference at <paramref name="refFieldOffset"/>
@@ -109,23 +186,38 @@ namespace UndertaleModLib.Wad
         // for every difference. Only fixed-size fields are editable this way; variable
         // regions (frame data, event stores, blobs) stay untouched.
 
-        private void CaptureName(WadChunk chunk, string chunkName, int index, string currentName)
+        private bool CaptureName(WadChunk chunk, string chunkName, int index, string currentName)
         {
             if (currentName is null)
-                return;
+                return false;
+            long loc;
+            try
+            {
+                loc = EntryLocation(chunkName, index);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            // A precise pointer repoint on this name ref is authoritative; don't append.
+            if (_explicitPointers.Contains(loc))
+                return false;
             string onDisk;
             try
             {
-                long loc = EntryLocation(chunkName, index);
                 uint refOff = BitConverter.ToUInt32(_original, (int)loc);   // field 0 = string ref
                 onDisk = ReadStringAt(refOff);
             }
             catch (Exception)
             {
-                return;
+                return false;
             }
             if (!string.Equals(onDisk, currentName, StringComparison.Ordinal))
+            {
                 PatchStringRef(chunkName, index, 0, currentName);
+                return true;
+            }
+            return false;
         }
 
         private string ReadStringAt(long fileOffset)
@@ -154,18 +246,20 @@ namespace UndertaleModLib.Wad
                 _pending.Add(new OffsetPatch { FileOffset = fileOffset, Bytes = bytes });
         }
 
-        /// <summary>Collects every model-vs-file difference into the patch list.</summary>
+        /// <summary>Collects every model-vs-file difference into the patch list. Chunks marked
+        /// <c>raw_edit</c> are skipped (their bytes are authoritative and are not re-checked).</summary>
         public void CaptureChanges()
         {
             _pending.Clear();
             _appends.Clear();
             _appendedBytes = 0;
-            if (!TryGetChunk("STRG", out _))
-                return;   // no string pool -> no renames possible
-
+            // Chunks marked raw_edit are guarded per-capture and skipped (bytes authoritative).
+            // STRG is only needed for string renames; raw edits save without it.
             CaptureSond(); CaptureSprt(); CaptureBgnd(); CaptureObjt(); CaptureFont();
             CaptureShdr(); CapturePath(); CaptureRoom(); CaptureSeqn();
         }
+
+        private bool ChunkRawEdited(string name) => _rawChunks.ContainsKey(name);
 
         private bool TryGetChunk(string name, out WadChunk chunk)
             => _wad.Chunks.TryGetValue(name, out chunk);
@@ -186,7 +280,7 @@ namespace UndertaleModLib.Wad
 
         private void CaptureSond()
         {
-            if (!TryGetChunk("SOND", out WadChunk chunk) || chunk is not WadSondChunk c)
+            if (ChunkRawEdited("SOND") || !TryGetChunk("SOND", out WadChunk chunk) || chunk is not WadSondChunk c)
                 return;
             for (int i = 0; i < c.Entries.Count; i++)
             {
@@ -202,7 +296,7 @@ namespace UndertaleModLib.Wad
 
         private void CaptureSprt()
         {
-            if (!TryGetChunk("SPRT", out WadChunk chunk) || chunk is not WadSprtChunk c)
+            if (ChunkRawEdited("SPRT") || !TryGetChunk("SPRT", out WadChunk chunk) || chunk is not WadSprtChunk c)
                 return;
             for (int i = 0; i < c.Entries.Count; i++)
             {
@@ -210,7 +304,11 @@ namespace UndertaleModLib.Wad
                 if (e.Error is not null)
                     continue;
                 long loc = EntryLocation("SPRT", i);
-                CaptureName(chunk, "SPRT", i, e.Name);
+                bool renamed = CaptureName(chunk, "SPRT", i, e.Name);
+                // If the name text was not renamed (or the ref was precisely repointed),
+                // persist the NameRef pointer value directly so precise pointer edits stick.
+                if (!renamed && !_explicitPointers.Contains(loc))
+                    PatchIfDiff(loc + 0, BitConverter.GetBytes(e.NameRef));
                 PatchIfDiff(loc + 4, BitConverter.GetBytes(e.Width));
                 PatchIfDiff(loc + 8, BitConverter.GetBytes(e.Height));
                 PatchIfDiff(loc + 12, BitConverter.GetBytes(e.BBoxLeft));
@@ -229,12 +327,22 @@ namespace UndertaleModLib.Wad
                 PatchIfDiff(loc + 64, BitConverter.GetBytes(e.SpriteType));
                 PatchIfDiff(loc + 68, BitConverter.GetBytes(e.PlaybackSpeed));
                 PatchIfDiff(loc + 72, BitConverter.GetBytes(e.PlaybackSpeedType));
+                // Precise pointers: repoint to explicit absolute offsets when changed.
+                PatchPtr(loc + 76, e.NineSliceOffset);
+                PatchPtr(loc + 80, e.SequenceOffset);
             }
+        }
+
+        private void PatchPtr(long fileOffset, uint value)
+        {
+            if (_explicitPointers.Contains(fileOffset))
+                return; // already queued by RepointU32 (authoritative)
+            PatchIfDiff(fileOffset, BitConverter.GetBytes(value));
         }
 
         private void CaptureBgnd()
         {
-            if (!TryGetChunk("BGND", out WadChunk chunk) || chunk is not WadBgndChunk c)
+            if (ChunkRawEdited("BGND") || !TryGetChunk("BGND", out WadChunk chunk) || chunk is not WadBgndChunk c)
                 return;
             for (int i = 0; i < c.Entries.Count; i++)
             {
@@ -261,7 +369,7 @@ namespace UndertaleModLib.Wad
 
         private void CaptureObjt()
         {
-            if (!TryGetChunk("OBJT", out WadChunk chunk) || chunk is not WadObjtChunk c)
+            if (ChunkRawEdited("OBJT") || !TryGetChunk("OBJT", out WadChunk chunk) || chunk is not WadObjtChunk c)
                 return;
             for (int i = 0; i < c.Entries.Count; i++)
             {
@@ -278,7 +386,7 @@ namespace UndertaleModLib.Wad
 
         private void CaptureFont()
         {
-            if (!TryGetChunk("FONT", out WadChunk chunk) || chunk is not WadFontChunk c)
+            if (ChunkRawEdited("FONT") || !TryGetChunk("FONT", out WadChunk chunk) || chunk is not WadFontChunk c)
                 return;
             for (int i = 0; i < c.Entries.Count; i++)
             {
@@ -295,7 +403,7 @@ namespace UndertaleModLib.Wad
 
         private void CaptureShdr()
         {
-            if (!TryGetChunk("SHDR", out WadChunk chunk) || chunk is not WadShdrChunk c)
+            if (ChunkRawEdited("SHDR") || !TryGetChunk("SHDR", out WadChunk chunk) || chunk is not WadShdrChunk c)
                 return;
             for (int i = 0; i < c.Entries.Count; i++)
             {
@@ -308,7 +416,7 @@ namespace UndertaleModLib.Wad
 
         private void CapturePath()
         {
-            if (!TryGetChunk("PATH", out WadChunk chunk) || chunk is not WadPathChunk c)
+            if (ChunkRawEdited("PATH") || !TryGetChunk("PATH", out WadChunk chunk) || chunk is not WadPathChunk c)
                 return;
             for (int i = 0; i < c.Entries.Count; i++)
             {
@@ -325,7 +433,7 @@ namespace UndertaleModLib.Wad
 
         private void CaptureRoom()
         {
-            if (!TryGetChunk("ROOM", out WadChunk chunk) || chunk is not WadRoomChunk c)
+            if (ChunkRawEdited("ROOM") || !TryGetChunk("ROOM", out WadChunk chunk) || chunk is not WadRoomChunk c)
                 return;
             for (int i = 0; i < c.Rooms.Count; i++)
             {
@@ -343,7 +451,7 @@ namespace UndertaleModLib.Wad
 
         private void CaptureSeqn()
         {
-            if (!TryGetChunk("SEQN", out WadChunk chunk) || chunk is not WadSeqnChunk c)
+            if (ChunkRawEdited("SEQN") || !TryGetChunk("SEQN", out WadChunk chunk) || chunk is not WadSeqnChunk c)
                 return;
             for (int i = 0; i < c.Entries.Count; i++)
             {
@@ -369,26 +477,28 @@ namespace UndertaleModLib.Wad
         /// <summary>
         /// Collects model changes, applies them on top of the original bytes and writes
         /// the result (a <c>.bak</c> of the pre-save file is kept next to <paramref name="path"/>).
+        /// Chunks carrying the <c>raw_edit</c> mark are written verbatim and are not re-checked.
         /// </summary>
         public void Save(string path = null)
         {
             path ??= _wad.FilePath;
-            if (!TryGetHeader("STRG", out WadChunkHeader strgHeader))
-                return;   // no string pool to grow; leave the file untouched
+            bool hasStrg = TryGetHeader("STRG", out WadChunkHeader strgHeader);
 
-            _appendBase = strgHeader.DataOffset + strgHeader.Length;
+            // Raw edits are applied even without a string pool; renames need STRG.
+            if (hasStrg)
+                _appendBase = strgHeader.DataOffset + strgHeader.Length;
 
             CaptureChanges();
-            if (_pending.Count == 0 && _appends.Count == 0)
+            if (_pending.Count == 0 && _appends.Count == 0 && _rawChunks.Count == 0 && _explicitPatches.Count == 0)
                 return;
 
             int delta = _appendedBytes;
-            long strgPayloadEnd = strgHeader.DataOffset + strgHeader.Length;
-            long strgLenField = strgHeader.Offset + 4;
+            long strgPayloadEnd = hasStrg ? strgHeader.DataOffset + strgHeader.Length : _original.Length;
+            long strgLenField = hasStrg ? strgHeader.Offset + 4 : -1;
 
             // Any resource chunk that sits after STRG must have its stored absolute
             // offsets shifted by the appended delta.
-            if (delta > 0)
+            if (hasStrg && delta > 0)
             {
                 foreach (WadChunkHeader h in _wad.ChunkHeaders)
                 {
@@ -414,22 +524,52 @@ namespace UndertaleModLib.Wad
                 long target = p.FileOffset >= strgPayloadEnd ? p.FileOffset + delta : p.FileOffset;
                 byOffset[target] = p.Bytes;
             }
+            foreach (OffsetPatch p in _explicitPatches)
+            {
+                long target = p.FileOffset >= strgPayloadEnd ? p.FileOffset + delta : p.FileOffset;
+                byOffset[target] = p.Bytes;
+            }
 
             byte[] result = new byte[_original.Length + delta];
-            Array.Copy(_original, result, checked((int)strgPayloadEnd));
-            int off = (int)strgPayloadEnd;
-            foreach (byte[] append in _appends)
+            if (hasStrg)
             {
-                append.CopyTo(result, off);
-                off += append.Length;
+                Array.Copy(_original, result, checked((int)strgPayloadEnd));
+                int off = (int)strgPayloadEnd;
+                foreach (byte[] append in _appends)
+                {
+                    append.CopyTo(result, off);
+                    off += append.Length;
+                }
+                Array.Copy(_original, checked((int)strgPayloadEnd), result, checked((int)strgPayloadEnd) + delta, _original.Length - checked((int)strgPayloadEnd));
             }
-            Array.Copy(_original, checked((int)strgPayloadEnd), result, checked((int)strgPayloadEnd) + delta, _original.Length - checked((int)strgPayloadEnd));
+            else
+            {
+                // No string pool: produce an output of the same length (delta always 0).
+                Array.Copy(_original, result, _original.Length);
+            }
 
+            // Apply per-offset patches.
             foreach (KeyValuePair<long, byte[]> kv in byOffset)
                 for (int i = 0; i < kv.Value.Length; i++)
                     result[kv.Key + i] = kv.Value[i];
 
-            if (delta > 0)
+            // Apply raw_edit chunks last so their bytes are authoritative within their region.
+            foreach (KeyValuePair<string, byte[]> raw in _rawChunks)
+            {
+                if (!TryGetHeader(raw.Key, out WadChunkHeader h))
+                    continue;
+                long dst = ChunkDataOffset(raw.Key);
+                if (dst >= strgPayloadEnd)
+                    dst += delta;
+                checked
+                {
+                    if (dst + raw.Value.Length > result.Length)
+                        continue;
+                }
+                Array.Copy(raw.Value, 0, result, dst, raw.Value.Length);
+            }
+
+            if (hasStrg && delta > 0)
             {
                 BitConverter.GetBytes(unchecked((uint)(result.Length - 8))).CopyTo(result, 4);       // FORM length
                 BitConverter.GetBytes(unchecked((uint)(strgHeader.Length + delta))).CopyTo(result, checked((int)strgLenField));
@@ -439,6 +579,8 @@ namespace UndertaleModLib.Wad
                 File.Copy(path, path + ".bak", true);
             File.WriteAllBytes(path, result);
             _pending.Clear();
+            _explicitPatches.Clear();
+            _explicitPointers.Clear();
             _appends.Clear();
             _appendedBytes = 0;
         }

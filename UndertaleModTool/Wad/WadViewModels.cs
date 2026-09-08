@@ -107,6 +107,7 @@ namespace UndertaleModTool.Wad
     {
         private readonly RelayCommand _openCommand;
         private UndertaleWadFile _wad;
+        private WadEditSession _session;
 
         public WadFileViewModel()
         {
@@ -151,13 +152,14 @@ namespace UndertaleModTool.Wad
         }
 
         /// <summary>Loads the given file and rebuilds the chunk table.</summary>
-        public void LoadFile(string path)
+        public void LoadFile(string path, WadEditSession session = null)
         {
             _wad?.Dispose();
             Chunks.Clear();
             ChunkEntries.Clear();
 
             _wad = UndertaleWadFile.Load(path);
+            _session = session;
             FilePath = Path.GetFileName(path);
             FileInfoText = string.Format(CultureInfo.InvariantCulture,
                 "FORM {0:N0} bytes · {1} chunks · {2:N0} strings",
@@ -166,12 +168,12 @@ namespace UndertaleModTool.Wad
             foreach (WadChunkHeader header in _wad.ChunkHeaders)
             {
                 _wad.Chunks.TryGetValue(header.Name, out WadChunk chunk);
-                Chunks.Add(WadChunkViewModel.Create(_wad, header, chunk));
+                Chunks.Add(WadChunkViewModel.Create(_wad, header, chunk, _session));
             }
         }
 
         /// <summary>Supports the file menu path: MainWindow opens the file and hands it to this VM.</summary>
-        public void Attach(UndertaleWadFile wad)
+        public void Attach(UndertaleWadFile wad, WadEditSession session = null)
         {
             if (wad is null)
                 throw new ArgumentNullException(nameof(wad));
@@ -180,6 +182,7 @@ namespace UndertaleModTool.Wad
             ChunkEntries.Clear();
 
             _wad = wad;
+            _session = session;
             FilePath = string.IsNullOrEmpty(wad.FilePath) ? "(WAD)" : Path.GetFileName(wad.FilePath);
             FileInfoText = string.Format(CultureInfo.InvariantCulture,
                 "FORM {0:N0} bytes · {1} chunks · {2:N0} strings",
@@ -188,7 +191,7 @@ namespace UndertaleModTool.Wad
             foreach (WadChunkHeader header in _wad.ChunkHeaders)
             {
                 _wad.Chunks.TryGetValue(header.Name, out WadChunk chunk);
-                Chunks.Add(WadChunkViewModel.Create(_wad, header, chunk));
+                Chunks.Add(WadChunkViewModel.Create(_wad, header, chunk, _session));
             }
         }
 

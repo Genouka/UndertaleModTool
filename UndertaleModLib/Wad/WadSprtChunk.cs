@@ -116,7 +116,8 @@ namespace UndertaleModLib.Wad
 
     public sealed class WadSprtEntry
     {
-        public uint NameRef { get; internal set; }
+        /// <summary>Absolute offset of the entry's name record in STRG. Editable for precise pointer control.</summary>
+        public uint NameRef { get; set; }
         public string Name { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
@@ -136,10 +137,10 @@ namespace UndertaleModLib.Wad
         public int SpriteType { get; set; }
         public float PlaybackSpeed { get; set; }
         public int PlaybackSpeedType { get; set; }
-        /// <summary>Absolute offset of the nine-slice data (0 = absent).</summary>
-        public uint NineSliceOffset { get; internal set; }
-        /// <summary>Absolute offset of the embedded sequence data (0 = absent).</summary>
-        public uint SequenceOffset { get; internal set; }
+        /// <summary>Absolute offset of the nine-slice data (0 = absent). Editable for precise pointer control.</summary>
+        public uint NineSliceOffset { get; set; }
+        /// <summary>Absolute offset of the embedded sequence data (0 = absent). Editable for precise pointer control.</summary>
+        public uint SequenceOffset { get; set; }
         public uint FrameCount { get; internal set; }
         public IReadOnlyList<WadSprtFrame> Frames { get; internal set; }
         public byte[] TailBytes { get; internal set; }
@@ -149,9 +150,11 @@ namespace UndertaleModLib.Wad
     /// <summary>One sprite frame; the first field links to the TPAG texture region.</summary>
     public sealed class WadSprtFrame
     {
-        public uint TpagRecordOffset { get; internal set; }
+        /// <summary>Absolute offset of the TPAG texture-region record for this frame. Editable for precise pointer control.</summary>
+        public uint TpagRecordOffset { get; set; }
         public uint Unknown0 { get; internal set; }
-        public uint FrameNameRef { get; internal set; }
+        /// <summary>Absolute offset of the frame's name record in STRG (0/0xFFFFFFFF = none). Editable for precise pointer control.</summary>
+        public uint FrameNameRef { get; set; }
         public string FrameName { get; internal set; }
         public uint BBox1 { get; internal set; }
         public uint BBox2 { get; internal set; }

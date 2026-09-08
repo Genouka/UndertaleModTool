@@ -8,6 +8,9 @@
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance wad:WadSprtEntry}">
+    <local:DataUserControl.Resources>
+        <local:HexUIntConverter x:Key="HexUIntConv"/>
+    </local:DataUserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
     <DockPanel Margin="12">
         <Grid DockPanel.Dock="Top">
@@ -79,14 +82,29 @@
                 <local:TextBoxDark Width="140" Text="{Binding PlaybackSpeed, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
                 <local:TextBoxDark Width="110" Text="{Binding PlaybackSpeedType, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"/>
             </StackPanel>
-            <TextBlock Grid.Row="12" Grid.Column="0" Text="Nine slice" Margin="3"/>
-            <TextBlock Grid.Row="12" Grid.Column="1" Margin="3" Text="{Binding NineSliceOffset, StringFormat='0x{0:X8}'}"/>
-            <TextBlock Grid.Row="13" Grid.Column="0" Text="Sequence" Margin="3"/>
-            <TextBlock Grid.Row="13" Grid.Column="1" Margin="3" Text="{Binding SequenceOffset, StringFormat='0x{0:X8}'}"/>
+            <TextBlock Grid.Row="12" Grid.Column="0" Text="Nine slice (pointer)" Margin="3"/>
+            <local:TextBoxDark Grid.Row="12" Grid.Column="1" Width="160" HorizontalAlignment="Left" Margin="3"
+                               Text="{Binding NineSliceOffset, Converter={StaticResource HexUIntConv}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                               ToolTip="Precise pointer: absolute offset of the nine-slice data (0 = absent). Type the target offset as hex."/>
+            <TextBlock Grid.Row="13" Grid.Column="0" Text="Sequence (pointer)" Margin="3"/>
+            <local:TextBoxDark Grid.Row="13" Grid.Column="1" Width="160" HorizontalAlignment="Left" Margin="3"
+                               Text="{Binding SequenceOffset, Converter={StaticResource HexUIntConv}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                               ToolTip="Precise pointer: absolute offset of the embedded sequence data (0 = absent). Type the target offset as hex."/>
             <TextBlock Grid.Row="14" Grid.Column="0" Text="Frame count" Margin="3"/>
             <TextBlock Grid.Row="14" Grid.Column="1" Margin="3" Text="{Binding FrameCount}"/>
             <TextBlock Grid.Row="15" Grid.Column="0" Text="Tail bytes" Margin="3"/>
             <TextBlock Grid.Row="15" Grid.Column="1" Margin="3" Text="{Binding TailBytes.Length}"/>
+            <TextBlock Grid.Row="16" Grid.Column="0" Text="Name ref (pointer)" Margin="3" FontWeight="Bold"/>
+            <StackPanel Grid.Row="16" Grid.Column="1" Orientation="Horizontal" Margin="3">
+                <local:TextBoxDark Width="150" HorizontalAlignment="Left"
+                                   Text="{Binding NameRef, Converter={StaticResource HexUIntConv}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                   ToolTip="Precise pointer: type the absolute STRG record offset (hex) to repoint the name directly, bypassing the string-append rename. 0 or 0xFFFFFFFF = none."/>
+                <TextBlock Text="{Binding Name, StringFormat='→ {0}'}" VerticalAlignment="Center" Foreground="#999" Margin="10,0,0,0"
+                           ToolTip="The string the current ref points to."/>
+            </StackPanel>
+            <TextBlock Grid.Row="17" Grid.Column="0" Text="Raw edit" Margin="3"/>
+            <TextBlock Grid.Row="17" Grid.Column="1" Margin="3" TextWrapping="Wrap" Foreground="#999"
+                       Text="Tip: for byte-exact pointer control open the chunk editor → 'Edit raw (raw_edit)' and mark this chunk. Its payload is then saved verbatim without re-checking."/>
         </Grid>
 
         <Separator Margin="0,6"/>

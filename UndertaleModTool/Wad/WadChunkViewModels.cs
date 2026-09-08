@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Windows;
 using UndertaleModLib.Wad;
 
 namespace UndertaleModTool.Wad
@@ -48,6 +49,10 @@ namespace UndertaleModTool.Wad
         /// <summary>The parsed chunk (null for a missing/unknown chunk).</summary>
         protected WadChunk Chunk { get; }
 
+        /// <summary>The byte-level edit session backing this chunk (null in design/read-only context).
+        /// Set by the file view model once a <see cref="WadDocument"/> is available.</summary>
+        public WadEditSession Session { get; set; }
+
         public string Name { get; }
         public string OffsetText { get; }
         public string LengthText { get; }
@@ -83,6 +88,127 @@ namespace UndertaleModTool.Wad
         }
 
         protected abstract ObservableCollection<WadEntryViewModel> BuildEntries();
+
+        // ---------------------------------------------------------- raw data ("raw_edit")
+
+        private bool _rawEdited;
+        private string _rawEditHex;
+
+        /// <summary>True while the chunk carries the <c>raw_edit</c> mark (its payload is saved verbatim, skipping the field-by-field check).</summary>
+        public bool RawEdited
+        {
+            get => _rawEdited;
+            private set => SetProperty(ref _rawEdited, value);
+        }
+
+        /// <summary>Full payload bytes currently being edited (the raw_edit buffer).</summary>
+        public string RawEditHex
+        {
+            get => _rawEditHex;
+            set
+            {
+                if (SetProperty(ref _rawEditHex, value))
+                    OnPropertyChanged(nameof(RawEditStatus));
+            }
+        }
+
+        /// <summary>Human-readable status line for the raw-bytes editor.</summary>
+        public string RawEditStatus
+        {
+            get
+            {
+                string baseMsg = $"Editable payload ({PayloadLengthText} bytes). Use [Apply raw edit] to mark this chunk raw_edit. "
+                                 + "A raw_edit chunk is saved verbatim without re-checking its fields.";
+                return RawEdited ? "⚑ raw_edit — saved verbatim; field-by-field check is skipped for this chunk. " + baseMsg : baseMsg;
+            }
+        }
+
+        private string _payloadLengthText;
+        private string PayloadLengthText => _payloadLengthText ??= (Chunk?.Length ?? 0).ToString("N0", CultureInfo.InvariantCulture);
+
+        /// <summary>Reads the currently edited raw payload (the raw_edit buffer, else the on-disk bytes).</summary>
+        protected byte[] CurrentRawBytes()
+        {
+            if (Session?.GetChunkRaw(Name) is byte[] raw)
+                return raw;
+            if (Wad is null)
+                return Array.Empty<byte>();
+            return Wad.GetChunkBytes(Name, int.MaxValue) ?? Array.Empty<byte>();
+        }
+
+        /// <summary>Applies the edited hex buffer as the chunk's raw payload and marks it raw_edit.</summary>
+        public bool ApplyRawEdit()
+        {
+            if (Session is null || Name == "STRG")
+                return false;
+            byte[] parsed;
+            try
+            {
+                parsed = ParseHex(_rawEditHex);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(Application.Current.MainWindow,
+                    $"The raw payload is not valid hex:\n{ex.Message}", "Raw edit",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return false;
+            }
+            try
+            {
+                Session.SetChunkRaw(Name, parsed);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(Application.Current.MainWindow, ex.Message, "Raw edit",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return false;
+            }
+            RawEdited = true;
+            OnPropertyChanged(nameof(HexText));
+            OnPropertyChanged(nameof(RawEditStatus));
+            return true;
+        }
+
+        /// <summary>Clears the raw_edit mark and reloads the buffer from the on-disk bytes.</summary>
+        public void ClearRawEdit()
+        {
+            Session?.ClearChunkRaw(Name);
+            RawEdited = false;
+            RawEditHex = HexFromBytes(CurrentRawBytes());
+            OnPropertyChanged(nameof(HexText));
+            OnPropertyChanged(nameof(RawEditStatus));
+        }
+
+        /// <summary>Reloads the editable buffer from the current working bytes (discards unsaved raw edits).</summary>
+        public void ReloadRawEdit()
+        {
+            RawEditHex = HexFromBytes(CurrentRawBytes());
+            OnPropertyChanged(nameof(RawEditStatus));
+        }
+
+        private static byte[] ParseHex(string text)
+        {
+            var bytes = new List<byte>();
+            foreach (string token in (text ?? "").Split(new[] { ' ', '\t', '\r', '\n', ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (token.Length != 2 || !byte.TryParse(token, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte b))
+                    throw new FormatException($"'{token}' is not a two-digit hex byte.");
+                bytes.Add(b);
+            }
+            return bytes.ToArray();
+        }
+
+        private static string HexFromBytes(byte[] data)
+        {
+            var sb = new StringBuilder(data.Length * 3);
+            for (int i = 0; i < data.Length; i++)
+            {
+                if (i > 0)
+                    sb.Append(' ');
+                sb.Append(data[i].ToString("X2"));
+            }
+            return sb.ToString();
+        }
 
         protected virtual IReadOnlyList<WadInfoItem> BuildInfo()
         {
@@ -224,27 +350,31 @@ namespace UndertaleModTool.Wad
             if (Chunk is null || Wad is null)
                 return "";
             const int maxBytes = 8192;
-            byte[] data = Wad.GetChunkBytes(Name, maxBytes);
-            if (data is null)
+            // When raw_edit is active the stored buffer is authoritative; preview it.
+            byte[] data = CurrentRawBytes();
+            if (data is null || data.Length == 0)
                 return "(no data)";
+            byte[] shown = data.Length > maxBytes ? data[..maxBytes] : data;
 
-            var sb = new StringBuilder(data.Length * 4 + 16);
-            for (int i = 0; i < data.Length; i += 16)
+            var sb = new StringBuilder(shown.Length * 4 + 16);
+            for (int i = 0; i < shown.Length; i += 16)
             {
                 sb.Append($"{i:X8}  ");
-                int rowEnd = Math.Min(i + 16, data.Length);
+                int rowEnd = Math.Min(i + 16, shown.Length);
                 for (int j = i; j < rowEnd; j++)
-                    sb.Append(data[j].ToString("X2")).Append(' ');
+                    sb.Append(shown[j].ToString("X2")).Append(' ');
                 sb.Append(new string(' ', (16 - (rowEnd - i)) * 3));
                 for (int j = i; j < rowEnd; j++)
                 {
-                    byte b = data[j];
+                    byte b = shown[j];
                     sb.Append(b >= 0x20 && b < 0x7F ? (char)b : '.');
                 }
                 sb.AppendLine();
             }
-            if (Chunk.Length > data.Length)
-                sb.AppendLine($"… {Chunk.Length - data.Length:N0} more bytes not shown");
+            if (data.Length > shown.Length)
+                sb.AppendLine($"… {data.Length - shown.Length:N0} more bytes not shown");
+            if (RawEdited)
+                sb.AppendLine($"⚑ raw_edit — payload ({data.Length:N0} bytes) saved verbatim, fields not re-checked");
             return sb.ToString();
         }
 
@@ -292,42 +422,48 @@ namespace UndertaleModTool.Wad
             _ => null,
         };
 
-        /// <summary>Creates the per-type view model for the given chunk.</summary>
-        public static WadChunkViewModel Create(UndertaleWadFile wad, WadChunkHeader header, WadChunk chunk)
+        /// <summary>Creates the per-type view model for the given chunk and attaches the edit session.</summary>
+        public static WadChunkViewModel Create(UndertaleWadFile wad, WadChunkHeader header, WadChunk chunk, WadEditSession session = null)
         {
+            WadChunkViewModel vm;
             if (chunk is null)
-                return new WadRawChunkViewModel(wad, header, null);
-            switch (chunk)
-            {
-                case WadStrgChunk c: return new WadStrgChunkViewModel(wad, header, c);
-                case WadPrjtChunk c: return new WadPrjtChunkViewModel(wad, header, c);
-                case WadRrefChunk c: return new WadRrefChunkViewModel(wad, header, c);
-                case WadTagsChunk c: return new WadTagsChunkViewModel(wad, header, c);
-                case WadEmbeddedImagesChunk c: return new WadEmbeddedImagesChunkViewModel(wad, header, c);
-                case WadAudoChunk c: return new WadAudoChunkViewModel(wad, header, c);
-                case WadTxTrChunk c: return new WadTxTrChunkViewModel(wad, header, c);
-                case WadTpagChunk c: return new WadTpagChunkViewModel(wad, header, c);
-                case WadTginChunk c: return new WadTginChunkViewModel(wad, header, c);
-                case WadRoomChunk c: return new WadRoomChunkViewModel(wad, header, c);
-                case WadSeqnChunk c: return new WadSeqnChunkViewModel(wad, header, c);
-                case WadAcrvChunk c: return new WadAcrvChunkViewModel(wad, header, c);
-                case WadTmlnChunk c: return new WadTmlnChunkViewModel(wad, header, c);
-                case WadPathChunk c: return new WadPathChunkViewModel(wad, header, c);
-                case WadPsysChunk c: return new WadPsysChunkViewModel(wad, header, c);
-                case WadShdrChunk c: return new WadShdrChunkViewModel(wad, header, c);
-                case WadObjtChunk c: return new WadObjtChunkViewModel(wad, header, c);
-                case WadOptnChunk c: return new WadOptnChunkViewModel(wad, header, c);
-                case WadUilrChunk c: return new WadUilrChunkViewModel(wad, header, c);
-                case WadExtnChunk c: return new WadExtnChunkViewModel(wad, header, c);
-                case WadFedsChunk c: return new WadFedsChunkViewModel(wad, header, c);
-                case WadResourceChunk c: return new WadScriptChunkViewModel(wad, header, c);
-                case WadSprtChunk c: return new WadSprtChunkViewModel(wad, header, c);
-                case WadBgndChunk c: return new WadBgndChunkViewModel(wad, header, c);
-                case WadSondChunk c: return new WadSondChunkViewModel(wad, header, c);
-                case WadAgrpChunk c: return new WadAgrpChunkViewModel(wad, header, c);
-                case WadFontChunk c: return new WadFontChunkViewModel(wad, header, c);
-                default: return new WadRawChunkViewModel(wad, header, chunk);
-            }
+                vm = new WadRawChunkViewModel(wad, header, null);
+            else
+                switch (chunk)
+                {
+                    case WadStrgChunk c: vm = new WadStrgChunkViewModel(wad, header, c); break;
+                    case WadPrjtChunk c: vm = new WadPrjtChunkViewModel(wad, header, c); break;
+                    case WadRrefChunk c: vm = new WadRrefChunkViewModel(wad, header, c); break;
+                    case WadTagsChunk c: vm = new WadTagsChunkViewModel(wad, header, c); break;
+                    case WadEmbeddedImagesChunk c: vm = new WadEmbeddedImagesChunkViewModel(wad, header, c); break;
+                    case WadAudoChunk c: vm = new WadAudoChunkViewModel(wad, header, c); break;
+                    case WadTxTrChunk c: vm = new WadTxTrChunkViewModel(wad, header, c); break;
+                    case WadTpagChunk c: vm = new WadTpagChunkViewModel(wad, header, c); break;
+                    case WadTginChunk c: vm = new WadTginChunkViewModel(wad, header, c); break;
+                    case WadRoomChunk c: vm = new WadRoomChunkViewModel(wad, header, c); break;
+                    case WadSeqnChunk c: vm = new WadSeqnChunkViewModel(wad, header, c); break;
+                    case WadAcrvChunk c: vm = new WadAcrvChunkViewModel(wad, header, c); break;
+                    case WadTmlnChunk c: vm = new WadTmlnChunkViewModel(wad, header, c); break;
+                    case WadPathChunk c: vm = new WadPathChunkViewModel(wad, header, c); break;
+                    case WadPsysChunk c: vm = new WadPsysChunkViewModel(wad, header, c); break;
+                    case WadShdrChunk c: vm = new WadShdrChunkViewModel(wad, header, c); break;
+                    case WadObjtChunk c: vm = new WadObjtChunkViewModel(wad, header, c); break;
+                    case WadOptnChunk c: vm = new WadOptnChunkViewModel(wad, header, c); break;
+                    case WadUilrChunk c: vm = new WadUilrChunkViewModel(wad, header, c); break;
+                    case WadExtnChunk c: vm = new WadExtnChunkViewModel(wad, header, c); break;
+                    case WadFedsChunk c: vm = new WadFedsChunkViewModel(wad, header, c); break;
+                    case WadResourceChunk c: vm = new WadScriptChunkViewModel(wad, header, c); break;
+                    case WadSprtChunk c: vm = new WadSprtChunkViewModel(wad, header, c); break;
+                    case WadBgndChunk c: vm = new WadBgndChunkViewModel(wad, header, c); break;
+                    case WadSondChunk c: vm = new WadSondChunkViewModel(wad, header, c); break;
+                    case WadAgrpChunk c: vm = new WadAgrpChunkViewModel(wad, header, c); break;
+                    case WadFontChunk c: vm = new WadFontChunkViewModel(wad, header, c); break;
+                    default: vm = new WadRawChunkViewModel(wad, header, chunk); break;
+                }
+            vm.Session = session;
+            vm.RawEditHex = HexFromBytes(vm.CurrentRawBytes());
+            vm.RawEdited = session?.IsChunkRawEdited(header.Name) ?? false;
+            return vm;
         }
     }
 
