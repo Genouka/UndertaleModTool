@@ -46,8 +46,11 @@
                     </Grid.ColumnDefinitions>
                     <Label Content="{loc:Loc Settings_Language}"/>
                     <local:ComboBoxDark Grid.Column="1" x:Name="LanguageComboBox" SelectionChanged="LanguageComboBox_SelectionChanged">
-                        <ComboBoxItem Content="English" Tag="en"/>
-                        <ComboBoxItem Content="简体中文" Tag="zh-CN"/>
+                        <!-- TODO: The languages list should be moved to LocalizationSource, but now keep it here. -->
+                        <ComboBoxItem Content="en - English" Tag="en"/>
+                        <ComboBoxItem Content="zh-CN - 简体中文" Tag="zh-Hans"/>
+                        <ComboBoxItem Content="ja - 日本语" Tag="ja"/>
+                        <ComboBoxItem Content="pt - Português" Tag="pt"/>
                     </local:ComboBoxDark>
                 </Grid>
 

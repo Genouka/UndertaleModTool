@@ -1180,7 +1180,7 @@ namespace UndertaleModTool
                 MainTree.Items.Remove(stale);
 
             WadFileViewModel viewModel = new();
-            viewModel.Attach(wad);
+            viewModel.Attach(wad, CurrentWadDocument?.Session);
 
             TreeViewItem root = new()
             {
