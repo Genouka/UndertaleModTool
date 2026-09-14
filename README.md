@@ -15,6 +15,8 @@ This repository maintains versions for four platforms: Windows, Linux, MacOS, an
 
 [在 Weblate 平台参与本地化翻译!](https://hosted.weblate.org/engage/qiuutmtv4/)
 
+[![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/new_common/multi-auto.svg)](https://hosted.weblate.org/engage/qiuutmtv4/)
+
 ## Download / 下载
 
 |  Releases (发布包)   | Link / State (链接/状态) 	                                                                                                                                                       |
