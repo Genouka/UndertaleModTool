@@ -3,6 +3,13 @@ name: Publish continuous release of UndertaleModTool
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - 'UndertaleModTool/Scripts/**'
+      - 'README.md'
+      - 'SCRIPTS.md'
+      - 'SECURITY.md'
+      - 'MCP.md'
+      - 'images/**'
   workflow_dispatch:
 
 concurrency:
