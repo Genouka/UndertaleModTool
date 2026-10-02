@@ -201,20 +201,6 @@ namespace UndertaleModTool
             {
                 title = LocalizationSource.GetString("TabTitle_GameEnd");
             }
-            else if (obj is UndertaleModLib.Wad.UndertaleWadFile wadFile)
-            {
-                title = string.IsNullOrEmpty(wadFile.FilePath)
-                    ? "WAD"
-                    : System.IO.Path.GetFileName(wadFile.FilePath);
-            }
-            else if (obj is UndertaleModTool.Wad.WadChunkViewModel chunkVm)
-            {
-                title = chunkVm.Title;
-            }
-            else if (obj is UndertaleModTool.Wad.WadEntryViewModel entryVm)
-            {
-                title = entryVm.Name ?? entryVm.Summary ?? "entry";
-            }
             else
             {
                 Debug.WriteLine($"Could not handle type {obj.GetType()}");

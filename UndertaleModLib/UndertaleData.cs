@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -98,23 +98,6 @@ namespace UndertaleModLib
         /// The FORM chunk of the data file.
         /// </summary>
         public UndertaleChunkFORM FORM;
-
-        /// <summary>
-        /// Whether this data file is a GMRT runtime asset package (<c>.wad</c> file).
-        /// These use the same FORM container as a regular <c>data.win</c>, but ship without a
-        /// <c>GEN8</c> chunk and replace several chunks (<c>PRJT</c>, <c>RREF</c>). Their internal
-        /// chunk layout is a different (component-based) serialization that is not yet fully
-        /// understood, so chunks are preserved as raw data on load.
-        /// </summary>
-        public bool IsWad { get; set; }
-
-        /// <summary>
-        /// Map from each <see cref="UndertaleObject"/> instance read from the file to the absolute
-        /// file offset (address/pointer) at which it is stored. Populated while loading a data file.
-        /// The editor UI uses this to display exact pointer information for objects.
-        /// </summary>
-        [System.Text.Json.Serialization.JsonIgnore]
-        public Dictionary<UndertaleObject, uint> ObjectAddressMap { get; set; } = new();
 
         /// <summary>
         /// General info of the data file.

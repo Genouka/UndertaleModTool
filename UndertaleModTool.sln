@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModToolAvalonia.De
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModToolLocalization", "UndertaleModToolLocalization\UndertaleModToolLocalization.csproj", "{7E50C44C-F44F-49D9-9180-23F46F8DEEFA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModWad", "UndertaleModWad\UndertaleModWad.csproj", "{A4A727AD-F30A-4D35-8B66-6A290B612B3C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -181,6 +183,18 @@ Global
 		{7E50C44C-F44F-49D9-9180-23F46F8DEEFA}.Release|x64.Build.0 = Release|Any CPU
 		{7E50C44C-F44F-49D9-9180-23F46F8DEEFA}.Release|x86.ActiveCfg = Release|Any CPU
 		{7E50C44C-F44F-49D9-9180-23F46F8DEEFA}.Release|x86.Build.0 = Release|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Debug|x64.Build.0 = Debug|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Debug|x86.Build.0 = Debug|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Release|x64.ActiveCfg = Release|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Release|x64.Build.0 = Release|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Release|x86.ActiveCfg = Release|Any CPU
+		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

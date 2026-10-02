@@ -319,18 +319,6 @@ namespace UndertaleModTool
             }
         }
 
-        public static bool ShowEditorPointerInfo
-        {
-            get => Settings.Instance.ShowEditorPointerInfo;
-            set
-            {
-                Settings.Instance.ShowEditorPointerInfo = value;
-                Settings.Save();
-
-                mainWindow?.UpdatePointerInfoVisibility();
-            }
-        }
-
         public static DecompilerSettings DecompilerSettings => Settings.Instance.DecompilerSettings;
 
         public static string InstanceIdPrefix

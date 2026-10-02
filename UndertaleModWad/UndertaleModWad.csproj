@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <RollForward>LatestMajor</RollForward>
+        <OutputType>Library</OutputType>
+        <UseWpf>true</UseWpf>
+        <LangVersion>13.0</LangVersion>
+        <AssemblyName>UndertaleModWad</AssemblyName>
+        <RootNamespace>UndertaleModWad</RootNamespace>
+        <NoWarn>1591</NoWarn>
+        <EnableDefaultItems>true</EnableDefaultItems>
+    </PropertyGroup>
+</Project>
