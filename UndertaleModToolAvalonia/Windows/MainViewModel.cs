@@ -154,8 +154,20 @@ public partial class MainViewModel : ObservableObject
         WindowState = Settings.StartMaximized ? WindowState.Maximized : WindowState.Normal;
     }
 
+    /// <summary>
+    /// Guards the one-time startup work in <see cref="OnLoaded"/>. Single-window platforms
+    /// (Android) move the main view in and out of the visual tree every time a modal dialog opens
+    /// or closes, which re-fires Avalonia's <c>Loaded</c> event and would otherwise re-run the
+    /// startup checks (e.g. the automatic update check) on every dialog dismissal.
+    /// </summary>
+    bool onLoadedRan = false;
+
     public async void OnLoaded()
     {
+        if (onLoadedRan)
+            return;
+        onLoadedRan = true;
+
         foreach (string message in LazyErrorMessages)
         {
             await View!.MessageDialog(message);
@@ -1326,15 +1338,27 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
             string downloadOutput = Path.Join(tempFolder, "Update.zip.zip");
 
-            using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) })
+            // Reuse a download of this exact build that is already cached (for example from an
+            // earlier attempt whose install never completed) instead of downloading it again.
+            if (!HasCachedUpdateDownload(tempFolder, info))
             {
-                bool downloaded = await DownloadUpdateAsync(client, info, downloadOutput, loader);
-                if (!downloaded)
+                // Drop the stale marker first: the file is about to be rewritten, and a partial
+                // download must never be mistaken for a complete one on a later check.
+                ClearCachedUpdateMarker(tempFolder);
+
+                using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) })
                 {
-                    await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"),
-                        LocalizationSource.GetString("Msg_CheckInternetConnection")));
-                    return;
+                    bool downloaded = await DownloadUpdateAsync(client, info, downloadOutput, loader);
+                    if (!downloaded)
+                    {
+                        await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"),
+                            LocalizationSource.GetString("Msg_CheckInternetConnection")));
+                        return;
+                    }
                 }
+
+                // Remember which build the cached file belongs to.
+                MarkCachedUpdateComplete(tempFolder, info);
             }
 
             // Extract the update (the downloaded file can be single or double zipped).
@@ -1405,19 +1429,31 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             loader.SetMessage(LocalizationSource.GetString("Main_Downloading"));
             loader.SetMaximum(1000);
 
-            // Download the update, showing progress in a loader window.
+            // The app deliberately keeps running when the user cancels the system package
+            // installer, so a build that was already downloaded stays in the app cache. Reuse it
+            // instead of downloading the same build again.
             string tempFolder = Path.Join(Path.GetTempPath(), "UndertaleModToolAvalonia");
             Directory.CreateDirectory(tempFolder);
             string downloadOutput = Path.Join(tempFolder, "Update.zip.zip");
 
-            using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) })
+            if (!HasCachedUpdateDownload(tempFolder, info))
             {
-                if (!await DownloadUpdateAsync(client, info, downloadOutput, loader))
+                // Drop the stale marker first: the file is about to be rewritten, and a partial
+                // download must never be mistaken for a complete one on a later check.
+                ClearCachedUpdateMarker(tempFolder);
+
+                using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) })
                 {
-                    await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"),
-                        LocalizationSource.GetString("Msg_CheckInternetConnection")));
-                    return;
+                    if (!await DownloadUpdateAsync(client, info, downloadOutput, loader))
+                    {
+                        await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"),
+                            LocalizationSource.GetString("Msg_CheckInternetConnection")));
+                        return;
+                    }
                 }
+
+                // Remember which build the cached file belongs to.
+                MarkCachedUpdateComplete(tempFolder, info);
             }
 
             // Extract the downloaded zip (single or double zipped) and locate the update APK.
@@ -1449,6 +1485,81 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         finally
         {
             loader?.Close();
+        }
+    }
+
+    /// <summary>
+    /// Whether a previously completed download of the given build is cached in the update temp
+    /// folder and can be reused. A cached file is only trusted when its marker records the same
+    /// workflow run id and the file is non-empty with a zip header, so an interrupted download or
+    /// a download of a different build is always fetched again.
+    /// </summary>
+    static bool HasCachedUpdateDownload(string tempFolder, UpdateChecker.UpdateInfo info)
+    {
+        string downloadOutput = Path.Join(tempFolder, "Update.zip.zip");
+        string runIdFile = Path.Join(tempFolder, "Update.zip.runid");
+
+        if (!File.Exists(downloadOutput) || !File.Exists(runIdFile))
+            return false;
+
+        try
+        {
+            if (File.ReadAllText(runIdFile).Trim() != info.RunId.ToString())
+                return false;
+
+            using FileStream fs = new(downloadOutput, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (fs.Length <= 0)
+                return false;
+
+            // Quick sanity check that the cached file looks like a zip archive before reusing it.
+            Span<byte> header = stackalloc byte[2];
+            if (fs.Read(header) != 2 || header[0] != (byte)'P' || header[1] != (byte)'K')
+                return false;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Removes the marker recording which build the cached download belongs to. Best effort.</summary>
+    static void ClearCachedUpdateMarker(string tempFolder)
+    {
+        try
+        {
+            File.Delete(Path.Join(tempFolder, "Update.zip.runid"));
+        }
+        catch (IOException)
+        {
+            // Best effort: at worst the next check downloads the build again.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Best effort: at worst the next check downloads the build again.
+        }
+    }
+
+    /// <summary>Records that the cached download belongs to the given build. Best effort.</summary>
+    static void MarkCachedUpdateComplete(string tempFolder, UpdateChecker.UpdateInfo info)
+    {
+        try
+        {
+            File.WriteAllText(Path.Join(tempFolder, "Update.zip.runid"), info.RunId.ToString());
+        }
+        catch (IOException)
+        {
+            // Best effort: without the marker the cached file is downloaded again next time, which
+            // must not fail the update that was just downloaded successfully.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Same as above.
         }
     }
 
