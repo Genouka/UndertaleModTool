@@ -41,9 +41,6 @@ public partial class MainViewModel : ObservableObject
     // Scripting
     public Scripting Scripting = null!;
 
-    // Built-in import/export
-    public ImportExportService ImportExportService = null!;
-
     // Window
     public string Title => $"UndertaleModToolAvalonia by luizzeroxis by Genouka - v" +
         (App.VersionString) +
@@ -146,7 +143,6 @@ public partial class MainViewModel : ObservableObject
     {
         Settings = SettingsFile.Load(ServiceProvider);
         Scripting = new(ServiceProvider);
-        ImportExportService ??= new(this);
 
         if (!string.IsNullOrEmpty(Settings.Language))
             LocalizationSource.Instance.CurrentCulture = new System.Globalization.CultureInfo(Settings.Language);
@@ -719,45 +715,6 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
     {
         OpenFindReferences();
     }
-
-    // Import commands
-    public void ImportGraphics() => Task.Run(() => ImportExportService.ImportGraphics());
-    public void ImportGraphicsAdvanced() => Task.Run(() => ImportExportService.ImportGraphicsAdvanced());
-    public void ImportApplyBasicGraphicsMod() => Task.Run(() => ImportExportService.ApplyBasicGraphicsMod());
-    public void ImportAllEmbeddedTextures() => Task.Run(() => ImportExportService.ImportAllEmbeddedTextures());
-    public void ImportAllTilesets() => Task.Run(() => ImportExportService.ImportAllTilesets());
-    public void ImportAllStrings() => Task.Run(() => ImportExportService.ImportAllStrings());
-    public void ImportAllStringsJSON() => Task.Run(() => ImportExportService.ImportAllStringsJSON());
-    public void ImportFonts() => Task.Run(() => ImportExportService.ImportFonts());
-    public void ImportGMS2FontData() => Task.Run(() => ImportExportService.ImportGMS2FontData());
-    public void ImportGML() => Task.Run(() => ImportExportService.ImportGML());
-    public void ImportAssembly() => Task.Run(() => ImportExportService.ImportAssembly());
-    public void ImportMasks() => Task.Run(() => ImportExportService.ImportMasks());
-    public void ImportShaders() => Task.Run(() => ImportExportService.ImportShaders());
-    public void ImportSounds() => Task.Run(() => ImportExportService.ImportSounds());
-    public void ImportSingleSound() => Task.Run(() => ImportExportService.ImportSingleSound());
-    public void NewTextureRepacker() => Task.Run(() => ImportExportService.NewTextureRepacker());
-    public void ReduceEmbeddedTexturePages() => Task.Run(() => ImportExportService.ReduceEmbeddedTexturePages());
-
-    // Export commands
-    public void ExportAllSprites() => Task.Run(() => ImportExportService.ExportAllSprites());
-    public void ExportAllTextures() => Task.Run(() => ImportExportService.ExportAllTextures());
-    public void ExportAllTexturesGrouped() => Task.Run(() => ImportExportService.ExportAllTexturesGrouped());
-    public void ExportAllTilesets() => Task.Run(() => ImportExportService.ExportAllTilesets());
-    public void ExportAllMasks() => Task.Run(() => ImportExportService.ExportAllMasks());
-    public void ExportAllEmbeddedTextures() => Task.Run(() => ImportExportService.ExportAllEmbeddedTextures());
-    public void ExportAllFonts() => Task.Run(() => ImportExportService.ExportAllFonts());
-    public void ExportAllShaders() => Task.Run(() => ImportExportService.ExportAllShaders());
-    public void ExportAllSounds() => Task.Run(() => ImportExportService.ExportAllSounds());
-    public void ExportAllStrings() => Task.Run(() => ImportExportService.ExportAllStrings());
-    public void ExportAllStringsJSON() => Task.Run(() => ImportExportService.ExportAllStringsJSON());
-    public void ExportAllCode() => Task.Run(() => ImportExportService.ExportAllCode());
-    public void ExportAllAssembly() => Task.Run(() => ImportExportService.ExportAllAssembly());
-    public void ExportSpecificCode() => Task.Run(() => ImportExportService.ExportSpecificCode());
-    public void ExportSpecificSprites() => Task.Run(() => ImportExportService.ExportSpecificSprites());
-    public void ExportSpritesAsGIF() => Task.Run(() => ImportExportService.ExportSpritesAsGIF());
-    public void ExportTextureGroups() => Task.Run(() => ImportExportService.ExportTextureGroups());
-    public void ExportAllRoomsToPNG() => Task.Run(() => ImportExportService.ExportAllRoomsToPNG());
 
     public async void ScriptsRunOtherScript()
     {
