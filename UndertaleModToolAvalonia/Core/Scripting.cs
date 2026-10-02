@@ -64,9 +64,20 @@ public class Scripting
         "Underanalyzer",
         "UndertaleModToolAvalonia",
         "UndertaleModToolLocalization",
-        // Texture import/export (ImageMagick wrapper) and zip support.
-        "Magick.NET",
-        "ImageMagick",
+        // Texture import/export (ImageMagick wrapper) and zip support. The Magick.NET assemblies
+        // have to be listed in full. A prefix only matches at a "." boundary, so the bare
+        // "Magick.NET" entry this list used to carry matched the abstractions (Magick.NET.Core)
+        // but not the implementation: the flavor assembly is named with a hyphen
+        // (Magick.NET-Q8-AnyCPU), and that is where the MagickImage class the scripts ask for
+        // lives - hence the "MagickImage could not be found" compile error they used to hit.
+        // Only the AnyCPU flavor may be listed: the per-architecture packages
+        // (Magick.NET-Q8-arm64/x64) contain the same 97 ImageMagick types, so referencing them as
+        // well is an ambiguous-type error. AnyCPU is also the identity the tool's own assemblies
+        // bind to (UndertaleModLib and UndertaleModToolAvalonia reference "Magick.NET-Q8-AnyCPU"),
+        // which keeps the script and the app on the same types at run time. ("ImageMagick" is a
+        // namespace rather than an assembly name, so that entry was dropped.)
+        "Magick.NET.Core",
+        "Magick.NET-Q8-AnyCPU",
         "ICSharpCode.SharpZipLib",
         "Newtonsoft",
     ];
