@@ -9,7 +9,7 @@ public class SettingsViewModel
     public MainViewModel MainVM { get; }
 
     // TODO: The languages list should be moved to LocalizationSource, but now keep it here.
-    public IReadOnlyList<string> Languages { get; } = new[] { "", "en", "zh-Hans", "ja", "pt" };
+    public IReadOnlyList<string> Languages { get; } = new[] { "", "en", "zh-Hans", "ja", "pt", "ko", "tr", "ar-EG" };
 
     public SettingsViewModel(IServiceProvider serviceProvider)
     {

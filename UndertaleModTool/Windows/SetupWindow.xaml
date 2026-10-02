@@ -30,6 +30,9 @@
             <ComboBoxItem Content="zh-CN - 简体中文" Tag="zh-Hans"/>
             <ComboBoxItem Content="ja - 日本语" Tag="ja"/>
             <ComboBoxItem Content="pt - Português" Tag="pt"/>
+            <ComboBoxItem Content="ko - 한국어" Tag="ko"/>
+            <ComboBoxItem Content="tr - Türkçe" Tag="tr"/>
+            <ComboBoxItem Content="ar-EG - العربية (مصر)" Tag="ar-EG"/>
         </local:ComboBoxDark>
 
         <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" x:Name="FileAssociationsCheckBox" Content="{loc:Loc Setup_FileAssociationsCheck}" Margin="0,16,0,0" VerticalAlignment="Center" IsChecked="True"/>
