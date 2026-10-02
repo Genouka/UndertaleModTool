@@ -16,12 +16,42 @@
         <AvaloniaAccessUnstablePrivateApis>true</AvaloniaAccessUnstablePrivateApis>
         <NoWarn>$(NoWarn);AVA3001</NoWarn>
 
-        <Version>0.9.1.2</Version>
+        <!--
+            The APK version follows the main Avalonia project's <Version> so the two can never
+            drift apart: the version the system installer reports for the app has to be the same
+            version the app itself shows (App.VersionString is read from the
+            UndertaleModToolAvalonia assembly, not from this one). MSBuild cannot read a property
+            from a referenced project, so the value is picked straight out of that project file.
+            Expected form: <major>.<minor>.<patch>[.<revision>].
+        -->
+        <_AvaloniaProjectFile>$(MSBuildThisFileDirectory)..\UndertaleModToolAvalonia\UndertaleModToolAvalonia.csproj</_AvaloniaProjectFile>
+        <_AvaloniaProjectText>$([System.IO.File]::ReadAllText('$(_AvaloniaProjectFile)'))</_AvaloniaProjectText>
+        <Version>$([System.Text.RegularExpressions.Regex]::Match($(_AvaloniaProjectText), '&lt;Version&gt;([0-9][0-9.]*)&lt;/Version&gt;').Groups[1].Value)</Version>
+        <ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
+
+        <!--
+            Android's version code is a separate, monotonically increasing integer, derived from
+            the same version as major * 1000000 + minor * 10000 + patch * 100 + revision
+            (0.9.2.0 -> 90200), so it moves with every release instead of being bumped by hand.
+            Each step is a property of its own: nested property-function calls are not reliably
+            expanded - MSBuild leaves such an expression as literal text instead of failing.
+        -->
+        <_VerMajor>$([System.Version]::Parse('$(Version)').Major)</_VerMajor>
+        <_VerMinor>$([System.Version]::Parse('$(Version)').Minor)</_VerMinor>
+        <_VerPatch>$([System.Version]::Parse('$(Version)').Build)</_VerPatch>
+        <_VerRevision>$([System.Version]::Parse('$(Version)').Revision)</_VerRevision>
+        <!-- A version written with fewer than four parts leaves these at -1. -->
+        <_VerPatch Condition="'$(_VerPatch)' == '-1'">0</_VerPatch>
+        <_VerRevision Condition="'$(_VerRevision)' == '-1'">0</_VerRevision>
+        <_AndroidCodeMajor>$([MSBuild]::Multiply($(_VerMajor), 1000000))</_AndroidCodeMajor>
+        <_AndroidCodeMinor>$([MSBuild]::Multiply($(_VerMinor), 10000))</_AndroidCodeMinor>
+        <_AndroidCodePatch>$([MSBuild]::Multiply($(_VerPatch), 100))</_AndroidCodePatch>
+        <_AndroidCodeMajorMinor>$([MSBuild]::Add($(_AndroidCodeMajor), $(_AndroidCodeMinor)))</_AndroidCodeMajorMinor>
+        <_AndroidCodePatchRevision>$([MSBuild]::Add($(_AndroidCodePatch), $(_VerRevision)))</_AndroidCodePatchRevision>
+        <ApplicationVersion>$([MSBuild]::Add($(_AndroidCodeMajorMinor), $(_AndroidCodePatchRevision)))</ApplicationVersion>
 
         <ApplicationId>com.undertalemodtool.avalonia.android</ApplicationId>
         <ApplicationTitle>QiuUTMTv5</ApplicationTitle>
-        <ApplicationVersion>1</ApplicationVersion>
-        <ApplicationDisplayVersion>0.9.1.2</ApplicationDisplayVersion>
 
         <AndroidUseAapt2>true</AndroidUseAapt2>
         <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
