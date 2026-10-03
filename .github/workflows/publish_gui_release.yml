@@ -217,11 +217,16 @@ jobs:
         # The APK stays inside the zip so the app can update itself on Android (it extracts the
         # APK from the downloaded build and hands it to the system package installer).
         7z a -tzip ${{ matrix.filename }}.zip ./Avalonia-Android-${{ matrix.rid }}/* -mx9
+        # The signed APK is published on its own as well: it installs directly without unzipping,
+        # so the release table links it instead of the zip.
+        Copy-Item (Get-Item "./Avalonia-Android-${{ matrix.rid }}/*-Signed.apk").FullName "./${{ matrix.filename }}-Signed.apk"
     - name: Upload artifact
       uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.filename }}
-        path: ${{ matrix.filename }}.zip
+        path: |
+          ${{ matrix.filename }}.zip
+          ${{ matrix.filename }}-Signed.apk
 
   upload:
 
@@ -233,7 +238,13 @@ jobs:
 
     - name: Generate release body with build table
       run: |
-        cat > release_body.md <<'EOF'
+        # 稳定版先把"非官方说明 + 该下载哪个"收进折叠块，正文优先显示表格；nightly 保持展开。
+        {
+          echo '<details>'
+          echo '<summary>ℹ️ About this release · 关于此版本（点击展开 / click to expand）</summary>'
+          echo ''
+        } > release_body.md
+        cat >> release_body.md <<'EOF'
         This is an unofficial version of UndertaleModTool developed by 秋冥散雨_Genouka.
 
         If you encounter any bugs, please submit an issue to this repository on Github.
@@ -246,47 +257,143 @@ jobs:
         
         如果你不清楚该下载哪个，请下载`UndertaleModTool_${{ inputs.version }}-Windows.zip`
         
-        ## Available builds
-        | Name | Platform | Type | Download |
-        |------|----------|------|----------|
         EOF
-        # 遍历所有下载的 .zip 文件，生成表格行
-        for file in $(find . -name "*.zip" -type f); do
-          name=$(basename "$file")
-          # 提取平台与图标
-          if [[ "$name" =~ Windows ]]; then
-            icon="🪟"
-            platform="Windows"
-          elif [[ "$name" =~ Ubuntu ]] || [[ "$name" =~ Linux ]]; then
-            icon="🐧"
-            platform="Linux"
-          elif [[ "$name" =~ macOS ]]; then
-            icon="🍎"
-            platform="macOS"
-          elif [[ "$name" =~ Android ]]; then
-            icon="📱"
-            platform="Android"
-          else
-            icon="❓"
-            platform="Unknown"
-          fi
-          # 提取版本类型
-          if [[ "$name" =~ CLI ]]; then
-            type="CLI"
-          elif [[ "$name" =~ Avalonia ]]; then
-            if [[ "$name" =~ Android ]]; then
-              type="Avalonia Android"
-            else
-              type="Avalonia GUI"
-            fi
-          else
-            type="GUI"
-          fi
-          echo "| $name | $icon $platform | $type | [Download](https://github.com/${{ github.repository }}/releases/download/${{ inputs.version }}/$name) |" >> release_body.md
+        {
+          echo '</details>'
+          echo ''
+          echo '## Available builds'
+          echo ''
+        } >> release_body.md
+        # 按平台分组：每个平台一张表、架构分别列出，不再用 find 的随机顺序。
+        tmp=$(mktemp -d)
+        folded="$tmp/avalonia-windows"
+        : > "$folded"
+
+        # Android 同时产出 zip 与已签名的 APK：表格给可直接安装的 APK，zip 仍作为发行资产保留
+        # （应用内更新会下载 zip 并从中取出 APK）。先记下哪些架构有 APK。
+        apk_arches=""
+        for apk in $(find . -name "*-Signed.apk" -type f); do
+          case "$(basename "$apk")" in
+            *-arm64*) apk_arches="$apk_arches arm64" ;;
+            *)        apk_arches="$apk_arches x64" ;;
+          esac
         done
-        echo "" >> release_body.md
-        echo "## Changelog" >> release_body.md
-        echo "[View Changelog](https://github.com/${{ github.repository }}/blob/master/CHANGELOG.md)" >> release_body.md
+
+        for file in $(find . \( -name "*.zip" -o -name "*-Signed.apk" \) -type f); do
+          name=$(basename "$file")
+          kind="zip"
+          case "$name" in
+            *.apk) kind="apk" ;;
+          esac
+          url="https://github.com/${{ github.repository }}/releases/download/${{ inputs.version }}/$name"
+
+          # 平台（决定分组与标题图标）
+          case "$name" in
+            *Android*)         platform=android; icon="📱"; label="Android" ;;
+            *Ubuntu*|*Linux*)  platform=linux;   icon="🐧"; label="Linux" ;;
+            *macOS*)           platform=macos;   icon="🍎"; label="macOS" ;;
+            *Windows*)         platform=windows; icon="🪟"; label="Windows" ;;
+            *)                 platform=unknown; icon="❓"; label="Unknown" ;;
+          esac
+
+          # 类型；type_rank 决定同一张表内的行序（GUI -> CLI -> Avalonia）
+          case "$name" in
+            *UTMT_CLI_*)         type="CLI";              type_rank=2 ;;
+            *Avalonia*Android*)  type="Avalonia Android"; type_rank=3 ;;
+            *Avalonia*)          type="Avalonia GUI";     type_rank=3 ;;
+            *)                   type="GUI";              type_rank=1 ;;
+          esac
+          if [ "$type" = "GUI" ]; then
+            case "$name" in
+              *SingleFile*) type="GUI (single file)" ;;
+              *)            type="**GUI (recommended)**" ;;
+            esac
+          fi
+
+          # 架构；arch_rank 让 arm64 排在 x64 前面。注意 macOS 的产物名不带架构后缀时就是
+          # Apple Silicon 版，只有 -x86/-x64 才是 Intel 版（见上面各 job 的 matrix）。
+          case "$platform" in
+            macos)
+              case "$name" in
+                *-x86*|*-x64*) arch="x64";   arch_rank=2 ;;
+                *)             arch="arm64"; arch_rank=1 ;;
+              esac
+              if [ "$arch" = "arm64" ]; then arch="arm64 (Apple Silicon)"; else arch="x64 (Intel)"; fi ;;
+            android)
+              case "$name" in
+                *-arm64*) arch_raw="arm64" ;;
+                *)        arch_raw="x64" ;;
+              esac
+              if [ "$arch_raw" = "arm64" ]; then arch="arm64 (most phones)"; arch_rank=1; else arch="x64 (emulators)"; arch_rank=2; fi ;;
+            *)
+              arch="x64"; arch_rank=2 ;;
+          esac
+
+          # Android 已有同架构 APK 时不再单列 zip 行
+          if [ "$platform" = "android" ] && [ "$kind" != "apk" ]; then
+            case " $apk_arches " in
+              *" $arch_raw "*) continue ;;
+            esac
+          fi
+
+          rank=$((type_rank * 10 + arch_rank))
+          row="$rank | $type | $arch | \`$name\` | [Download]($url) |"
+          if [ "$platform" = "windows" ] && [ "$type" = "Avalonia GUI" ]; then
+            # Windows 上的 Avalonia 版不常见，折叠到 Windows 表下方
+            echo "$row" >> "$folded"
+          else
+            echo "$row" >> "$tmp/$platform"
+          fi
+        done
+
+        for platform in windows linux macos android unknown; do
+          [ -s "$tmp/$platform" ] || continue
+          case "$platform" in
+            windows) icon="🪟"; label="Windows" ;;
+            linux)   icon="🐧"; label="Linux" ;;
+            macos)   icon="🍎"; label="macOS" ;;
+            android) icon="📱"; label="Android" ;;
+            *)       icon="❓"; label="Unknown" ;;
+          esac
+
+          {
+            echo "### $icon $label"
+            echo ''
+            echo '| Type | Arch | Build | Download |'
+            echo '|------|------|-------|----------|'
+            sort -k1,1n "$tmp/$platform" | sed 's/^[0-9]* //'
+            echo ''
+          } >> release_body.md
+
+          if [ "$platform" = "windows" ] && [ -s "$folded" ]; then
+            {
+              echo '<details>'
+              echo "<summary>$icon $label · Avalonia GUI (x64) — 不常见，点击展开 / uncommon, click to expand</summary>"
+              echo ''
+              echo '| Type | Arch | Build | Download |'
+              echo '|------|------|-------|----------|'
+              sort -k1,1n "$folded" | sed 's/^[0-9]* //'
+              echo ''
+              echo '</details>'
+              echo ''
+            } >> release_body.md
+          fi
+        done
+      shell: bash
+
+    - name: Find previous stable release tag
+      id: previous
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPO: ${{ github.repository }}
+      run: |
+        # 最新的 release 通常是滚动发布的 nightly（prerelease），以它为基准会让自动生成的
+        # Changelog 几乎是空的；这里取最近一个稳定版 release 作为比较基准。
+        tag=$(gh release list --limit 100 --json tagName,isPrerelease,publishedAt \
+          --jq '[.[] | select(.isPrerelease | not) | select(.tagName != "${{ inputs.version }}")]
+                | sort_by(.publishedAt) | reverse | .[0].tagName // ""')
+        echo "tag=$tag" >> "$GITHUB_OUTPUT"
+        echo "previous stable release: ${tag:-<none>}"
       shell: bash
 
     - name: Release
@@ -299,3 +406,7 @@ jobs:
         files: |
           */*
         body_path: release_body.md
+        # 由 GitHub 自动生成的发行说明会追加在上面的正文之后，Changelog 由此填充
+        # （仓库中并没有 CHANGELOG.md，原先那个链接是失效的）。
+        generate_release_notes: true
+        previous_tag: ${{ steps.previous.outputs.tag }}
