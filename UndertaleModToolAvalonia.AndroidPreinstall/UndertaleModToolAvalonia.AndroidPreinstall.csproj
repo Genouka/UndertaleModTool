@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        Shared with UndertaleModToolAvalonia.Android: app version, Android version code and release
+        channel. Both APKs deliberately carry the same application id AND the same version code -
+        see that file for why the flow cannot work without it.
+    -->
+    <Import Project="..\build\AndroidApp.props" />
+
+    <PropertyGroup>
+        <TargetFramework>net10.0-android</TargetFramework>
+
+        <!--
+            This APK exists for exactly one version of Android. Android 10 (API 29) is the last
+            release where an app can still ask for the legacy (path-based) external storage model, so
+            it is the only one where this helper has anything to hand over to the real app. The
+            real app points Android 10 users here and nowhere else, and this APK declines to do
+            anything on newer versions (see MainActivity), but minSdk 29 is also what keeps it from
+            being installed on Android 8/9, where the real app already works.
+        -->
+        <SupportedOSPlatformVersion>29.0</SupportedOSPlatformVersion>
+
+        <OutputType>Exe</OutputType>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
+        <AndroidUseFastDeployment>False</AndroidUseFastDeployment>
+
+        <AndroidUseAapt2>true</AndroidUseAapt2>
+        <!-- An .apk, never an .aab: this APK is sideloaded straight from the GitHub release. -->
+        <AndroidPackageFormat>apk</AndroidPackageFormat>
+        <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+        <RunAOTCompilation>false</RunAOTCompilation>
+        <EnableLLVM>false</EnableLLVM>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+        <!--
+            Same package and same title prefix as the real app: this APK is installed *over* the real
+            app (and is replaced by it again afterwards), which is what makes Android carry the
+            legacy storage model and the granted permission over to the real app.
+        -->
+        <ApplicationId>com.undertalemodtool.avalonia.android</ApplicationId>
+        <ApplicationTitle>QiuUTMTv5 存储权限助手</ApplicationTitle>
+    </PropertyGroup>
+
+</Project>

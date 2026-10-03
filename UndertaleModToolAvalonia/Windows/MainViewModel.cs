@@ -170,6 +170,11 @@ public partial class MainViewModel : ObservableObject
         }
         LazyErrorMessages.Clear();
 
+        // Storage access first: on Android 10 the answer decides whether the user has to be walked
+        // through the preinstall APK flow, and asking before the update check keeps the two dialogs
+        // from stacking on top of each other.
+        await CheckStorageAccessAsync();
+
         CheckForUpdatesAutomatically();
 
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -1147,6 +1152,49 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
     // Update checking (mirrors the update check of the WPF version of UndertaleModTool)
     bool updateInProgress = false;
+
+    /// <summary>
+    /// Makes sure the app can read and write shared external storage by path - the whole app is
+    /// path-based, so a denial is not a cosmetic problem - and explains the Android 10 case where
+    /// the runtime permission alone cannot fix it.
+    /// <para>
+    /// Android 10 is special: this app targets a much newer API level than 29, so Android 10 runs it
+    /// under scoped storage, where <c>WRITE_EXTERNAL_STORAGE</c> no longer grants the path-based
+    /// access everything here relies on. The documented way out is the legacy storage model, which
+    /// Android 10 only carries over to an app that is <i>updated</i> from a build that already had
+    /// it - the tiny targetSdk 29 "storage setup" (preinstall) APK published next to every release.
+    /// So instead of a permission dialog that can never help, the user gets the download link and
+    /// the exact order of installs.
+    /// </para>
+    /// </summary>
+    public async Task CheckStorageAccessAsync()
+    {
+        if (PlatformStorageAccess.EnsureAccessAsync is not { } ensureAccess)
+            return; // Desktop, or any other platform where this is not a thing.
+
+        StorageAccessResult result;
+        try
+        {
+            result = await ensureAccess();
+        }
+        catch
+        {
+            // Same reasoning as the update check below: a failure here must never break startup.
+            return;
+        }
+
+        if (result != StorageAccessResult.NeedsPreinstallSetup)
+            return;
+
+        string url = PlatformStorageAccess.GetPreinstallSetupUrl?.Invoke() ?? UpdateChecker.ReleasesPageUrl;
+        if (await View!.MessageDialog(
+                string.Format(LocalizationSource.GetString("Msg_Android10StorageSetup"), url),
+                title: LocalizationSource.GetString("Msg_Android10StorageSetupTitle"),
+                buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes)
+        {
+            await View!.LaunchUriAsync(new Uri(url));
+        }
+    }
 
     /// <summary>Set right before the app closes to install an update; checked by <see cref="MainWindow.OnClosing"/>.</summary>
     public bool IsUpdating { get; private set; } = false;

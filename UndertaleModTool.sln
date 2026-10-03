@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32014.148
@@ -22,6 +22,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModToolAvalonia", "UndertaleModToolAvalonia\UndertaleModToolAvalonia.csproj", "{F353AA91-7B76-4725-81D8-2089E82947B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModToolAvalonia.Android", "UndertaleModToolAvalonia.Android\UndertaleModToolAvalonia.Android.csproj", "{58F84C4D-6C0F-48D7-AA54-25B89981693E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModToolAvalonia.AndroidPreinstall", "UndertaleModToolAvalonia.AndroidPreinstall\UndertaleModToolAvalonia.AndroidPreinstall.csproj", "{160FBDDE-08A0-4D3A-B841-313C676F033D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModToolAvalonia.Desktop", "UndertaleModToolAvalonia.Desktop\UndertaleModToolAvalonia.Desktop.csproj", "{749B76EE-798A-48EC-B45F-7B525F6422F0}"
 EndProject
@@ -159,6 +161,18 @@ Global
 		{58F84C4D-6C0F-48D7-AA54-25B89981693E}.Release|x64.Build.0 = Release|Any CPU
 		{58F84C4D-6C0F-48D7-AA54-25B89981693E}.Release|x86.ActiveCfg = Release|Any CPU
 		{58F84C4D-6C0F-48D7-AA54-25B89981693E}.Release|x86.Build.0 = Release|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Debug|x64.Build.0 = Debug|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Debug|x86.Build.0 = Debug|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Release|x64.ActiveCfg = Release|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Release|x64.Build.0 = Release|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Release|x86.ActiveCfg = Release|Any CPU
+		{160FBDDE-08A0-4D3A-B841-313C676F033D}.Release|x86.Build.0 = Release|Any CPU
 		{749B76EE-798A-48EC-B45F-7B525F6422F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{749B76EE-798A-48EC-B45F-7B525F6422F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{749B76EE-798A-48EC-B45F-7B525F6422F0}.Debug|x64.ActiveCfg = Debug|Any CPU

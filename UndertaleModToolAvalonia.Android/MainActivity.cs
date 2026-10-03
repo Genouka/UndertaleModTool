@@ -40,10 +40,13 @@ public class MainActivity : AvaloniaMainActivity
         // The app does not target TalkBack/screen-reader users, so disable the whole bridge.
         AndroidAccessibilityDisabler.Disable(Window!.DecorView);
 
-        // Ask for direct external-storage access: runtime permission dialog on Android 6-10,
-        // "All files access" (MANAGE_EXTERNAL_STORAGE) settings on Android 11+. This lets the app
-        // resolve SAF picker results into real paths and read/write external storage directly.
-        StoragePermissionHelper.RequestOnStartup(this);
+        // Hand the shared UI the storage permissions this app needs for direct (path-based) access
+        // to external storage. The request itself runs later, from MainViewModel.OnLoaded: on
+        // Android 10 the answer decides whether the user has to be walked through the preinstall
+        // APK flow, and that guidance needs the UI (and the user's answer to the system dialog)
+        // before it makes sense to show anything.
+        PlatformStorageAccess.EnsureAccessAsync = () => StoragePermissionHelper.EnsureAccessAsync(this);
+        PlatformStorageAccess.GetPreinstallSetupUrl = () => AndroidStorageSetup.ApkUrl;
 
         // Wire the shared UI's haptic feedback hooks (long-press / tap gestures in the code editor
         // and room editor) to the platform's haptic feedback API.

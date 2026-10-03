@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:installLocation="auto">
+	<!--
+	    targetSdkVersion 29 is the entire point of this APK: Android 10 only offers the legacy
+	    (path-based) external storage model to apps that target API 29 or lower, and only keeps that
+	    model for the app that is installed on top of such a build. The real app targets a much newer
+	    API level, so this helper has to be the one that asks for the permission and switches the
+	    package back to the legacy model.
+
+	    WRITE_EXTERNAL_STORAGE is what the user is asked to grant here; Android 10 implies read
+	    access with it. The grant survives the update to the real app, because the real app still
+	    declares both permissions.
+	-->
+	<uses-sdk android:minSdkVersion="29" android:targetSdkVersion="29" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+	<application android:label="QiuUTMTv5 存储权限助手"
+				 android:requestLegacyExternalStorage="true"
+				 android:supportsRtl="true"
+				 android:theme="@android:style/Theme.Material.Light" />
+</manifest>

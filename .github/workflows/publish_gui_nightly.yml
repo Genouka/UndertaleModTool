@@ -186,8 +186,10 @@ jobs:
         rid: [android-arm64, android-x64]
         include:
           - rid: android-arm64
+            arch: arm64
             filename: UndertaleModToolAvalonia_nightly-Android-arm64
           - rid: android-x64
+            arch: x64
             filename: UndertaleModToolAvalonia_nightly-Android-x64
 
     runs-on: windows-latest
@@ -209,7 +211,17 @@ jobs:
       run: dotnet workload install android
     - name: Publish Avalonia Android APK
       run: |
-        dotnet publish UndertaleModToolAvalonia.Android -c Debug -r ${{ matrix.rid }} --self-contained true -p:AndroidSdkDirectory="$env:ANDROID_HOME" --output ${{ github.workspace }}\Avalonia-Android-${{ matrix.rid }}
+        dotnet publish UndertaleModToolAvalonia.Android -c Debug -r ${{ matrix.rid }} --self-contained true -p:AndroidSdkDirectory="$env:ANDROID_HOME" -p:AndroidPreinstallChannel=nightly --output ${{ github.workspace }}\Avalonia-Android-${{ matrix.rid }}
+    - name: Publish Android storage setup (preinstall) APK
+      # Android 10 only: the real APK targets a far newer API level, so granting the storage
+      # permission there is worthless without the legacy storage model - which Android 10 only keeps
+      # for a package that is *updated* from a build that already had it. This tiny targetSdk 29 APK
+      # is that build. It is published next to the real APK and installed first, then replaced by it.
+      #
+      # It has to be built in the same job as the real APK: both share an application id and are
+      # installed over each other, so the system requires one and the same signing key for both.
+      run: |
+        dotnet publish UndertaleModToolAvalonia.AndroidPreinstall -c Debug -r ${{ matrix.rid }} --self-contained true -p:AndroidSdkDirectory="$env:ANDROID_HOME" -p:AndroidPreinstallChannel=nightly --output ${{ github.workspace }}\Avalonia-Android-Preinstall-${{ matrix.rid }}
     - name: Copy external files
       shell: pwsh
       run: |
@@ -224,6 +236,9 @@ jobs:
         # The signed APK is published on its own as well: it installs directly without unzipping,
         # so the release table links it instead of the zip.
         Copy-Item (Get-Item "./Avalonia-Android-${{ matrix.rid }}/*-Signed.apk").FullName "./${{ matrix.filename }}-Signed.apk"
+        # The storage setup APK is a separate asset and has to be installed *before* the APK above.
+        # Its name carries no version or channel on purpose, so the app can link it on both channels.
+        Copy-Item (Get-Item "./Avalonia-Android-Preinstall-${{ matrix.rid }}/*-Signed.apk").FullName "./UndertaleModToolAvalonia_Android-${{ matrix.arch }}-Preinstall-Signed.apk"
     - name: Upload artifact
       uses: actions/upload-artifact@v7
       with:
@@ -231,6 +246,7 @@ jobs:
         path: |
           ${{ matrix.filename }}.zip
           ${{ matrix.filename }}-Signed.apk
+          UndertaleModToolAvalonia_Android-${{ matrix.arch }}-Preinstall-Signed.apk
 
   upload:
 
@@ -276,8 +292,9 @@ jobs:
 
         # Android 同时产出 zip 与已签名的 APK：表格给可直接安装的 APK，zip 仍作为发行资产保留
         # （应用内更新会下载 zip 并从中取出 APK）。先记下哪些架构有 APK。
+        # 前置（storage setup）APK 不参与这个判断：它是给 Android 10 单独安装的辅助包。
         apk_arches=""
-        for apk in $(find . -name "*-Signed.apk" -type f); do
+        for apk in $(find . -name "*-Signed.apk" -type f ! -name "*Preinstall*"); do
           case "$(basename "$apk")" in
             *-arm64*) apk_arches="$apk_arches arm64" ;;
             *)        apk_arches="$apk_arches x64" ;;
@@ -301,8 +318,9 @@ jobs:
             *)                 platform=unknown; icon="❓"; label="Unknown" ;;
           esac
 
-          # 类型；type_rank 决定同一张表内的行序（GUI -> CLI -> Avalonia）
+          # 类型；type_rank 决定同一张表内的行序（GUI -> CLI -> Avalonia -> Android 10 前置包）
           case "$name" in
+            *Preinstall*)        type="Android 10 storage setup"; type_rank=4 ;;
             *UTMT_CLI_*)         type="CLI";              type_rank=2 ;;
             *Avalonia*Android*)  type="Avalonia Android"; type_rank=3 ;;
             *Avalonia*)          type="Avalonia GUI";     type_rank=3 ;;
@@ -369,6 +387,14 @@ jobs:
             sort -k1,1n "$tmp/$platform" | sed 's/^[0-9]* //'
             echo ''
           } >> release_body.md
+
+          # Android 10 需要先装前置包才能拿到存储权限，光看表格不知道哪个先装，这里补一句说明
+          if [ "$platform" = "android" ]; then
+            {
+              echo '> **Android 10 users / Android 10 用户：** if the app cannot access storage, install the `*-Preinstall-Signed.apk` for your device **first**, open it and grant the storage permission, then install the app APK **on top of it** (no uninstall needed). / 若应用无法读写存储，请先安装对应架构的 `*-Preinstall-Signed.apk` 前置包，打开并允许存储权限，再直接覆盖安装正式版 APK（不需要卸载）。'
+              echo ''
+            } >> release_body.md
+          fi
 
           if [ "$platform" = "windows" ] && [ -s "$folded" ]; then
             {

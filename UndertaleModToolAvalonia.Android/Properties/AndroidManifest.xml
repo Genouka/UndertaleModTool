@@ -31,8 +31,21 @@
 		</intent>
 	</queries>
 
-	<!-- Serves the downloaded update APK to the system package installer (content:// URI). -->
-	<application android:label="QiuUTMTv5">
+	<!-- Serves the downloaded update APK to the system package installer (content:// URI).
+
+	     The two legacy-storage flags are the Android 10 half of the storage story. This app targets
+	     a much newer API level than 29, so Android 10 would normally run it under scoped storage,
+	     where granting WRITE_EXTERNAL_STORAGE no longer gives the path-based access the whole app is
+	     built on (File.WriteAllText, Directory.CreateDirectory, ...):
+	       * requestLegacyExternalStorage asks for the pre-scoped-storage model. Android 10 honours
+	         it; Android 11+ ignores it (that is what MANAGE_EXTERNAL_STORAGE above is for).
+	       * preserveLegacyExternalStorage keeps that model when the app is installed as an update
+	         over a build that already had it - which only the targetSdk 29 "storage setup" APK can
+	         establish on Android 10. See UndertaleModToolAvalonia.AndroidPreinstall. -->
+	<application android:label="QiuUTMTv5"
+				 android:requestLegacyExternalStorage="true"
+				 android:preserveLegacyExternalStorage="true"
+				 android:requestRawExternalStorageAccess="true">
 		<provider android:name="androidx.core.content.FileProvider"
 		          android:authorities="${applicationId}.fileprovider"
 		          android:exported="false"

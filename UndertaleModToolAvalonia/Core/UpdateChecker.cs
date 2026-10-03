@@ -34,6 +34,9 @@ public static class UpdateChecker
     /// </summary>
     public const double NewerThanMinutes = 10;
 
+    /// <summary>Releases page of the repository, listing every published release.</summary>
+    public static string ReleasesPageUrl => $"https://github.com/{Owner}/{Repo}/releases";
+
     /// <summary>Information about an available nightly build.</summary>
     public sealed record UpdateInfo(long RunId, DateTime UpdatedAt, string ArtifactName,
         string ReleasePageUrl, string ReleaseDownloadUrl, string NightlyLinkDownloadUrl);
