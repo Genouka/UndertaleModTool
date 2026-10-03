@@ -1420,7 +1420,10 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 Directory.Delete(updateFolder, true);
             await Task.Run(() => ExtractUpdateZip(downloadOutput, updateFolder));
 
-            string? apkPath = Directory.EnumerateFiles(updateFolder, "*.apk", SearchOption.AllDirectories).FirstOrDefault();
+            // Prefer the signed APK: the Android build also emits an unsigned one next to it, and
+            // the system package installer rejects unsigned packages.
+            string? apkPath = Directory.EnumerateFiles(updateFolder, "*-Signed.apk", SearchOption.AllDirectories).FirstOrDefault()
+                ?? Directory.EnumerateFiles(updateFolder, "*.apk", SearchOption.AllDirectories).FirstOrDefault();
             if (apkPath is null)
             {
                 // Older releases shipped without an APK inside the zip - fall back to the releases page.
