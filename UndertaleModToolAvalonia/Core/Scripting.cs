@@ -46,6 +46,14 @@ public class Scripting
     public static Action? PrepareScriptAssemblies { get; set; }
 
     /// <summary>
+    /// Optional override for the directory scripts see as <c>ExePath</c>. Platforms where the real
+    /// executable location is not usable set it to an app-private directory: scripts create their
+    /// scratch ("Packager") folders under <c>ExePath</c> and write results next to it, while on
+    /// Android <see cref="Environment.ProcessPath"/> resolves to the read-only /system/bin.
+    /// </summary>
+    public static string? ExePathOverride { get; set; }
+
+    /// <summary>
     /// Name prefixes of the assemblies that scripts may bind against. The Android assembly
     /// extractor dumps every linked assembly (the whole Avalonia/Skia/SDL/interop stack included)
     /// next to the app, but scripts never use those; feeding all of them to the compiler balloons
@@ -389,7 +397,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public string ScriptErrorMessage => throw new NotImplementedException();
 
-    public string? ExePath => Path.GetDirectoryName(Environment.ProcessPath);
+    public string? ExePath => Scripting.ExePathOverride ?? Path.GetDirectoryName(Environment.ProcessPath);
 
     public string ScriptErrorType => throw new NotImplementedException();
 

@@ -47,6 +47,11 @@ public class AvaloniaAndroidApp : AvaloniaAndroidApplication<App>
         // the Scripts menu at them. Synchronous, because the menu is built once when the activity
         // UI is created - which still happens after this method completes.
         BuiltInScriptExtractor.Install();
+
+        // Scripts build their scratch ("Packager") folders under ExePath and write results next to
+        // it; on Android Environment.ProcessPath resolves to the read-only /system/bin, so point
+        // ExePath at an app-private directory instead.
+        Scripting.ExePathOverride = CacheDir?.AbsolutePath ?? FilesDir?.AbsolutePath;
     }
 
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
