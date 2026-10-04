@@ -13,7 +13,8 @@
                      ToolTip.Tip="{Binding Reference, TargetNullValue={l:Loc RefTooltip_NullResourceReference}}"
                      IsReadOnly="True"
                      PointerReleased="TextBox_PointerReleased"
-                     DoubleTapped="TextBox_DoubleTapped">
+                     DoubleTapped="TextBox_DoubleTapped"
+                     LostFocus="TextBox_LostFocus">
                 <TextBox.Resources>
                     <l:UndertaleReferenceDropHandler x:Key="UndertaleReferenceDropHandler"/>
                 </TextBox.Resources>

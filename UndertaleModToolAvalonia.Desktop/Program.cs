@@ -17,6 +17,16 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        AppDomain.CurrentDomain.UnhandledException += (source, e) =>
+        {
+            HandleException((e.ExceptionObject as Exception)!);
+        };
+
+        TaskScheduler.UnobservedTaskException += (source, e) =>
+        {
+            HandleException(e.Exception);
+        };
+
         try
         {
             // The main app copies itself to the temp folder and relaunches it with
@@ -41,16 +51,21 @@ class Program
         }
         catch (Exception e)
         {
-            string localAppData = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UndertaleModToolAvalonia");
-            Directory.CreateDirectory(localAppData);
-
-            File.WriteAllText(Path.Join(localAppData, "CrashLog.txt"), e.ToString());
-
-            // TODO: Figure out a way to actually stop the UI and other threads.
-            SDL.ShowSimpleMessageBox(SDL3.SDL.MessageBoxFlags.Error,
-                "UndertaleModToolAvalonia " + App.VersionString, $"{e}", 0);
+            HandleException(e);
             throw;
         }
+    }
+
+    public static void HandleException(Exception ex)
+    {
+        string localAppData = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UndertaleModToolAvalonia");
+        Directory.CreateDirectory(localAppData);
+
+        File.WriteAllText(Path.Join(localAppData, "CrashLog.txt"), ex.ToString());
+
+        // TODO: Figure out a way to actually stop the UI and other threads.
+        SDL.ShowSimpleMessageBox(SDL3.SDL.MessageBoxFlags.Error,
+            "UndertaleModToolAvalonia " + App.VersionString, $"{ex}", 0);
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.

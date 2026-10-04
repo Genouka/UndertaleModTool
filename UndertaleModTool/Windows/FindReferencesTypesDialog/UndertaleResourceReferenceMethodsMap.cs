@@ -337,7 +337,7 @@ namespace UndertaleModTool.Windows
 
                             var textGroups = data.TextureGroupInfo.NotNullWhere(x => x.TexturePages.Any(s => s.Resource == obj));
                             if (textGroups.Any())
-                                return new() { { "Texture groups", checkOne ? textGroups.ToEmptyArray() : textGroups.ToArray() } };
+                                return new() { { LocalizationSource.GetString("RefType_TextureGroups"), checkOne ? textGroups.ToEmptyArray() : textGroups.ToArray() } };
                             else
                                 return null;
                         }

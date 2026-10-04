@@ -1131,7 +1131,7 @@ public partial class UndertaleCodeView : UserControl
         NamedResourcesCache.Clear();
         codeLocalsCache.Clear();
 
-        if (!vm.MainVM.Settings!.EnableSyntaxHighlighting)
+        if (!vm.MainVM.Settings.EnableSyntaxHighlighting)
             return;
 
         UndertaleData? data = vm.MainVM.Data;
@@ -1260,7 +1260,7 @@ public partial class UndertaleCodeView : UserControl
         if (e.NavigationMethod == NavigationMethod.Unspecified)
             return;
 
-        if (vm.GMLFocused && vm.MainVM.Settings!.AutomaticallyCompileAndDecompileCodeOnLostFocus)
+        if (vm.GMLFocused && vm.MainVM.Settings.AutomaticallyCompileAndDecompileCodeOnLostFocus)
         {
             vm.GMLFocused = false;
             vm.CompileAndDecompileTab(Tab.GML);
@@ -1275,7 +1275,7 @@ public partial class UndertaleCodeView : UserControl
         if (e.NavigationMethod == NavigationMethod.Unspecified)
             return;
 
-        if (vm.ASMFocused && vm.MainVM.Settings!.AutomaticallyCompileAndDecompileCodeOnLostFocus)
+        if (vm.ASMFocused && vm.MainVM.Settings.AutomaticallyCompileAndDecompileCodeOnLostFocus)
         {
             vm.ASMFocused = false;
             vm.CompileAndDecompileTab(Tab.ASM);
@@ -2991,6 +2991,8 @@ public partial class UndertaleCodeView : UserControl
                         possibleObjects.Add(data.Sequences[id]);
                     if (id < data.ParticleSystems?.Count)
                         possibleObjects.Add(data.ParticleSystems[id]);
+                    if (id < data.AudioGroups?.Count)
+                        possibleObjects.Add(data.AudioGroups[id]);
                 }
 
                 contextMenu.Items.Clear();

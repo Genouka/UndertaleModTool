@@ -20,11 +20,14 @@
                     <NativeMenuItem Header="{l:Loc Menu_File_Save}" Command="{Binding FileSave}" Gesture="{OnPlatform 'Ctrl+S', macOS='Meta+S'}"/>
                     <NativeMenuItem Header="{l:Loc Menu_File_Close}" Command="{Binding FileClose}"/>
                     <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_File_TempRun}" Command="{Binding FileRun}" Gesture="F5"/>
+                    <NativeMenuItem Header="{l:Loc Menu_File_TempRun}" Command="{Binding FileTempRun}" Gesture="F5"/>
+                    <NativeMenuItem Header="_Run with data/project runner" Command="{Binding FileRun}" Gesture="Alt+F5"/>
                     <NativeMenuItem Header="{l:Loc Menu_File_RunOtherRunner}" Command="{Binding FileRunWithOther}"/>
                     <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_File_Settings}" Command="{Binding FileSettings}"/>
-                    <NativeMenuItem Header="{l:Loc Menu_File_Exit}" Command="{Binding FileExit}"/>
+                    <NativeMenuItem Header="Clear audio group cache" Command="{Binding FileClearAudioGroupCache}"/>
+                    <NativeMenuItemSeparator Header="-" />
+                    <NativeMenuItem Header="{l:Loc Menu_File_Settings}" Command="{Binding FileSettings}" Gesture="F4"/>
+                    <NativeMenuItem Header="{l:Loc Menu_File_Exit}" Command="{Binding FileExit}" Gesture="{OnPlatform 'Ctrl+Q', macOS='Meta+Q'}"/>
                 </NativeMenu>
             </NativeMenuItem>
             <NativeMenuItem Header="{l:Loc Menu_Tools}">
@@ -62,13 +65,16 @@
         <KeyBinding Gesture="{OnPlatform 'Ctrl+N', macOS='Meta+N'}" Command="{Binding FileNew}" />
         <KeyBinding Gesture="{OnPlatform 'Ctrl+O', macOS='Meta+O'}" Command="{Binding FileOpen}" />
         <KeyBinding Gesture="{OnPlatform 'Ctrl+S', macOS='Meta+S'}" Command="{Binding FileSave}" />
-        <KeyBinding Gesture="F5" Command="{Binding FileRun}" />
+        <KeyBinding Gesture="F5" Command="{Binding FileTempRun}" />
+        <KeyBinding Gesture="Alt+F5" Command="{Binding FileRun}" />
+        <KeyBinding Gesture="F4" Command="{Binding FileSettings}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+Q', macOS='Meta+Q'}" Command="{Binding FileExit}" />
         <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+F', macOS='Meta+Shift+F'}" Command="{Binding ToolsSearchInCode}" />
         <KeyBinding Gesture="F1" Command="{Binding HelpAbout}" />
-        <KeyBinding Gesture="{OnPlatform 'Ctrl+W', macOS='Meta+W'}" Command="{Binding TabCloseSelected}" />
-        <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+W', macOS='Meta+Shift+W'}" Command="{Binding TabCloseAll}" />
-        <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+Tab', macOS='Meta+Shift+Tab'}" Command="{Binding TabSetToPrevious}" />
-        <KeyBinding Gesture="{OnPlatform 'Ctrl+Tab', macOS='Meta+Tab'}" Command="{Binding TabSetToNext}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+W', macOS='Meta+W'}" Command="{Binding Tabs.TabCloseSelected}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+W', macOS='Meta+Shift+W'}" Command="{Binding Tabs.TabCloseAll}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+Tab', macOS='Meta+Shift+Tab'}" Command="{Binding Tabs.TabSetToPrevious}" />
+        <KeyBinding Gesture="{OnPlatform 'Ctrl+Tab', macOS='Meta+Tab'}" Command="{Binding Tabs.TabSetToNext}" />
     </Window.KeyBindings>
 
     <l:MainView />

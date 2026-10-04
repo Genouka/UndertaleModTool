@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
@@ -86,91 +85,6 @@ public partial class MainView : UserControl, IView
     {
         projectAssetsWindow?.Close();
         projectAssetsWindow = null;
-    }
-
-    public void ExpandItemOnTree(DataExplorerViewModel.Item item)
-    {
-        DataExplorer.ExpandItemOnTree(item);
-    }
-
-    public void SelectValueInTree(object value)
-    {
-        DataExplorer.SelectValueInTree(value);
-    }
-
-    private void TabControl_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (DataContext is MainViewModel vm)
-        {
-            object? tabSelected = e.AddedItems.Count > 0 ? e.AddedItems[0] : null;
-            foreach (TabItemViewModel tab in vm.Tabs)
-            {
-                tab.IsSelected = (tab == tabSelected);
-            }
-        }
-    }
-
-    private void TabControl_PointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        if (e.InitialPressMouseButton == MouseButton.Middle)
-        {
-            if (DataContext is MainViewModel vm)
-            {
-                if (e.Source is Control control)
-                {
-                    TabStrip? tabControl = control.FindLogicalAncestorOfType<TabStrip>();
-                    if (tabControl is not null && tabControl == sender)
-                    {
-                        TabStripItem? tabItem = control.FindLogicalAncestorOfType<TabStripItem>();
-                        if (tabItem is not null && tabItem.DataContext is TabItemViewModel vmTabItem)
-                        {
-                            _ = vm.TabClose(vmTabItem);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private void TabMenu_Select_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is not MainViewModel vm)
-            return;
-
-        if (e.Source is Control control)
-        {
-            TabStripItem? tabItem = control.FindLogicalAncestorOfType<TabStripItem>();
-            if (tabItem is not null && tabItem.DataContext is TabItemViewModel vmTabItem)
-            {
-                if (vmTabItem?.Content is IUndertaleResourceViewModel vmResourceView)
-                {
-                    SelectValueInTree(vmResourceView.Resource);
-                }
-            }
-        }
-    }
-
-    private void TabMenu_Close_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainViewModel vm)
-        {
-            if (e.Source is Control control)
-            {
-                TabStripItem? tabItem = control.FindLogicalAncestorOfType<TabStripItem>();
-                if (tabItem is not null && tabItem.DataContext is TabItemViewModel vmTabItem)
-                {
-                    _ = vm.TabClose(vmTabItem);
-                }
-            }
-        }
-    }
-
-    private void TabMenu_CloseAll_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is MainViewModel vm)
-        {
-            _ = vm.TabCloseAll();
-        }
     }
 
     private async void CommandTextBox_KeyDown_Tunnel(object? sender, KeyEventArgs e)

@@ -3,189 +3,200 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:l="clr-namespace:UndertaleModToolAvalonia"
-        mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="400"
+        mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="500"
         x:Class="UndertaleModToolAvalonia.SettingsWindow"
         x:DataType="l:SettingsViewModel"
         Title="{l:Loc Settings_WindowTitle}"
         Width="700"
-        Height="400"
+        Height="500"
         Classes="SettingsWindow">
+
     <ScrollViewer>
-        <StackPanel>
-            <TextBlock FontWeight="Bold" Text="{l:Loc GML_Interface}"/>
-            <Separator />
+        <StackPanel Name="ContentStackPanel">
+            <StackPanel Classes="Section">
+                <TextBlock Classes="Header" Text="{l:Loc GML_Interface}"/>
+                <Separator />
 
-            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label Content="{l:Loc Settings_Language}"/>
-                <ComboBox ItemsSource="{Binding Languages}"
-                          SelectedItem="{Binding MainVM.Settings.Language, Mode=TwoWay}" />
-            </Grid>
+                <Grid ColumnDefinitions="Auto,1*" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center" Content="{l:Loc Settings_Language}"/>
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding Languages}"
+                              SelectedItem="{Binding MainVM.Settings.Language, Mode=TwoWay}" />
+                </Grid>
 
-            <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label Content="{l:Loc Settings_Theme}"/>
-                <ComboBox SelectedIndex="{Binding MainVM.Settings.Theme}">
-                    <ComboBoxItem Content="{l:Loc Settings_ThemeSystemDefault}"/>
-                    <ComboBoxItem Content="{l:Loc Settings_ThemeLight}"/>
-                    <ComboBoxItem Content="{l:Loc Settings_ThemeDark}"/>
-                </ComboBox>
-            </Grid>
+                <Grid ColumnDefinitions="Auto,Auto" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center" Content="{l:Loc Settings_Theme}"/>
+                    <ComboBox Grid.Column="1" SelectedIndex="{Binding MainVM.Settings.Theme}">
+                        <ComboBoxItem Content="{l:Loc Settings_ThemeSystemDefault}"/>
+                        <ComboBoxItem Content="{l:Loc Settings_ThemeLight}"/>
+                        <ComboBoxItem Content="{l:Loc Settings_ThemeDark}"/>
+                    </ComboBox>
+                </Grid>
 
-            <StackPanel>
-                <CheckBox Content="{l:Loc Settings_StartMaximized}"
-                          IsChecked="{Binding MainVM.Settings.StartMaximized}" />
-                <CheckBox Content="{l:Loc Settings_OpenNewResourceAfterCreatingIt}"
-                          IsChecked="{Binding MainVM.Settings.OpenNewResourceAfterCreatingIt}" />
+                <Grid ColumnDefinitions="Auto,60,60" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center" Content="{l:Loc Settings_DefaultRoomGridSize}"/>
+                    <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DefaultRoomGridWidth}"/>
+                    <TextBox Grid.Column="2" Text="{Binding MainVM.Settings.DefaultRoomGridHeight}"/>
+                </Grid>
+
                 <CheckBox Content="{l:Loc Settings_EnableSyntaxHighlighting}"
-                          IsChecked="{Binding MainVM.Settings.EnableSyntaxHighlighting}"/>
+                            IsChecked="{Binding MainVM.Settings.EnableSyntaxHighlighting}"/>
+                <CheckBox Content="{l:Loc Settings_StartMaximized}"
+                            IsChecked="{Binding MainVM.Settings.StartMaximized}"/>
+                <CheckBox Content="{l:Loc Settings_OpenNewResourceAfterCreatingIt}"
+                            IsChecked="{Binding MainVM.Settings.OpenNewResourceAfterCreatingIt}"/>
                 <CheckBox Content="{l:Loc Settings_AutoCompileDecompileOnLostFocus}"
-                          IsChecked="{Binding MainVM.Settings.AutomaticallyCompileAndDecompileCodeOnLostFocus}"/>
-
+                            IsChecked="{Binding MainVM.Settings.AutomaticallyCompileAndDecompileCodeOnLostFocus}"/>
                 <CheckBox Content="{l:Loc Settings_EnableRoomGridByDefault}"
-                          IsChecked="{Binding MainVM.Settings.EnableRoomGridByDefault}"/>
-
-                <StackPanel Orientation="Horizontal">
-                    <Label Content="{l:Loc Settings_DefaultRoomGridSize}"/>
-                    <TextBox Text="{Binding MainVM.Settings.DefaultRoomGridWidth}" />
-                    <TextBox Text="{Binding MainVM.Settings.DefaultRoomGridHeight}" />
-                </StackPanel>
-
+                            IsChecked="{Binding MainVM.Settings.EnableRoomGridByDefault}"/>
                 <CheckBox Content="{l:Loc Settings_EnableSelectAnyLayerByDefault}"
-                          IsChecked="{Binding MainVM.Settings.EnableSelectAnyLayerByDefault}"/>
+                            IsChecked="{Binding MainVM.Settings.EnableSelectAnyLayerByDefault}"/>
                 <CheckBox Content="{l:Loc Settings_ShowRoomEditorDebugInfo}"
-                          IsChecked="{Binding MainVM.Settings.ShowRoomEditorDebugInfo}"/>
+                            IsChecked="{Binding MainVM.Settings.ShowRoomEditorDebugInfo}"/>
                 <CheckBox Content="{l:Loc Settings_EnableProjectBackup}"
-                          IsChecked="{Binding MainVM.Settings.EnableProjectBackup}"/>
+                            IsChecked="{Binding MainVM.Settings.EnableProjectBackup}"/>
+                <CheckBox Content="Always save to the project's designated data file for saving"
+                            IsChecked="{Binding MainVM.Settings.AlwaysSaveDataInProjectDestination}"/>
                 <CheckBox Content="{l:Loc Settings_RecompileOnSave}"
-                          ToolTip.Tip="{l:Loc Settings_RecompileOnSaveToolTip}"
-                          IsChecked="{Binding MainVM.Settings.RecompileAllCodeSourcesOnProjectSave}"/>
-
+                            ToolTip.Tip="{l:Loc Settings_RecompileOnSaveToolTip}"
+                            IsChecked="{Binding MainVM.Settings.RecompileAllCodeSourcesOnProjectSave}"/>
                 <CheckBox Content="{l:Loc Settings_CheckForUpdates}"
-                          ToolTip.Tip="{l:Loc Settings_CheckForUpdatesToolTip}"
-                          IsChecked="{Binding MainVM.Settings.CheckForUpdates}"/>
+                            ToolTip.Tip="{l:Loc Settings_CheckForUpdatesToolTip}"
+                            IsChecked="{Binding MainVM.Settings.CheckForUpdates}"/>
                 <Button Content="{l:Loc Settings_UpdateApp}"
                         Command="{Binding MainVM.HelpUpdateApp}"
                         HorizontalAlignment="Left" Margin="0,4,0,0"/>
             </StackPanel>
 
-            <!--
-            TODO: Missing:
-            bool EmptyLineAroundEnums { get; set; } = true;
-            string UnknownEnumName { get; set; } = "UnknownEnum";
-            string UnknownEnumValuePattern { get; set; } = "Value_{0}";
-            string UnknownArgumentNamePattern { get; set; } = "arg{0}";
-            -->
+            <StackPanel Classes="Section">
+                <TextBlock Classes="Header" Text="{l:Loc GML_GML}"/>
+                <Separator />
 
-            <TextBlock FontWeight="Bold" Text="{l:Loc GML_GML}"/>
-            <Separator />
+                <CheckBox Content="{l:Loc GML_UseCSSHexColors}"
+                            ToolTip.Tip="{l:Loc GML_UseCSSHexColors_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.UseCSSColors}"/>
 
-            <Grid ColumnDefinitions="1*,1*">
-                <StackPanel Grid.Column="0">
-                    <CheckBox Content="{l:Loc GML_UseCSSHexColors}"
-                              ToolTip.Tip="{l:Loc GML_UseCSSHexColors_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.UseCSSColors}"/>
+                <CheckBox Content="{l:Loc GML_AlwaysUseSemicolons}"
+                            ToolTip.Tip="{l:Loc GML_AlwaysUseSemicolons_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.UseSemicolon}"/>
 
-                    <CheckBox Content="{l:Loc GML_AlwaysUseSemicolons}"
-                              ToolTip.Tip="{l:Loc GML_AlwaysUseSemicolons_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.UseSemicolon}"/>
+                <CheckBox Content="{l:Loc GML_OpenBlockBraceOnSameLine}"
+                            ToolTip.Tip="{l:Loc GML_OpenBlockBraceOnSameLine_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.OpenBlockBraceOnSameLine}"/>
 
-                    <CheckBox Content="{l:Loc GML_OpenBlockBraceOnSameLine}"
-                              ToolTip.Tip="{l:Loc GML_OpenBlockBraceOnSameLine_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.OpenBlockBraceOnSameLine}"/>
+                <CheckBox Content="{l:Loc GML_CreateEnumDeclarations}"
+                            ToolTip.Tip="{l:Loc GML_CreateEnumDeclarations_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.CreateEnumDeclarations}"/>
 
-                    <CheckBox Content="{l:Loc GML_CreateEnumDeclarations}"
-                              ToolTip.Tip="{l:Loc GML_CreateEnumDeclarations_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.CreateEnumDeclarations}"/>
+                <CheckBox Content="{l:Loc GML_PrintWarnings}"
+                            ToolTip.Tip="{l:Loc GML_PrintWarnings_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.PrintWarnings}"/>
 
-                    <CheckBox Content="{l:Loc GML_PrintWarnings}"
-                              ToolTip.Tip="{l:Loc GML_PrintWarnings_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.PrintWarnings}"/>
+                <Grid ColumnDefinitions="Auto,1*">
+                    <Label Content="{l:Loc GML_InstanceIdPrefix}"
+                            ToolTip.Tip="{l:Loc GML_InstanceIdPrefix_Tooltip}"/>
+                    <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.InstanceIdPrefix}"/>
+                </Grid>
 
-                </StackPanel>
+                <Grid ColumnDefinitions="Auto,Auto,*" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center"
+                            Content="{l:Loc GML_IndentationStyle}"
+                            ToolTip.Tip="{l:Loc GML_IndentationStyle_Tooltip}"/>
 
-                <StackPanel Grid.Column="1">
-                    <Grid ColumnDefinitions="Auto,1*">
-                        <Label Content="{l:Loc GML_InstanceIdPrefix}"
-                               ToolTip.Tip="{l:Loc GML_InstanceIdPrefix_Tooltip}"/>
-                        <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.InstanceIdPrefix}"/>
-                    </Grid>
+                    <ComboBox Grid.Column="1" SelectedIndex="{Binding IndentStyle}">
+                        <ComboBoxItem>4 spaces</ComboBoxItem>
+                        <ComboBoxItem>2 spaces</ComboBoxItem>
+                        <ComboBoxItem>Tabs</ComboBoxItem>
+                        <ComboBoxItem>Custom</ComboBoxItem>
+                    </ComboBox>
 
-                    <!-- TODO: Make this a ComboBox -->
-                    <Grid ColumnDefinitions="Auto,1*">
-                        <Label Content="{l:Loc GML_IndentString}"/>
-                        <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.IndentString}" />
-                    </Grid>
+                    <TextBox Grid.Column="2"
+                             AcceptsTab="True"
+                             IsVisible="{Binding IsCustomIndentStyle}"
+                             Text="{Binding MainVM.Settings.DecompileSettings.IndentString}"/>
+                </Grid>
 
-                    <CheckBox Content="{l:Loc GML_RemoveSingleLineBlockBraces}"
-                              ToolTip.Tip="{l:Loc GML_RemoveSingleLineBlockBraces_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.RemoveSingleLineBlockBraces}"/>
+                <Grid ColumnDefinitions="Auto,1*">
+                    <Label Content="Name of unknown enums:"
+                            ToolTip.Tip="The name used for auto-generated enum declarations when integer constants are detected as enums without known types (default: &quot;UnknownEnum&quot;)."/>
+                    <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.UnknownEnumName}"/>
+                </Grid>
 
-                    <CheckBox Content="{l:Loc GML_EnumMacroDeclarationsAtTop}"
-                              ToolTip.Tip="{l:Loc GML_EnumMacroDeclarationsAtTop_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.MacroDeclarationsAtTop}"/>
+                <Grid ColumnDefinitions="Auto,1*">
+                    <Label Content="Pattern of unknown enum value names:"
+                            ToolTip.Tip="Formatting pattern for values inside generated unknown enums. '{0}' is replaced with the underlying number (e.g. 'Value_{0}' produces 'Value_0', 'Value_1'...)."/>
+                    <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.UnknownEnumValuePattern}"/>
+                </Grid>
 
-                    <CheckBox Content="{l:Loc GML_AllowLeftoverDataOnStack}"
-                              ToolTip.Tip="{l:Loc GML_AllowLeftoverDataOnStack_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.AllowLeftoverDataOnStack}"/>
-                </StackPanel>
-            </Grid>
+                <Grid ColumnDefinitions="Auto,1*">
+                    <Label Content="Pattern of unknown argument names:"
+                            ToolTip.Tip="Formatting pattern for unnamed arguments. '{0}' is replaced with the argument index (e.g. 'arg{0}' produces 'arg0', 'arg1'...)."/>
+                    <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.UnknownArgumentNamePattern}"/>
+                </Grid>
 
-            <TextBlock Text="{l:Loc GML_AddEmptyLines}"
-                       ToolTip.Tip="{l:Loc GML_AddEmptyLines_Tooltip}"/>
+                <CheckBox Content="{l:Loc GML_RemoveSingleLineBlockBraces}"
+                            ToolTip.Tip="{l:Loc GML_RemoveSingleLineBlockBraces_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.RemoveSingleLineBlockBraces}"/>
 
-            <Grid ColumnDefinitions="1*,1*">
-                <StackPanel Grid.Column="0">
-                    <CheckBox Content="{l:Loc GML_EmptyLineAroundBranchStatements}"
-                              ToolTip.Tip="{l:Loc GML_EmptyLineAroundBranchStatements_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAroundBranchStatements}"/>
-                    <CheckBox Content="{l:Loc GML_EmptyLineBeforeSwitchCases}"
-                              ToolTip.Tip="{l:Loc GML_EmptyLineBeforeSwitchCases_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineBeforeSwitchCases}"/>
-                    <CheckBox Content="{l:Loc GML_EmptyLineAroundFunctionDeclarations}"
-                              ToolTip.Tip="{l:Loc GML_EmptyLineAroundFunctionDeclarations_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAroundFunctionDeclarations}"/>
-                </StackPanel>
+                <CheckBox Content="{l:Loc GML_EnumMacroDeclarationsAtTop}"
+                            ToolTip.Tip="{l:Loc GML_EnumMacroDeclarationsAtTop_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.MacroDeclarationsAtTop}"/>
 
-                <StackPanel Grid.Column="1">
-                    <CheckBox Content="{l:Loc GML_EmptyLineAfterBlockLocals}"
-                              ToolTip.Tip="{l:Loc GML_EmptyLineAfterBlockLocals_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAfterBlockLocals}"/>
-                    <CheckBox Content="{l:Loc GML_EmptyLineAfterSwitchCases}"
-                              ToolTip.Tip="{l:Loc GML_EmptyLineAfterSwitchCases_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAfterSwitchCases}"/>
-                    <CheckBox Content="{l:Loc GML_EmptyLineAroundStaticInitialization}"
-                              ToolTip.Tip="{l:Loc GML_EmptyLineAroundStaticInitialization_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAroundStaticInitialization}"/>
-                </StackPanel>
-            </Grid>
+                <CheckBox Content="{l:Loc GML_AllowLeftoverDataOnStack}"
+                            ToolTip.Tip="{l:Loc GML_AllowLeftoverDataOnStack_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.AllowLeftoverDataOnStack}"/>
+            </StackPanel>
 
-            <TextBlock Text="{l:Loc GML_PerformCleanups}"
-                       ToolTip.Tip="{l:Loc GML_PerformCleanups_Tooltip}"/>
+            <StackPanel Classes="Section">
+                <TextBlock Classes="Header" Text="{l:Loc GML_AddEmptyLines}"/>
+                <Separator />
 
-            <Grid ColumnDefinitions="1*,1*">
-                <StackPanel Grid.Column="0">
-                    <CheckBox Content="{l:Loc GML_CleanupTryCatchFinally}"
-                              ToolTip.Tip="{l:Loc GML_CleanupTryCatchFinally_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupTry}"/>
-                    <CheckBox Content="{l:Loc GML_CleanupDefaultArgumentValues}"
-                              ToolTip.Tip="{l:Loc GML_CleanupDefaultArgumentValues_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupDefaultArgumentValues}"/>
-                    <CheckBox Content="{l:Loc GML_CleanupLocalVarDeclarations}"
-                              ToolTip.Tip="{l:Loc GML_CleanupLocalVarDeclarations_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupLocalVarDeclarations}"/>
-                </StackPanel>
+                <CheckBox Content="{l:Loc GML_AroundBranchStatements}"
+                            ToolTip.Tip="{l:Loc GML_AroundBranchStatements_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAroundBranchStatements}"/>
+                <CheckBox Content="{l:Loc GML_BeforeSwitchCases}"
+                            ToolTip.Tip="{l:Loc GML_BeforeSwitchCases_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineBeforeSwitchCases}"/>
+                <CheckBox Content="{l:Loc GML_AroundFunctionDeclarations}"
+                            ToolTip.Tip="{l:Loc GML_AroundFunctionDeclarations_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAroundFunctionDeclarations}"/>
+                <CheckBox Content="{l:Loc GML_AfterLocalVarDeclarations}"
+                            ToolTip.Tip="{l:Loc GML_AfterLocalVarDeclarations_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAfterBlockLocals}"/>
+                <CheckBox Content="{l:Loc GML_AfterSwitchCases}"
+                            ToolTip.Tip="{l:Loc GML_AfterSwitchCases_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAfterSwitchCases}"/>
+                <CheckBox Content="{l:Loc GML_AroundStaticInitialization}"
+                            ToolTip.Tip="{l:Loc GML_AroundStaticInitialization_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAroundStaticInitialization}"/>
+                <CheckBox Content="Around enums"
+                            ToolTip.Tip="If enabled, adds an empty line before and after enums."
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAroundEnums}"/>
+            </StackPanel>
 
-                <StackPanel Grid.Column="1">
-                    <CheckBox Content="{l:Loc GML_CleanupElseToContinue}"
-                              ToolTip.Tip="{l:Loc GML_CleanupElseToContinue_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupElseToContinue}"/>
-                    <CheckBox Content="{l:Loc GML_CleanupBuiltinArrayVariables}"
-                              ToolTip.Tip="{l:Loc GML_CleanupBuiltinArrayVariables_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupBuiltinArrayVariables}"/>
-                    <CheckBox Content="{l:Loc GML_CleanupTemplateStrings}"
-                              ToolTip.Tip="{l:Loc GML_CleanupTemplateStrings_Tooltip}"
-                              IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupTemplateStrings}"/>
-                </StackPanel>
-            </Grid>
+            <StackPanel Classes="Section">
+                <TextBlock Classes="Header" Text="{l:Loc GML_PerformCleanups}"/>
+                <Separator />
+
+                <CheckBox Content="{l:Loc GML_TryCatchFinallyRewriting}"
+                            ToolTip.Tip="{l:Loc GML_TryCatchFinallyRewriting_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupTry}"/>
+                <CheckBox Content="{l:Loc GML_DefaultArgumentValues}"
+                            ToolTip.Tip="{l:Loc GML_DefaultArgumentValues_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupDefaultArgumentValues}"/>
+                <CheckBox Content="{l:Loc GML_ScopeLocalVarDeclarations}"
+                            ToolTip.Tip="{l:Loc GML_ScopeLocalVarDeclarations_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupLocalVarDeclarations}"/>
+                <CheckBox Content="{l:Loc GML_TransformElseToContinue}"
+                            ToolTip.Tip="{l:Loc GML_TransformElseToContinue_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupElseToContinue}"/>
+                <CheckBox Content="{l:Loc GML_BuiltinArrayVariableSyntax}"
+                            ToolTip.Tip="{l:Loc GML_BuiltinArrayVariableSyntax_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupBuiltinArrayVariables}"/>
+                <CheckBox Content="{l:Loc GML_CleanupTemplateStrings}"
+                            ToolTip.Tip="{l:Loc GML_CleanupTemplateStrings_Tooltip}"
+                            IsChecked="{Binding MainVM.Settings.DecompileSettings.CleanupTemplateStrings}"/>
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </Window>

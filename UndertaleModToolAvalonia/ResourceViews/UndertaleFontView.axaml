@@ -9,6 +9,7 @@
              x:DataType="l:UndertaleFontViewModel">
     <UserControl.Resources>
         <l:VersionCompareConverter x:Key="VersionCompareConverter" />
+        <l:CodePointToCharConverter x:Key="CodePointToCharConverter" />
     </UserControl.Resources>
 
     <ScrollViewer>
@@ -86,93 +87,102 @@
 
             <!-- TODO: Click and edit glyphs -->
 
-            <Label Content="{l:Loc Editor_Font_Glyphs}"/>
-            <l:EditableDataGrid ItemsSource="{Binding Font.Glyphs}" ItemFactory="{Binding CreateGlyph}" SelectionChanged="{Binding GlyphsSelectedChanged}">
-                <l:EditableDataGrid.Columns>
-                    <DataGridTemplateColumn Header="{l:Loc Common_Character}" Width="4*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
-                                <TextBox Text="{Binding Character}" />
-                                <!-- TODO: Character convert -->
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="{l:Loc Common_X}" Width="1*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
-                                <TextBox Text="{Binding SourceX}" />
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="{l:Loc Common_Y}" Width="1*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
-                                <TextBox Text="{Binding SourceY}" />
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="{l:Loc Common_W}" Width="1*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
-                                <TextBox Text="{Binding SourceWidth}" />
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="{l:Loc Common_H}" Width="1*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
-                                <TextBox Text="{Binding SourceHeight}" />
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Width="4*">
-                        <DataGridTemplateColumn.Header>
-                            <TextBlock Text="{l:Loc Editor_Font_Shift}" ToolTip.Tip="{l:Loc Editor_ShiftTooltip}" />
-                        </DataGridTemplateColumn.Header>
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
-                                <TextBox Text="{Binding Shift}" />
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Width="4*">
-                        <DataGridTemplateColumn.Header>
-                            <TextBlock Text="{l:Loc Editor_Font_Offset}" ToolTip.Tip="{l:Loc Editor_OffsetTooltip}" />
-                        </DataGridTemplateColumn.Header>
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
-                                <TextBox Text="{Binding Offset}" />
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </l:EditableDataGrid.Columns>
-            </l:EditableDataGrid>
+            <Expander Header="{l:Loc Editor_Font_Glyphs}">
+                <StackPanel>
+                    <l:EditableDataGrid ItemsSource="{Binding Font.Glyphs}" ItemFactory="{Binding CreateGlyph}" SelectionChanged="{Binding GlyphsSelectedChanged}">
+                        <l:EditableDataGrid.Columns>
+                            <DataGridTemplateColumn Header="Code point" Width="3*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
+                                        <TextBox Text="{Binding Character}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_Character}" Width="3*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
+                                        <TextBox Text="{Binding Character, Converter={StaticResource CodePointToCharConverter}}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_X}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
+                                        <TextBox Text="{Binding SourceX}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_Y}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
+                                        <TextBox Text="{Binding SourceY}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_W}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
+                                        <TextBox Text="{Binding SourceWidth}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_H}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
+                                        <TextBox Text="{Binding SourceHeight}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Width="3*">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{l:Loc Editor_Font_Shift}" ToolTip.Tip="{l:Loc Editor_ShiftTooltip}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
+                                        <TextBox Text="{Binding Shift}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Width="3*">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{l:Loc Editor_Font_Offset}" ToolTip.Tip="{l:Loc Editor_OffsetTooltip}" />
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
+                                        <TextBox Text="{Binding Offset}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </l:EditableDataGrid.Columns>
+                    </l:EditableDataGrid>
 
-            <Label Content="{l:Loc Editor_Font_Kerning}"/>
-            <l:EditableDataGrid ItemsSource="{Binding GlyphsSelected.Kerning}" ItemFactory="{Binding CreateGlyphKerning}">
-                <l:EditableDataGrid.Columns>
-                    <DataGridTemplateColumn Header="{l:Loc Common_PrecedingCharacter}" Width="1*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="undertalem:UndertaleFont+Glyph+GlyphKerning">
-                                <TextBox Text="{Binding Character}" />
-                                <!-- TODO: Character convert -->
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTemplateColumn Header="{l:Loc Common_ShiftModified}" Width="1*">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="undertalem:UndertaleFont+Glyph+GlyphKerning">
-                                <TextBox Text="{Binding ShiftModifier}" />
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </l:EditableDataGrid.Columns>
-            </l:EditableDataGrid>
+                    <Label Content="{l:Loc Editor_Font_Kerning}"/>
+                    <l:EditableDataGrid ItemsSource="{Binding GlyphsSelected.Kerning}" ItemFactory="{Binding CreateGlyphKerning}">
+                        <l:EditableDataGrid.Columns>
+                            <DataGridTemplateColumn Header="{l:Loc Common_PrecedingCharacter}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph+GlyphKerning">
+                                        <TextBox Text="{Binding Character}" />
+                                        <!-- TODO: Character convert -->
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="{l:Loc Common_ShiftModified}" Width="1*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="undertalem:UndertaleFont+Glyph+GlyphKerning">
+                                        <TextBox Text="{Binding ShiftModifier}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </l:EditableDataGrid.Columns>
+                    </l:EditableDataGrid>
 
-            <StackPanel Orientation="Horizontal">
-                <Button Command="{Binding SortGlyphs}" Content="{l:Loc Editor_Font_SortGlyphs}"/>
-                <Button Command="{Binding UpdateRange}" Content="{l:Loc Editor_Font_UpdateRange}"/>
-            </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Command="{Binding SortGlyphs}" Content="{l:Loc Editor_Font_SortGlyphs}"/>
+                        <Button Command="{Binding UpdateRange}" Content="{l:Loc Editor_Font_UpdateRange}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

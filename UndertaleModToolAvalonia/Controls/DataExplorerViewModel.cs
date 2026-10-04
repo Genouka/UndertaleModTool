@@ -15,6 +15,12 @@ public partial class DataExplorerViewModel : ObservableObject
     [ObservableProperty]
     public partial ObservableCollection<Item> TreeDataGridData { get; set; } = [];
 
+    public delegate void OnExpandItemOnTreeDelegate(DataExplorerViewModel.Item item);
+    public OnExpandItemOnTreeDelegate? OnExpandItemOnTree;
+
+    public delegate void OnSelectValueInTreeDelegate(object value);
+    public OnSelectValueInTreeDelegate? OnSelectValueInTree;
+
     readonly List<ObservableCollectionView> observableCollectionViewList = [];
 
     public DataExplorerViewModel(MainViewModel mainVM)
