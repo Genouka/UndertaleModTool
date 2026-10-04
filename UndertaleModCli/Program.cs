@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Newtonsoft.Json;
 using System;
@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Underanalyzer.Decompiler;
@@ -20,7 +21,6 @@ using UndertaleModLib.Models;
 using UndertaleModLib.Project;
 using UndertaleModLib.Scripting;
 using UndertaleModLib.Util;
-using static UndertaleModLib.UndertaleReader;
 
 namespace UndertaleModCli;
 
@@ -264,16 +264,18 @@ public partial class Program : IScriptInterface
         });
 
         // Setup project command
-        Argument<FileInfo> projectBuildFileArgument = new("file")
+        Argument<FileInfo> projectFileArgument = new("file")
         {
             Description = "Path to the UndertaleModTool project.json file"
         };
-        Option<FileInfo> projectBuildSourceOption = new("-s", "--source") { Description = "Source data file", Required = true };
-        Option<FileInfo> projectBuildDestinationOption = new("-d", "--destination") { Description = "Destination data file", Required = true };
+        Option<FileInfo> projectSourceOption = new("-s", "--source") { Description = "Source data file", Required = true };
+        Option<FileInfo> projectDestinationOption = new("-d", "--destination") { Description = "Destination data file", Required = true };
+        Option<FileInfo> projectBuildSourceOption = new("-s", "--source") { Description = "Source data file" };
+        Option<FileInfo> projectBuildDestinationOption = new("-d", "--destination") { Description = "Destination data file" };
 
         Command projectBuildCommand = new("build", "Build a project")
         {
-            projectBuildFileArgument,
+            projectFileArgument,
             verboseOption,
             projectBuildSourceOption,
             projectBuildDestinationOption
@@ -283,16 +285,40 @@ public partial class Program : IScriptInterface
         {
             return BuildProject(new ProjectBuildOptions()
             {
-                ProjectFile = parseResult.GetValue(projectBuildFileArgument),
+                ProjectFile = parseResult.GetValue(projectFileArgument),
                 Verbose = parseResult.GetValue(verboseOption),
                 Source = parseResult.GetValue(projectBuildSourceOption),
                 Destination = parseResult.GetValue(projectBuildDestinationOption)
             });
         });
 
+        Option<string[]> projectExportAssetsOption = new("-a", "--assets") { Description = "Assets to export (use * as a wildcard)", Required = true };
+
+        Command projectExportCommand = new("export", "Export assets to project")
+        {
+            projectFileArgument,
+            verboseOption,
+            projectSourceOption,
+            projectDestinationOption,
+            projectExportAssetsOption
+        };
+
+        projectExportCommand.SetAction(parseResult =>
+        {
+            return ExportToProject(new ProjectExportOptions()
+            {
+                ProjectFile = parseResult.GetValue(projectFileArgument),
+                Verbose = parseResult.GetValue(verboseOption),
+                Source = parseResult.GetValue(projectSourceOption),
+                Destination = parseResult.GetValue(projectDestinationOption),
+                Assets = parseResult.GetValue(projectExportAssetsOption),
+            });
+        });
+
         Command projectCommand = new("project", "Subcommands that deal with projects")
         {
-            projectBuildCommand
+            projectBuildCommand,
+            projectExportCommand,
         };
 
         // Merge everything together
@@ -336,13 +362,12 @@ public partial class Program : IScriptInterface
     {
         if (datafile == null) throw new ArgumentNullException(nameof(datafile));
 
-        Console.WriteLine($"Trying to load file: '{datafile.FullName}'");
+        if (verbose)
+            Console.WriteLine($"Trying to load file: '{datafile.FullName}'");
+
         this.Verbose = verbose;
         this.Data = ReadDataFile(datafile, verbose ? WarningHandler : null, verbose ? MessageHandler : null);
         this.Output = output ?? new DirectoryInfo(datafile.DirectoryName);
-
-        if (this.Verbose)
-            Console.WriteLine("Output directory has been set to " + this.Output.FullName);
     }
 
     /// <summary>
@@ -454,7 +479,7 @@ public partial class Program : IScriptInterface
                 Console.Error.WriteLine($"'{options.Output}' already exists. Pass --overwrite to overwrite");
                 return EXIT_FAILURE;
             }
-            program.SaveDataFile(options.Output.FullName);
+            program.SaveDataFile(options.Output.FullName, options.Verbose ? MessageHandler : DummyHandler);
         }
 
         return EXIT_SUCCESS;
@@ -637,12 +662,78 @@ public partial class Program : IScriptInterface
 
         // If parameter to save file was given, save the data file
         if (options.Output != null)
-            program.SaveDataFile(options.Output.FullName);
+            program.SaveDataFile(options.Output.FullName, options.Verbose ? MessageHandler : DummyHandler);
 
         return EXIT_SUCCESS;
     }
 
     private static int BuildProject(ProjectBuildOptions options)
+    {
+        try
+        {
+            ArgumentNullException.ThrowIfNull(options.ProjectFile);
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return EXIT_FAILURE;
+        }
+
+        ProjectContext newProjectContext;
+        try
+        {
+            if (options.Verbose)
+                Console.WriteLine($"Loading project file '{options.ProjectFile.FullName}'");
+
+            newProjectContext = ProjectContext.CreateWithLocalOptions(options.ProjectFile.FullName);
+
+            string loadFilePath = newProjectContext.LoadDataPath;
+            string saveFilePath = newProjectContext.SaveDataPath;
+
+            if (options.Source is not null)
+                loadFilePath = options.Source.FullName;
+            if (options.Destination is not null)
+                saveFilePath = options.Destination.FullName;
+
+            if (loadFilePath is null || saveFilePath is null)
+            {
+                Console.Error.WriteLine($"Source and destination not found in local options and not set in arguments.");
+                return EXIT_FAILURE;
+            }
+
+            if (options.Verbose)
+                Console.WriteLine($"Source: {loadFilePath}\nDestination: {saveFilePath}");
+
+            Program program;
+            program = new Program(new(loadFilePath), options.Verbose);
+            program.FilePath = saveFilePath;
+
+            newProjectContext.SetDataFilePaths(loadFilePath, saveFilePath);
+
+            newProjectContext.Import(program.Data);
+
+            program.Project = newProjectContext;
+
+            if (options.Verbose)
+                Console.WriteLine($"Saving to destination data file");
+
+            program.SaveDataFile(saveFilePath, options.Verbose ? MessageHandler : DummyHandler);
+        }
+        catch (ProjectException e)
+        {
+            Console.Error.WriteLine($"Failed to load project: {e.Message}");
+            return EXIT_FAILURE;
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return EXIT_FAILURE;
+        }
+
+        return EXIT_SUCCESS;
+    }
+
+    private static int ExportToProject(ProjectExportOptions options)
     {
         try
         {
@@ -682,11 +773,56 @@ public partial class Program : IScriptInterface
             if (program.Verbose)
                 Console.WriteLine($"Importing project into source data file");
 
+            // TODO: This should be unnecessary, could look directly at data file and the project without needing to import it.
             newProjectContext.Import(program.Data);
+
+            string regexPattern = string.Join("|", options.Assets.Select(x => "^" + Regex.Escape(x).Replace(@"\*", ".*") + "$"));
+
+            if (program.Verbose)
+                Console.WriteLine($"Searching for exportable assets matching {regexPattern}");
+
+            IEnumerable<IEnumerable<IProjectAsset>> lists = [ 
+                program.Data.GameObjects,
+                program.Data.Paths,
+                program.Data.Code,
+                program.Data.Scripts,
+                program.Data.Sounds,
+                program.Data.Rooms,
+                program.Data.Backgrounds,
+                program.Data.Sprites,
+                program.Data.Sequences,
+                program.Data.AnimationCurves,
+                program.Data.Fonts,
+                program.Data.Shaders,
+            ];
+
+            foreach (IEnumerable<IProjectAsset> list in lists)
+                foreach (IProjectAsset asset in list)
+                {
+                    if (asset.ProjectExportable && Regex.IsMatch(asset.ProjectName, regexPattern))
+                    {
+                        if (program.Verbose)
+                            Console.WriteLine($"Marking asset for export: {asset.ProjectName}");
+
+                        newProjectContext.MarkAssetForExport(asset);
+                    }
+                }
+
+            if (!newProjectContext.EnumerateUnexportedAssets().Any())
+            {
+                Console.Error.WriteLine($"No exported assets matching asset names");
+                return EXIT_FAILURE;
+            }
+
+            if (program.Verbose)
+                Console.WriteLine($"Exporting assets");
+
+            // TODO: Make it so an error in one asset doesn't stop everything
+            newProjectContext.Export(false);
         }
         catch (ProjectException e)
         {
-            Console.Error.WriteLine($"Failed to load project: {e.Message}");
+            Console.Error.WriteLine($"Failed to export to project: {e.Message}");
             return EXIT_FAILURE;
         }
         catch (Exception e)
@@ -694,14 +830,6 @@ public partial class Program : IScriptInterface
             Console.Error.WriteLine($"Error occurred when loading project:\n{e}");
             return EXIT_FAILURE;
         }
-
-        program.Project = newProjectContext;
-
-        // Save destination data file
-        if (program.Verbose)
-            Console.WriteLine($"Saving to destination data file");
-
-        program.SaveDataFile(options.Destination.FullName);
 
         return EXIT_SUCCESS;
     }
@@ -762,7 +890,7 @@ public partial class Program : IScriptInterface
                 case ConsoleKey.NumPad3:
                 case ConsoleKey.D3:
                     {
-                        SaveDataFile(FilePath);
+                        SaveDataFile(FilePath, this.Verbose ? MessageHandler : DummyHandler);
                         break;
                     }
 
@@ -772,7 +900,7 @@ public partial class Program : IScriptInterface
                     {
                         Console.Write("Where to save? ");
                         string path = RemoveQuotes(Console.ReadLine());
-                        SaveDataFile(path);
+                        SaveDataFile(path, this.Verbose ? MessageHandler : DummyHandler);
                         break;
                     }
 
@@ -1248,8 +1376,9 @@ public partial class Program : IScriptInterface
     /// Saves the currently loaded <see cref="Data"/> to an output path.
     /// </summary>
     /// <param name="outputPath">The path where to save the data.</param>
+    /// <param name="messageHandler">Handler for messages</param>
     /// <exception cref="IOException">If saving fails</exception>
-    private void SaveDataFile(string outputPath)
+    private void SaveDataFile(string outputPath, UndertaleWriter.MessageHandlerDelegate messageHandler = null)
     {
         if (Verbose)
             Console.WriteLine($"Saving new data file to '{outputPath}'");
@@ -1258,7 +1387,7 @@ public partial class Program : IScriptInterface
             // Save data.win to temp file
             using (FileStream fs = new(outputPath + "temp", FileMode.Create, FileAccess.Write))
             {
-                UndertaleIO.Write(fs, Data, MessageHandler);
+                UndertaleIO.Write(fs, Data, messageHandler);
             }
 
             // If we're executing this, the saving was successful. So we can replace the new temp file
@@ -1285,7 +1414,7 @@ public partial class Program : IScriptInterface
     /// <param name="messageHandler">Handler for messages</param>
     /// <returns></returns>
     /// <exception cref="FileNotFoundException">If the data file cannot be found</exception>
-    private static UndertaleData ReadDataFile(FileInfo datafile, WarningHandlerDelegate warningHandler = null, MessageHandlerDelegate messageHandler = null)
+    private static UndertaleData ReadDataFile(FileInfo datafile, UndertaleReader.WarningHandlerDelegate warningHandler = null, UndertaleReader.MessageHandlerDelegate messageHandler = null)
     {
         try
         {

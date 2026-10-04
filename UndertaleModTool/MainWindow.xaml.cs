@@ -1652,15 +1652,20 @@ namespace UndertaleModTool
                 }
 
                 bool saveSucceeded = true;
+                bool tempFileCreated = false;
 
                 try
                 {
-                    using (var stream = new FileStream(filename + "temp", FileMode.Create, FileAccess.Write))
+                    using (var stream = new FileStream(filename + "temp", FileMode.CreateNew, FileAccess.Write))
                     {
+                        tempFileCreated = true;
                         UndertaleIO.Write(stream, Data, message =>
                         {
                             FileMessageEvent?.Invoke(message);
                         });
+
+                        // Make sure it's on disk before overwriting the final file.
+                        stream.Flush(flushToDisk: true);
                     }
 
                     if (debugMode != DebugDataDialog.DebugDataMode.NoDebug)
@@ -1771,8 +1776,11 @@ namespace UndertaleModTool
                     {
                         // It failed, but since we made a temp file for saving, no data was overwritten or destroyed (hopefully)
                         // We need to delete the temp file though (if it exists).
-                        if (File.Exists(filename + "temp"))
-                            File.Delete(filename + "temp");
+                        if (tempFileCreated)
+                        {
+                            if (File.Exists(filename + "temp"))
+                                File.Delete(filename + "temp");
+                        }
                     }
                 }
                 catch (Exception exc)
@@ -4751,29 +4759,59 @@ namespace UndertaleModTool
                 return;
             }
 
-            // If necessary, ask for a source data file
-            string dataFilePathToLoad = null;
-            if (Data is null || FilePath is null)
+            // Set up project
+            string mainFilePath = openProjectDialog.FileName;
+
+            ProjectContext newProjectContext = null;
+            try
             {
-                OpenFileDialog sourceDialog = new()
-                {
-                    DefaultExt = "win",
-                    Filter = DataFileFilter,
-                    Title = LocalizationSource.GetString("Msg_ChooseSourceDataFile")
-                };
-                if (sourceDialog.ShowDialog(this) != true)
-                {
-                    return;
-                }
-                dataFilePathToLoad = sourceDialog.FileName;
+                newProjectContext = ProjectContext.CreateWithLocalOptions(mainFilePath);
+            }
+            catch (ProjectException ex)
+            {
+                this.ShowError(ex.Message, LocalizationSource.GetString("Msg_FailedToLoadProject"));
+                return;
             }
 
-            // Ask for save file directory
-            string saveFilePath = ChooseProjectSaveFile(dataFilePathToLoad ?? FilePath);
+            string loadFilePath = newProjectContext.LoadDataPath;
+            string saveFilePath = newProjectContext.SaveDataPath;
+
+            string dataFilePathToLoad = loadFilePath;
+
+            // If there's no source data file defined
+            if (loadFilePath is null)
+            {
+                if (Data is not null && FilePath is not null)
+                {
+                    // Use currently loaded data file as source data file
+                    loadFilePath = FilePath;
+                }
+                else
+                {
+                    // If there's no loaded data file, ask for a source data file
+                    OpenFileDialog sourceDialog = new()
+                    {
+                        DefaultExt = "win",
+                        Filter = DataFileFilter,
+                        Title = LocalizationSource.GetString("Msg_ChooseSourceDataFile")
+                    };
+                    if (sourceDialog.ShowDialog(this) != true)
+                    {
+                        return;
+                    }
+                    dataFilePathToLoad = sourceDialog.FileName;
+                }
+            }
+
+            // If there's no destination data file defined
             if (saveFilePath is null)
             {
-                // Save file prompt failed or was cancelled
-                return;
+                saveFilePath = ChooseProjectSaveFile(dataFilePathToLoad ?? FilePath);
+                if (saveFilePath is null)
+                {
+                    // Save file prompt failed or was cancelled
+                    return;
+                }
             }
 
             // Load data file if needed
@@ -4786,20 +4824,22 @@ namespace UndertaleModTool
                 {
                     return;
                 }
+
+                loadFilePath = FilePath;
             }
 
             // Change main file path to the save data file path
-            string loadFilePath = FilePath;
             FilePath = saveFilePath;
 
+            // Set project data file paths
+            newProjectContext.SetDataFilePaths(loadFilePath, saveFilePath);
+
             // Attempt loading project from the specific JSON
-            ProjectContext newProjectContext = null;
             IsEnabled = false;
             await Task.Run(() =>
             {
                 try
                 {
-                    newProjectContext = ProjectContext.CreateWithDataFilePaths(loadFilePath, saveFilePath, openProjectDialog.FileName);
                     newProjectContext.Import(Data, null, (f) => Dispatcher.Invoke(f));
                 }
                 catch (ProjectException ex)

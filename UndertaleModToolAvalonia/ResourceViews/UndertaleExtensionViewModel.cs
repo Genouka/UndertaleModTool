@@ -39,7 +39,7 @@ public partial class UndertaleExtensionViewModel : ObservableObject, IUndertaleR
     {
         return new()
         {
-            Filename = MainVM.Data!.Strings.MakeString($"NewExtensionFile{Extension.Files.Count}.dll", createNew: true),
+            Filename = MainVM.Data!.Strings.MakeString($"NewExtensionFile{Extension.Files.Count}.dll"),
             Kind = UndertaleExtensionKind.Dll,
             Functions = [],
         };
@@ -49,11 +49,11 @@ public partial class UndertaleExtensionViewModel : ObservableObject, IUndertaleR
     {
         return new()
         {
-            Name = MainVM.Data!.Strings.MakeString($"new_extension_function_{FilesSelected!.Functions.Count}", createNew: true),
+            Name = MainVM.Data!.Strings.MakeString($"new_extension_function_{FilesSelected!.Functions.Count}"),
             ID = MainVM.Data!.ExtensionFindLastId(),
             Kind = 11, // TODO: Probably find out what this is
             RetType = UndertaleExtensionVarType.Double,
-            ExtName = MainVM.Data!.Strings.MakeString($"new_extension_function_{FilesSelected!.Functions.Count}_ext", createNew: true),
+            ExtName = MainVM.Data!.Strings.MakeString($"new_extension_function_{FilesSelected!.Functions.Count}_ext"),
             Arguments = [],
         };
     }
@@ -64,8 +64,8 @@ public partial class UndertaleExtensionViewModel : ObservableObject, IUndertaleR
     {
         return new()
         {
-            Name = MainVM.Data!.Strings.MakeString($"extensionOption{Extension.Options.Count}", createNew: true),
-            Value = MainVM.Data!.Strings.MakeString("", createNew: true),
+            Name = MainVM.Data!.Strings.MakeString($"extensionOption{Extension.Options.Count}"),
+            Value = MainVM.Data!.Strings.MakeString(""),
         };
     }
 }

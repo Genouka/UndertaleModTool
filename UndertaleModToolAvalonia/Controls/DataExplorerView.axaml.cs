@@ -32,6 +32,9 @@ public partial class DataExplorerView : UserControl
         if (DataContext is not DataExplorerViewModel vm)
             return;
 
+        vm.OnExpandItemOnTree = ExpandItemOnTree;
+        vm.OnSelectValueInTree = SelectValueInTree;
+
         MainTreeDataGrid.Source = new HierarchicalTreeDataGridSource<DataExplorerViewModel.Item>(vm.TreeDataGridData)
         {
             Columns = {

@@ -169,7 +169,7 @@ namespace UndertaleModTool.Windows
                     return;
                 }
 
-ShowReferencesFor(sourceObj, typesList);
+                ShowReferencesFor(sourceObj, typesList);
             }
             else
             {

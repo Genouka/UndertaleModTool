@@ -180,6 +180,20 @@
         <Setter Property="Margin" Value="0,4,0,0" />
     </Style>
 
+    <Style Selector="TextBlock.Header">
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+
+    <Style Selector="StackPanel.Section">
+        <Setter Property="Margin" Value="0,0,0,12" />
+        <Setter Property="Spacing" Value="4" />
+    </Style>
+    
+    <Style Selector="Grid.SpacedGrid">
+        <Setter Property="ColumnSpacing" Value="4" />
+        <Setter Property="RowSpacing" Value="4" />
+    </Style>
+
     <Style Selector=":is(Control).PaddedProperties">
         <Setter Property="Margin" Value="12,0,12,0" />
     </Style>
@@ -245,8 +259,8 @@
         </Style>
     </Style>
 
-    <Style Selector="Window.SettingsWindow">
-        <Setter Property="Padding" Value="16" />
+    <Style Selector="Window.SettingsWindow StackPanel#ContentStackPanel">
+        <Setter Property="Margin" Value="16" />
     </Style>
 
     <Style Selector="Window.SearchInCodeWindow">

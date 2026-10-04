@@ -94,29 +94,16 @@ public partial class UndertaleSoundViewModel : ObservableObject, IUndertaleResou
 
     byte[]? GetAudioGroupSoundData()
     {
-        // TODO: Cache audio groups somewhere to not load them every time.
-        if (Sound.AudioGroup is null)
+        UndertaleData? audioGroupData = MainVM.GetAudioGroupData(Sound.GroupID);
+
+        if (audioGroupData is null)
             return null;
 
-        string relativePath = Sound.AudioGroup.Path?.Content ?? $"audiogroup{Sound.GroupID}.dat";
+        if (Sound.AudioID >= audioGroupData.EmbeddedAudio.Count)
+            return null;
 
-        string path = Paths.JoinVerifyWithinDirectory(Path.GetDirectoryName(MainVM.DataPath), relativePath);
+        UndertaleEmbeddedAudio audioGroupEmbeddedAudio = audioGroupData.EmbeddedAudio[Sound.AudioID];
 
-        if (File.Exists(path))
-        {
-            using FileStream stream = File.OpenRead(path);
-
-            // TODO: Maybe deal with messages and warnings
-            UndertaleData audioGroupData = UndertaleIO.Read(stream);
-
-            if (Sound.AudioID >= audioGroupData.EmbeddedAudio.Count)
-                return null;
-
-            UndertaleEmbeddedAudio audioGroupEmbeddedAudio = audioGroupData.EmbeddedAudio[Sound.AudioID];
-
-            return audioGroupEmbeddedAudio.Data;
-        }
-
-        return null;
+        return audioGroupEmbeddedAudio.Data;
     }
 }

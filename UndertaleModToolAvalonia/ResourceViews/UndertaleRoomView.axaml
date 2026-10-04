@@ -395,7 +395,7 @@
                                 </Grid>
                             </DataTemplate>
                             <DataTemplate DataType="l:UndertaleRoomViewModel+TilesViewModel">
-                                <StackPanel>
+                                <Panel>
                                     <Grid RowDefinitions="Auto,1*"
                                           IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                                           Converter={StaticResource VersionCompareConverter},
@@ -425,7 +425,7 @@
                                             TileWidth="{Binding #Root.DataContext.GridWidth}"
                                             TileHeight="{Binding #Root.DataContext.GridHeight}"/>
                                     </Grid>
-                                </StackPanel>
+                                </Panel>
                             </DataTemplate>
                             <DataTemplate DataType="undertalem:UndertaleRoom+Tile">
                                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
@@ -483,7 +483,7 @@
                                         <Label Content="{l:Loc Room_LayerName}"/>
                                         <l:UndertaleStringReferenceView Reference="{Binding LayerName}" />
 
-                                        <Label Content="{l:Loc Room_LayerId}"/>
+                                        <Label Content="{l:Loc Room_LayerID}"/>
                                         <TextBox Text="{Binding LayerId}" />
 
                                         <Label Content="{l:Loc Common_Depth}"/>
@@ -976,8 +976,8 @@
             <Grid Grid.Row="2" ColumnDefinitions="Auto,1*,Auto" Margin="0,4,0,0">
                 <TextBlock Grid.Column="0" Text="{Binding StatusText}" VerticalAlignment="Center" />
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <TextBox Text="{Binding GridWidth}" Width="40" ToolTip.Tip="Grid width" />
-                    <TextBox Text="{Binding GridHeight}" Width="40" ToolTip.Tip="Grid height" />
+                    <TextBox Text="{Binding GridWidth}" Width="40" ToolTip.Tip="{l:Loc Room_GridWidth}" />
+                    <TextBox Text="{Binding GridHeight}" Width="40" ToolTip.Tip="{l:Loc Room_GridHeight}" />
                     <!-- Logarithmic scale: slider center = 100% (range 5% .. 3200%), dragging snaps up to whole percents -->
                     <Slider Minimum="0" Maximum="1"
                             Value="{Binding Zoom, Converter={StaticResource ZoomLogConverter}}"

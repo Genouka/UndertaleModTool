@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -36,7 +35,7 @@ public partial class MainViewModel : ObservableObject
     public List<string> LazyErrorMessages = [];
 
     // Settings
-    public SettingsFile? Settings { get; set; }
+    public SettingsFile Settings { get; init; }
 
     // Scripting
     public Scripting Scripting = null!;
@@ -68,6 +67,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     public partial (uint Major, uint Minor, uint Release, uint Build) DataVersion { get; set; }
 
+    Dictionary<int, UndertaleData> audioGroupDataList = [];
+
     IStorageFolder? lastDataLocation;
 
     // Project
@@ -90,13 +91,7 @@ public partial class MainViewModel : ObservableObject
     public partial bool IsSorted { get; set; } = false;
 
     // Tabs
-    public ObservableCollection<TabItemViewModel> Tabs { get; set; } = [];
-
-    [ObservableProperty]
-    public partial TabItemViewModel? TabSelected { get; set; }
-
-    [ObservableProperty]
-    public partial int TabSelectedIndex { get; set; }
+    public TabsViewModel Tabs { get; set; }
 
     [ObservableProperty]
     public partial bool TabIsMarkedForExport { get; set; } = false;
@@ -121,6 +116,10 @@ public partial class MainViewModel : ObservableObject
     {
         ServiceProvider = serviceProvider;
 
+        Settings = LoadSettings();
+
+        WindowState = Settings.StartMaximized ? WindowState.Maximized : WindowState.Normal;
+
         AudioPlayer.Init(
             f => Dispatcher.UIThread.Post(f),
             // Audio failures (SDL init, decode, playback) are reported as a message dialog
@@ -133,21 +132,37 @@ public partial class MainViewModel : ObservableObject
                 title: LocalizationSource.GetString("Msg_AudioFailure")));
 
         DataExplorer = new(this);
+        Tabs = new(this);
 
         _ = TabOpen(new DescriptionViewModel(
             LocalizationSource.GetString("Main_WelcomeHeading"),
             LocalizationSource.GetString("Main_WelcomeDescription")));
     }
 
+    SettingsFile LoadSettings()
+    {
+        (SettingsFile settingsFile, Exception? ex) = SettingsFile.Load();
+
+        if (ex is not null)
+        {
+            LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorSettingsLoading")}\n{ex.Message}\n{LocalizationSource.GetString("Msg_DefaultSettingsLoaded")}");
+        }
+
+        Exception? stylesEx = SettingsFile.LoadStyles();
+        if (stylesEx is not null)
+        {
+            LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorStylesLoading")}\n{stylesEx.Message}");
+        }
+
+        return settingsFile;
+    }
+
     public void Initialize()
     {
-        Settings = SettingsFile.Load(ServiceProvider);
         Scripting = new(ServiceProvider);
 
         if (!string.IsNullOrEmpty(Settings.Language))
             LocalizationSource.Instance.CurrentCulture = new System.Globalization.CultureInfo(Settings.Language);
-
-        WindowState = Settings.StartMaximized ? WindowState.Maximized : WindowState.Normal;
     }
 
     /// <summary>
@@ -228,8 +243,11 @@ public partial class MainViewModel : ObservableObject
     {
         if (Data is not null)
         {
-            Data.ToolInfo.InstanceIdPrefix = () => Settings?.InstanceIdPrefix;
-            Data.ToolInfo.DecompilerSettings = Settings?.DecompileSettings;
+            if (Data.GeneralInfo is not null)
+                Data.GeneralInfo.PropertyChanged += DataGeneralInfoChangedHandler;
+
+            Data.ToolInfo.InstanceIdPrefix = () => Settings.InstanceIdPrefix;
+            Data.ToolInfo.DecompilerSettings = Settings.DecompileSettings;
         }
 
         UpdateVersion();
@@ -238,8 +256,7 @@ public partial class MainViewModel : ObservableObject
 
         if (Data is not null)
         {
-            if (View is MainView mainView)
-                mainView.ExpandItemOnTree(DataExplorer.TreeDataGridData[0]);
+            DataExplorer.OnExpandItemOnTree?.Invoke(DataExplorer.TreeDataGridData[0]);
         }
     }
 
@@ -362,6 +379,68 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
     }
 
+    public UndertaleData? GetAudioGroupData(int audioGroupId)
+    {
+        if (audioGroupDataList.TryGetValue(audioGroupId, out UndertaleData? value))
+        {
+            return value;
+        }
+
+        return LoadAudioGroupData(audioGroupId);
+    }
+
+    public UndertaleData? LoadAudioGroupData(int audioGroupId)
+    {
+        if (Data is null)
+            return null;
+
+        if (audioGroupId >= Data.AudioGroups.Count)
+            return null;
+
+        UndertaleAudioGroup audioGroup = Data.AudioGroups[audioGroupId];
+
+        string relativePath = audioGroup.Path?.Content ?? $"audiogroup{audioGroupId}.dat";
+
+        string path = Paths.JoinVerifyWithinDirectory(Path.GetDirectoryName(DataPath), relativePath);
+
+        if (File.Exists(path))
+        {
+            try
+            {
+                using FileStream stream = File.OpenRead(path);
+
+                UndertaleData audioGroupData = UndertaleIO.Read(stream,
+                    (string warning, bool isImportant) =>
+                    {
+                        //warnings.Add(warning);
+                        if (isImportant)
+                        {
+                            //hadImportantWarnings = true;
+                        }
+                    },
+                    (string message) =>
+                    {
+                        //Dispatcher.UIThread.Post(() => w.SetText($"Opening data file... {message}"));
+                    }
+                );
+
+                audioGroupDataList[audioGroupId] = audioGroupData;
+                return audioGroupData;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    public void UnloadAudioGroupData(int audioGroupId)
+    {
+        audioGroupDataList.Remove(audioGroupId);
+    }
+
     public async Task<bool> SaveData(Stream stream)
     {
         IsEnabled = false;
@@ -372,7 +451,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         try
         {
             // Recompile all code sources before saving, if requested and a project is open (mirrors the WPF version)
-            if (Settings!.RecompileAllCodeSourcesOnProjectSave && Project is not null)
+            if (Settings.RecompileAllCodeSourcesOnProjectSave && Project is not null)
             {
                 try
                 {
@@ -403,7 +482,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         catch (ProjectException e)
         {
             w.EnsureShown();
-            await View!.MessageDialog($"Recompile error:\n{e.Message}");
+            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_RecompileError"), e.Message));
         }
         catch (Exception e)
         {
@@ -432,12 +511,14 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             }
         }
 
-        TabCloseAllWithoutSaving();
+        Tabs.TabCloseAllWithoutSaving();
 
         ClearProject();
 
         Data = null;
         DataPath = null;
+
+        audioGroupDataList.Clear();
     }
 
     public void UpdateVersion()
@@ -503,26 +584,40 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         if (Data is null)
             return false;
 
-        if (!await TabSaveAll())
+        if (!await Tabs.TabSaveAll())
             return false;
 
         if (Project is not null)
         {
-            var result = await View!.MessageDialog(LocalizationSource.GetString("Msg_SaveToProjectDataFileQuestion"), buttons: MessageWindow.Buttons.YesNoCancel);
-            if (result == MessageWindow.Result.Yes)
+            bool saveInProjectDestination = true;
+
+            if (!Settings.AlwaysSaveDataInProjectDestination)
             {
-                using FileStream fileStream = File.Open(Project.SaveDataPath, FileMode.Create);
-                if (await SaveData(fileStream))
+                var result = await View!.MessageDialog(LocalizationSource.GetString("Msg_SaveToProjectDataFileQuestion"), buttons: MessageWindow.Buttons.YesNoCancel);
+                if (result == MessageWindow.Result.Yes)
                 {
-                    return true;
+                    saveInProjectDestination = true;
                 }
-                return false;
+                else if (result == MessageWindow.Result.No)
+                {
+                    // If pressed No, continue saving as if there's no project.
+                    saveInProjectDestination = false;
+                }
+                else
+                {
+                    return false;
+                }
             }
-            else if (result != MessageWindow.Result.No)
+
+            if (saveInProjectDestination)
             {
-                return false;
+                if (!await SaveDataToFilePath(Project.SaveDataPath, useTempFile: false))
+                {
+                    return false;
+                }
+                DataPath = Project.SaveDataPath;
+                return true;
             }
-            // If pressed No, continue saving as if there's no project.
         }
 
         IStorageFile? file = await View!.SaveFileDialog(new FilePickerSaveOptions()
@@ -570,29 +665,11 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 }
             }
 
-            string tempPath = path + "temp";
-
-            bool saved = false;
-
-            using (FileStream stream = File.Open(tempPath, FileMode.CreateNew, FileAccess.Write))
+            if (await SaveDataToFilePath(path, useTempFile: true))
             {
-                await SaveData(stream);
-                saved = true;
-
-                stream.Flush(flushToDisk: true);
-            }
-
-            if (saved)
-            {
-                File.Move(tempPath, path, overwrite: true);
-
                 DataPath = path;
                 lastDataLocation = await file.GetParentAsync();
                 return true;
-            }
-            else
-            {
-                File.Delete(tempPath);
             }
         }
         catch (IOException ex)
@@ -603,6 +680,46 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         return false;
     }
 
+    async Task<bool> SaveDataToFilePath(string filePath, bool useTempFile = true)
+    {
+        bool writeFileCreated = false;
+
+        string tempPath = filePath + "temp";
+        string writeFilePath = useTempFile ? tempPath : filePath;
+        var writeFileMode = useTempFile ? FileMode.CreateNew : FileMode.Create;
+
+        try
+        {
+            using (FileStream stream = File.Open(writeFilePath, writeFileMode, FileAccess.Write))
+            {
+                writeFileCreated = true;
+                await SaveData(stream);
+
+                if (useTempFile)
+                {
+                    stream.Flush(flushToDisk: true);
+                }
+            }
+
+            if (useTempFile)
+            {
+                File.Move(tempPath, filePath, overwrite: true);
+            }
+        }
+        catch (IOException ex)
+        {
+            // Delete file only if it was created right now, not if it was pre-existing.
+            if (writeFileCreated)
+            {
+                File.Delete(tempPath);
+            }
+            await View!.MessageDialog(LocalizationSource.GetString("Msg_ErrorSavingDataFile") + "\n" + ex.Message);
+            return false;
+        }
+
+        return true;
+    }
+
     public async void FileClose()
     {
         if (!await AskProjectSave(LocalizationSource.GetString("Msg_SaveProjectBeforeClosing")))
@@ -611,6 +728,51 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             return;
 
         CloseData();
+    }
+
+    public async void FileTempRun()
+    {
+        // TODO: Ideally, if the project system is being used, this would actually not use a temp file, but instead just save it to the destination file.
+        if (Data is null)
+            return;
+
+        string? runnerName = Data.GeneralInfo?.FileName?.Content;
+        if (runnerName is null)
+        {
+            await View!.MessageDialog(LocalizationSource.GetString("Msg_FileNameNotSet"));
+            return;
+        }
+
+        if (DataPath is null)
+            return;
+
+        // Save to temp
+
+        string tempFileName = Path.GetTempFileName();
+
+        if (!await SaveDataToFilePath(tempFileName, useTempFile: false))
+        {
+            return;
+        }
+
+        string? runnerPath;
+
+        if (Project is not null)
+        {
+            runnerPath = Paths.TryJoinVerifyWithinDirectory(Project.SaveDirectory, $"{runnerName}.exe");
+        }
+        else
+        {
+            runnerPath = Paths.TryJoinVerifyWithinDirectory(Path.GetDirectoryName(DataPath), $"{runnerName}.exe");
+        }
+
+        if (runnerPath is null || !File.Exists(runnerPath))
+        {
+            await View!.MessageDialog($"{LocalizationSource.GetString("Msg_InvalidRunner")} ({runnerPath})");
+            return;
+        }
+
+        StartRunnerProcess(runnerPath, dataPath: tempFileName, workingDirectory: Path.GetDirectoryName(DataPath));
     }
 
     public async void FileRun()
@@ -648,7 +810,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
         if (runnerPath is null || !File.Exists(runnerPath))
         {
-            await View!.MessageDialog(LocalizationSource.GetString("Msg_InvalidRunner"));
+            await View!.MessageDialog($"{LocalizationSource.GetString("Msg_InvalidRunner")} ({runnerPath})");
             return;
         }
 
@@ -657,7 +819,6 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
     public async void FileRunWithOther()
     {
-        // NOTE: The project system would make this a lot simpler!
         if (Data is null)
             return;
 
@@ -690,10 +851,19 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         StartRunnerProcess(runnerPath);
     }
 
-    void StartRunnerProcess(string runnerPath)
+    void StartRunnerProcess(string runnerPath, string? dataPath = null, string? workingDirectory = null)
     {
+        dataPath ??= DataPath;
+        workingDirectory ??= Path.GetDirectoryName(dataPath);
+
         // "launcher" allows game_change data files to still access files above the data path.
-        Process.Start(new ProcessStartInfo(runnerPath, $"-game \"{DataPath}\" launcher") { WorkingDirectory = Path.GetDirectoryName(DataPath) });
+        Process.Start(new ProcessStartInfo(runnerPath, $"-game \"{dataPath}\" launcher") { WorkingDirectory = workingDirectory });
+    }
+
+    public void FileClearAudioGroupCache()
+    {
+        audioGroupDataList.Clear();
+        GC.Collect();
     }
 
     public async void FileSettings()
@@ -743,6 +913,15 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         await Scripting.RunScript(WithLineDirective(text, filePath), filePath);
 
         CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(filePath) ?? "Script");
+    }
+
+    public async void ScriptsRunScript(string filePath)
+    {
+        string text = File.ReadAllText(filePath);
+
+        await Scripting.RunScript(WithLineDirective(text, filePath), filePath);
+
+        CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(filePath));
     }
 
     /// <summary>
@@ -1007,7 +1186,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             projectContext = await Task.Run(() =>
             {
                 ProjectContext created = ProjectContext.CreateWithDataFilePaths(loadDataPath, destinationDataPath, projectFilePath);
-                created.Import(Data, Settings!.EnableProjectBackup ? null : new GameFileNoOpBackup(), Dispatcher.UIThread.Invoke);
+                created.Import(Data, Settings.EnableProjectBackup ? null : new GameFileNoOpBackup(), Dispatcher.UIThread.Invoke);
                 return created;
             });
         }
@@ -1091,7 +1270,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             projectContext = await Task.Run(() =>
             {
                 ProjectContext created = ProjectContext.CreateWithDataFilePaths(sourceDataPath, destinationDataPath, projectFilePath);
-                created.Import(Data, Settings!.EnableProjectBackup ? null : new GameFileNoOpBackup(), Dispatcher.UIThread.Invoke);
+                created.Import(Data, Settings.EnableProjectBackup ? null : new GameFileNoOpBackup(), Dispatcher.UIThread.Invoke);
                 return created;
             });
         }
@@ -1717,7 +1896,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             }
         }
 
-        if (Settings!.OpenNewResourceAfterCreatingIt)
+        if (Settings.OpenNewResourceAfterCreatingIt)
         {
             _ = TabOpen(res, inNewTab: true);
         }
@@ -1749,178 +1928,13 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             mainView.OpenFindReferences(ServiceProvider, resource);
     }
 
-    public async Task<TabItemViewModel?> TabOpen(object? item, bool inNewTab = false)
-    {
-        if (Data is null)
-            return null;
-
-        ITabContent? content = item switch
-        {
-            DescriptionViewModel vm => vm,
-            "GeneralInfo" => new GeneralInfoViewModel(Data),
-            "GlobalInitScripts" => new GlobalInitScriptsViewModel(Data.FORM.GLOB.List),
-            "GameEndScripts" => new GameEndScriptsViewModel(Data.FORM.GMEN.List),
-            UndertaleAudioGroup r => new UndertaleAudioGroupViewModel(r),
-            UndertaleSound r => new UndertaleSoundViewModel(r, ServiceProvider),
-            UndertaleSprite r => new UndertaleSpriteViewModel(r, ServiceProvider),
-            UndertaleBackground r => new UndertaleBackgroundViewModel(r),
-            UndertalePath r => new UndertalePathViewModel(r),
-            UndertaleScript r => new UndertaleScriptViewModel(r),
-            UndertaleShader r => new UndertaleShaderViewModel(r, ServiceProvider),
-            UndertaleFont r => new UndertaleFontViewModel(r),
-            UndertaleTimeline r => new UndertaleTimelineViewModel(r),
-            UndertaleGameObject r => new UndertaleGameObjectViewModel(r, ServiceProvider),
-            UndertaleRoom r => new UndertaleRoomViewModel(r, ServiceProvider),
-            "Extensions" => new UndertaleExtensionChunkViewModel(Data.FORM.EXTN),
-            UndertaleExtension r => new UndertaleExtensionViewModel(r, ServiceProvider),
-            UndertaleTexturePageItem r => new UndertaleTexturePageItemViewModel(r, ServiceProvider),
-            UndertaleCode r => new UndertaleCodeViewModel(r, ServiceProvider),
-            UndertaleVariable r => new UndertaleVariableViewModel(r),
-            UndertaleFunction r => new UndertaleFunctionViewModel(r),
-            UndertaleCodeLocals r => new UndertaleCodeLocalsViewModel(r),
-            UndertaleString r => new UndertaleStringViewModel(r),
-            UndertaleEmbeddedTexture r => new UndertaleEmbeddedTextureViewModel(r, ServiceProvider),
-            UndertaleEmbeddedAudio r => new UndertaleEmbeddedAudioViewModel(r, ServiceProvider),
-            UndertaleTextureGroupInfo r => new UndertaleTextureGroupInfoViewModel(r),
-            UndertaleEmbeddedImage r => new UndertaleEmbeddedImageViewModel(r),
-            UndertaleAnimationCurve r => new UndertaleAnimationCurveViewModel(r),
-            UndertaleParticleSystem r => new UndertaleParticleSystemViewModel(r),
-            UndertaleParticleSystemEmitter r => new UndertaleParticleSystemEmitterViewModel(r),
-            _ => null,
-        };
-
-        if (content is not null)
-        {
-            if (!inNewTab && TabSelected is not null)
-            {
-                if (!await TabGoTo(content))
-                    return null;
-                return TabSelected;
-            }
-            else
-            {
-                TabItemViewModel tab = new(content);
-                Tabs.Add(tab);
-                TabSelected = tab;
-                tab.OnOpen();
-                return tab;
-            }
-        }
-
-        return null;
-    }
-
-    public async Task<bool> TabSaveAll()
-    {
-        bool savedAll = true;
-
-        foreach (TabItemViewModel tab in Tabs)
-        {
-            if (!await tab.Save())
-                savedAll = false;
-        }
-
-        return savedAll;
-    }
-
-    [RelayCommand]
-    public async Task TabClose(TabItemViewModel tab)
-    {
-        if (!await tab.Save())
-            return;
-
-        tab.OnClose();
-
-        TabItemViewModel? selected = TabSelected;
-        int index = TabSelectedIndex;
-
-        Tabs.Remove(tab);
-
-        if (TabSelected != selected)
-        {
-            if (index >= Tabs.Count)
-                index = Tabs.Count - 1;
-
-            TabSelectedIndex = index;
-        }
-    }
-
-    public async void TabCloseSelected()
-    {
-        if (TabSelected is not null)
-            _ = TabClose(TabSelected);
-    }
-
-    public async Task TabCloseAll()
-    {
-        foreach (TabItemViewModel tab in Tabs.ToList())
-        {
-            await TabClose(tab);
-        }
-    }
-
-    public void TabCloseAllWithoutSaving()
-    {
-        foreach (TabItemViewModel tab in Tabs.ToList())
-        {
-            tab.OnClose();
-        }
-        Tabs.Clear();
-    }
-
-    public void TabSetToPrevious()
-    {
-        if (TabSelectedIndex > 0)
-            TabSelectedIndex--;
-        else
-            TabSelectedIndex = Tabs.Count - 1;
-    }
-
-    public void TabSetToNext()
-    {
-        if (TabSelectedIndex < Tabs.Count - 1)
-            TabSelectedIndex++;
-        else
-            TabSelectedIndex = 0;
-    }
-
-    public async Task<bool> TabGoTo(ITabContent content)
-    {
-        if (TabSelected is not null)
-            if (!await TabSelected.GoTo(content))
-                return false;
-
-        UpdateSelectedTabProperties();
-        return true;
-    }
-
-    public async void TabGoBack()
-    {
-        if (TabSelected is not null)
-            if (!await TabSelected.GoBack())
-                return;
-
-        UpdateSelectedTabProperties();
-    }
-
-    public async void TabGoForward()
-    {
-        if (TabSelected is not null)
-            if (!await TabSelected.GoForward())
-                return;
-
-        UpdateSelectedTabProperties();
-    }
-
-    partial void OnTabSelectedChanged(TabItemViewModel? value)
-    {
-        UpdateSelectedTabProperties();
-    }
+    // Tabs
+    public Task<TabItemViewModel?> TabOpen(object? item, bool inNewTab = false) => Tabs.TabOpen(item, inNewTab);
 
     // Bottom bar
-    void UpdateSelectedTabProperties()
+    public void UpdateSelectedTabProperties()
     {
-        if (Data is not null && TabSelected?.Content is IUndertaleResourceViewModel vm)
+        if (Data is not null && Tabs.TabSelected?.Content is IUndertaleResourceViewModel vm)
         {
             TabSelectedResourceIdString = Data.IndexOf(vm.Resource).ToString();
 
@@ -1946,7 +1960,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
     partial void OnTabIsMarkedForExportChanged(bool value)
     {
         if (Project is not null
-            && TabSelected?.Content is IUndertaleResourceViewModel vm
+            && Tabs.TabSelected?.Content is IUndertaleResourceViewModel vm
             && vm.Resource is IProjectAsset { ProjectExportable: true } projectAsset)
         {
             if (TabIsMarkedForExport)

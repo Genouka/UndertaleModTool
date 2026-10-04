@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using UndertaleModLib.Models;
 using UndertaleModLib.Util;
@@ -246,7 +249,7 @@ namespace UndertaleModLib
     public class UndertaleChunkEXTN : UndertaleListChunk<UndertaleExtension>
     {
         public override string Name => "EXTN";
-        public List<byte[]> productIdData = new List<byte[]>();
+        public ObservableCollection<ByteArrayWrapper> productIdData { get; set; } = new ObservableCollection<ByteArrayWrapper>(); // TODO: Capitalize property
 
         private bool checkedFor2022_6 = false;
         private bool checkedFor2023_4 = false;
@@ -370,7 +373,7 @@ namespace UndertaleModLib
 
             // Strange data for each extension, some kind of unique identifier based on
             // the product ID for each of them
-            productIdData = new List<byte[]>();
+            productIdData.Clear();
             if (UndertaleExtension.ProductDataEligible(reader.undertaleData))
             {
                 for (int i = 0; i < List.Count; i++)
@@ -405,6 +408,14 @@ namespace UndertaleModLib
             CheckFor2023_4(reader);
 
             return base.UnserializeObjectCount(reader);
+        }
+
+        public class ByteArrayWrapper(byte[] v)
+        {
+            public byte[] ByteArray { get; set; } = v;
+
+            public static implicit operator byte[](ByteArrayWrapper v) => v.ByteArray;
+            public static implicit operator ByteArrayWrapper(byte[] v) => new(v);
         }
     }
 
@@ -1291,26 +1302,37 @@ namespace UndertaleModLib
             long positionToReturn = reader.Position;
             bool managedFieldPresent = false;
 
-            if (reader.ReadUInt32() > 0) // Object count
+            uint remainingObjects = reader.ReadUInt32(); // Object count
+
+            if (remainingObjects > 0)
             {
-                uint firstObjectPointer = reader.ReadUInt32();
-                reader.AbsPosition = firstObjectPointer + 64;
-                uint vertexCount = reader.ReadUInt32();
-
-                // If any of these checks fail, the managed field is probably present
-                managedFieldPresent = true;
-
-                // Bounds check on vertex data
-                if (reader.Position + 12 + vertexCount * 8 < positionToReturn + this.Length)
+                uint firstNonNullObjectPointer = reader.ReadUInt32();
+                while (remainingObjects > 0 && firstNonNullObjectPointer == 0)
                 {
-                    reader.Position += 12 + vertexCount * 8;
-                    // A pointer list of events
-                    if (reader.ReadUInt32() == UndertaleGameObject.EventTypeCount)
+                    firstNonNullObjectPointer = reader.ReadUInt32();
+                    remainingObjects--;
+                }
+
+                if (firstNonNullObjectPointer != 0)
+                {
+                    reader.AbsPosition = firstNonNullObjectPointer + 64;
+                    uint vertexCount = reader.ReadUInt32();
+
+                    // If any of these checks fail, the managed field is probably present
+                    managedFieldPresent = true;
+
+                    // Bounds check on vertex data
+                    if (reader.Position + 12 + vertexCount * 8 < positionToReturn + this.Length)
                     {
-                        uint subEventPointer = reader.ReadUInt32();
-                        // Should start right after the list
-                        if (reader.AbsPosition + 56 == subEventPointer)
-                            managedFieldPresent = false;
+                        reader.Position += 12 + vertexCount * 8;
+                        // A pointer list of events
+                        if (reader.ReadUInt32() == UndertaleGameObject.EventTypeCount)
+                        {
+                            uint subEventPointer = reader.ReadUInt32();
+                            // Should start right after the list
+                            if (reader.AbsPosition + 56 == subEventPointer)
+                                managedFieldPresent = false;
+                        }
                     }
                 }
             }

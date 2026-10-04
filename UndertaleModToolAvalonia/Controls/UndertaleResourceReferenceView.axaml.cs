@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Avalonia.Xaml.Interactions.DragAndDrop;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +56,8 @@ public partial class UndertaleResourceReferenceView : UserControl
     public UndertaleResourceReferenceView()
     {
         InitializeComponent();
+
+        ReferenceTextBox.AddHandler(TextBox.KeyDownEvent, TextBox_KeyDown_Tunnel, RoutingStrategies.Tunnel);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -70,6 +75,15 @@ public partial class UndertaleResourceReferenceView : UserControl
         }
     }
 
+    private void TextBox_KeyDown_Tunnel(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            UpdateReferenceToText();
+        }
+    }
+
     private void TextBox_PointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         if (e.InitialPressMouseButton == MouseButton.Middle
@@ -82,6 +96,54 @@ public partial class UndertaleResourceReferenceView : UserControl
     private void TextBox_DoubleTapped(object? sender, TappedEventArgs e)
     {
         Open();
+    }
+
+    private void TextBox_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        UpdateReferenceToText();
+    }
+
+    void UpdateReferenceToText()
+    {
+        if (mainVM.Data is not null)
+        {
+            string? text = ReferenceTextBox.Text;
+
+            UndertaleResource? ParseResourceText()
+            {
+                IList list;
+
+                try
+                {
+                    list = mainVM.Data[ReferenceType];
+                }
+                catch (Exception e) when (e is NotSupportedException or MissingMemberException)
+                {
+                    return null;
+                }
+
+                if (int.TryParse(text, out int id) && id < list.Count)
+                {
+                    return list[id] as UndertaleResource;
+                }
+
+                return list
+                    .OfType<UndertaleNamedResource>()
+                    .FirstOrDefault(x => x.Name?.Content?.Equals(text, StringComparison.OrdinalIgnoreCase) ?? false);
+            }
+
+            if (string.IsNullOrEmpty(text))
+            {
+                Reference = null;
+            }
+            else if (ParseResourceText() is UndertaleResource reference)
+            {
+                Reference = reference;
+            }
+
+            // Update text box to reflect current reference value
+            BindingOperations.GetBindingExpressionBase(ReferenceTextBox, TextBox.TextProperty)?.UpdateTarget();
+        }
     }
 
     public async void Add()

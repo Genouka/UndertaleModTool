@@ -186,7 +186,7 @@ public class ObservableCollectionView<TInput, TOutput> : ObservableCollectionVie
         T IList<T>.this[int index]
         {
             get => internalList[index].Value;
-            set => throw new NotImplementedException();
+            set => throw new NotSupportedException();
         }
 
         public int IndexOf(object? value) => internalList.FindIndex(x => x.Value == value);

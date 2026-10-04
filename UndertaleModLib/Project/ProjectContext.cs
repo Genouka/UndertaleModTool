@@ -40,12 +40,12 @@ public partial class ProjectContext
     /// <summary>
     /// Current directory associated with loading data for this project. Must always be set.
     /// </summary>
-    public string LoadDirectory { get; }
+    public string LoadDirectory { get; private set; }
 
     /// <summary>
     /// Current directory associated with saving data for this project. Must always be set.
     /// </summary>
-    public string SaveDirectory { get; }
+    public string SaveDirectory { get; private set; }
 
     /// <summary>
     /// Current data file path associated with this project, for loading only, or <see langword="null"/> if none is assigned.
@@ -148,6 +148,17 @@ public partial class ProjectContext
     private HashSet<string> _streamedSoundFilenames = null;
 
     /// <summary>
+    /// Initializes a project context based on its existing main file path.
+    /// </summary>
+    /// <param name="mainFilePath">Main file path for the project.</param>
+    private ProjectContext(string mainFilePath)
+    {
+        Data = null;
+        MainFilePath = mainFilePath;
+        MainDirectory = Path.GetFullPath(Path.GetDirectoryName(MainFilePath));
+    }
+
+    /// <summary>
     /// Initializes a project context based on its existing main file path, as well as load/save directories.
     /// </summary>
     /// <param name="loadDirectory">Path of the directory for game data to be loaded from.</param>
@@ -205,6 +216,45 @@ public partial class ProjectContext
     }
 
     /// <summary>
+    /// Initializes a project context based on its existing main file path and reads the local options file to determine the load/save data file paths.
+    /// <para>If <see cref="LoadDirectory"/> and <see cref="SaveDirectory"/> are null, use <see cref="SetDataFilePaths"/> before performing any other operations.</para>
+    /// </summary>
+    /// <param name="mainFilePath">Main file path for the project.</param>
+    public static ProjectContext CreateWithLocalOptions(string mainFilePath)
+    {
+        var projectContext = new ProjectContext(mainFilePath);
+        projectContext.LoadLocalOptions();
+        return projectContext;
+    }
+
+    private void LoadLocalOptions()
+    {
+        string localFilePath = Path.Join(MainDirectory, "project-local.json");
+
+        ProjectLocalOptions localOptions;
+
+        if (File.Exists(localFilePath))
+        {
+            try
+            {
+                using (FileStream fs = new(localFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    localOptions = JsonSerializer.Deserialize<ProjectLocalOptions>(fs, JsonOptions);
+                }
+
+                LoadDataPath = Path.GetFullPath(localOptions.DataFilePath.Source);
+                SaveDataPath = Path.GetFullPath(localOptions.DataFilePath.Destination);
+                LoadDirectory = Path.GetDirectoryName(LoadDataPath);
+                SaveDirectory = Path.GetDirectoryName(SaveDataPath);
+            }
+            catch (Exception e)
+            {
+                throw new ProjectException($"Failed to load project local options at \"{Path.GetFileName(localFilePath)}\": {e.Message}", e);
+            }
+        }
+    }
+
+    /// <summary>
     /// Initializes a project context for a new project based on its main file path, and a name to give to it.
     /// </summary>
     /// <param name="currentData">Current data context to associate with the project.</param>
@@ -251,8 +301,35 @@ public partial class ProjectContext
         {
             Name = newProjectName
         };
-        using FileStream fs = new(mainFilePath, FileMode.CreateNew);
-        JsonSerializer.Serialize(fs, _mainOptions, JsonOptions);
+        using (FileStream fs = new(mainFilePath, FileMode.CreateNew))
+        {
+            JsonSerializer.Serialize(fs, _mainOptions, JsonOptions);
+        }
+
+        // Create new local options and save it
+        string localFilePath = Path.Join(MainDirectory, "project-local.json");
+        ProjectLocalOptions localOptions = new()
+        {
+            DataFilePath = new(LoadDataPath, SaveDataPath)
+        };
+        using (FileStream fs = new(localFilePath, FileMode.CreateNew))
+        {
+            JsonSerializer.Serialize(fs, localOptions, JsonOptions);
+        }
+    }
+
+
+    /// <summary>
+    /// Sets data paths for the project. Must be called if it failed to find them in the local options file before performing any other operations.
+    /// </summary>
+    /// <param name="loadPath">Path of the data file for game data to be loaded from.</param>
+    /// <param name="savePath">Path of the data file for game data to be saved to.</param>
+    public void SetDataFilePaths(string loadPath, string savePath)
+    {
+        LoadDataPath = Path.GetFullPath(loadPath);
+        SaveDataPath = Path.GetFullPath(savePath);
+        LoadDirectory = Path.GetDirectoryName(LoadDataPath);
+        SaveDirectory = Path.GetDirectoryName(SaveDataPath);
     }
 
     /// <summary>
@@ -276,6 +353,12 @@ public partial class ProjectContext
         if (_mainOptions is not null)
         {
             throw new InvalidOperationException("Project has already been imported");
+        }
+
+        // Ensure load and save directories are set
+        if (LoadDirectory is null || SaveDirectory is null)
+        {
+            throw new InvalidOperationException("Project has no save and/or load directories set");
         }
 
         // Set main thread action, if supplied
@@ -489,7 +572,7 @@ public partial class ProjectContext
                     }
                     catch (Exception e)
                     {
-                        _codeSources[code] = 
+                        _codeSources[code] =
                             $"""
                             /*
                             Decompiler failed on project export.
