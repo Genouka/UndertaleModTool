@@ -881,7 +881,7 @@
                             <TextBlock Grid.Row="0" Grid.Column="0" Margin="3" Text="{loc:Loc Room_LayerName}"/>
                             <local:UndertaleStringReference Grid.Row="0" Grid.Column="2" Margin="3" ObjectReference="{Binding LayerName}"/>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Margin="3" Text="{loc:Loc Room_LayerId}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Margin="3" Text="{loc:Loc Room_LayerID}"/>
                             <local:TextBoxDark Grid.Row="1" Grid.Column="2" Margin="3" Text="{Binding LayerId}"/>
 
                             <TextBlock Grid.Row="2" Grid.Column="0" Margin="3" Text="{loc:Loc Room_LayerType}"/>

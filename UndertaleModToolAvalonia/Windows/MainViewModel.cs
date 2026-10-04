@@ -482,7 +482,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         catch (ProjectException e)
         {
             w.EnsureShown();
-            await View!.MessageDialog($"Recompile error:\n{e.Message}");
+            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_RecompileError"), e.Message));
         }
         catch (Exception e)
         {
