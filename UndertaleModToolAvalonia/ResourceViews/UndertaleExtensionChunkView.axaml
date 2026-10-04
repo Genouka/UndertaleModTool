@@ -15,11 +15,11 @@
         <StackPanel Classes="PaddedProperties">
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
                 <Label>Product ID data</Label>
-                <l:EditableDataGrid ItemsSource="{Binding ProductIdData}" ItemFactory="{Binding CreateByteArray}" HeadersVisibility="None">
+                <l:EditableDataGrid ItemsSource="{Binding ExtensionChunk.productIdData}" ItemFactory="{Binding CreateByteArray}" HeadersVisibility="None">
                     <l:EditableDataGrid.Columns>
                         <DataGridTemplateColumn Header="{l:Loc Common_ByteArray}" Width="1*">
                             <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate x:DataType="l:ByteArrayWrapper">
+                                <DataTemplate x:DataType="undertale:UndertaleChunkEXTN+ByteArrayWrapper">
                                     <TextBox Text="{Binding ByteArray, Converter={StaticResource ByteArrayToStringConverter}}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
