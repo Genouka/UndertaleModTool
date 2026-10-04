@@ -1391,7 +1391,7 @@ namespace UndertaleModTool
                         }
                         else
                         {
-                            throw new Exception(spriteName + " is missing one or more indexes. The detected missing index is: " + prevFrameName);
+                            //throw new Exception(spriteName + " is missing one or more indexes. The detected missing index is: " + prevFrameName);
                         }
                     }
                 }

@@ -1082,7 +1082,7 @@ Pressing ""No"" will cause the program to ignore these images.");
                 }
                 else
                 {
-                    throw new ScriptException(spriteName + " is missing one or more indexes. The detected missing index is: " + prevFrameName);
+                    //throw new ScriptException(spriteName + " is missing one or more indexes. The detected missing index is: " + prevFrameName);
                 }
             }
         }

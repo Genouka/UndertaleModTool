@@ -82,7 +82,7 @@ foreach (string file in dirFiles)
     string[] previousFrameFiles = Directory.GetFiles(importFolder, prevFrameName);
     if (previousFrameFiles.Length < 1)
     {
-        throw new ScriptException($"{spriteName} is missing one or more indexes. The detected missing index is: {prevFrameName}");
+        //throw new ScriptException($"{spriteName} is missing one or more indexes. The detected missing index is: {prevFrameName}");
     }
 }
 
