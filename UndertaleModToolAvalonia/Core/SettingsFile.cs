@@ -160,6 +160,21 @@ public partial class SettingsFile
     /// <summary>Check for a newer nightly build automatically when the app starts.</summary>
     public bool CheckForUpdates { get; set; } = true;
 
+    public enum DrawerModeValue
+    {
+        /// <summary>Expanded (push layout) on wide screens, collapsed (overlay drawer) on narrow ones.</summary>
+        Auto = 0,
+        /// <summary>Desktop-style layout: the explorer sidebar is permanently visible and resizable.</summary>
+        AlwaysExpanded = 1,
+        /// <summary>Phone-style layout: the explorer is a slide-in drawer opened by button, edge swipe or back gesture.</summary>
+        AlwaysCollapsed = 2,
+    }
+
+    /// <summary>
+    /// How the asset explorer sidebar (the former fixed left panel) is displayed.
+    /// </summary>
+    public DrawerModeValue DrawerMode { get; set; } = DrawerModeValue.Auto;
+
     public bool AlwaysSaveDataInProjectDestination { get; set; } = true;
 
     public string InstanceIdPrefix { get; set; } = "inst_";

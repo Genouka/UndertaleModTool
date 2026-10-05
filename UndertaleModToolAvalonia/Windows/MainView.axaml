@@ -30,13 +30,11 @@
         </Grid>
 
         <!-- The asset explorer (former LeftPanel) lives in a slide-in drawer; the tab area takes
-             the full page width while the drawer is closed. Desktop keeps the panel permanently
-             visible (push layout, resized with the drag handle) and hides the toggle button;
-             Android overlays it (closed by default, with a light-dismiss scrim) to save space. -->
-        <l:DrawerPage Name="DrawerPageHost"
-                      Mode="{OnPlatform Push, Android=Overlay}"
-                      IsCollapsible="{OnPlatform False, Android=True}"
-                      IsDrawerOpen="{OnPlatform True, Android=False}">
+             the full page width while the drawer is closed. Its layout is resolved from the
+             "DrawerMode" setting (ApplyDrawerSettings in code-behind): "always expanded" pushes
+             content aside and shows the drag handle (desktop style), "always collapsed" overlays
+             it with a light-dismiss scrim, edge-swipe and back-button support (phone style). -->
+        <l:DrawerPage Name="DrawerPageHost">
             <l:DrawerPage.MainContent>
                 <Grid RowDefinitions="Auto,1*">
                     <ToggleButton Grid.Row="0"

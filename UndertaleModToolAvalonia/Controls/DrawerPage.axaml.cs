@@ -103,6 +103,14 @@ public partial class DrawerPage : UserControl
     public DrawerPage()
     {
         InitializeComponent();
+
+        // Edge-swipe-to-open gesture, observed on the tunneling route so it also works when the
+        // swipe starts on top of main content (the press itself is not consumed, so ordinary
+        // taps on whatever sits near the edge keep working).
+        AddHandler(PointerPressedEvent, DrawerEdge_PointerPressed, RoutingStrategies.Tunnel);
+        AddHandler(PointerReleasedEvent, DrawerEdge_PointerReleased, RoutingStrategies.Tunnel);
+        AddHandler(PointerCaptureLostEvent, DrawerEdge_PointerCaptureLost, RoutingStrategies.Tunnel);
+
         UpdateVisualState();
     }
 
@@ -135,7 +143,7 @@ public partial class DrawerPage : UserControl
 
         DrawerRoot.RenderTransform = TransformOperations.Parse(open
             ? "translateX(0)"
-            : string.Create(CultureInfo.InvariantCulture, $"translateX(-{DrawerWidth})"));
+            : string.Create(CultureInfo.InvariantCulture, $"translateX(-{DrawerWidth}px)"));
         Scrim.IsVisible = open && !push;
         PushSplitter.IsVisible = open && push;
         PushSplitter.Margin = new Thickness(DrawerWidth - 3, 0, 0, 0);
@@ -143,6 +151,50 @@ public partial class DrawerPage : UserControl
     }
 
     private void Scrim_Tapped(object? sender, TappedEventArgs e) => CloseDrawer();
+
+    private const double EdgeSwipeWidth = 32;
+    private const double MinEdgeSwipeDistance = 48;
+
+    private IPointer? _edgeSwipePointer;
+    private Point _edgeSwipeOrigin;
+
+    private bool CanEdgeSwipe() => IsCollapsible && !IsDrawerOpen && Mode == DrawerDisplayMode.Overlay;
+
+    private void DrawerEdge_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_edgeSwipePointer is not null || !CanEdgeSwipe() || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            return;
+
+        Point origin = e.GetPosition(this);
+        if (origin.X > EdgeSwipeWidth)
+            return;
+
+        _edgeSwipePointer = e.Pointer;
+        _edgeSwipeOrigin = origin;
+    }
+
+    private void DrawerEdge_PointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (!ReferenceEquals(e.Pointer, _edgeSwipePointer))
+            return;
+
+        _edgeSwipePointer = null;
+
+        Point pos = e.GetPosition(this);
+        double dx = pos.X - _edgeSwipeOrigin.X;
+        double dy = pos.Y - _edgeSwipeOrigin.Y;
+
+        // A mostly-horizontal swipe inward from the edge opens the drawer; vertical drags are
+        // left to whatever the user is touching (e.g. scrolling the content).
+        if (dx >= MinEdgeSwipeDistance && dx > Math.Abs(dy) * 2)
+            OpenDrawer();
+    }
+
+    private void DrawerEdge_PointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (ReferenceEquals(e.Pointer, _edgeSwipePointer))
+            _edgeSwipePointer = null;
+    }
 
     private Point _splitterDragOrigin;
     private double _splitterStartDrawerWidth;
