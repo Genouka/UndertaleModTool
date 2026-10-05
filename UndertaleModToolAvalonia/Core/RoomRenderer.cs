@@ -206,7 +206,7 @@ public class RoomRenderer
                     TileSourceX: roomTile.SourceX,
                     TileSourceY: roomTile.SourceY,
                     X: (layer?.XOffset ?? 0) + roomTile.X - Math.Min(roomTile.SourceX - texture.TargetX, 0),
-                    Y: (layer?.YOffset ?? 0) + roomTile.Y - Math.Min(roomTile.SourceX - texture.TargetX, 0),
+                    Y: (layer?.YOffset ?? 0) + roomTile.Y - Math.Min(roomTile.SourceY - texture.TargetY, 0),
                     ScaleX: roomTile.ScaleX,
                     ScaleY: roomTile.ScaleY
                 ));
