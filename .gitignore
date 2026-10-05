@@ -340,3 +340,6 @@ UndertaleModLib/gitversion.txt
 
 # macOS makes these files
 *.DS_Store
+
+# Android release signing key - NEVER commit (see build/AndroidSigning.md)
+/signing/

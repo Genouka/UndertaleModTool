@@ -205,6 +205,32 @@ jobs:
         java-version: '17'
     - name: Install Android workload
       run: dotnet workload install android
+    - name: Restore fixed signing key from secrets
+      env:
+        ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      shell: bash
+      run: |
+        # Both APKs built below (the app and the Android 10 preinstall helper) share one
+        # application id, so the system only accepts installing either over the other when both
+        # carry the same signature - and a fresh runner would otherwise generate a throwaway
+        # debug keystore on every run. The fixed release keystore lives base64-encoded in the
+        # ANDROID_KEYSTORE_BASE64 repo secret and is materialised into $RUNNER_TEMP, never into
+        # the workspace, so it cannot end up inside any zip or artifact. The password reaches
+        # MSBuild as an environment variable (mapped to the signing properties in
+        # build/AndroidApp.props) and is never echoed or placed on a command line.
+        if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+          echo "::warning::Secret ANDROID_KEYSTORE_BASE64 is not configured - falling back to a throwaway auto-generated debug keystore. These builds will not install over officially signed ones."
+          exit 0
+        fi
+        keystore="${RUNNER_TEMP//\\//}/qiuutmtv5-android-release.keystore"
+        printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore"
+        {
+          echo "UMT_ANDROID_KEYSTORE_PATH=$keystore"
+          echo "UMT_ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS"
+          echo "UMT_ANDROID_KEY_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
+        } >> "$GITHUB_ENV"
     - name: Publish Avalonia Android APK
       run: |
         dotnet publish UndertaleModToolAvalonia.Android -c Debug -r ${{ matrix.rid }} --self-contained true -p:AndroidSdkDirectory="$env:ANDROID_HOME" -p:AndroidPreinstallChannel=stable --output ${{ github.workspace }}\Avalonia-Android-${{ matrix.rid }}
