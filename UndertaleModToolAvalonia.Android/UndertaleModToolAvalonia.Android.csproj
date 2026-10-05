@@ -58,6 +58,14 @@
         <AndroidResource Include="Resources\values-night\colors.xml" />
         <AndroidResource Include="Resources\values-night\styles.xml" />
         <AndroidResource Include="Resources\xml\file_paths.xml" />
+        <!-- Adaptive launcher icon (see mipmap-anydpi-v26\ic_launcher.xml): the density PNGs are
+             explicit because the rest of this project lists resources explicitly as well. -->
+        <AndroidResource Include="Resources\mipmap-anydpi-v26\ic_launcher.xml" />
+        <AndroidResource Include="Resources\mipmap-mdpi\*.png" />
+        <AndroidResource Include="Resources\mipmap-hdpi\*.png" />
+        <AndroidResource Include="Resources\mipmap-xhdpi\*.png" />
+        <AndroidResource Include="Resources\mipmap-xxhdpi\*.png" />
+        <AndroidResource Include="Resources\mipmap-xxxhdpi\*.png" />
     </ItemGroup>
 
     <!--

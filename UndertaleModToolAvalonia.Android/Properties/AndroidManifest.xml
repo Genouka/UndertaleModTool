@@ -53,6 +53,8 @@
 	         over a build that already had it - which only the targetSdk 29 "storage setup" APK can
 	         establish on Android 10. See UndertaleModToolAvalonia.AndroidPreinstall. -->
 	<application android:label="QiuUTMTv5"
+                 android:icon="@mipmap/ic_launcher"
+                 android:roundIcon="@mipmap/ic_launcher"
                  android:largeHeap="true"
 				 android:requestLegacyExternalStorage="true"
 				 android:preserveLegacyExternalStorage="true"
