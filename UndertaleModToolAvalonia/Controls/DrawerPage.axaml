@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="UndertaleModToolAvalonia.DrawerPage">
+    <UserControl.Styles>
+        <!-- The drawer slides in from the left edge; closed it is fully translated outside the
+             page (the root Panel clips it away). -->
+        <Style Selector="Border#DrawerRoot">
+            <Setter Property="Transitions">
+                <Setter.Value>
+                    <Transitions>
+                        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut"/>
+                    </Transitions>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Width drag handle of the push layout (desktop). -->
+        <Style Selector="Border#PushSplitter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="Border#PushSplitter:pointerover">
+            <Setter Property="Background" Value="#40808080"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Panel ClipToBounds="True">
+        <ContentPresenter x:Name="MainPresenter"
+                          Content="{Binding $parent[l:DrawerPage].MainContent}"/>
+
+        <!-- Light-dismiss scrim (overlay mode only): tapping outside the drawer closes it. -->
+        <Border x:Name="Scrim"
+                Background="#66000000"
+                Tapped="Scrim_Tapped"/>
+
+        <Border x:Name="DrawerRoot"
+                Width="{Binding $parent[l:DrawerPage].DrawerWidth}"
+                HorizontalAlignment="Left"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,1,0"
+                Padding="8">
+            <ContentPresenter Content="{Binding $parent[l:DrawerPage].DrawerContent}"/>
+        </Border>
+
+        <!-- Push-mode width drag handle, centered on the drawer's right edge. -->
+        <Border x:Name="PushSplitter"
+                Width="6"
+                HorizontalAlignment="Left"
+                Cursor="SizeWestEast"
+                PointerPressed="PushSplitter_PointerPressed"
+                PointerMoved="PushSplitter_PointerMoved"
+                PointerReleased="PushSplitter_PointerReleased"/>
+    </Panel>
+</UserControl>

@@ -12,6 +12,9 @@ public partial class MainView : UserControl, IView
 {
     ProjectAssetsWindow? projectAssetsWindow = null;
 
+    /// <summary>The drawer hosting the asset explorer (the former LeftPanel).</summary>
+    public DrawerPage? Drawer => DrawerPageHost;
+
     public MainView()
     {
         InitializeComponent();

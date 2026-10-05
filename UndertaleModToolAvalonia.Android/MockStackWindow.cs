@@ -392,6 +392,14 @@ public class MockStackWindow : UserControl
             return;
         }
 
+        // On the main page, the system back button closes the asset-explorer drawer first
+        // (standard navigation-drawer behavior) before doing anything else.
+        if (mainView is { } view && view.Drawer is { } drawer && drawer.IsDrawerOpen)
+        {
+            drawer.IsDrawerOpen = false;
+            return;
+        }
+
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.Shutdown();
     }
