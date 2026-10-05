@@ -30,7 +30,7 @@ namespace UndertaleModToolAvalonia.Android;
     Theme = "@style/AppTheme",
     ExcludeFromRecents = true,
     Process = ":crashreport",
-    Label = "UndertaleModToolAvalonia")]
+    Label = "QiuUTMTv5")]
 public class CrashDialogActivity : Activity
 {
     /// <summary>Maximum characters rendered inside the dialog; the full text is always in the log.</summary>
