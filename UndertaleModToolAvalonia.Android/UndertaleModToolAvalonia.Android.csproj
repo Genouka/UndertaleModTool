@@ -61,29 +61,25 @@
     </ItemGroup>
 
     <!--
-        Cross-app API: the AIDL contract other apps bind against (see Api/README.md). The
-        "AndroidInterfaceDescription" build action makes the .NET Android build run the managed
+        Cross-app API: the AIDL contract other apps bind against (see Api/README.md). The contract
+        itself lives in the SDK repository, which the "api" git submodule points at, because its
+        clients compile the very same file - one copy means the tool and its clients cannot drift
+        apart. Initialise the submodule (api/) before building this project.
+
+        The "AndroidInterfaceDescription" build action makes the .NET Android build run the managed
         AIDL generator, which emits the C# IUmApi interface + IUmApiStub binder into
         obj/<config>/<tfm>/aidl/ and adds them to the compilation, so the service can implement the
-        contract in C#. The same .aidl file is what a client app has to copy into its own project.
+        contract in C#.
     -->
     <ItemGroup>
-        <AndroidInterfaceDescription Include="Api\IUmApi.aidl" />
-    </ItemGroup>
-
-    <!--
-        Api/samples holds client code (a Kotlin and a .NET for Android wrapper) that is meant to be
-        copied into another app, not compiled into this one - it would only fight with the SDK's
-        automatic **\*.cs glob.
-    -->
-    <ItemGroup>
-        <Compile Remove="Api\samples\**\*.cs" />
+        <AndroidInterfaceDescription Include="..\api\umapi\src\main\aidl\com\undertalemodtool\avalonia\android\api\IUmApi.aidl" />
     </ItemGroup>
 
     <PropertyGroup>
         <!--
-            The managed AIDL proxies (obj/<config>/<tfm>/aidl/*.cs, generated from
-            Api/IUmApi.aidl) are nullable-oblivious: they declare each parcel argument as a
+            The managed AIDL proxies (obj/<config>/<tfm>/aidl/*.cs, generated from the submodule's
+            api/umapi/src/main/aidl/.../IUmApi.aidl) are nullable-oblivious: they declare each parcel
+            argument as a
             non-nullable local, assign what they read back to it, and cast the replies. Compiling
             that generated file with nullable analysis on reports dozens of CS86xx warnings that the
             generator cannot fix, so those four codes are silenced for the project - everything else

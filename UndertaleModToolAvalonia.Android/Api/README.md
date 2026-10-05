@@ -9,7 +9,7 @@ own scripting engine - including while the tool is not on screen.
 | Permission | `com.undertalemodtool.avalonia.android.permission.RUN_SCRIPT` (`signature\|dangerous` - see [Security](#security)) |
 | Bind action | `com.undertalemodtool.avalonia.android.api.action.BIND_UM_API` |
 | AIDL package | `com.undertalemodtool.avalonia.android.api` |
-| Interface | `IUmApi` (contract file: [`IUmApi.aidl`](IUmApi.aidl)) |
+| Interface | `IUmApi` (contract file: [`IUmApi.aidl`](../api/umapi/src/main/aidl/com/undertalemodtool/avalonia/android/api/IUmApi.aidl), in the `api` submodule) |
 | API version | `1` (reported by `getApiInfo`, bump on incompatible changes) |
 | Implementation | [`UmApiService.cs`](UmApiService.cs), [`UmApiBinder.cs`](UmApiBinder.cs), [`UmApiJobs.cs`](UmApiJob.cs), [`UmApiScriptHost.cs`](UmApiScriptHost.cs), [`UmApiDataFile.cs`](UmApiDataFile.cs) |
 
@@ -21,165 +21,71 @@ sides. Every method that returns a JSON document returns an object with `ok: tru
 managed exception would reach a Java client as an opaque `RuntimeException`, so every entry point
 catches and reports instead.
 
+> **The client side lives in its own repository.** The contract, the generated AIDL classes and a
+> ready-made Java client are the SDK [**QiuUTMTv5-API**](https://github.com/Genouka/QiuUTMTv5-API)
+> (Apache-2.0), checked into this repository as the **`api` git submodule**: its
+> `umapi/src/main/aidl/com/undertalemodtool/avalonia/android/api/IUmApi.aidl` is the canonical
+> contract that the service below implements, so the two sides cannot drift apart. Read
+> [the SDK README](https://github.com/Genouka/QiuUTMTv5-API#readme) for the client-side setup and
+> for the JSON shape of every reply.
+
 ## Quick start (client app)
 
-1. Add the permission to your manifest:
+```kotlin
+// 1. the SDK, from the public Maven repository published by its CI (no token needed)
+repositories { maven { url = uri("https://genouka.github.io/QiuUTMTv5-API/") } }
+dependencies { implementation("com.undertalemodtool.avalonia:qiuutmtv5-api:0.9.2.0") }
+```
 
-   ```xml
-   <uses-permission android:name="com.undertalemodtool.avalonia.android.permission.RUN_SCRIPT" />
+```xml
+<!-- 2. AndroidManifest.xml: the permission, plus package visibility (on Android 11+ a missing
+     <queries> entry makes the bind fail as if the tool were not installed) -->
+<uses-permission android:name="com.undertalemodtool.avalonia.android.permission.RUN_SCRIPT" />
+<queries>
+    <package android:name="com.undertalemodtool.avalonia.android" />
+</queries>
+```
 
-   <!-- Android 11+ package visibility: without this the tool is invisible to your app and both
-        queryIntentServices() and bindService() fail. -->
-   <queries>
-       <package android:name="com.undertalemodtool.avalonia.android" />
-   </queries>
-   ```
+```java
+// 3. bind and run something
+UmApiClient client = new UmApiClient(context);
+client.connect(10_000, new UmApiClient.OnConnectedListener() {
+    @Override public void onConnected(UmApiClient api) {
+        api.runScriptAsync("SetUMTConsoleText(\"hello\");", "demo.csx", false,
+            chunk -> Log.i("demo", chunk),
+            (job, error) -> Log.i("demo", error != null ? error.getMessage() : job.state));
+    }
+    @Override public void onConnectionFailed(String message) { Log.w("demo", message); }
+});
+```
 
-2. Copy [`IUmApi.aidl`](IUmApi.aidl) into your project as
-   `src/main/aidl/com/undertalemodtool/avalonia/android/api/IUmApi.aidl` (Gradle compiles it into
-   `IUmApi` + `IUmApi.Stub`). A .NET for Android client does the same by adding the file with the
-   `AndroidInterfaceDescription` build action - exactly what this app does.
-
-3. Bind and call - `bindService` with the **action** (the service's Java class name is a generated
-   `crc64...` name, so the action is the stable identifier; `getApiInfo().serviceComponent` reports
-   the concrete component if you prefer an explicit one):
-
-   ```kotlin
-   val intent = Intent(UmApi.ACTION_BIND).setPackage(UmApi.PACKAGE)
-   bindService(intent, connection, Context.BIND_AUTO_CREATE)
-   ```
-
-A ready-to-run Kotlin wrapper (discovery, script run, output streaming, cancellation) is in
-[`samples/android-kotlin/UmApiClient.kt`](samples/android-kotlin/UmApiClient.kt), and the same
-client for a .NET for Android app in
-[`samples/dotnet-android/UmApiClient.cs`](samples/dotnet-android/UmApiClient.cs).
-
-Binding to the service **starts the tool's process** if it is not running. No activity is started:
-the API works headless, and an external call never brings the tool's UI to the foreground.
+A client that cannot consume an AAR (.NET for Android, for instance) copies
+`api/umapi/src/main/aidl/com/undertalemodtool/avalonia/android/api/IUmApi.aidl` into its own project
+and binds the raw interface - see
+[`api/samples/dotnet-android`](https://github.com/Genouka/QiuUTMTv5-API/tree/main/samples/dotnet-android).
 
 ## Method reference
 
-### `String getApiInfo()`
+| Method | What it does |
+|---|---|
+| `getApiInfo()` | tool status: `apiVersion`, `ready`, `dataLoaded`, `serviceComponent`, `scriptRoots`, ... |
+| `listScripts()` | every csx file the tool can run (built-in and user folders) |
+| `startScriptText(text, name, options)` | queue an inline script (at most 512 KB) |
+| `startScriptFile(pathOrUri, options)` | queue a script from a path, `file://` or `content://` URI |
+| `startBuiltinScript(relativePath, options)` | queue a script from `listScripts()`, resolved inside the script folders only |
+| `getJob(jobId)` | current state, progress, `returnValue`, `consoleText`, `error` |
+| `getJobOutput(jobId, fromOffset)` | incremental log read; pass `nextOffset` back in to continue |
+| `waitForJob(jobId, timeoutMillis)` | block the caller's thread until the job finished or the timeout elapsed |
+| `cancelJob(jobId)` | cooperative cancel: a queued job stops at once, a running script at its next progress call |
+| `listJobs()` / `clearFinishedJobs()` | every remembered job (metadata only) / forget the finished ones |
+| `loadDataFile(pathOrUri)` / `saveDataFile(pathOrUri)` | synchronous load/save through `UndertaleIO` |
 
-```json
-{ "ok": true, "apiVersion": "1", "appVersion": "0.9.2.0",
-  "packageName": "com.undertalemodtool.avalonia.android",
-  "descriptor": "com.undertalemodtool.avalonia.android.api.IUmApi",
-  "permission": "com.undertalemodtool.avalonia.android.permission.RUN_SCRIPT",
-  "permissionLevel": "signature|dangerous",
-  "serviceClass": "crc64xxxxxxxxxxxxxxxx.UmApiService",
-  "serviceComponent": "com.undertalemodtool.avalonia.android/crc64xxxxxxxxxxxxxxxx.UmApiService",
-  "bindAction": "com.undertalemodtool.avalonia.android.api.action.BIND_UM_API",
-  "ready": true, "dataLoaded": false, "dataPath": null, "projectName": null,
-  "runningJobId": null, "activeJobs": 0,
-  "scriptRoots": [ { "path": "/data/user/0/.../files/Scripts", "isBuiltIn": true, "exists": true } ] }
-```
-
-`ready: false` means the app is still starting (Avalonia boots in `Application.onCreate`, which can
-finish after Android delivered the bind); the call itself waits up to 20 s for that. Every other
-method returns `{"ok":false,"error":"The tool is still starting up; ..."}` in that case.
-
-### `String listScripts()`
-
-```json
-{ "ok": true, "count": 12,
-  "scripts": [ { "name": "Clear_All_Flags", "fileName": "Clear_All_Flags.csx",
-                 "relativePath": "Clear_All_Flags.csx", "root": "/data/user/0/.../files/Scripts",
-                 "isBuiltIn": true, "fullPath": "/data/user/0/.../files/Scripts/Clear_All_Flags.csx" } ] }
-```
-
-Roots are the built-in script folder (extracted from the APK assets into internal storage) and the
-user folder `/sdcard/QiuUTMTv5/Scripts`. Nothing else is scanned, and `startBuiltinScript` refuses
-paths that escape those folders (`..`, absolute paths).
-
-### `String startScriptText(String scriptText, String name, String optionsJson)`
-
-### `String startScriptFile(String pathOrUri, String optionsJson)`
-
-### `String startBuiltinScript(String relativePath, String optionsJson)`
-
-All three queue a script run and return immediately:
-
-```json
-{ "ok": true, "jobId": "9f2c...", "state": "Queued" }
-```
-
-* `startScriptText` takes the csx source directly (max **512 KB** - a Binder transaction is capped
-  at 1 MB; write bigger scripts to a file and use `startScriptFile`).
-* `startScriptFile` accepts a filesystem path, a `file://` URI or a `content://` URI the calling app
-  granted to the tool (its own documents, a SAF pick, ...).
-* `optionsJson` may be `null`/empty; supported keys:
-
-  | key | default | meaning |
-  |---|---|---|
-  | `assumeYes` | `false` | answer given to `ScriptQuestion` confirmations. `false` makes a script that asks "are you sure?" stop or skip its work; `true` lets an automation client run confirm-only scripts unattended. |
-
-### `String getJob(String jobId)`
-
-```json
-{ "ok": true, "id": "9f2c...", "kind": "script-text", "name": "inline.csx", "source": "<inline>",
-  "state": "Succeeded", "queuedAt": 1730000000000, "startedAt": 1730000000050, "finishedAt": 1730000001234,
-  "outputLength": 812, "progress": 1.0, "progressMaximum": 1.0,
-  "progressMessage": "Saving...", "progressStatus": "Writing data file",
-  "cancelRequested": false, "assumeYes": false,
-  "returnValue": "42", "returnType": "System.Int32",
-  "error": null, "errorTitle": null, "consoleText": "..." }
-```
-
-`state` is `Queued` → `Running` → `Succeeded` | `Failed` | `Cancelled`. `Failed` means the script
-reported an error (`ScriptError`) or the engine threw (compile error, exception) - the message is in
-`error`, with `errorTitle` when the script supplied one. `consoleText` is the last value the script
-set with `SetUMTConsoleText` (truncated at 64 KB), and it is also appended to the job's log when the
-job finishes.
-
-### `String getJobOutput(String jobId, int fromOffset)`
-
-Streams the captured log (messages, warnings, errors, questions, progress notes) in chunks:
-
-```json
-{ "ok": true, "id": "9f2c...", "state": "Running", "offset": 0, "nextOffset": 4096,
-  "eof": false, "text": "..." }
-```
-
-Pass the previous `nextOffset` as the next `fromOffset` (`0` to start over). Chunks are at most
-64 KB and never cut a surrogate pair. `eof` is true once the job has finished and everything has
-been read. The whole log is capped at 8 MB per job; beyond that a truncation notice is appended.
-
-### `boolean cancelJob(String jobId)`
-
-Cooperative: a job that has not started yet is cancelled immediately; a running script stops at its
-next progress/message call. A script that never talks to the host (no progress, no output) runs to
-completion - cancellation is best effort, not preemption.
-
-### `boolean waitForJob(String jobId, long timeoutMillis)`
-
-Blocks the **calling Binder thread** until the job finishes (returns `true`) or the timeout elapses
-(returns `false`). `timeoutMillis` is clamped to 0..600000. Call it from a worker thread; calling it
-on a UI thread freezes that UI for up to the timeout.
-
-### `String listJobs()` / `int clearFinishedJobs()`
-
-`listJobs` returns `{"ok":true,"count":n,"jobs":[...]}` with the metadata-only form of `getJob`
-(no output text / console text). At most 64 jobs are retained; the oldest finished ones are dropped
-first. `clearFinishedJobs` removes every finished job and returns how many were removed.
-
-### `String loadDataFile(String pathOrUri)` / `String saveDataFile(String pathOrUri)`
-
-```json
-{ "ok": true, "path": "/sdcard/QiuUTMTv5/data.win", "dataPath": "/sdcard/QiuUTMTv5/data.win",
-  "importantWarnings": false, "warnings": [] }
-```
-
-Both run **synchronously** (a large data file can take seconds) and both block - call them from a
-worker thread. They read/write through `UndertaleIO` directly instead of the app's own
-open/save flow, so no loader window or message dialog ever appears; the loaded data is still
-installed into the app (`loadDataFile` closes the current document first, exactly like using the
-tool's own *Open* command, and the running app window updates accordingly).
-
-`saveDataFile` writes the data that is currently loaded - call `loadDataFile` (or have the user open
-a file) first. `content://` URIs are supported in both directions; the resolver's `"wt"` mode is
-used so an existing document is truncated instead of appended to.
-
+`options` is a JSON string whose only key today is `assumeYes` - the answer the host gives to
+`ScriptQuestion` confirmations (default `false`). Every method returns a JSON document carrying
+`ok`, and `error` when it failed (except `cancelJob`, `waitForJob` and `clearFinishedJobs`, which
+return their value directly); the SDK turns `ok: false` into an `UmApiException`. The exact shapes -
+the `state`/`kind` enums, the chunk format of `getJobOutput`, the output caps - are in
+[the SDK README](https://github.com/Genouka/QiuUTMTv5-API#api-reference).
 ## Execution model
 
 * **One job at a time.** The scripting engine, the loaded `UndertaleData` and the view model are
@@ -246,19 +152,25 @@ trust.
 
 ## 中文速览
 
-* 其他应用通过**绑定 Service**（action `com.undertalemodtool.avalonia.android.api.action.BIND_UM_API`）
-  调用 `IUmApi`，需要声明权限 `com.undertalemodtool.avalonia.android.permission.RUN_SCRIPT`
-  （`signature|dangerous`，即 sig-or-system：同签名应用直接获得，普通第三方应用无法通过弹窗获取；
-  想改成用户可授权，把清单里的 `protectionLevel` 改成 `dangerous` 即可）。
-* 把 [`IUmApi.aidl`](IUmApi.aidl) 复制到客户端工程的
-  `src/main/aidl/com/undertalemodtool/avalonia/android/api/` 下即可（.NET for Android 客户端用
-  `AndroidInterfaceDescription` 构建项）。
-* 所有返回值都是 JSON 字符串：先 `startScriptText` / `startScriptFile` / `startBuiltinScript`
-  拿到 `jobId`，再 `waitForJob` 等待、`getJob` 查看状态与返回值、`getJobOutput` 增量拉取日志
-  （`getJobOutput` 上限 64 KB/次），`cancelJob` 尽力取消。
-* 外部调用**不会弹出任何界面**：脚本里的对话框、进度条、报错都被捕获进任务日志，
-  `ScriptQuestion` 按 `optionsJson` 里的 `assumeYes`（默认 false）回答；绑定 Service 可以
-  在应用没有界面的情况下启动进程并跑脚本。
-* `loadDataFile` / `saveDataFile` 是同步阻塞调用（大文件可能几秒），请放在工作线程里；
-  它们直接走 `UndertaleIO`，不会打开加载窗口。
-* 所有会修改数据的操作（脚本、加载、保存）在同一进程里串行执行，来自不同应用的请求共享队列。
+QiuUTMTv5（安卓版 UndertaleModTool）暴露一个受权限保护的绑定式 Service：其他应用可以在工具进程里运行 `csx`
+脚本、实时读取脚本输出、读写数据文件。
+
+* **客户端文档在 SDK 仓库**：[QiuUTMTv5-API](https://github.com/Genouka/QiuUTMTv5-API)（Apache-2.0），
+  以 **`api` 子模块**的形式放在本仓库里。契约
+  [`IUmApi.aidl`](https://github.com/Genouka/QiuUTMTv5-API/blob/main/umapi/src/main/aidl/com/undertalemodtool/avalonia/android/api/IUmApi.aidl)
+  由它定义，本仓库的服务实现直接编译这份文件，因此两边不会出现不一致。
+* **依赖**：`com.undertalemodtool.avalonia:qiuutmtv5-api:<版本>`，公开 Maven 仓库
+  `https://genouka.github.io/QiuUTMTv5-API/`（GitHub Packages 同样有产物，但读取需要 token）。
+* **接入清单**：声明
+  `<uses-permission android:name="com.undertalemodtool.avalonia.android.permission.RUN_SCRIPT" />`
+  和 `<queries><package android:name="com.undertalemodtool.avalonia.android" /></queries>`；权限是
+  `signature|dangerous`，实际等于 signature-or-system（只有同一证书签名的应用和预装应用能拿到，详见
+  [Security](#security)）。
+* **调用方式**：绑定 action `com.undertalemodtool.avalonia.android.api.action.BIND_UM_API`；方法返回 JSON
+  （`ok` / `error`），脚本与文件操作都是异步任务（jobId 轮询、增量读日志、协作式取消），方法一览见
+  [Method reference](#method-reference)。
+* **执行模型**：绑定会拉起工具进程，但**不会打开任何界面**，也不会弹出任何对话框——脚本里的消息、警告、提问、进度
+  全部被捕获进任务日志；所有请求串行执行，一次一个任务。
+* **本仓库这一侧**是服务的实现（[`UmApiService.cs`](UmApiService.cs)、[`UmApiBinder.cs`](UmApiBinder.cs)、
+  [`UmApiJob.cs`](UmApiJob.cs)、[`UmApiScriptHost.cs`](UmApiScriptHost.cs)、[`UmApiDataFile.cs`](UmApiDataFile.cs)），
+  执行模型、安全模型与已知限制见上面几节。

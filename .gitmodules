@@ -5,3 +5,7 @@
 	path = UndertaleModToolLocalization
 	url = git@github.com:QiumingOrg/QiuUTMTv4.git
 	branch = new-v5
+[submodule "api"]
+	path = api
+	url = git@github.com:Genouka/QiuUTMTv5-API.git
+	branch = main
