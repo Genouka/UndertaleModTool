@@ -1,7 +1,7 @@
 # UndertaleModTool (Genouka Fork)
 
 ![GitHub Release](https://img.shields.io/github/v/release/genouka/UndertaleModTool?style=flat) [![GitHub](https://img.shields.io/github/license/genouka/UndertaleModTool?logo=github)](https://github.com/UnderminersTeam/UndertaleModTool/blob/master/LICENSE.txt)
-![GitHub Repo stars](https://img.shields.io/github/stars/genouka/UndertaleModTool?style=flat) [![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/svg-badge.svg)](https://hosted.weblate.org/engage/qiuutmtv4/) [![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126) [![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200)
+![GitHub Repo stars](https://img.shields.io/github/stars/genouka/UndertaleModTool?style=flat) ![Download total](https://img.shields.io/github/downloads/genouka/UndertaleModTool/total) [![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/svg-badge.svg)](https://hosted.weblate.org/engage/qiuutmtv4/) [![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126) [![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200) [![Static Badge](https://img.shields.io/badge/QQ_Group-517549773-purple?style=flat-square)](https://qm.qq.com/q/hu0rdlwbYY)
 
 **This is an unofficial fork of UndertaleModTool!**
 
