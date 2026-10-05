@@ -16,6 +16,16 @@
 	<!-- In-app updates: lets the app start the system installer for a downloaded update APK
 	     (the user still has to allow "install unknown apps" for this app). -->
 	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+	<!-- Cross-app API: only apps holding this permission may bind UmApiService (see Api/README.md).
+	     "signature|dangerous" is a bitmask (PROTECTION_SIGNATURE | PROTECTION_DANGEROUS), i.e.
+	     Android treats it as signature-or-system: apps signed with the same certificate as this one
+	     (and preinstalled/system apps) get it, third-party apps cannot obtain it through a user
+	     prompt. Swap the value for "dangerous" to let the user grant it at install time instead. -->
+	<permission android:name="com.undertalemodtool.avalonia.android.permission.RUN_SCRIPT"
+	            android:protectionLevel="signature|dangerous"
+	            android:label="Run QiuUTMTv5 scripts"
+	            android:description="@string/um_api_permission_description" />
 	<queries>
 		<intent>
 			<action android:name="android.intent.action.VIEW" />

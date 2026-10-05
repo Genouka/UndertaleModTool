@@ -109,8 +109,33 @@ public class Scripting
         MainVM = serviceProvider.GetRequiredService<MainViewModel>();
     }
 
-    public async Task<object?> RunScript(string text, string? filePath = null)
+    /// <summary>
+    /// Compiles and runs a script.
+    /// </summary>
+    /// <param name="text">The script source (typically prefixed with a <c>#line</c> directive).</param>
+    /// <param name="filePath">Path the script was loaded from, used for diagnostics and
+    /// <see cref="IScriptInterface.ScriptPath"/>.</param>
+    /// <param name="hostFactory">
+    /// Optional factory for the host object the script runs with (the object a script sees as
+    /// <c>this</c>/globals, normally a <see cref="ScriptGlobals"/>). Hosts without a UI - the
+    /// Android cross-app API - pass a capturing host so that an externally requested script never
+    /// opens dialogs; passing null uses the regular UI-backed host.
+    /// </param>
+    /// <param name="errorHandler">
+    /// Optional handler for the error dialogs <see cref="RunScript"/> itself shows (compilation
+    /// failures and script exceptions). UI-less hosts pass one to capture the text into their own
+    /// result; null opens the regular dialog through <c>MainVM.View</c>.
+    /// </param>
+    public async Task<object?> RunScript(string text, string? filePath = null,
+                                         Func<Scripting, string?, IScriptInterface>? hostFactory = null,
+                                         Func<string, string?, Task>? errorHandler = null)
     {
+        // Report failures through the caller's handler when it has one, as a dialog otherwise.
+        Task ReportErrorAsync(string message, string title)
+            => errorHandler is { } handler
+                ? handler(message, title)
+                : MainVM.View!.MessageDialog(message, title: title);
+
         try
         {
             MainVM.IsEnabled = false;
@@ -184,7 +209,7 @@ public class Scripting
                 // Compilation infrastructure failures (e.g. missing reference assemblies on
                 // platforms that don't support scripting) must surface as a dialog, not escape the
                 // async void command handler and crash the whole app.
-                await MainVM.View!.MessageDialog(e.ToString(), title: LocalizationSource.GetString("Msg_ScriptCompilationError"));
+                await ReportErrorAsync(e.ToString(), LocalizationSource.GetString("Msg_ScriptCompilationError"));
 
                 return null;
             }
@@ -193,12 +218,14 @@ public class Scripting
             if (errors.Any())
             {
                 string message = String.Join("\n", errors);
-                await MainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptCompilationError"));
+                await ReportErrorAsync(message, LocalizationSource.GetString("Msg_ScriptCompilationError"));
 
                 return null;
             }
 
-            ScriptGlobals scripting = new(this, filePath);
+            // Platforms that drive scripts without a UI (the Android cross-app API) pass their own
+            // capturing host; everything else runs with the regular UI-backed host.
+            IScriptInterface scripting = hostFactory?.Invoke(this, filePath) ?? new ScriptGlobals(this, filePath);
 
             try
             {
@@ -214,15 +241,15 @@ public class Scripting
             }
             catch (ScriptException e)
             {
-                await MainVM.View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_ErrorFromScript"));
+                await ReportErrorAsync(e.Message, LocalizationSource.GetString("Msg_ErrorFromScript"));
             }
             catch (Exception e)
             {
-                await MainVM.View!.MessageDialog(e.ToString(), title: LocalizationSource.GetString("Msg_ScriptExecutionError"));
+                await ReportErrorAsync(e.ToString(), LocalizationSource.GetString("Msg_ScriptExecutionError"));
             }
             finally
             {
-                scripting.Dispose();
+                (scripting as IDisposable)?.Dispose();
             }
         }
         finally
@@ -372,7 +399,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         this.scriptPath = scriptPath;
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         // Runs on whatever thread the script ended on; closing the simulated window touches the
         // visual tree, so it must be marshaled to the UI thread.
@@ -387,23 +414,23 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public string? ScriptPath => scriptPath;
 
-    public object Highlighted => throw new NotImplementedException();
+    public virtual object Highlighted => throw new NotImplementedException();
 
-    public object Selected => throw new NotImplementedException();
+    public virtual object Selected => throw new NotImplementedException();
 
-    public bool CanSave => throw new NotImplementedException();
+    public virtual bool CanSave => throw new NotImplementedException();
 
-    public bool ScriptExecutionSuccess => throw new NotImplementedException();
+    public virtual bool ScriptExecutionSuccess => throw new NotImplementedException();
 
-    public string ScriptErrorMessage => throw new NotImplementedException();
+    public virtual string ScriptErrorMessage => throw new NotImplementedException();
 
     public string? ExePath => Scripting.ExePathOverride ?? Path.GetDirectoryName(Environment.ProcessPath);
 
-    public string ScriptErrorType => throw new NotImplementedException();
+    public virtual string ScriptErrorType => throw new NotImplementedException();
 
-    public bool IsAppClosed => throw new NotImplementedException();
+    public virtual bool IsAppClosed => throw new NotImplementedException();
 
-    public Action<Action> MainThreadAction => Dispatcher.UIThread.Invoke;
+    public virtual Action<Action> MainThreadAction => Dispatcher.UIThread.Invoke;
 
     /// <summary>
     /// Shows a dialog on the UI thread and blocks the caller until it is dismissed. Scripts run
@@ -427,7 +454,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
             Dispatcher.UIThread.InvokeAsync(dialog).GetAwaiter().GetResult();
     }
 
-    public void AddProgress(int amount)
+    public virtual void AddProgress(int amount)
     {
         loaderValue += amount;
 
@@ -437,7 +464,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void AddProgressParallel(int amount)
+    public virtual void AddProgressParallel(int amount)
     {
         Interlocked.Add(ref loaderValue, amount);
 
@@ -452,17 +479,17 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         // TODO: Implement
     }
 
-    public Task ClickableSearchOutput(string title, string query, int resultsCount, IOrderedEnumerable<KeyValuePair<string, List<(int lineNum, string codeLine)>>> resultsDict, bool showInDecompiledView, IOrderedEnumerable<string>? failedList = null)
+    public virtual Task ClickableSearchOutput(string title, string query, int resultsCount, IOrderedEnumerable<KeyValuePair<string, List<(int lineNum, string codeLine)>>> resultsDict, bool showInDecompiledView, IOrderedEnumerable<string>? failedList = null)
     {
         throw new NotImplementedException();
     }
 
-    public Task ClickableSearchOutput(string title, string query, int resultsCount, IDictionary<string, List<(int lineNum, string codeLine)>> resultsDict, bool showInDecompiledView, IEnumerable<string>? failedList = null)
+    public virtual Task ClickableSearchOutput(string title, string query, int resultsCount, IDictionary<string, List<(int lineNum, string codeLine)>> resultsDict, bool showInDecompiledView, IEnumerable<string>? failedList = null)
     {
         throw new NotImplementedException();
     }
 
-    public void EnableUI()
+    public virtual void EnableUI()
     {
         Dispatcher.UIThread.Invoke(() => mainVM.IsEnabled = true);
     }
@@ -490,12 +517,12 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         return code.Disassemble(mainVM.Data!.Variables, mainVM.Data!.CodeLocals?.For(code));
     }
 
-    public int GetProgress()
+    public virtual int GetProgress()
     {
         return loaderValue;
     }
 
-    public void HideProgressBar()
+    public virtual void HideProgressBar()
     {
         Dispatcher.UIThread.Invoke(CloseLoaderWindow);
     }
@@ -506,7 +533,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         loaderWindow = null;
     }
 
-    public void IncrementProgress()
+    public virtual void IncrementProgress()
     {
         loaderValue++;
 
@@ -516,7 +543,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void IncrementProgressParallel()
+    public virtual void IncrementProgressParallel()
     {
         Interlocked.Increment(ref loaderValue);
 
@@ -526,23 +553,23 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         }, DispatcherPriority.Background);
     }
 
-    public void InitializeScriptDialog()
+    public virtual void InitializeScriptDialog()
     {
         // TODO: Implement
     }
 
-    public bool LintUMTScript(string path)
+    public virtual bool LintUMTScript(string path)
     {
         throw new NotImplementedException();
     }
 
-    public bool MakeNewDataFile()
+    public virtual bool MakeNewDataFile()
     {
         Dispatcher.UIThread.Invoke(() => mainVM.NewData());
         return true;
     }
 
-    public string? PromptChooseDirectory()
+    public virtual string? PromptChooseDirectory()
     {
         // The dialog is shown on the UI thread while this (script) thread blocks: the Android SAF
         // pickers need the main thread to launch their intent and deliver the result.
@@ -557,7 +584,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         return folders[0].TryGetLocalPath();
     }
 
-    public string? PromptLoadFile(string? defaultExt, string? filter)
+    public virtual string? PromptLoadFile(string? defaultExt, string? filter)
     {
         // TODO: filter
         var files = ShowDialogBlocking(() => mainVM.View!.OpenFileDialog(new FilePickerOpenOptions()
@@ -572,7 +599,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         return files[0].TryGetLocalPath();
     }
 
-    public string? PromptSaveFile(string defaultExt, string filter)
+    public virtual string? PromptSaveFile(string defaultExt, string filter)
     {
         // TODO: filter
         var file = ShowDialogBlocking(() => mainVM.View!.SaveFileDialog(new FilePickerSaveOptions()
@@ -588,12 +615,12 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         return file.TryGetLocalPath();
     }
 
-    public bool RunUMTScript(string path)
+    public virtual bool RunUMTScript(string path)
     {
         throw new NotImplementedException();
     }
 
-    public void ScriptError(string error, string? title = null, bool SetConsoleText = true)
+    public virtual void ScriptError(string error, string? title = null, bool SetConsoleText = true)
     {
         ShowDialogBlocking(() => mainVM.View!.MessageDialog(error, title ?? LocalizationSource.GetString("Common_Error")));
 
@@ -603,38 +630,38 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         }
     }
 
-    public string? ScriptInputDialog(string title, string label, string defaultInput, string cancelText, string submitText, bool isMultiline, bool preventClose)
+    public virtual string? ScriptInputDialog(string title, string label, string defaultInput, string cancelText, string submitText, bool isMultiline, bool preventClose)
     {
         // TODO: cancelText, submitText, preventClose
         return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultInput, title: title, isMultiline: isMultiline));
     }
 
-    public void ScriptMessage(string message)
+    public virtual void ScriptMessage(string message)
     {
         ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptMessageTitle")));
     }
 
-    public void ScriptOpenURL(string url)
+    public virtual void ScriptOpenURL(string url)
     {
         ShowDialogBlocking(() => mainVM.View!.LaunchUriAsync(new(url)));
     }
 
-    public bool ScriptQuestion(string message)
+    public virtual bool ScriptQuestion(string message)
     {
         return ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, LocalizationSource.GetString("Msg_ScriptQuestionTitle"), MessageWindow.Buttons.YesNo)) == MessageWindow.Result.Yes;
     }
 
-    public void ScriptWarning(string message)
+    public virtual void ScriptWarning(string message)
     {
         ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptWarningTitle")));
     }
 
-    public void SetFinishedMessage(bool isFinishedMessageEnabled)
+    public virtual void SetFinishedMessage(bool isFinishedMessageEnabled)
     {
         // TODO: Implement
     }
 
-    public void SetProgress(int value)
+    public virtual void SetProgress(int value)
     {
         loaderValue = value;
 
@@ -644,7 +671,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void SetProgressBar(string message, string status, double progressValue, double maxValue)
+    public virtual void SetProgressBar(string message, string status, double progressValue, double maxValue)
     {
         loaderValue = (int)progressValue;
 
@@ -659,7 +686,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void SetProgressBar()
+    public virtual void SetProgressBar()
     {
         Dispatcher.UIThread.Invoke(() =>
         {
@@ -668,39 +695,39 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void SetUMTConsoleText(string message)
+    public virtual void SetUMTConsoleText(string message)
     {
         Dispatcher.UIThread.Invoke(() => mainVM.CommandTextBoxText = message);
     }
 
-    public string? SimpleTextInput(string title, string label, string defaultValue, bool allowMultiline, bool showDialog = true)
+    public virtual string? SimpleTextInput(string title, string label, string defaultValue, bool allowMultiline, bool showDialog = true)
     {
         // TODO: showDialog
         return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultValue, title: title, isMultiline: allowMultiline));
     }
 
-    public void SimpleTextOutput(string title, string label, string message, bool allowMultiline)
+    public virtual void SimpleTextOutput(string title, string label, string message, bool allowMultiline)
     {
         ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, message, title: title, isMultiline: allowMultiline, isReadOnly: true));
     }
 
-    public void StartProgressBarUpdater()
+    public virtual void StartProgressBarUpdater()
     {
         // TODO: Implement
     }
 
-    public Task StopProgressBarUpdater()
+    public virtual Task StopProgressBarUpdater()
     {
         // TODO: Implement
         return Task.CompletedTask;
     }
 
-    public void UpdateProgressBar(string message, string status, double progressValue, double maxValue)
+    public virtual void UpdateProgressBar(string message, string status, double progressValue, double maxValue)
     {
         SetProgressBar(message, status, progressValue, maxValue);
     }
 
-    public void UpdateProgressStatus(string status)
+    public virtual void UpdateProgressStatus(string status)
     {
         Dispatcher.UIThread.Post(() =>
         {
@@ -708,7 +735,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void UpdateProgressValue(double progressValue)
+    public virtual void UpdateProgressValue(double progressValue)
     {
         loaderValue = (int)progressValue;
 

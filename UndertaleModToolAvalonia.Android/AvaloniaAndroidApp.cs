@@ -52,6 +52,12 @@ public class AvaloniaAndroidApp : AvaloniaAndroidApplication<App>
         // it; on Android Environment.ProcessPath resolves to the read-only /system/bin, so point
         // ExePath at an app-private directory instead.
         Scripting.ExePathOverride = CacheDir?.AbsolutePath ?? FilesDir?.AbsolutePath;
+
+        // An app can bind the cross-app API service in a process that has no activity, and Android
+        // creates the Application before it delivers the bind - so a request may arrive while the
+        // lines above are still running. Only now is the view model (and its scripting engine)
+        // usable, so this is the point where the API stops replying "still starting up".
+        Api.UmApiApp.NotifyReady();
     }
 
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
