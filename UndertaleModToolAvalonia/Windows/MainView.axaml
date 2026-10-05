@@ -20,7 +20,7 @@
     </Interaction.Behaviors>
 
     <DockPanel>
-        <l:MenuBarCompat DockPanel.Dock="Top" />
+        <l:AppMenuBar DockPanel.Dock="Top" />
         
         <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto">
             <TextBox Grid.Column="0" Name="CommandTextBox" Text="{Binding CommandTextBoxText}" AcceptsReturn="True" />
