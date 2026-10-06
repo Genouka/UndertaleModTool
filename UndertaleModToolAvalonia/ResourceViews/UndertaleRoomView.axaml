@@ -860,7 +860,7 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
                     <ToggleButton x:Name="TreeOverlayButton"
                                   Click="TreeOverlayButton_Click"
-                                  ToolTip.Tip="Toggle tree view overlay"
+                                  ToolTip.Tip="Toggle tree view"
                                   Padding="6,4">
                         <Panel Width="18" Height="18">
                             <Rectangle Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" RadiusX="2.5" RadiusY="2.5" />
@@ -869,15 +869,17 @@
                     </ToggleButton>
                     <ToggleButton x:Name="PropertiesOverlayButton"
                                   Click="PropertiesOverlayButton_Click"
-                                  ToolTip.Tip="Toggle properties overlay"
+                                  ToolTip.Tip="Toggle properties"
                                   Padding="6,4">
+                        <!-- Three rows with a knob on each; the knobs are 5px so they keep an even
+                             gap to the neighboring rows and don't visually touch them. -->
                         <Panel Width="18" Height="18">
-                            <Line StartPoint="1,4.5" EndPoint="17,4.5" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" />
+                            <Line StartPoint="1,3.5" EndPoint="17,3.5" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" />
                             <Line StartPoint="1,9" EndPoint="17,9" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" />
-                            <Line StartPoint="1,13.5" EndPoint="17,13.5" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" />
-                            <Ellipse Width="6" Height="6" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Left" Margin="7.5,1.5,0,0" />
-                            <Ellipse Width="6" Height="6" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Left" Margin="2.5,6,0,0" />
-                            <Ellipse Width="6" Height="6" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Left" Margin="10,10.5,0,0" />
+                            <Line StartPoint="1,14.5" EndPoint="17,14.5" Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" />
+                            <Ellipse Width="5" Height="5" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Left" Margin="8.5,1,0,0" />
+                            <Ellipse Width="5" Height="5" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Left" Margin="3.5,6.5,0,0" />
+                            <Ellipse Width="5" Height="5" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}" HorizontalAlignment="Left" Margin="10,12,0,0" />
                         </Panel>
                     </ToggleButton>
                 </StackPanel>
@@ -923,53 +925,22 @@
                 </StackPanel>
             </Grid>
 
-            <!-- View + semi-transparent overlays -->
+            <!-- View + slide-in drawers. The tree/properties submenus (toggle buttons in the top
+                 bar) slide in from the left edge of the editor area only - the DrawerPage's root
+                 panel clips them to this region, they never cover the rest of the page. -->
             <Panel Grid.Row="1">
-                <l:UndertaleRoomEditor />
-
-                <Border x:Name="TreeOverlayHost"
-                        IsVisible="False"
-                        HorizontalAlignment="Left"
-                        Width="330"
-                        Margin="8"
-                        CornerRadius="8"
-                        Padding="8"
-                        Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
-                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                        BorderThickness="1"
-                        BoxShadow="0 4 16 0 #40000000"
-                        Opacity="0.94"
-                        ZIndex="10">
-                    <Grid RowDefinitions="Auto,1*">
-                        <Grid Grid.Row="0" ColumnDefinitions="1*,Auto" Margin="0,0,0,6">
-                            <TextBlock FontWeight="Bold" VerticalAlignment="Center" Text="Tree view" />
-                            <Button Grid.Column="1" Click="TreeOverlayClose_Click" Padding="6,0" Content="✕" />
-                        </Grid>
-                        <Border Grid.Row="1" x:Name="TreeOverlayContent" MinHeight="200" />
-                    </Grid>
-                </Border>
-
-                <Border x:Name="PropertiesOverlayHost"
-                        IsVisible="False"
-                        HorizontalAlignment="Left"
-                        Width="340"
-                        Margin="8"
-                        CornerRadius="8"
-                        Padding="8"
-                        Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
-                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                        BorderThickness="1"
-                        BoxShadow="0 4 16 0 #40000000"
-                        Opacity="0.94"
-                        ZIndex="11">
-                    <Grid RowDefinitions="Auto,1*">
-                        <Grid Grid.Row="0" ColumnDefinitions="1*,Auto" Margin="0,0,0,6">
-                            <TextBlock FontWeight="Bold" VerticalAlignment="Center" Text="Properties" />
-                            <Button Grid.Column="1" Click="PropertiesOverlayClose_Click" Padding="6,0" Content="✕" />
-                        </Grid>
-                        <Border Grid.Row="1" x:Name="PropertiesOverlayContent" MinHeight="200" />
-                    </Grid>
-                </Border>
+                <l:DrawerPage x:Name="EditorDrawerHost"
+                              Mode="Overlay"
+                              IsEdgeSwipeEnabled="False">
+                    <l:DrawerPage.MainContent>
+                        <l:UndertaleRoomEditor />
+                    </l:DrawerPage.MainContent>
+                    <l:DrawerPage.DrawerContent>
+                        <!-- The tree/properties content is moved here by the code-behind while
+                             its drawer is open, and back to the inline hosts when closed. -->
+                        <Border x:Name="DrawerContentHost" />
+                    </l:DrawerPage.DrawerContent>
+                </l:DrawerPage>
             </Panel>
 
             <!-- Bottom bar: status text on the left, grid size and zoom slider on the right -->

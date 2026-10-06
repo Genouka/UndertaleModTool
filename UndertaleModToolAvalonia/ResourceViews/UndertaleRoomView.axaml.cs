@@ -14,7 +14,7 @@ namespace UndertaleModToolAvalonia;
 public partial class UndertaleRoomView : UserControl
 {
     // Below this width (in DIPs) the tree/properties panels are collapsed and can only be shown
-    // as semi-transparent overlays via the toolbar toggle buttons.
+    // in the slide-in drawer over the editor via the toolbar toggle buttons.
     const double NarrowLayoutThreshold = 900;
 
     bool treeOverlayOpen;
@@ -27,6 +27,19 @@ public partial class UndertaleRoomView : UserControl
 
         SizeChanged += (_, _) => UpdatePanelsLayout();
         UpdatePanelsLayout();
+
+        // The drawer can also be closed by tapping the scrim over the editor - keep the toggle
+        // buttons and the inline/drawer content placement in sync when that happens.
+        EditorDrawerHost.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == DrawerPage.IsDrawerOpenProperty && !EditorDrawerHost.IsDrawerOpen
+                && (treeOverlayOpen || propertiesOverlayOpen))
+            {
+                treeOverlayOpen = false;
+                propertiesOverlayOpen = false;
+                UpdatePanelsLayout();
+            }
+        };
 
         DataContextChanged += (_, _) =>
         {
@@ -46,35 +59,27 @@ public partial class UndertaleRoomView : UserControl
         };
     }
 
-    #region Side panel placement (inline vs semi-transparent overlay)
+    #region Side panel placement (inline vs slide-in drawer)
 
     void TreeOverlayButton_Click(object? sender, RoutedEventArgs e)
     {
         treeOverlayOpen = !treeOverlayOpen;
+        if (treeOverlayOpen)
+            propertiesOverlayOpen = false; // a single drawer shows one submenu at a time
         UpdatePanelsLayout();
     }
 
     void PropertiesOverlayButton_Click(object? sender, RoutedEventArgs e)
     {
         propertiesOverlayOpen = !propertiesOverlayOpen;
+        if (propertiesOverlayOpen)
+            treeOverlayOpen = false;
         UpdatePanelsLayout();
     }
 
-    void TreeOverlayClose_Click(object? sender, RoutedEventArgs e)
-    {
-        treeOverlayOpen = false;
-        UpdatePanelsLayout();
-    }
-
-    void PropertiesOverlayClose_Click(object? sender, RoutedEventArgs e)
-    {
-        propertiesOverlayOpen = false;
-        UpdatePanelsLayout();
-    }
-
-    // Moves a panel between its inline host (left column) and its overlay host (over the editor),
-    // collapsing the left column entirely while an overlay is open or there isn't enough
-    // horizontal space.
+    // Moves a panel between its inline host (left column) and the slide-in drawer over the
+    // editor area, collapsing the left column entirely while the drawer is open or there isn't
+    // enough horizontal space.
     void UpdatePanelsLayout()
     {
         bool narrow = Bounds.Width > 0 && Bounds.Width < NarrowLayoutThreshold;
@@ -94,23 +99,19 @@ public partial class UndertaleRoomView : UserControl
         }
         SideSplitter.IsVisible = showSide;
 
-        PlacePanel(TreeInlineHost, TreeOverlayContent, TreePanel, treeOverlayOpen);
-        PlacePanel(PropertiesInlineHost, PropertiesOverlayContent, PropertiesScroll, propertiesOverlayOpen);
+        PlacePanel(TreeInlineHost, DrawerContentHost, TreePanel, treeOverlayOpen);
+        PlacePanel(PropertiesInlineHost, DrawerContentHost, PropertiesScroll, propertiesOverlayOpen);
 
-        TreeOverlayHost.IsVisible = treeOverlayOpen;
-        PropertiesOverlayHost.IsVisible = propertiesOverlayOpen;
-
-        // Offset the properties overlay so both overlays don't overlap when opened together.
-        double leftOffset = treeOverlayOpen ? TreeOverlayHost.Width + 16 : 8;
-        PropertiesOverlayHost.Margin = new Thickness(leftOffset, 8, 8, 8);
+        EditorDrawerHost.DrawerWidth = propertiesOverlayOpen ? 340 : 330;
+        EditorDrawerHost.IsDrawerOpen = treeOverlayOpen || propertiesOverlayOpen;
 
         TreeOverlayButton.IsChecked = treeOverlayOpen;
         PropertiesOverlayButton.IsChecked = propertiesOverlayOpen;
     }
 
-    static void PlacePanel(Border inlineHost, Border overlayContent, Control content, bool toOverlay)
+    static void PlacePanel(Border inlineHost, Border drawerHost, Control content, bool toDrawer)
     {
-        Border target = toOverlay ? overlayContent : inlineHost;
+        Border target = toDrawer ? drawerHost : inlineHost;
         if (target.Child == content)
             return;
 

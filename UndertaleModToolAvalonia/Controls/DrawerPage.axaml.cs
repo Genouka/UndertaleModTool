@@ -54,6 +54,9 @@ public partial class DrawerPage : UserControl
     public static readonly StyledProperty<bool> IsCollapsibleProperty =
         AvaloniaProperty.Register<DrawerPage, bool>(nameof(IsCollapsible), defaultValue: true);
 
+    public static readonly StyledProperty<bool> IsEdgeSwipeEnabledProperty =
+        AvaloniaProperty.Register<DrawerPage, bool>(nameof(IsEdgeSwipeEnabled), defaultValue: true);
+
     /// <summary>The content the page shows while the drawer is closed.</summary>
     public object? MainContent
     {
@@ -98,6 +101,17 @@ public partial class DrawerPage : UserControl
     {
         get => GetValue(IsCollapsibleProperty);
         set => SetValue(IsCollapsibleProperty, value);
+    }
+
+    /// <summary>
+    /// Whether the edge-swipe-to-open gesture is active. Hosts whose main content is itself
+    /// drag-pannable (e.g. the room editor canvas) should turn it off so a pan starting near the
+    /// left edge does not open the drawer.
+    /// </summary>
+    public bool IsEdgeSwipeEnabled
+    {
+        get => GetValue(IsEdgeSwipeEnabledProperty);
+        set => SetValue(IsEdgeSwipeEnabledProperty, value);
     }
 
     public DrawerPage()
@@ -158,7 +172,7 @@ public partial class DrawerPage : UserControl
     private IPointer? _edgeSwipePointer;
     private Point _edgeSwipeOrigin;
 
-    private bool CanEdgeSwipe() => IsCollapsible && !IsDrawerOpen && Mode == DrawerDisplayMode.Overlay;
+    private bool CanEdgeSwipe() => IsEdgeSwipeEnabled && IsCollapsible && !IsDrawerOpen && Mode == DrawerDisplayMode.Overlay;
 
     private void DrawerEdge_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
