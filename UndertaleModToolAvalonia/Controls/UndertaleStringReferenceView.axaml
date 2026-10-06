@@ -8,14 +8,13 @@
     <ContentControl DataContext="{Binding $parent[l:UndertaleStringReferenceView]}">
         <Grid ColumnDefinitions="*,Auto,Auto,Auto">
             <!-- TODO: Make this look/work better -->
+            <!-- Editable: a string can be typed (creating it when needed), with the existing strings offered below. -->
             <TextBox Grid.Column="0" Name="ReferenceTextBox"
                      Text="{Binding Reference.Content, Mode=OneWay, TargetNullValue=''}"
                      ToolTip.Tip="{Binding Reference.Content, TargetNullValue={l:Loc RefTooltip_NullStringReference}}"
-                     IsReadOnly="{Binding Reference, Converter={x:Static ObjectConverters.IsNull}}"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
-                     PointerReleased="TextBox_PointerReleased"
-                     LostFocus="TextBox_LostFocus">
+                     PointerReleased="TextBox_PointerReleased">
                 <TextBox.Resources>
                     <l:UndertaleStringDropHandler x:Key="UndertaleStringDropHandler"/>
                 </TextBox.Resources>
@@ -34,6 +33,30 @@
             <Button Grid.Column="3" Command="{Binding OpenInNewTab}"
                     IsEnabled="{Binding Reference, Converter={x:Static ObjectConverters.IsNotNull}}"
                     ToolTip.Tip="{l:Loc RefTooltip_OpenStringNewTab}">&gt;</Button>
+
+            <Popup Grid.Column="0" Grid.ColumnSpan="4" Name="SuggestionsPopup"
+                   PlacementTarget="{Binding #ReferenceTextBox}"
+                   Placement="BottomEdgeAlignedLeft"
+                   IsLightDismissEnabled="True"
+                   Width="{Binding #ReferenceTextBox.Bounds.Width}">
+                <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                        BorderThickness="1">
+                    <ListBox Name="SuggestionsListBox"
+                             MaxHeight="260"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Focusable="False"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.Styles>
+                            <!-- Keep the keyboard focus in the text box while the dropdown is used. -->
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="Focusable" Value="False"/>
+                            </Style>
+                        </ListBox.Styles>
+                    </ListBox>
+                </Border>
+            </Popup>
         </Grid>
     </ContentControl>
 </UserControl>
