@@ -28,9 +28,7 @@ If you are looking for the official version instead of the version I forked, ple
 
 如果你在找官方的版本而不是我Fork的版本，请前往[这里](https://github.com/UnderminersTeam/UndertaleModTool/)
 
-[QQ群](https://qm.qq.com/q/V1LyuIu3IY) |  [哔哩哔哩](https://space.bilibili.com/3493116076100126)
-
-## What do I change?/我做了什么修改？
+## What do this fork changed?/这个版本做了什么修改？
 
 - Avalonia App for Windows/Linux/MacOS/Android 跨平台支持
 
@@ -136,10 +134,11 @@ If you are looking for the official version instead of the version I forked, ple
 Without the following projects as a foundation, this project would never have been born!
 
 - [UndertaleModTool(UnderminersTeam)](https://github.com/UnderminersTeam/UndertaleModTool/) Original version of UndertaleModTool
-- [UndertaleModTool(luizzeroxis)](https://github.com/luizzeroxis/UndertaleModTool/) Avalonia version for desktop
-- [GUTMT4A(Genouka)](https://github.com/QiumingOrg/GUTMT4A) Android version(v3)
-- [QiuUTMTv4(Genouka)](https://github.com/QiumingOrg/QiuUTMTv4) Android version(v4)
-- [QiuMagickNet(Genouka)](https://github.com/orgs/QiuMagickNet/repositories) Build `Magick.NET` nupkgs for Android.
+- [UndertaleModTool(luizzeroxis)](https://github.com/luizzeroxis/UndertaleModTool/) An avalonia version fork for desktop
+- [GUTMT4A(Genouka)](https://github.com/QiumingOrg/GUTMT4A) An old MAUI android version (QiuUTMTv3)
+- [QiuUTMTv4(Genouka)](https://github.com/QiumingOrg/QiuUTMTv4) An old avalonia android version (QiuUTMTv4)
+- [QiuMagickNet(Genouka)](https://github.com/orgs/QiuMagickNet/repositories) Build unofficial `Magick.NET` nupkgs for Android.
+- [SDL3-CS](https://github.com/edwardgushchin/SDL3-CS) A wonderful c# binding for SDL3
   
 ## 捐赠/Donate
 
