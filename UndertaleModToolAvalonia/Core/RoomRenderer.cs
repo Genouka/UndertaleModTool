@@ -310,10 +310,10 @@ public class RoomRenderer
                 return null;
 
             return new(
-                nineSlice.Left - texturePageItem.TargetX,
-                nineSlice.Top - texturePageItem.TargetY,
-                texturePageItem.BoundingWidth - nineSlice.Right - texturePageItem.TargetX,
-                texturePageItem.BoundingHeight - nineSlice.Bottom - texturePageItem.TargetY,
+                nineSlice.Left,
+                nineSlice.Top,
+                nineSlice.Right,
+                nineSlice.Bottom,
                 nineSlice.TileModes[0],
                 nineSlice.TileModes[1],
                 nineSlice.TileModes[2],
@@ -438,20 +438,114 @@ public class RoomRenderer
 
         if (c.NinePatch is NinePatchData ninePatch)
         {
-            SKRect destination = SKRect.Create(
-                (-c.OriginX * c.ScaleX),
-                (-c.OriginY * c.ScaleY),
-                (c.BoundingWidth * c.ScaleX),
-                (c.BoundingHeight * c.ScaleY));
+            // Only the origin is scaled
+            Canvas.Scale(c.ScaleX, c.ScaleY);
+            Canvas.Translate(-c.OriginX, -c.OriginY);
 
-            //SKRectI center = new(ninePatch.Left, ninePatch.Top, ninePatch.Right, ninePatch.Bottom);
+            Canvas.ClipRect(SKRect.Create(0, 0, c.BoundingWidth, c.BoundingHeight));
 
-            // TODO: This is necessary so it doesn't crash if the center is outside the actual texture item.
-            // Can only be fixed by not using DrawImageNinePatch probably
-            SKRectI center = new(Math.Max(ninePatch.Left, 0), Math.Max(ninePatch.Top, 0),
-                Math.Min(ninePatch.Right, c.Image.Width), Math.Min(ninePatch.Bottom, c.Image.Height));
+            // Undo previous scale to get real pixels next.
+            Canvas.Scale(1 / c.ScaleX, 1 / c.ScaleY);
 
-            Canvas.DrawImageNinePatch(c.Image, center, destination, paint);
+            var scaledW = c.BoundingWidth * c.ScaleX;
+            var scaledH = c.BoundingHeight * c.ScaleY;
+
+            // TODO: Work better when scale is too small, with this it only clips. Probably min max these.
+            float[] sourceXs = [0, ninePatch.Left, c.BoundingWidth - ninePatch.Right, c.BoundingWidth];
+            float[] sourceYs = [0, ninePatch.Top, c.BoundingHeight - ninePatch.Bottom, c.BoundingHeight];
+
+            float[] destinXs = [0, ninePatch.Left, scaledW - ninePatch.Right, scaledW];
+            float[] destinYs = [0, ninePatch.Top, scaledH - ninePatch.Bottom, scaledH];
+
+            for (int y = 0; y < 3; y++)
+            {
+                for (int x = 0; x < 3; x++)
+                {
+                    SKRect source = new SKRect(sourceXs[x], sourceYs[y], sourceXs[x + 1], sourceYs[y + 1]);
+                    SKRect destin = new SKRect(destinXs[x], destinYs[y], destinXs[x + 1], destinYs[y + 1]);
+
+                    UndertaleSprite.NineSlice.TileMode tileMode = (x, y) switch
+                    {
+                        (1, 1) => ninePatch.TileModeCenter,
+                        (0, 1) => ninePatch.TileModeLeft,
+                        (1, 0) => ninePatch.TileModeTop,
+                        (2, 1) => ninePatch.TileModeRight,
+                        (1, 2) => ninePatch.TileModeBottom,
+                        _ => UndertaleSprite.NineSlice.TileMode.BlankRepeat,
+                    };
+
+                    if (tileMode == UndertaleSprite.NineSlice.TileMode.Stretch)
+                    {
+                        Canvas.DrawImage(c.Image, source, destin, SKSamplingOptions.Default, paint);
+                    }
+
+                    else if (tileMode == UndertaleSprite.NineSlice.TileMode.Repeat)
+                    {
+                        for (float cy = destin.Top; cy < destin.Bottom; cy += source.Height)
+                        {
+                            for (float cx = destin.Left; cx < destin.Right; cx += source.Width)
+                            {
+                                SKRect destinDraw = SKRect.Create(cx, cy, Math.Min(source.Width, destin.Right - cx), Math.Min(source.Height, destin.Bottom - cy));
+                                SKRect sourceDraw = SKRect.Create(source.Left, source.Top, destinDraw.Width, destinDraw.Height);
+
+                                Canvas.DrawImage(c.Image, sourceDraw, destinDraw, SKSamplingOptions.Default, paint);
+                            }
+                        }
+                    }
+
+                    else if (tileMode == UndertaleSprite.NineSlice.TileMode.Mirror)
+                    {
+                        bool flipY = false;
+
+                        for (float cy = destin.Top; cy < destin.Bottom; cy += source.Height)
+                        {
+                            bool flipX = false;
+
+                            for (float cx = destin.Left; cx < destin.Right; cx += source.Width)
+                            {
+                                float drawW = Math.Min(source.Width, destin.Right - cx);
+                                float drawH = Math.Min(source.Height, destin.Bottom - cy);
+
+                                float drawX = flipX ? (source.Right - drawW) : source.Left;
+                                float drawY = flipY ? (source.Bottom - drawH) : source.Top;
+
+                                SKRect sourceDraw = SKRect.Create(drawX, drawY, drawW, drawH);
+                                SKRect destinDraw = SKRect.Create(0, 0, drawW, drawH);
+
+                                Canvas.Save();
+                                Canvas.Translate(cx, cy);
+
+                                if (flipX)
+                                {
+                                    Canvas.Translate(drawW, 0);
+                                    Canvas.Scale(-1, 1);
+                                }
+
+                                if (flipY)
+                                {
+                                    Canvas.Translate(0, drawH);
+                                    Canvas.Scale(1, -1);
+                                }
+
+                                Canvas.DrawImage(c.Image, sourceDraw, destinDraw, SKSamplingOptions.Default, paint);
+                                Canvas.Restore();
+
+                                flipX = !flipX;
+                            }
+
+                            flipY = !flipY;
+                        }
+                    }
+
+                    else if (tileMode == UndertaleSprite.NineSlice.TileMode.BlankRepeat)
+                    {
+                        SKRect destinDraw = SKRect.Create(destin.Left, destin.Top, Math.Min(source.Width, destin.Width), Math.Min(source.Height, destin.Height));
+                        SKRect sourceDraw = SKRect.Create(source.Left, source.Top, destinDraw.Width, destinDraw.Height);
+
+                        Canvas.DrawImage(c.Image, sourceDraw, destinDraw, SKSamplingOptions.Default, paint);
+                    }
+                }
+            }
         }
         else
         {
