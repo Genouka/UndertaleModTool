@@ -27,24 +27,18 @@ public class RoomRenderer
         public readonly record struct BackgroundColorRenderCommand(uint RoomWidth, uint RoomHeight, uint Color)
             : IRenderCommand;
         public readonly record struct BackgroundRenderCommand(SKImage Image,
-            ushort SourceX, ushort SourceY, ushort SourceWidth, ushort SourceHeight,
-            ushort TargetX, ushort TargetY, ushort TargetWidth, ushort TargetHeight, ushort BoundingWidth, ushort BoundingHeight,
+            ushort BoundingWidth, ushort BoundingHeight,
             float X, float Y, float ScaleX, float ScaleY, uint Color, bool TiledHorizontally, bool TiledVertically, uint RoomWidth, uint RoomHeight)
             : IRenderCommand;
         public readonly record struct TileRenderCommand(SKImage Image,
-            ushort SourceX, ushort SourceY, ushort SourceWidth, ushort SourceHeight,
-            ushort TargetX, ushort TargetY, ushort TargetWidth, ushort TargetHeight,
-            int TileSourceX, int TileSourceY, float X, float Y, float ScaleX, float ScaleY)
+            float X, float Y, float ScaleX, float ScaleY)
             : IRenderCommand;
         public readonly record struct GameObjectRenderCommand(SKImage Image,
-            ushort SourceX, ushort SourceY, ushort SourceWidth, ushort SourceHeight,
-            ushort TargetX, ushort TargetY, ushort TargetWidth, ushort TargetHeight, ushort BoundingWidth, ushort BoundingHeight,
+            ushort BoundingWidth, ushort BoundingHeight,
             int X, int Y, float ScaleX, float ScaleY, uint Color, float Rotation, int OriginX, int OriginY,
             NinePatchData? NinePatch)
             : IRenderCommand;
         public readonly record struct SpriteRenderCommand(SKImage Image,
-            ushort SourceX, ushort SourceY, ushort SourceWidth, ushort SourceHeight,
-            ushort TargetX, ushort TargetY, ushort TargetWidth, ushort TargetHeight,
             float X, float Y, float ScaleX, float ScaleY, uint Color, float Rotation, int OriginX, int OriginY)
             : IRenderCommand;
         public readonly record struct LayerTilesRenderCommand(SKImage Image,
@@ -139,14 +133,6 @@ public class RoomRenderer
 
                     RenderCommands.Add(new BackgroundRenderCommand(
                        Image: image,
-                       SourceX: texture.SourceX,
-                       SourceY: texture.SourceY,
-                       SourceWidth: texture.SourceWidth,
-                       SourceHeight: texture.SourceHeight,
-                       TargetX: texture.TargetX,
-                       TargetY: texture.TargetY,
-                       TargetWidth: texture.TargetWidth,
-                       TargetHeight: texture.TargetHeight,
                        BoundingWidth: texture.BoundingWidth,
                        BoundingHeight: texture.BoundingHeight,
                        X: roomBackground.X,
@@ -178,16 +164,6 @@ public class RoomRenderer
 
                 RenderCommands.Add(new TileRenderCommand(
                     Image: image,
-                    SourceX: texture.SourceX,
-                    SourceY: texture.SourceY,
-                    SourceWidth: texture.SourceWidth,
-                    SourceHeight: texture.SourceHeight,
-                    TargetX: texture.TargetX,
-                    TargetY: texture.TargetY,
-                    TargetWidth: texture.TargetWidth,
-                    TargetHeight: texture.TargetHeight,
-                    TileSourceX: roomTile.SourceX,
-                    TileSourceY: roomTile.SourceY,
                     X: (layer?.XOffset ?? 0) + roomTile.X - Math.Min(roomTile.SourceX - texture.TargetX, 0),
                     Y: (layer?.YOffset ?? 0) + roomTile.Y - Math.Min(roomTile.SourceX - texture.TargetX, 0),
                     ScaleX: roomTile.ScaleX,
@@ -211,14 +187,6 @@ public class RoomRenderer
                 // image, source xywh, target xywh, x/y offset, scale x/y, color, rotation, origin x/y
                 RenderCommands.Add(new GameObjectRenderCommand(
                     Image: image,
-                    SourceX: texture.SourceX,
-                    SourceY: texture.SourceY,
-                    SourceWidth: texture.SourceWidth,
-                    SourceHeight: texture.SourceHeight,
-                    TargetX: texture.TargetX,
-                    TargetY: texture.TargetY,
-                    TargetWidth: texture.TargetWidth,
-                    TargetHeight: texture.TargetHeight,
                     BoundingWidth: texture.BoundingWidth,
                     BoundingHeight: texture.BoundingHeight,
                     X: roomGameObject.X,
@@ -248,14 +216,6 @@ public class RoomRenderer
 
                 RenderCommands.Add(new SpriteRenderCommand(
                     Image: image,
-                    SourceX: texture.SourceX,
-                    SourceY: texture.SourceY,
-                    SourceWidth: texture.SourceWidth,
-                    SourceHeight: texture.SourceHeight,
-                    TargetX: texture.TargetX,
-                    TargetY: texture.TargetY,
-                    TargetWidth: texture.TargetWidth,
-                    TargetHeight: texture.TargetHeight,
                     X: layer.XOffset + roomSprite.X,
                     Y: layer.YOffset + roomSprite.Y,
                     ScaleX: roomSprite.ScaleX,
@@ -292,14 +252,6 @@ public class RoomRenderer
             // image, source xywh, target xywh, x/y offset, scale x/y, color, tile h/v, parent w/h
             RenderCommands.Add(new BackgroundRenderCommand(
                 Image: image,
-                SourceX: texture.SourceX,
-                SourceY: texture.SourceY,
-                SourceWidth: texture.SourceWidth,
-                SourceHeight: texture.SourceHeight,
-                TargetX: texture.TargetX,
-                TargetY: texture.TargetY,
-                TargetWidth: texture.TargetWidth,
-                TargetHeight: texture.TargetHeight,
                 BoundingWidth: texture.BoundingWidth,
                 BoundingHeight: texture.BoundingHeight,
                 X: layer.XOffset,
@@ -448,7 +400,7 @@ public class RoomRenderer
                 }
                 Canvas.Translate(x, y);
                 Canvas.Scale(c.ScaleX, c.ScaleY);
-                Canvas.DrawImage(c.Image, SKRect.Create(c.TargetX, c.TargetY, c.TargetWidth, c.TargetHeight), SKSamplingOptions.Default, skPaint);
+                Canvas.DrawImage(c.Image, 0, 0, SKSamplingOptions.Default, skPaint);
                 Canvas.Restore();
             }
         }
@@ -486,13 +438,11 @@ public class RoomRenderer
 
         if (c.NinePatch is NinePatchData ninePatch)
         {
-            // Width = scaled bounding width - unscaled left + right side (which is bounding width - target width), similarly for height
-
             SKRect destination = SKRect.Create(
-                (-c.OriginX * c.ScaleX) + c.TargetX,
-                (-c.OriginY * c.ScaleY) + c.TargetY,
-                (c.BoundingWidth * c.ScaleX) - (c.BoundingWidth - c.TargetWidth),
-                (c.BoundingHeight * c.ScaleY) - (c.BoundingHeight - c.TargetHeight));
+                (-c.OriginX * c.ScaleX),
+                (-c.OriginY * c.ScaleY),
+                (c.BoundingWidth * c.ScaleX),
+                (c.BoundingHeight * c.ScaleY));
 
             //SKRectI center = new(ninePatch.Left, ninePatch.Top, ninePatch.Right, ninePatch.Bottom);
 
@@ -505,15 +455,13 @@ public class RoomRenderer
         }
         else
         {
-            SKRect destination = SKRect.Create(
-                -c.OriginX + c.TargetX,
-                -c.OriginY + c.TargetY,
-                c.TargetWidth,
-                c.TargetHeight);
-
             Canvas.Scale(c.ScaleX, c.ScaleY);
-            Canvas.DrawImage(c.Image, destination, SKSamplingOptions.Default, paint);
+            Canvas.Translate(-c.OriginX, -c.OriginY);
+
+            Canvas.DrawImage(c.Image, 0, 0, SKSamplingOptions.Default, paint);
         }
+
+        paint.Dispose();
 
         Canvas.Restore();
     }
@@ -529,11 +477,16 @@ public class RoomRenderer
         Canvas.Translate(c.X, c.Y);
         Canvas.RotateDegrees(c.Rotation);
         Canvas.Scale(c.ScaleX, c.ScaleY);
+        Canvas.Translate(-c.OriginX, -c.OriginY);
 
-        Canvas.DrawImage(c.Image, SKRect.Create(-c.OriginX + c.TargetX, -c.OriginY + c.TargetY, c.TargetWidth, c.TargetHeight), SKSamplingOptions.Default, new SKPaint()
+        SKPaint paint = new()
         {
             ColorFilter = SKColorFilter.CreateBlendMode(UndertaleColor.ToColor(c.Color).ToSKColor(), SKBlendMode.Modulate),
-        });
+        };
+
+        Canvas.DrawImage(c.Image, 0, 0, SKSamplingOptions.Default, paint);
+
+        paint.Dispose();
 
         Canvas.Restore();
     }

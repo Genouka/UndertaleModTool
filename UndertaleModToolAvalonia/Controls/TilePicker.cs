@@ -158,7 +158,7 @@ public abstract class RoomOrLegacyTilePicker : TilePicker
             if (TexturePageItem is null)
                 return;
 
-            canvas.DrawImage(image, SKRect.Create(TexturePageItem.TargetX, TexturePageItem.TargetY, TexturePageItem.TargetWidth, TexturePageItem.TargetHeight), SKSamplingOptions.Default);
+            canvas.DrawImage(image, 0, 0, SKSamplingOptions.Default);
 
             selectedTileRect = SelectedTileSourceRect?.ToSKRect();
         }
@@ -254,16 +254,11 @@ public class LayerTilePicker : TilePicker
             uint tileColumns = Background.GMS2TileColumns;
             uint tileCount = Background.GMS2TileCount;
 
-            ushort targetX = TexturePageItem.TargetX;
-            ushort targetY = TexturePageItem.TargetY;
-            ushort sourceX = TexturePageItem.SourceX;
-            ushort sourceY = TexturePageItem.SourceY;
-
             if (VisualColumns == 0)
                 VisualColumns = tileColumns;
 
-            var sx = -targetX + borderX;
-            var sy = -targetY + borderY;
+            var sx = borderX;
+            var sy = borderY;
 
             uint dx = 0;
             uint dy = 0;
@@ -282,7 +277,7 @@ public class LayerTilePicker : TilePicker
                 }
                 else
                 {
-                    sx = -targetX + borderX;
+                    sx = borderX;
                     sy += tileH + borderY * 2;
                     tileColumn = 0;
                 }

@@ -103,8 +103,7 @@ public class SKImageViewer : Control
 
                     if (image is not null)
                     {
-                        return new SKImageDrawOperation(image,
-                            SKRect.Create(texturePageItem.TargetX, texturePageItem.TargetY, texturePageItem.TargetWidth, texturePageItem.TargetHeight));
+                        return new SKImageDrawOperation(image);
                     }
                 }
             }
@@ -214,16 +213,14 @@ public class SKImageViewer : Control
     {
         bool enableRender = true;
         SKImage image;
-        SKRect? dest;
 
         public Rect Bounds { get; }
 
-        public SKImageDrawOperation(SKImage image, SKRect? dest = null)
+        public SKImageDrawOperation(SKImage image)
         {
             this.image = image;
-            this.dest = dest;
 
-            Bounds = dest?.ToAvaloniaRect() ?? new Rect(0, 0, image.Width, image.Height);
+            Bounds = new Rect(0, 0, image.Width, image.Height);
         }
 
         public void Render(ImmediateDrawingContext context)
@@ -240,14 +237,7 @@ public class SKImageViewer : Control
                 using var lease = leaseFeature.Lease();
                 SKCanvas canvas = lease.SkCanvas;
 
-                if (dest is SKRect destSKRect)
-                {
-                    canvas.DrawImage(image, destSKRect, SKSamplingOptions.Default);
-                }
-                else
-                {
-                    canvas.DrawImage(image, 0, 0, SKSamplingOptions.Default);
-                }
+                canvas.DrawImage(image, 0, 0, SKSamplingOptions.Default);
             }
             catch (Exception ex)
             {
