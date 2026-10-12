@@ -142,5 +142,10 @@ Without the following projects as a foundation, this project would never have be
   
 ## 捐赠/Donate
 
-Wechat/微信:
-![mm_reward_qrcode](https://github.com/user-attachments/assets/8f442af8-fba5-41fb-ac19-0977744520a0)
+* Afdian/爱发电：
+
+  https://afdian.com/a/genouka
+
+*  Wechat/微信:
+
+  ![mm_reward_qrcode](https://github.com/user-attachments/assets/8f442af8-fba5-41fb-ac19-0977744520a0)
