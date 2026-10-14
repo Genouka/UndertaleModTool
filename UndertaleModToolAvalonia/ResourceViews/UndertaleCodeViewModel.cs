@@ -253,6 +253,12 @@ public partial class UndertaleCodeViewModel : ObservableObject, IUndertaleResour
     };
 
     private static Dictionary<string, string>? localizationData = null;
+
+    public static void ResetLocalizationData()
+    {
+        localizationData = null;
+    }
+
     private static void ParseLocalizationDataFromScript(UndertaleData data, UndertaleCode gettextCode, MainViewModel mainVM)
     {
         localizationData = new Dictionary<string, string>();
