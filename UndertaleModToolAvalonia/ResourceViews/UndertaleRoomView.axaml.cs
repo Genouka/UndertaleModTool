@@ -362,7 +362,7 @@ public partial class UndertaleRoomView : UserControl
     // NOTE: Mostly taken from:
     // https://learn.microsoft.com/en-us/dotnet/desktop/wpf/controls/how-to-find-a-treeviewitem-in-a-treeview
     // So I'm not sure exactly why and how this works.
-    private static TreeViewItem? GetTreeViewItem(ItemsControl? container, object? item)
+    public static TreeViewItem? GetTreeViewItem(ItemsControl? container, object? item)
     {
         if (container != null && item != null)
         {

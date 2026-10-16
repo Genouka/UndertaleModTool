@@ -165,6 +165,7 @@ public partial class DataExplorerView : UserControl
                 "AnimationCurves" => vm.MainVM.Data.AnimationCurves as IList,
                 "ParticleSystems" => vm.MainVM.Data.ParticleSystems as IList,
                 "ParticleSystemEmitters" => vm.MainVM.Data.ParticleSystemEmitters as IList,
+                "UINodes" => vm.MainVM.Data.UINodes as IList,
                 _ => null,
             })!;
 
@@ -174,7 +175,7 @@ public partial class DataExplorerView : UserControl
 
     public void ContextMenu_Open_Click(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is not DataExplorerViewModel vm  || vm.MainVM.Data is null)
+        if (DataContext is not DataExplorerViewModel vm || vm.MainVM.Data is null)
             return;
 
         DataExplorerViewModel.Item? item = GetItemFromTreeDataGridControl(e.Source);

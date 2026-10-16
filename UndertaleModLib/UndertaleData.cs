@@ -304,6 +304,10 @@ namespace UndertaleModLib
         /// </summary>
         public IList<UndertaleParticleSystemEmitter> ParticleSystemEmitters => FORM.PSEM?.List;
 
+        /// <summary>
+        /// The root UI nodes stored in the data file.
+        /// </summary>
+        public IList<UndertaleUIRootNode> UINodes => FORM.UILR?.List;
 
         /// <summary>
         /// Whether this is an unsupported bytecode version.
@@ -756,6 +760,12 @@ namespace UndertaleModLib
         public IList<UndertaleResource> InitializeResource(UndertaleResource resource, IList list, string resourceName)
         {
             IList<UndertaleResource> newResources = [];
+
+            // Set up UI root node, needs to be done before setting name
+            if (resource is UndertaleUIRootNode uiRootNode)
+            {
+                uiRootNode.Node = new UndertaleUILayer();
+            }
 
             // Set up name
             if (resource is UndertaleNamedResource namedResource)

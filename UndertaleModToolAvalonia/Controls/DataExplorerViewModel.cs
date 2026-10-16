@@ -84,6 +84,7 @@ public partial class DataExplorerViewModel : ObservableObject
         AddList(MainVM.Data.AnimationCurves, "AnimationCurves", "Animation curves");
         AddList(MainVM.Data.ParticleSystems, "ParticleSystems", "Particle systems");
         AddList(MainVM.Data.ParticleSystemEmitters, "ParticleSystemEmitters", "Particle system emitters");
+        AddList(MainVM.Data.UINodes, "UINodes", "UI nodes");
 
         TreeDataGridData.Add(dataItem);
     }
