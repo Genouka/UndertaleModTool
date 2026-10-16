@@ -24,7 +24,7 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Label Content="{loc:Loc ImportGraphics_ImportFolder}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+            <TextBlock Text="{loc:Loc ImportGraphics_ImportFolder}" Margin="0,0,5,0" VerticalAlignment="Center"/>
             <local:TextBoxDark Grid.Column="1" x:Name="ImportFolderTextBox"/>
             <local:ButtonDark Grid.Column="2" x:Name="BrowseButton" Content="{loc:Loc ImportGraphics_Browse}" Click="BrowseButton_Click" Width="80" Margin="5,0,0,0"/>
             <local:ButtonDark Grid.Column="3" x:Name="ScanButton" Content="{loc:Loc ImportGraphics_Scan}" Click="ScanButton_Click" Width="80" Margin="5,0,0,0"/>
@@ -59,7 +59,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Label Content="{loc:Loc ImportGraphics_OriginPosition}"/>
+                        <TextBlock Text="{loc:Loc ImportGraphics_OriginPosition}"/>
                         <local:ComboBoxDark Grid.Column="1" x:Name="OriginPositionComboBox" SelectedIndex="0">
                             <ComboBoxItem Content="Top Left"/>
                             <ComboBoxItem Content="Top Center"/>
@@ -77,7 +77,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Label Content="{loc:Loc ImportGraphics_AnimationSpeed}"/>
+                        <TextBlock Text="{loc:Loc ImportGraphics_AnimationSpeed}"/>
                         <local:TextBoxDark Grid.Column="1" x:Name="AnimationSpeedTextBox" Text="1"/>
                     </Grid>
                     <Grid>
@@ -85,7 +85,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Label Content="{loc:Loc ImportGraphics_PlaybackType}"/>
+                        <TextBlock Text="{loc:Loc ImportGraphics_PlaybackType}"/>
                         <local:ComboBoxDark Grid.Column="1" x:Name="PlaybackTypeComboBox" SelectedIndex="1">
                             <ComboBoxItem Content="Frames Per Second"/>
                             <ComboBoxItem Content="Frames Per Game Frame"/>
@@ -103,7 +103,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Label Content="{loc:Loc ImportGraphics_SpecialVersion}"/>
+                        <TextBlock Text="{loc:Loc ImportGraphics_SpecialVersion}"/>
                         <local:TextBoxDark Grid.Column="1" x:Name="SpecialVersionTextBox" Text="1"/>
                     </Grid>
                 </StackPanel>
@@ -128,7 +128,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Label Content="{loc:Loc ImportGraphics_TexturePageSize}"/>
+                    <TextBlock Text="{loc:Loc ImportGraphics_TexturePageSize}"/>
                     <local:ComboBoxDark Grid.Column="1" x:Name="TexturePageSizeComboBox" SelectedIndex="0">
                         <ComboBoxItem Content="2048"/>
                         <ComboBoxItem Content="4096"/>

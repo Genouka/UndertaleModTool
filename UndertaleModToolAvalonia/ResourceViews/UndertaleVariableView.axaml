@@ -13,17 +13,17 @@
 
     <ScrollViewer>
         <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*" Classes="PaddedProperties">
-            <Label Content="{l:Loc Common_Name}"/>
+            <TextBlock Text="{l:Loc Common_Name}"/>
             <l:UndertaleStringReferenceView Reference="{Binding Variable.Name}" />
 
-            <Label Content="{l:Loc Editor_Variable_InstanceType}"/>
+            <TextBlock Text="{l:Loc Editor_Variable_InstanceType}"/>
             <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleInstruction+InstanceType}, Converter={StaticResource EnumTypeToValuesConverter}}"
                       SelectedItem="{Binding Variable.InstanceType}" />
 
-            <Label Content="{l:Loc Editor_Variable_VarID}"/>
+            <TextBlock Text="{l:Loc Editor_Variable_VarID}"/>
             <TextBox Text="{Binding Variable.VarID}" />
 
-            <Label Content="{l:Loc Editor_Variable_NameStringID}"/>
+            <TextBlock Text="{l:Loc Editor_Variable_NameStringID}"/>
             <TextBox Text="{Binding Variable.NameStringID}" />
         </Grid>
     </ScrollViewer>

@@ -28,7 +28,7 @@
                                         <Binding Path="."/>
                                     </MultiBinding>
                                 </CheckBox.IsChecked>
-                                <Label Content="{Binding}" Padding="0" />
+                                <TextBlock Text="{Binding}" Padding="0" />
                             </CheckBox>
                         </StackPanel>
                     </DataTemplate>

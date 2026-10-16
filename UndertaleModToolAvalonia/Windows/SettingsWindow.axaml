@@ -102,7 +102,7 @@
                             IsChecked="{Binding MainVM.Settings.DecompileSettings.PrintWarnings}"/>
 
                 <Grid ColumnDefinitions="Auto,1*">
-                    <Label Content="{l:Loc GML_InstanceIdPrefix}"
+                    <TextBlock Text="{l:Loc GML_InstanceIdPrefix}"
                             ToolTip.Tip="{l:Loc GML_InstanceIdPrefix_Tooltip}"/>
                     <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.InstanceIdPrefix}"/>
                 </Grid>
@@ -126,19 +126,19 @@
                 </Grid>
 
                 <Grid ColumnDefinitions="Auto,1*">
-                    <Label Content="Name of unknown enums:"
+                    <TextBlock Text="Name of unknown enums:"
                             ToolTip.Tip="The name used for auto-generated enum declarations when integer constants are detected as enums without known types (default: &quot;UnknownEnum&quot;)."/>
                     <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.UnknownEnumName}"/>
                 </Grid>
 
                 <Grid ColumnDefinitions="Auto,1*">
-                    <Label Content="Pattern of unknown enum value names:"
+                    <TextBlock Text="Pattern of unknown enum value names:"
                             ToolTip.Tip="Formatting pattern for values inside generated unknown enums. '{0}' is replaced with the underlying number (e.g. 'Value_{0}' produces 'Value_0', 'Value_1'...)."/>
                     <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.UnknownEnumValuePattern}"/>
                 </Grid>
 
                 <Grid ColumnDefinitions="Auto,1*">
-                    <Label Content="Pattern of unknown argument names:"
+                    <TextBlock Text="Pattern of unknown argument names:"
                             ToolTip.Tip="Formatting pattern for unnamed arguments. '{0}' is replaced with the argument index (e.g. 'arg{0}' produces 'arg0', 'arg1'...)."/>
                     <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.UnknownArgumentNamePattern}"/>
                 </Grid>

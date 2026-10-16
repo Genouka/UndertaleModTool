@@ -44,7 +44,7 @@
                         <ColumnDefinition SharedSizeGroup="g1" Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Label Content="{loc:Loc Settings_Language}"/>
+                    <TextBlock Text="{loc:Loc Settings_Language}"/>
                     <local:ComboBoxDark Grid.Column="1" x:Name="LanguageComboBox" SelectionChanged="LanguageComboBox_SelectionChanged">
                         <!-- TODO: The languages list should be moved to LocalizationSource, but now keep it here. -->
                         <ComboBoxItem Content="en - English" Tag="en"/>
@@ -71,7 +71,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Label Content="{loc:Loc Settings_GMS1Path}"/>
+                    <TextBlock Text="{loc:Loc Settings_GMS1Path}"/>
                     <local:TextBoxDark Grid.Column="1" Text="{Binding GameMakerStudioPath}"/>
                 </Grid>
 
@@ -81,7 +81,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Label Content="{loc:Loc Settings_GMS2Path}"/>
+                    <TextBlock Text="{loc:Loc Settings_GMS2Path}"/>
                     <local:TextBoxDark Grid.Column="1" Text="{Binding GameMakerStudio2RuntimesPath}"/>
                 </Grid>
 

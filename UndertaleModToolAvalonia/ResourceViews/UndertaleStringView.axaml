@@ -8,7 +8,7 @@
              x:DataType="l:UndertaleStringViewModel">
     <ScrollViewer>
         <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*" Classes="PaddedProperties">
-            <Label Content="{l:Loc Editor_Content}"/>
+            <TextBlock Text="{l:Loc Editor_Content}"/>
             <TextBox Text="{Binding String.Content}" AcceptsReturn="True"/>
         </Grid>
     </ScrollViewer>

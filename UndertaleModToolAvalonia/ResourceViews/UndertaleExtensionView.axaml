@@ -15,7 +15,7 @@
     <ScrollViewer>
         <StackPanel Classes="PaddedProperties">
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label Content="{l:Loc Common_Name}"/>
+                <TextBlock Text="{l:Loc Common_Name}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding Extension.Name}" />
             </Grid>
 
@@ -23,15 +23,15 @@
                   IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                   Converter={StaticResource VersionCompareConverter},
                   ConverterParameter=GE2023.4}">
-                <Label Content="{l:Loc Common_Version}"/>
+                <TextBlock Text="{l:Loc Common_Version}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding Extension.Version}" />
             </Grid>
 
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label Content="{l:Loc Editor_Extension_ClassName}"/>
+                <TextBlock Text="{l:Loc Editor_Extension_ClassName}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding Extension.ClassName}" />
 
-                <Label Content="{l:Loc Editor_Extension_Files}"/>
+                <TextBlock Text="{l:Loc Editor_Extension_Files}"/>
                 <l:EditableDataGrid ItemsSource="{Binding Extension.Files}" ItemFactory="{Binding CreateExtensionFile}" HeadersVisibility="None"
                                     SelectionChanged="{Binding FilesSelectedChanged}">
                     <l:EditableDataGrid.Columns>
@@ -54,20 +54,20 @@
                 </Label>
 
                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                    <Label Content="{l:Loc Common_Name}"/>
+                    <TextBlock Text="{l:Loc Common_Name}"/>
                     <l:UndertaleStringReferenceView Reference="{Binding FilesSelected.Filename}" />
 
-                    <Label Content="{l:Loc Common_Kind}"/>
+                    <TextBlock Text="{l:Loc Common_Kind}"/>
                     <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleExtensionKind}, Converter={StaticResource EnumTypeToValuesConverter}}"
                               SelectedItem="{Binding FilesSelected.Kind}" />
 
-                    <Label Content="{l:Loc Editor_InitFunctionName}"/>
+                    <TextBlock Text="{l:Loc Editor_InitFunctionName}"/>
                     <l:UndertaleStringReferenceView Reference="{Binding FilesSelected.InitScript}" />
 
-                    <Label Content="{l:Loc Editor_CleanupFunctionName}"/>
+                    <TextBlock Text="{l:Loc Editor_CleanupFunctionName}"/>
                     <l:UndertaleStringReferenceView Reference="{Binding FilesSelected.CleanupScript}" />
 
-                    <Label Content="{l:Loc Editor_Functions}"/>
+                    <TextBlock Text="{l:Loc Editor_Functions}"/>
                     <l:EditableDataGrid ItemsSource="{Binding FilesSelected.Functions}" ItemFactory="{Binding CreateExtensionFunction}" HeadersVisibility="None"
                                         SelectionChanged="{Binding FunctionsSelectedChanged}">
                         <l:EditableDataGrid.Columns>
@@ -91,23 +91,23 @@
                 </Label>
 
                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                    <Label Content="{l:Loc Common_Name}"/>
+                    <TextBlock Text="{l:Loc Common_Name}"/>
                     <l:UndertaleStringReferenceView Reference="{Binding FunctionsSelected.Name}" />
                 
-                    <Label Content="{l:Loc Editor_ExtFuncExternalName}"/>
+                    <TextBlock Text="{l:Loc Editor_ExtFuncExternalName}"/>
                     <l:UndertaleStringReferenceView Reference="{Binding FunctionsSelected.ExtName}" />
 
-                    <Label Content="{l:Loc Editor_ID}"/>
+                    <TextBlock Text="{l:Loc Editor_ID}"/>
                     <TextBox Text="{Binding FunctionsSelected.ID}" />
                 
-                    <Label Content="{l:Loc Common_Kind}"/>
+                    <TextBlock Text="{l:Loc Common_Kind}"/>
                     <TextBox Text="{Binding FunctionsSelected.Kind}" />
 
-                    <Label Content="{l:Loc Editor_ReturnType}"/>
+                    <TextBlock Text="{l:Loc Editor_ReturnType}"/>
                     <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleExtensionVarType}, Converter={StaticResource EnumTypeToValuesConverter}}"
                               SelectedItem="{Binding FunctionsSelected.RetType}" />
 
-                    <Label Content="{l:Loc Editor_ArgumentTypes}"/>
+                    <TextBlock Text="{l:Loc Editor_ArgumentTypes}"/>
                     <l:EditableDataGrid ItemsSource="{Binding FunctionsSelected.Arguments}" ItemFactory="{Binding CreateExtensionFunctionArg}" HeadersVisibility="None">
                         <l:EditableDataGrid.Columns>
                             <DataGridTemplateColumn Header="{l:Loc Common_Type}" Width="1*">

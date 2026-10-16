@@ -9,10 +9,10 @@
              x:DataType="l:UndertaleTimelineViewModel">
     <ScrollViewer>
         <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*" Classes="PaddedProperties">
-            <Label Content="{l:Loc Common_Name}"/>
+            <TextBlock Text="{l:Loc Common_Name}"/>
             <l:UndertaleStringReferenceView Reference="{Binding Timeline.Name}" />
 
-            <Label Content="{l:Loc Editor_Timeline_Moments}"/>
+            <TextBlock Text="{l:Loc Editor_Timeline_Moments}"/>
             <l:EditableDataGrid ItemsSource="{Binding Timeline.Moments}" ItemFactory="{Binding CreateMoment}">
                 <l:EditableDataGrid.Columns>
                     <DataGridTemplateColumn Header="{l:Loc Editor_Timeline_Step}" Width="1*">

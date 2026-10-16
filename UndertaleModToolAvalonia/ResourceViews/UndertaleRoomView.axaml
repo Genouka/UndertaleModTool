@@ -196,40 +196,40 @@
                             <DataTemplate DataType="undertalem:UndertaleRoom">
                                 <StackPanel>
                                     <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                        <Label Content="{l:Loc Common_Name}"/>
+                                        <TextBlock Text="{l:Loc Common_Name}"/>
                                         <l:UndertaleStringReferenceView Reference="{Binding Name}" />
 
-                                        <Label Content="{l:Loc Room_Caption}"/>
+                                        <TextBlock Text="{l:Loc Room_Caption}"/>
                                         <l:UndertaleStringReferenceView Reference="{Binding Caption}" />
 
-                                        <Label Content="{l:Loc Room_PortPosSize}"/>
+                                        <TextBlock Text="{l:Loc Room_PortPosSize}"/>
                                         <Grid ColumnDefinitions="1*,1*">
                                             <TextBox Grid.Column="0" Text="{Binding Width}" />
                                             <TextBox Grid.Column="1" Text="{Binding Height}" />
                                         </Grid>
 
-                                        <Label Content="{l:Loc Room_Speed}"/>
+                                        <TextBlock Text="{l:Loc Room_Speed}"/>
                                         <TextBox Text="{Binding Speed}" />
 
-                                        <Label Content="{l:Loc Room_Persistent}"/>
+                                        <TextBlock Text="{l:Loc Room_Persistent}"/>
                                         <CheckBox IsChecked="{Binding Persistent}" />
 
-                                        <Label Content="{l:Loc Room_BackgroundColor}"/>
+                                        <TextBlock Text="{l:Loc Room_BackgroundColor}"/>
                                         <ColorPicker Color="{Binding BackgroundColor, Converter={StaticResource UndertaleColorToColorConverter}}" />
 
-                                        <Label Content="{l:Loc Room_DrawBackgroundColor}"/>
+                                        <TextBlock Text="{l:Loc Room_DrawBackgroundColor}"/>
                                         <CheckBox IsChecked="{Binding DrawBackgroundColor}" />
 
-                                        <Label Content="{l:Loc Room_CreationCode}"/>
+                                        <TextBlock Text="{l:Loc Room_CreationCode}"/>
                                         <l:UndertaleResourceReferenceView Reference="{Binding CreationCodeId}" ReferenceType="undertalem:UndertaleCode" />
 
-                                        <Label Content="{l:Loc Common_Flags}"/>
+                                        <TextBlock Text="{l:Loc Common_Flags}"/>
                                         <l:FlagsBoxView Value="{Binding Flags}" />
 
-                                        <Label Content="{l:Loc Room_World}"/>
+                                        <TextBlock Text="{l:Loc Room_World}"/>
                                         <CheckBox IsChecked="{Binding World}" />
 
-                                        <Label Content="{l:Loc Room_TopLeftRightBottom}"/>
+                                        <TextBlock Text="{l:Loc Room_TopLeftRightBottom}"/>
                                         <Grid ColumnDefinitions="1*,1*,1*,1*">
                                             <TextBox Grid.Column="0" Text="{Binding Top}"/>
                                             <TextBox Grid.Column="1" Text="{Binding Left}"/>
@@ -237,13 +237,13 @@
                                             <TextBox Grid.Column="3" Text="{Binding Bottom}"/>
                                         </Grid>
 
-                                        <Label Content="{l:Loc Room_Gravity}"/>
+                                        <TextBlock Text="{l:Loc Room_Gravity}"/>
                                         <Grid ColumnDefinitions="1*,1*">
                                             <TextBox Grid.Column="0" Text="{Binding GravityX}"/>
                                             <TextBox Grid.Column="1" Text="{Binding GravityY}"/>
                                         </Grid>
 
-                                        <Label Content="{l:Loc Room_Persistent}"/>
+                                        <TextBlock Text="{l:Loc Room_Persistent}"/>
                                         <TextBox Text="{Binding MetersPerPixel}" />
                                     </Grid>
 
@@ -251,7 +251,7 @@
                                             IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                                             Converter={StaticResource VersionCompareConverter},
                                             ConverterParameter=GE2}">
-                                        <Label Content="{l:Loc Room_GameObjects}"/>
+                                        <TextBlock Text="{l:Loc Room_GameObjects}"/>
                                         <l:EditableDataGrid ItemsSource="{Binding GameObjects}" ItemFactory="{x:Null}" HeadersVisibility="None">
                                             <l:EditableDataGrid.Columns>
                                                 <DataGridTemplateColumn Header="{l:Loc Room_GameObject}" Width="1*">
@@ -269,7 +269,7 @@
                                             IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                                             Converter={StaticResource VersionCompareConverter},
                                             ConverterParameter=GE2024.13}">
-                                        <Label Content="{l:Loc Room_InstanceID}"/>
+                                        <TextBlock Text="{l:Loc Room_InstanceID}"/>
                                         <l:EditableDataGrid ItemsSource="{Binding InstanceCreationOrderIDs.InstanceIDs}" ItemFactory="{x:Null}" HeadersVisibility="None">
                                             <l:EditableDataGrid.Columns>
                                                 <DataGridTemplateColumn Header="{l:Loc Room_IDs}" Width="1*">
@@ -286,43 +286,43 @@
                             </DataTemplate>
                             <DataTemplate DataType="undertalem:UndertaleRoom+Background">
                                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                    <Label Content="{l:Loc Room_Enabled}"/>
+                                    <TextBlock Text="{l:Loc Room_Enabled}"/>
                                     <CheckBox IsChecked="{Binding Enabled}"/>
 
-                                    <Label Content="{l:Loc Room_Foreground}"/>
+                                    <TextBlock Text="{l:Loc Room_Foreground}"/>
                                     <CheckBox IsChecked="{Binding Foreground}"/>
 
-                                    <Label Content="{l:Loc Room_Definition}"/>
+                                    <TextBlock Text="{l:Loc Room_Definition}"/>
                                     <l:UndertaleResourceReferenceView Reference="{Binding BackgroundDefinition}" ReferenceType="undertalem:UndertaleBackground" />
 
-                                    <Label Content="{l:Loc Room_Position}"/>
+                                    <TextBlock Text="{l:Loc Room_Position}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding X}" />
                                         <TextBox Grid.Column="1" Text="{Binding Y}" />
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_Tiling}"/>
+                                    <TextBlock Text="{l:Loc Room_Tiling}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <CheckBox Grid.Column="0" IsChecked="{Binding TiledHorizontally}" Content="{l:Loc Room_Horizontal}" />
                                         <CheckBox Grid.Column="1" IsChecked="{Binding TiledVertically}" Content="{l:Loc Room_Vertical}"/>
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_Speed}"/>
+                                    <TextBlock Text="{l:Loc Room_Speed}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding SpeedX}" />
                                         <TextBox Grid.Column="1" Text="{Binding SpeedY}" />
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_Stretch}"/>
+                                    <TextBlock Text="{l:Loc Room_Stretch}"/>
                                     <CheckBox IsChecked="{Binding Stretch}" />
                                 </Grid>
                             </DataTemplate>
                             <DataTemplate DataType="undertalem:UndertaleRoom+View">
                                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                    <Label Content="{l:Loc Room_Enabled}"/>
+                                    <TextBlock Text="{l:Loc Room_Enabled}"/>
                                     <CheckBox IsChecked="{Binding Enabled}" />
 
-                                    <Label Content="{l:Loc Room_PosSize}"/>
+                                    <TextBlock Text="{l:Loc Room_PosSize}"/>
                                     <Grid ColumnDefinitions="1*,1*,1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding ViewX}"/>
                                         <TextBox Grid.Column="1" Text="{Binding ViewY}"/>
@@ -330,7 +330,7 @@
                                         <TextBox Grid.Column="3" Text="{Binding ViewHeight}"/>
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_PortPosSize}"/>
+                                    <TextBlock Text="{l:Loc Room_PortPosSize}"/>
                                     <Grid ColumnDefinitions="1*,1*,1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding PortX}"/>
                                         <TextBox Grid.Column="1" Text="{Binding PortY}"/>
@@ -338,59 +338,59 @@
                                         <TextBox Grid.Column="3" Text="{Binding PortHeight}"/>
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_Border}"/>
+                                    <TextBlock Text="{l:Loc Room_Border}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding BorderX}"/>
                                         <TextBox Grid.Column="1" Text="{Binding BorderY}"/>
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_Speed}"/>
+                                    <TextBlock Text="{l:Loc Room_Speed}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding SpeedX}"/>
                                         <TextBox Grid.Column="1" Text="{Binding SpeedY}"/>
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_FollowsObject}"/>
+                                    <TextBlock Text="{l:Loc Room_FollowsObject}"/>
                                     <l:UndertaleResourceReferenceView Reference="{Binding ObjectId}" ReferenceType="undertalem:UndertaleGameObject" />
                                 </Grid>
                             </DataTemplate>
                             <DataTemplate DataType="undertalem:UndertaleRoom+GameObject">
                                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                    <Label Content="{l:Loc Room_Position}"/>
+                                    <TextBlock Text="{l:Loc Room_Position}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding X}" />
                                         <TextBox Grid.Column="1" Text="{Binding Y}" />
                                     </Grid>
 
                                     <!-- TODO: Nonexistent? -->
-                                    <Label Content="{l:Loc Room_Definition}"/>
+                                    <TextBlock Text="{l:Loc Room_Definition}"/>
                                     <l:UndertaleResourceReferenceView Reference="{Binding ObjectDefinition}" ReferenceType="undertalem:UndertaleGameObject" />
 
-                                    <Label Content="{l:Loc Room_InstanceID}"/>
+                                    <TextBlock Text="{l:Loc Room_InstanceID}"/>
                                     <TextBox Text="{Binding InstanceID}" />
 
-                                    <Label Content="{l:Loc Room_CreationCode}"/>
+                                    <TextBlock Text="{l:Loc Room_CreationCode}"/>
                                     <l:UndertaleResourceReferenceView Reference="{Binding CreationCode}" ReferenceType="undertalem:UndertaleCode" />
 
-                                    <Label Content="{l:Loc Editor_ScaleXY}"/>
+                                    <TextBlock Text="{l:Loc Editor_ScaleXY}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding ScaleX}" />
                                         <TextBox Grid.Column="1" Text="{Binding ScaleY}" />
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_Color}"/>
+                                    <TextBlock Text="{l:Loc Room_Color}"/>
                                     <ColorPicker Color="{Binding Color, Converter={StaticResource UndertaleColorToColorConverter}}" />
 
-                                    <Label Content="{l:Loc Room_Rotation}"/>
+                                    <TextBlock Text="{l:Loc Room_Rotation}"/>
                                     <TextBox Text="{Binding Rotation}" />
 
-                                    <Label Content="{l:Loc Room_FrameIndex}"/>
+                                    <TextBlock Text="{l:Loc Room_FrameIndex}"/>
                                     <TextBox Text="{Binding ImageIndex}" />
 
-                                    <Label Content="{l:Loc Room_ImageSpeed}"/>
+                                    <TextBlock Text="{l:Loc Room_ImageSpeed}"/>
                                     <TextBox Text="{Binding ImageSpeed}" />
 
-                                    <Label Content="{l:Loc Room_PreCreateCode}"/>
+                                    <TextBlock Text="{l:Loc Room_PreCreateCode}"/>
                                     <l:UndertaleResourceReferenceView Reference="{Binding PreCreateCode}" ReferenceType="undertalem:UndertaleCode" />
                                 </Grid>
                             </DataTemplate>
@@ -429,13 +429,13 @@
                             </DataTemplate>
                             <DataTemplate DataType="undertalem:UndertaleRoom+Tile">
                                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                    <Label Content="{l:Loc Room_Position}"/>
+                                    <TextBlock Text="{l:Loc Room_Position}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding X}" />
                                         <TextBox Grid.Column="1" Text="{Binding Y}" />
                                     </Grid>
                                     
-                                    <Label Content="{l:Loc Room_Definition}"/>
+                                    <TextBlock Text="{l:Loc Room_Definition}"/>
 
                                     <Panel>
                                         <Panel IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
@@ -450,7 +450,7 @@
                                         </Panel>
                                     </Panel>
 
-                                    <Label Content="{l:Loc Editor_SourcePositionSize}"/>
+                                    <TextBlock Text="{l:Loc Editor_SourcePositionSize}"/>
                                     <Grid ColumnDefinitions="1*,1*,1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding SourceX}" />
                                         <TextBox Grid.Column="1" Text="{Binding SourceY}" />
@@ -458,38 +458,38 @@
                                         <TextBox Grid.Column="3" Text="{Binding Height}" />
                                     </Grid>
 
-                                    <Label Content="{l:Loc Common_Depth}"/>
+                                    <TextBlock Text="{l:Loc Common_Depth}"/>
                                     <TextBox Text="{Binding TileDepth}" />
 
-                                    <Label Content="{l:Loc Room_InstanceID}"/>
+                                    <TextBlock Text="{l:Loc Room_InstanceID}"/>
                                     <TextBox Text="{Binding InstanceID}" />
 
-                                    <Label Content="{l:Loc Editor_ScaleXY}"/>
+                                    <TextBlock Text="{l:Loc Editor_ScaleXY}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding ScaleX}" />
                                         <TextBox Grid.Column="1" Text="{Binding ScaleY}" />
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_Color}"/>
+                                    <TextBlock Text="{l:Loc Room_Color}"/>
                                     <ColorPicker Color="{Binding Color, Converter={StaticResource UndertaleColorToColorConverter}}" />
                                 </Grid>
                             </DataTemplate>
                             <DataTemplate DataType="undertalem:UndertaleRoom+Layer">
                                 <StackPanel Name="Layer">
                                     <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                        <Label Content="{l:Loc Room_LayerType}"/>
+                                        <TextBlock Text="{l:Loc Room_LayerType}"/>
                                         <TextBlock Text="{Binding LayerType}" FontWeight="Bold" VerticalAlignment="Center" />
                                         
-                                        <Label Content="{l:Loc Room_LayerName}"/>
+                                        <TextBlock Text="{l:Loc Room_LayerName}"/>
                                         <l:UndertaleStringReferenceView Reference="{Binding LayerName}" />
 
-                                        <Label Content="{l:Loc Room_LayerID}"/>
+                                        <TextBlock Text="{l:Loc Room_LayerID}"/>
                                         <TextBox Text="{Binding LayerId}" />
 
-                                        <Label Content="{l:Loc Common_Depth}"/>
+                                        <TextBlock Text="{l:Loc Common_Depth}"/>
                                         <TextBox Text="{Binding LayerDepth}" />
 
-                                        <Label Content="{l:Loc Room_Visible}"/>
+                                        <TextBlock Text="{l:Loc Room_Visible}"/>
                                         <CheckBox IsChecked="{Binding IsVisible}" />
                                     </Grid>
 
@@ -497,13 +497,13 @@
                                           IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                                           Converter={StaticResource VersionCompareConverter},
                                           ConverterParameter=GE2022.1}">
-                                        <Label Content="{l:Loc Room_EffectEnabled}"/>
+                                        <TextBlock Text="{l:Loc Room_EffectEnabled}"/>
                                         <CheckBox IsChecked="{Binding EffectEnabled}" />
 
-                                        <Label Content="{l:Loc Room_EffectType}"/>
+                                        <TextBlock Text="{l:Loc Room_EffectType}"/>
                                         <l:UndertaleStringReferenceView Reference="{Binding EffectType}" />
 
-                                        <Label Content="{l:Loc Room_EffectProperties}"/>
+                                        <TextBlock Text="{l:Loc Room_EffectProperties}"/>
                                         <l:EditableDataGrid ItemsSource="{Binding EffectProperties}" ItemFactory="{Binding #Root.DataContext.CreateEffectProperty}">
                                             <l:EditableDataGrid.Columns>
                                                 <DataGridTemplateColumn Header="{l:Loc Common_Kind}" Width="1*">
@@ -539,43 +539,43 @@
                                         <ContentControl.DataTemplates>
                                             <DataTemplate DataType="undertalem:UndertaleRoom+Layer+LayerBackgroundData">
                                                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                                    <Label Content="{l:Loc Room_Offset}"/>
+                                                    <TextBlock Text="{l:Loc Room_Offset}"/>
                                                     <Grid ColumnDefinitions="1*,1*">
                                                         <TextBox Grid.Column="0" Text="{ReflectionBinding #Layer.DataContext.XOffset}" />
                                                         <TextBox Grid.Column="1" Text="{ReflectionBinding #Layer.DataContext.YOffset}" />
                                                     </Grid>
 
-                                                    <Label Content="{l:Loc Room_Speed}"/>
+                                                    <TextBlock Text="{l:Loc Room_Speed}"/>
                                                     <Grid ColumnDefinitions="1*,1*">
                                                         <TextBox Grid.Column="0" Text="{ReflectionBinding #Layer.DataContext.HSpeed}" />
                                                         <TextBox Grid.Column="1" Text="{ReflectionBinding #Layer.DataContext.VSpeed}" />
                                                     </Grid>
 
-                                                    <Label Content="{l:Loc Room_Visible}"/>
+                                                    <TextBlock Text="{l:Loc Room_Visible}"/>
                                                     <CheckBox IsChecked="{Binding Visible}" />
 
-                                                    <Label Content="{l:Loc Room_Foreground}"/>
+                                                    <TextBlock Text="{l:Loc Room_Foreground}"/>
                                                     <CheckBox IsChecked="{Binding Foreground}" />
                                                     
-                                                    <Label Content="{l:Loc Editor_Sprite}"/>
+                                                    <TextBlock Text="{l:Loc Editor_Sprite}"/>
                                                     <l:UndertaleResourceReferenceView Reference="{Binding Sprite}" ReferenceType="undertalem:UndertaleSprite" />
 
-                                                    <Label Content="{l:Loc Room_Tiling}"/>
+                                                    <TextBlock Text="{l:Loc Room_Tiling}"/>
                                                     <Grid ColumnDefinitions="1*,1*">
                                                         <CheckBox Grid.Column="0" IsChecked="{Binding TiledHorizontally}" Content="{l:Loc Room_Horizontal}" />
                                                         <CheckBox Grid.Column="1" IsChecked="{Binding TiledVertically}" Content="{l:Loc Room_Vertical}" />
                                                     </Grid>
 
-                                                    <Label Content="{l:Loc Room_Stretch}"/>
+                                                    <TextBlock Text="{l:Loc Room_Stretch}"/>
                                                     <CheckBox IsChecked="{Binding Stretch}" />
 
-                                                    <Label Content="{l:Loc Room_Color}"/>
+                                                    <TextBlock Text="{l:Loc Room_Color}"/>
                                                     <ColorPicker Color="{Binding Color, Converter={StaticResource UndertaleColorToColorConverter}}" />
 
-                                                    <Label Content="{l:Loc Room_FirstFrame}"/>
+                                                    <TextBlock Text="{l:Loc Room_FirstFrame}"/>
                                                     <TextBox Text="{Binding FirstFrame}" />
 
-                                                    <Label Content="{l:Loc Room_AnimationSpeed}"/>
+                                                    <TextBlock Text="{l:Loc Room_AnimationSpeed}"/>
                                                     <Grid ColumnDefinitions="1*,1*">
                                                         <TextBox Grid.Column="0" Text="{Binding AnimationSpeed}" />
                                                         <ComboBox Grid.Column="1"
@@ -590,31 +590,31 @@
                                             <DataTemplate DataType="undertalem:UndertaleRoom+Layer+LayerTilesData">
                                                 <StackPanel>
                                                     <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                                        <Label Content="{l:Loc Room_Offset}"/>
+                                                        <TextBlock Text="{l:Loc Room_Offset}"/>
                                                         <Grid ColumnDefinitions="1*,1*">
                                                             <TextBox Grid.Column="0" Text="{ReflectionBinding #Layer.DataContext.XOffset}" />
                                                             <TextBox Grid.Column="1" Text="{ReflectionBinding #Layer.DataContext.YOffset}" />
                                                         </Grid>
 
-                                                        <Label Content="{l:Loc Room_Speed}"/>
+                                                        <TextBlock Text="{l:Loc Room_Speed}"/>
                                                         <Grid ColumnDefinitions="1*,1*">
                                                             <TextBox Grid.Column="0" Text="{ReflectionBinding #Layer.DataContext.HSpeed}" />
                                                             <TextBox Grid.Column="1" Text="{ReflectionBinding #Layer.DataContext.VSpeed}" />
                                                         </Grid>
 
-                                                        <Label Content="{l:Loc Room_Size}"/>
+                                                        <TextBlock Text="{l:Loc Room_Size}"/>
                                                         <Grid ColumnDefinitions="1*,1*,1*">
                                                             <TextBox Grid.Column="0" Text="{Binding TilesX, UpdateSourceTrigger=LostFocus}" />
                                                             <TextBox Grid.Column="1" Text="{Binding TilesY, UpdateSourceTrigger=LostFocus}" />
                                                             <Button Grid.Column="2" Command="{Binding #Root.DataContext.AutoSizeTileLayer}">Auto</Button>
                                                         </Grid>
 
-                                                        <Label Content="{l:Loc Room_TileSet}"/>
+                                                        <TextBlock Text="{l:Loc Room_TileSet}"/>
                                                         <l:UndertaleResourceReferenceView Reference="{Binding Background}" ReferenceType="undertalem:UndertaleBackground" />
                                                     
                                                         <!-- TODO: Export/import tile data -->
 
-                                                        <Label Content="{l:Loc Room_TileSetColumns}"/>
+                                                        <TextBlock Text="{l:Loc Room_TileSetColumns}"/>
                                                         <NumericUpDown
                                                             Value="{Binding #Root.DataContext.TileSetColumns}"
                                                             Minimum="0" FormatString="0" />
@@ -640,13 +640,13 @@
                                             <DataTemplate DataType="undertalem:UndertaleRoom+Layer+LayerAssetsData">
                                                 <StackPanel>
                                                     <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                                        <Label Content="{l:Loc Room_Offset}"/>
+                                                        <TextBlock Text="{l:Loc Room_Offset}"/>
                                                         <Grid ColumnDefinitions="1*,1*">
                                                             <TextBox Grid.Column="0" Text="{ReflectionBinding #Layer.DataContext.XOffset}" />
                                                             <TextBox Grid.Column="1" Text="{ReflectionBinding #Layer.DataContext.YOffset}" />
                                                         </Grid>
 
-                                                        <Label Content="{l:Loc Room_Speed}"/>
+                                                        <TextBlock Text="{l:Loc Room_Speed}"/>
                                                         <Grid ColumnDefinitions="1*,1*">
                                                             <TextBox Grid.Column="0" Text="{ReflectionBinding #Layer.DataContext.HSpeed}" />
                                                             <TextBox Grid.Column="1" Text="{ReflectionBinding #Layer.DataContext.VSpeed}" />
@@ -660,10 +660,10 @@
                                             <DataTemplate DataType="undertalem:UndertaleRoom+Layer+LayerEffectData">
                                                 <StackPanel>
                                                     <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                                        <Label Content="{l:Loc Room_EffectType}"/>
+                                                        <TextBlock Text="{l:Loc Room_EffectType}"/>
                                                         <l:UndertaleStringReferenceView Reference="{ReflectionBinding #Layer.DataContext.EffectType}" />
 
-                                                        <Label Content="{l:Loc Room_Properties}"/>
+                                                        <TextBlock Text="{l:Loc Room_Properties}"/>
                                                         <l:EditableDataGrid ItemsSource="{ReflectionBinding #Layer.DataContext.Properties}" ItemFactory="{Binding #Root.DataContext.CreateEffectProperty}">
                                                             <l:EditableDataGrid.Columns>
                                                                 <DataGridTemplateColumn Header="{l:Loc Common_Kind}" Width="Auto">
@@ -700,34 +700,34 @@
                             </DataTemplate>
                             <DataTemplate DataType="undertalem:UndertaleRoom+SpriteInstance">
                                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                    <Label Content="{l:Loc Common_Name}"/>
+                                    <TextBlock Text="{l:Loc Common_Name}"/>
                                     <l:UndertaleStringReferenceView Reference="{Binding Name}" />
                                     
-                                    <Label Content="{l:Loc Room_Definition}"/>
+                                    <TextBlock Text="{l:Loc Room_Definition}"/>
                                     <l:UndertaleResourceReferenceView Reference="{Binding Sprite}" ReferenceType="undertalem:UndertaleSprite"/>
 
-                                    <Label Content="{l:Loc Room_Position}"/>
+                                    <TextBlock Text="{l:Loc Room_Position}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding X}" />
                                         <TextBox Grid.Column="1" Text="{Binding Y}" />
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_Scale}"/>
+                                    <TextBlock Text="{l:Loc Room_Scale}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding ScaleX}" />
                                         <TextBox Grid.Column="1" Text="{Binding ScaleY}" />
                                     </Grid>
 
-                                    <Label Content="{l:Loc Room_Color}"/>
+                                    <TextBlock Text="{l:Loc Room_Color}"/>
                                     <ColorPicker Color="{Binding Color, Converter={StaticResource UndertaleColorToColorConverter}}" />
 
-                                    <Label Content="{l:Loc Room_Rotation}"/>
+                                    <TextBlock Text="{l:Loc Room_Rotation}"/>
                                     <TextBox Text="{Binding Rotation}" />
 
-                                    <Label Content="{l:Loc Room_FrameIndex}"/>
+                                    <TextBlock Text="{l:Loc Room_FrameIndex}"/>
                                     <TextBox Text="{Binding FrameIndex}" />
                                     
-                                    <Label Content="{l:Loc Room_AnimationSpeed}"/>
+                                    <TextBlock Text="{l:Loc Room_AnimationSpeed}"/>
                                     <Grid ColumnDefinitions="1*,1*">
                                         <TextBox Grid.Column="0" Text="{Binding AnimationSpeed}" />
                                         <ComboBox Grid.Column="1"
@@ -738,7 +738,7 @@
                             </DataTemplate>
                             <DataTemplate DataType="undertalem:UndertaleRoom+SequenceInstance">
                                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                    <Label Content="{l:Loc Common_Name}"/>
+                                    <TextBlock Text="{l:Loc Common_Name}"/>
                                     <l:UndertaleStringReferenceView Reference="{Binding Name}" />
 
                                     <!-- TODO: Add all sequence properties -->
@@ -747,28 +747,28 @@
                             <DataTemplate DataType="undertalem:UndertaleRoom+ParticleSystemInstance">
                                 <StackPanel>
                                     <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                        <Label Content="{l:Loc Common_Name}"/>
+                                        <TextBlock Text="{l:Loc Common_Name}"/>
                                         <l:UndertaleStringReferenceView Reference="{Binding Name}" />
 
-                                        <Label Content="{l:Loc Room_Definition}"/>
+                                        <TextBlock Text="{l:Loc Room_Definition}"/>
                                         <l:UndertaleResourceReferenceView Reference="{Binding ParticleSystem}" ReferenceType="undertalem:UndertaleParticleSystem"/>
 
-                                        <Label Content="{l:Loc Room_Position}"/>
+                                        <TextBlock Text="{l:Loc Room_Position}"/>
                                         <Grid ColumnDefinitions="1*,1*">
                                             <TextBox Grid.Column="0" Text="{Binding X}" />
                                             <TextBox Grid.Column="1" Text="{Binding Y}" />
                                         </Grid>
                                     
-                                        <Label Content="{l:Loc Room_Scale}"/>
+                                        <TextBlock Text="{l:Loc Room_Scale}"/>
                                         <Grid ColumnDefinitions="1*,1*">
                                             <TextBox Grid.Column="0" Text="{Binding ScaleX}" />
                                             <TextBox Grid.Column="1" Text="{Binding ScaleY}" />
                                         </Grid>
 
-                                        <Label Content="{l:Loc Room_Color}"/>
+                                        <TextBlock Text="{l:Loc Room_Color}"/>
                                         <ColorPicker Color="{Binding Color, Converter={StaticResource UndertaleColorToColorConverter}}" />
 
-                                        <Label Content="{l:Loc Room_Rotation}"/>
+                                        <TextBlock Text="{l:Loc Room_Rotation}"/>
                                         <TextBox Text="{Binding Rotation}" />
                                     </Grid>
                                     
@@ -776,72 +776,72 @@
                                           IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                                           Converter={StaticResource VersionCompareConverter},
                                           ConverterParameter=GE2024.14}">
-                                        <Label Content="{l:Loc Room_InstanceID}"/>
+                                        <TextBlock Text="{l:Loc Room_InstanceID}"/>
                                         <TextBox Text="{Binding InstanceID}" />
                                     </Grid>
                                 </StackPanel>
                             </DataTemplate>
                             <DataTemplate DataType="undertalem:UndertaleRoom+TextItemInstance">
                                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,2*">
-                                    <Label Content="{l:Loc Common_Name}"/>
+                                    <TextBlock Text="{l:Loc Common_Name}"/>
                                     <l:UndertaleStringReferenceView Reference="{Binding Name}" />
 
-                                    <Label Content="{l:Loc Room_X}"/>
+                                    <TextBlock Text="{l:Loc Room_X}"/>
                                     <TextBox Text="{Binding X}" />
 
-                                    <Label Content="{l:Loc Room_Y}"/>
+                                    <TextBlock Text="{l:Loc Room_Y}"/>
                                     <TextBox Text="{Binding Y}" />
 
-                                    <Label Content="{l:Loc Room_Font}"/>
+                                    <TextBlock Text="{l:Loc Room_Font}"/>
                                     <l:UndertaleResourceReferenceView Reference="{Binding Font}" ReferenceType="undertalem:UndertaleFont" />
 
-                                    <Label Content="{l:Loc Room_ScaleX}"/>
+                                    <TextBlock Text="{l:Loc Room_ScaleX}"/>
                                     <TextBox Text="{Binding ScaleX}" />
 
-                                    <Label Content="{l:Loc Room_ScaleY}"/>
+                                    <TextBlock Text="{l:Loc Room_ScaleY}"/>
                                     <TextBox Text="{Binding ScaleY}" />
 
-                                    <Label Content="{l:Loc Room_Rotation}"/>
+                                    <TextBlock Text="{l:Loc Room_Rotation}"/>
                                     <TextBox Text="{Binding Rotation}" />
 
-                                    <Label Content="{l:Loc Room_Color}"/>
+                                    <TextBlock Text="{l:Loc Room_Color}"/>
                                     <ColorPicker Color="{Binding Color, Converter={StaticResource UndertaleColorToColorConverter}}" />
 
-                                    <Label Content="{l:Loc Room_OriginX}"/>
+                                    <TextBlock Text="{l:Loc Room_OriginX}"/>
                                     <TextBox Text="{Binding OriginX}" />
 
-                                    <Label Content="{l:Loc Room_OriginY}"/>
+                                    <TextBlock Text="{l:Loc Room_OriginY}"/>
                                     <TextBox Text="{Binding OriginY}" />
 
-                                    <Label Content="{l:Loc Room_Text}"/>
+                                    <TextBlock Text="{l:Loc Room_Text}"/>
                                     <l:UndertaleStringReferenceView Reference="{Binding Text}" />
 
-                                    <Label Content="{l:Loc Room_Alignment}"/>
+                                    <TextBlock Text="{l:Loc Room_Alignment}"/>
                                     <TextBox Text="{Binding Alignment}" />
 
-                                    <Label Content="{l:Loc Room_CharSpacing}"/>
+                                    <TextBlock Text="{l:Loc Room_CharSpacing}"/>
                                     <TextBox Text="{Binding CharSpacing}" />
 
-                                    <Label Content="{l:Loc Room_LineSpacing}"/>
+                                    <TextBlock Text="{l:Loc Room_LineSpacing}"/>
                                     <TextBox Text="{Binding LineSpacing}" />
 
-                                    <Label Content="{l:Loc Room_FrameWidth}"/>
+                                    <TextBlock Text="{l:Loc Room_FrameWidth}"/>
                                     <TextBox Text="{Binding FrameWidth}" />
 
-                                    <Label Content="{l:Loc Room_FrameHeight}"/>
+                                    <TextBlock Text="{l:Loc Room_FrameHeight}"/>
                                     <TextBox Text="{Binding FrameHeight}" />
 
-                                    <Label Content="{l:Loc Room_Wrap}"/>
+                                    <TextBlock Text="{l:Loc Room_Wrap}"/>
                                     <CheckBox IsChecked="{Binding Wrap}" />
 
-                                    <Label Content="{l:Loc Room_ParagraphSpacing}"/>
+                                    <TextBlock Text="{l:Loc Room_ParagraphSpacing}"/>
                                     <TextBox Text="{Binding ParagraphSpacing}" />
                                     
-                                    <Label Content="{l:Loc Room_WrapMode}"/>
+                                    <TextBlock Text="{l:Loc Room_WrapMode}"/>
                                     <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleSequence+TextKeyframes+WrapMode}, Converter={StaticResource EnumTypeToValuesConverter}}"
                                               SelectedItem="{Binding WrapMode}" />
 
-                                    <Label Content="{l:Loc Room_Origin}"/>
+                                    <TextBlock Text="{l:Loc Room_Origin}"/>
                                     <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleSequence+TextKeyframes+Origin}, Converter={StaticResource EnumTypeToValuesConverter}}"
                                               SelectedItem="{Binding Origin}" />
                                 </Grid>

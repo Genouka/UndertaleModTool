@@ -13,7 +13,7 @@
     <ScrollViewer>
         <StackPanel Classes="PaddedProperties">
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label Content="{l:Loc Common_Name}"/>
+                <TextBlock Text="{l:Loc Common_Name}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding AudioGroup.Name}" />
             </Grid>
     
@@ -21,7 +21,7 @@
                   IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                   Converter={StaticResource VersionCompareConverter},
                   ConverterParameter=GE2024.14}">
-                <Label Content="{l:Loc Editor_AudioGroup_Path}"/>
+                <TextBlock Text="{l:Loc Editor_AudioGroup_Path}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding AudioGroup.Path}" />
             </Grid>
         </StackPanel>

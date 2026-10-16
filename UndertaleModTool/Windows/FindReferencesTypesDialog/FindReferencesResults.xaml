@@ -43,7 +43,7 @@
                     <Style.Resources>
                         <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                             <VisualBrush.Visual>
-                                <Label Content="{loc:Loc Common_FilterByName}" Foreground="Gray" FontSize="14"/>
+                                <TextBlock Text="{loc:Loc Common_FilterByName}" Foreground="Gray" FontSize="14"/>
                             </VisualBrush.Visual>
                         </VisualBrush>
                     </Style.Resources>

@@ -345,7 +345,7 @@
                                 <Style.Resources>
                                     <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                         <VisualBrush.Visual>
-                                            <Label Content="{loc:Loc Common_FilterByName}" Foreground="Gray" />
+                                            <TextBlock Text="{loc:Loc Common_FilterByName}" Foreground="Gray" />
                                         </VisualBrush.Visual>
                                     </VisualBrush>
                                 </Style.Resources>
