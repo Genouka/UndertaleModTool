@@ -17,7 +17,66 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # 路径检测：决定每个构建 job 是否需要跑
+  # ---------------------------------------------------------------------------
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      gui: ${{ steps.filter.outputs.gui }}
+      cli: ${{ steps.filter.outputs.cli }}
+      avalonia: ${{ steps.filter.outputs.avalonia }}
+      android: ${{ steps.filter.outputs.android }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            gui:
+              - 'UndertaleModTool/**'
+              - 'UndertaleModToolUpdater/**'
+              - 'Underanalyzer/**'
+              - '*.props'
+              - '*.targets'
+              - 'Directory.Build.*'
+              - '.github/workflows/publish_gui_nightly.yml'
+            cli:
+              - 'UndertaleModCli/**'
+              - 'UndertaleModTool/Scripts/**'
+              - 'Underanalyzer/**'
+              - '*.props'
+              - '*.targets'
+              - 'Directory.Build.*'
+              - '.github/workflows/publish_gui_nightly.yml'
+            avalonia:
+              - 'UndertaleModToolAvalonia/**'
+              - 'UndertaleModToolAvalonia.Desktop/**'
+              - 'Underanalyzer/**'
+              - '*.props'
+              - '*.targets'
+              - 'Directory.Build.*'
+              - '.github/workflows/publish_gui_nightly.yml'
+            android:
+              - 'UndertaleModToolAvalonia.Android/**'
+              - 'UndertaleModToolAvalonia.AndroidPreinstall/**'
+              - 'UndertaleModToolAvalonia/**'
+              - 'build/AndroidApp.props'
+              - 'Underanalyzer/**'
+              - '*.props'
+              - '*.targets'
+              - 'Directory.Build.*'
+              - '.github/workflows/publish_gui_nightly.yml'
+
   build_gui:
+    needs: changes
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.gui == 'true'
 
     strategy:
       fail-fast: false
@@ -68,6 +127,10 @@ jobs:
           path: ${{ matrix.filename }}.zip
 
   build_cli:
+    needs: changes
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.cli == 'true'
 
     strategy:
       fail-fast: false
@@ -130,6 +193,10 @@ jobs:
           path: ${{ matrix.filename }}.zip
 
   build_avalonia_gui:
+    needs: changes
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.avalonia == 'true'
 
     strategy:
       fail-fast: false
@@ -179,6 +246,10 @@ jobs:
         path: ${{ matrix.filename }}.zip
 
   build_avalonia_android:
+    needs: changes
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.android == 'true'
 
     strategy:
       fail-fast: false
@@ -275,8 +346,13 @@ jobs:
           UndertaleModToolAvalonia_Android-${{ matrix.arch }}-Preinstall-Signed.apk
 
   upload:
-
+    # 关键：即使某些 build job 被跳过，也仍然要跑 upload。
+    # 使用 always() 让 needs 里的 skipped 不阻断，再用 contains 检查真正的失败/取消。
     needs: [build_gui, build_cli, build_avalonia_gui, build_avalonia_android]
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
     steps:
     - name: Download artifacts
