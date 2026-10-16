@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media.Transformation;
+using Avalonia.Threading;
 
 namespace UndertaleModToolAvalonia;
 
@@ -162,6 +163,45 @@ public partial class DrawerPage : UserControl
         PushSplitter.IsVisible = open && push;
         PushSplitter.Margin = new Thickness(DrawerWidth - 3, 0, 0, 0);
         MainPresenter.Margin = open && push ? new Thickness(DrawerWidth, 0, 0, 0) : default;
+
+        if (open)
+            ForceRepaintOnAndroid();
+    }
+
+    // Workaround for an Android-only rendering bug: while the drawer is closed it sits fully
+    // outside the root Panel's clip, and when it slides back in the compositor does not
+    // re-upload its whole area - only a thin left sliver is painted until a touch forces a
+    // full redraw. Nudging Opacity and invalidating the visual after the slide transition
+    // finishes makes the compositor re-render the drawer immediately.
+    private DispatcherTimer? _androidRepaintTimer;
+
+    private void ForceRepaintOnAndroid()
+    {
+        if (!OperatingSystem.IsAndroid() || DrawerRoot is null)
+            return;
+
+        // Slightly non-1 opacity during the transition already forces a fresh layer upload.
+        DrawerRoot.Opacity = 0.999;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (DrawerRoot is not null)
+                DrawerRoot.Opacity = 1;
+        }, DispatcherPriority.Background);
+
+        // And after the 0.2s transition completes, invalidate once more in case the compositor
+        // reused the stale frame from before the slide.
+        _androidRepaintTimer?.Stop();
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            if (ReferenceEquals(_androidRepaintTimer, timer))
+                _androidRepaintTimer = null;
+            if (IsDrawerOpen && DrawerRoot is not null)
+                DrawerRoot.InvalidateVisual();
+        };
+        _androidRepaintTimer = timer;
+        timer.Start();
     }
 
     private void Scrim_Tapped(object? sender, TappedEventArgs e) => CloseDrawer();
