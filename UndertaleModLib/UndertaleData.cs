@@ -374,7 +374,7 @@ namespace UndertaleModLib
         {
             AllListProperties = GetType().GetProperties()
                                 .Where(x => x.PropertyType.IsGenericType
-                                            && x.PropertyType.GetGenericTypeDefinition() == typeof(IList<>))
+                                            && x.PropertyType.IsAssignableTo(typeof(IList<>).MakeGenericType(x.PropertyType.GenericTypeArguments)))
                                 .ToArray();
         }
 
