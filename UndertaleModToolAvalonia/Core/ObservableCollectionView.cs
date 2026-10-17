@@ -318,16 +318,15 @@ public class ObservableCollectionView : IList, INotifyCollectionChanged
 /// <summary>
 /// <inheritdoc />
 /// </summary>
-/// <typeparam name="TInput">Type of item in input collection.</typeparam>
 /// <typeparam name="TOutput">Type of item in output collection.</typeparam>
-public class ObservableCollectionView<TInput, TOutput> : ObservableCollectionView, IList<TOutput>
-    where TInput : class?
+public class ObservableCollectionView<TOutput> : ObservableCollectionView, IList<TOutput>
     where TOutput : class?
 {
-    public ObservableCollectionView(IList<TInput> input, Func<TInput, TOutput>? transform = null, Predicate<TOutput>? filter = null, Comparison<TOutput>? sort = null) : base
+    public ObservableCollectionView(IList input, Func<object?, TOutput>? transform = null, Predicate<TOutput>? filter = null, Comparison<TOutput>? sort = null) : base
         (
-            (IList)input,
-            transform is null ? null : a => transform((TInput)a!),
+            input,
+            // transform is null ? null : a => transform(a),
+            transform,
             filter is null ? null : a => filter((TOutput)a!),
             (Comparison<object?>?)sort
         )
@@ -366,4 +365,25 @@ public class ObservableCollectionView<TInput, TOutput> : ObservableCollectionVie
     public void SetSort(Comparison<TOutput>? sort) => SetSort((Comparison<object?>?)sort);
 
     #endregion
+}
+
+/// <summary>
+/// <inheritdoc />
+/// </summary>
+/// <typeparam name="TInput">Type of item in input collection.</typeparam>
+/// <typeparam name="TOutput">Type of item in output collection.</typeparam>
+public class ObservableCollectionView<TInput, TOutput> : ObservableCollectionView<TOutput>
+    where TInput : class?
+    where TOutput : class?
+{
+    public ObservableCollectionView(IList<TInput> input, Func<TInput, TOutput>? transform = null, Predicate<TOutput>? filter = null, Comparison<TOutput>? sort = null) : base
+        (
+            (IList)input,
+            transform is null ? null : a => transform((TInput)a!),
+            filter is null ? null : a => filter((TOutput)a!),
+            (Comparison<object?>?)sort
+        )
+    {
+        //
+    }
 }
