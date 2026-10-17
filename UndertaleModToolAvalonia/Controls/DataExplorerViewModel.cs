@@ -89,7 +89,7 @@ public partial class DataExplorerViewModel : ObservableObject
         TreeDataGridData.Add(dataItem);
     }
 
-    ObservableCollectionView<T?, Item>.CustomObservableCollection<Item>? CreateListObservableCollectionView<T>(IList<T?>? list) where T : class?
+    ObservableCollectionView<T?, Item>? CreateListObservableCollectionView<T>(IList<T?>? list) where T : class?
     {
         if (list is not null)
         {
@@ -99,7 +99,7 @@ public partial class DataExplorerViewModel : ObservableObject
 
             observableCollectionViewList.Add(view);
 
-            return view.Output;
+            return view;
         }
         return null;
     }
