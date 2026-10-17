@@ -337,66 +337,69 @@ public partial class UndertaleCodeViewModel : ObservableObject, IUndertaleResour
             }
         }
 
-        if (localizationData == null && MainVM.Data?.Code != null)
+        if (MainVM.Settings.EnableLocalizationStringPreview)
         {
-            await Task.Run(() => {
-                localizationData = new Dictionary<string, string>();
+            if (localizationData == null && MainVM.Data?.Code != null)
+            {
+                await Task.Run(() => {
+                    localizationData = new Dictionary<string, string>();
 
-                UndertaleCode? gettextCode = MainVM.Data.Code.ByName("gml_Script_textdata_en");
+                    UndertaleCode? gettextCode = MainVM.Data.Code.ByName("gml_Script_textdata_en");
 
-                if (gettextCode != null)
-                {
-                    ParseLocalizationDataFromScript(MainVM.Data, gettextCode, MainVM);
-                }
-                else
-                {
-                    string? dataPath = Path.GetDirectoryName(MainVM.DataPath);
-                    if (dataPath is not null)
+                    if (gettextCode != null)
                     {
-                        string localizationJsonPath = Path.Join(dataPath, "lang", "lang_en.json");
-                        if (!File.Exists(localizationJsonPath))
-                            localizationJsonPath = Path.Join(dataPath, "lang", "lang_en_ch1.json");
-                        
-                        if (File.Exists(localizationJsonPath))
+                        ParseLocalizationDataFromScript(MainVM.Data, gettextCode, MainVM);
+                    }
+                    else
+                    {
+                        string? dataPath = Path.GetDirectoryName(MainVM.DataPath);
+                        if (dataPath is not null)
                         {
-                            try
+                            string localizationJsonPath = Path.Join(dataPath, "lang", "lang_en.json");
+                            if (!File.Exists(localizationJsonPath))
+                                localizationJsonPath = Path.Join(dataPath, "lang", "lang_en_ch1.json");
+                            
+                            if (File.Exists(localizationJsonPath))
                             {
-                                localizationData = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(localizationJsonPath));
-                            }
-                            catch (Exception e)
-                            {
-                                localizationData = new Dictionary<string, string>();
-                                _ = MainVM.View?.MessageDialog($"Failed to parse language file {localizationJsonPath}. Error: {e.Message}");
+                                try
+                                {
+                                    localizationData = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(localizationJsonPath));
+                                }
+                                catch (Exception e)
+                                {
+                                    localizationData = new Dictionary<string, string>();
+                                    _ = MainVM.View?.MessageDialog($"Failed to parse language file {localizationJsonPath}. Error: {e.Message}");
+                                }
                             }
                         }
                     }
-                }
-            });
-        }
-
-        // Add `// string` at the end of lines with `scr_gettext()` or `scr_84_get_lang_string()`
-        if (text is not null && localizationData is not null)
-        {
-            StringReader decompLinesReader = new(text);
-            StringBuilder decompLinesBuilder = new();
-
-            string? line;
-            while ((line = decompLinesReader.ReadLine()) is not null)
-            {
-                var matches = localizationFunctionRegex.Matches(line).Where(m => m.Success).ToArray();
-
-                decompLinesBuilder.Append(line);
-
-                foreach (var match in matches)
-                {
-                    string locText = localizationData.GetValueOrDefault(match.Groups[1].Value, "<localization fetch error>");
-                    decompLinesBuilder.Append($" // {locText}");
-                }
-
-                decompLinesBuilder.Append("\n");
+                });
             }
 
-            text = decompLinesBuilder.ToString();
+            // Add `// string` at the end of lines with `scr_gettext()` or `scr_84_get_lang_string()`
+            if (text is not null && localizationData is not null)
+            {
+                StringReader decompLinesReader = new(text);
+                StringBuilder decompLinesBuilder = new();
+
+                string? line;
+                while ((line = decompLinesReader.ReadLine()) is not null)
+                {
+                    var matches = localizationFunctionRegex.Matches(line).Where(m => m.Success).ToArray();
+
+                    decompLinesBuilder.Append(line);
+
+                    foreach (var match in matches)
+                    {
+                        string locText = localizationData.GetValueOrDefault(match.Groups[1].Value, "<localization fetch error>");
+                        decompLinesBuilder.Append($" // {locText}");
+                    }
+
+                    decompLinesBuilder.Append("\n");
+                }
+
+                text = decompLinesBuilder.ToString();
+            }
         }
 
         GMLTextDocument!.Text = text;
