@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Data;
-using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
@@ -26,14 +24,7 @@ public class SKImageViewer : Control
         set => SetValue(ImageProperty, value);
     }
 
-    public static readonly StyledProperty<IList<object?>> BindingsProperty =
-        AvaloniaProperty.Register<SKImageViewer, IList<object?>>(nameof(Bindings));
-
-    public IList<object?> Bindings
-    {
-        get => GetValue(BindingsProperty);
-        set => SetValue(BindingsProperty, value);
-    }
+    public IList<IDisposable> subscriptions = [];
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -43,42 +34,43 @@ public class SKImageViewer : Control
         {
             if (Image is UndertaleTexturePageItem texturePageItem)
             {
-                // Bind these values to a property so we can get updates when they change.
-                // Yeah, I know this sucks.
-                IList<BindingBase> bindings =
+                foreach (IDisposable subscription in subscriptions)
+                    subscription.Dispose();
+
+                subscriptions =
                 [
-                    CompiledBinding.Create<UndertaleTexturePageItem, GMImage>(source: texturePageItem, expression: x => x.TexturePage.TextureData.Image),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.SourceX),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.SourceY),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.SourceWidth),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.SourceHeight),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.TargetX),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.TargetY),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.TargetWidth),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.TargetHeight),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.BoundingWidth),
-                    CompiledBinding.Create<UndertaleTexturePageItem, ushort>(source: texturePageItem, expression: x => x.BoundingHeight),
+                    texturePageItem.WhenAnyValue(x => x.TexturePage, x => x.TexturePage.TextureData, x => x.TexturePage.TextureData.Image)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.SourceX)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.SourceY)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.SourceWidth)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.SourceHeight)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.TargetX)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.TargetY)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.TargetWidth)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.TargetHeight)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.BoundingWidth)
+                        .Subscribe(_ => Invalidate()),
+                    texturePageItem.WhenAnyValue(x => x.BoundingHeight)
+                        .Subscribe(_ => Invalidate()),
                 ];
-
-                MultiBinding multiBinding = new()
-                {
-                    Bindings = bindings,
-                    Converter = new FuncMultiValueConverter<object?, IList<object?>>(x => new List<object?>(x))
-                };
-
-                Bind(BindingsProperty, multiBinding);
             }
             else
             {
-                ClearValue(BindingsProperty);
+                foreach (var i in subscriptions)
+                    i.Dispose();
+                subscriptions.Clear();
+
                 Invalidate();
             }
-        }
-        else if (change.Property == BindingsProperty)
-        {
-            // Only invalidate if not in transitional null state. If new value is actually null, it'll invalidate above in the type check.
-            if (change.NewValue is not null && Image is not null)
-                Invalidate();
         }
     }
 
