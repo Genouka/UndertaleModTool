@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -47,7 +48,7 @@ namespace UndertaleModLib
                 // Prevent recursion
                 if (resourceTypeName == "Item")
                     return;
-                
+
                 var property = GetType().GetProperty(resourceTypeName);
                 if (property is null)
                     throw new MissingMemberException($"\"UndertaleData\" doesn't contain a property named \"{resourceTypeName}\".");
@@ -117,89 +118,87 @@ namespace UndertaleModLib
         /// <summary>
         /// The used extensions of the data file.
         /// </summary>
-        public IList<UndertaleExtension> Extensions => FORM.EXTN?.List;
+        public UndertalePointerList<UndertaleExtension> Extensions => FORM.EXTN?.List;
 
         /// <summary>
         /// The used sounds of the data file.
         /// </summary>
-        public IList<UndertaleSound> Sounds => FORM.SOND?.List;
+        public UndertalePointerList<UndertaleSound> Sounds => FORM.SOND?.List;
 
         /// <summary>
         /// The audio groups of the data file.
         /// </summary>
-        public IList<UndertaleAudioGroup> AudioGroups => FORM.AGRP?.List;
+        public UndertalePointerList<UndertaleAudioGroup> AudioGroups => FORM.AGRP?.List;
 
         /// <summary>
         /// The sprites of the data file.
         /// </summary>
-        public IList<UndertaleSprite> Sprites => FORM.SPRT?.List;
+        public UndertalePointerList<UndertaleSprite> Sprites => FORM.SPRT?.List;
 
         /// <summary>
         /// The backgrounds (or Tilesets) of the data file.
         /// </summary>
-        public IList<UndertaleBackground> Backgrounds => FORM.BGND?.List;
+        public UndertalePointerList<UndertaleBackground> Backgrounds => FORM.BGND?.List;
 
         /// <summary>
         /// The paths of the data file.
         /// </summary>
-        public IList<UndertalePath> Paths => FORM.PATH?.List;
+        public UndertalePointerList<UndertalePath> Paths => FORM.PATH?.List;
 
         /// <summary>
         /// The scripts of the data file.
         /// </summary>
-        public IList<UndertaleScript> Scripts => FORM.SCPT?.List;
+        public UndertalePointerList<UndertaleScript> Scripts => FORM.SCPT?.List;
 
         /// <summary>
         /// The global initialization scripts of the data file.
         /// </summary>
-        public IList<UndertaleGlobalInit> GlobalInitScripts => FORM.GLOB?.List;
+        public UndertaleSimpleList<UndertaleGlobalInit> GlobalInitScripts => FORM.GLOB?.List;
 
         /// <summary>
         /// The global end scripts of the data file.
         /// </summary>
-        public IList<UndertaleGlobalInit> GameEndScripts => FORM.GMEN?.List;
+        public UndertaleSimpleList<UndertaleGlobalInit> GameEndScripts => FORM.GMEN?.List;
 
         /// <summary>
         /// The used shaders of the data file.
         /// </summary>
-        public IList<UndertaleShader> Shaders => FORM.SHDR?.List;
+        public UndertalePointerList<UndertaleShader> Shaders => FORM.SHDR?.List;
 
         /// <summary>
         /// The fonts of the data file.
         /// </summary>
-        public IList<UndertaleFont> Fonts => FORM.FONT?.List;
+        public UndertalePointerList<UndertaleFont> Fonts => FORM.FONT?.List;
 
         /// <summary>
         /// The Timelines of the data file.
         /// </summary>
-        public IList<UndertaleTimeline> Timelines => FORM.TMLN?.List;
+        public UndertalePointerList<UndertaleTimeline> Timelines => FORM.TMLN?.List;
 
         /// <summary>
         /// The game objects of the data file.
         /// </summary>
-        public IList<UndertaleGameObject> GameObjects => FORM.OBJT?.List;
+        public UndertalePointerList<UndertaleGameObject> GameObjects => FORM.OBJT?.List;
 
         /// <summary>
         /// The rooms of the data file.
         /// </summary>
-        public IList<UndertaleRoom> Rooms => FORM.ROOM?.List;
-        //[Obsolete("Unused")]
-        // DataFile
+        public UndertalePointerList<UndertaleRoom> Rooms => FORM.ROOM?.List;
 
         /// <summary>
         /// The texture page items from the data file.
         /// </summary>
-        public IList<UndertaleTexturePageItem> TexturePageItems => FORM.TPAG?.List;
+        public UndertalePointerList<UndertaleTexturePageItem> TexturePageItems => FORM.TPAG?.List;
 
         /// <summary>
         /// The code entries of the data file.
         /// </summary>
-        public IList<UndertaleCode> Code => FORM.CODE?.List;
+        public UndertalePointerList<UndertaleCode> Code => FORM.CODE?.List;
 
         /// <summary>
         /// The used variables of the data file.
         /// </summary>
-        public IList<UndertaleVariable> Variables => FORM.VARI?.List;
+        public ObservableCollection<UndertaleVariable> Variables => FORM.VARI?.List;
 
         /// <summary>
         /// TODO: Unknown value, need more research.
@@ -236,38 +235,38 @@ namespace UndertaleModLib
         /// <summary>
         /// The functions of the data file.
         /// </summary>
-        public IList<UndertaleFunction> Functions => FORM.FUNC?.Functions;
+        public UndertaleSimpleList<UndertaleFunction> Functions => FORM.FUNC?.Functions;
 
         /// <summary>
         /// The code locals of the data file.
         /// </summary>
-        public IList<UndertaleCodeLocals> CodeLocals => FORM.FUNC?.CodeLocals;
+        public UndertaleSimpleList<UndertaleCodeLocals> CodeLocals => FORM.FUNC?.CodeLocals;
 
         /// <summary>
         /// The used strings of the data file.
         /// </summary>
-        public IList<UndertaleString> Strings => FORM.STRG?.List;
+        public UndertalePointerList<UndertaleString> Strings => FORM.STRG?.List;
 
         /// <summary>
         /// The embedded images of the data file. This is used to store built-in particle sprites,
         /// every time you use <c>part_sprite</c> functions.
         /// </summary>
-        public IList<UndertaleEmbeddedImage> EmbeddedImages => FORM.EMBI?.List;
+        public UndertaleSimpleList<UndertaleEmbeddedImage> EmbeddedImages => FORM.EMBI?.List;
 
         /// <summary>
         /// The embedded textures of the data file.
         /// </summary>
-        public IList<UndertaleEmbeddedTexture> EmbeddedTextures => FORM.TXTR?.List;
+        public UndertalePointerList<UndertaleEmbeddedTexture> EmbeddedTextures => FORM.TXTR?.List;
 
         /// <summary>
         /// The texture group infos of the data file.
         /// </summary>
-        public IList<UndertaleTextureGroupInfo> TextureGroupInfo => FORM.TGIN?.List;
+        public UndertalePointerList<UndertaleTextureGroupInfo> TextureGroupInfo => FORM.TGIN?.List;
 
         /// <summary>
         /// The embedded audio of the data file.
         /// </summary>
-        public IList<UndertaleEmbeddedAudio> EmbeddedAudio => FORM.AUDO?.List;
+        public UndertalePointerList<UndertaleEmbeddedAudio> EmbeddedAudio => FORM.AUDO?.List;
 
         /// <summary>
         /// The used tags of the data file.
@@ -277,12 +276,12 @@ namespace UndertaleModLib
         /// <summary>
         /// The animation curves of the data file.
         /// </summary>
-        public IList<UndertaleAnimationCurve> AnimationCurves => FORM.ACRV?.List;
+        public UndertalePointerList<UndertaleAnimationCurve> AnimationCurves => FORM.ACRV?.List;
 
         /// <summary>
         /// The sequences of the data file.
         /// </summary>
-        public IList<UndertaleSequence> Sequences => FORM.SEQN?.List;
+        public UndertalePointerList<UndertaleSequence> Sequences => FORM.SEQN?.List;
 
         /// <summary>
         /// The feature flags stored in the data file.
@@ -292,22 +291,22 @@ namespace UndertaleModLib
         /// <summary>
         /// The filter effects stored in the data file.
         /// </summary>
-        public IList<UndertaleFilterEffect> FilterEffects => FORM.FEDS?.List;
+        public UndertalePointerList<UndertaleFilterEffect> FilterEffects => FORM.FEDS?.List;
 
         /// <summary>
         /// The particle systems stored in the data file.
         /// </summary>
-        public IList<UndertaleParticleSystem> ParticleSystems => FORM.PSYS?.List;
+        public UndertalePointerList<UndertaleParticleSystem> ParticleSystems => FORM.PSYS?.List;
 
         /// <summary>
         /// The particle system emitters stored in the data file.
         /// </summary>
-        public IList<UndertaleParticleSystemEmitter> ParticleSystemEmitters => FORM.PSEM?.List;
+        public UndertalePointerList<UndertaleParticleSystemEmitter> ParticleSystemEmitters => FORM.PSEM?.List;
 
         /// <summary>
         /// The root UI nodes stored in the data file.
         /// </summary>
-        public IList<UndertaleUIRootNode> UINodes => FORM.UILR?.List;
+        public UndertalePointerList<UndertaleUIRootNode> UINodes => FORM.UILR?.List;
 
         /// <summary>
         /// Whether this is an unsupported bytecode version.
@@ -390,7 +389,7 @@ namespace UndertaleModLib
         /// <returns>The <see cref="UndertaleNamedResource"/>.</returns>
         public UndertaleNamedResource ByName(string name, bool ignoreCase = false)
         {
-            return 
+            return
                 Sounds.ByName(name, ignoreCase) ??
                 Sprites.ByName(name, ignoreCase) ??
                 Backgrounds.ByName(name, ignoreCase) ??
@@ -433,7 +432,6 @@ namespace UndertaleModLib
                 throw new InvalidOperationException();
             return -1;
         }
-
 
         /// <summary>
         /// Returns the zero-based index of the first occurrence of the specified <see cref="UndertaleNamedResource"/>.
@@ -497,7 +495,6 @@ namespace UndertaleModLib
             return IsVersionAtLeast(2);
         }
 
-
         // Old Versions: https://store.yoyogames.com/downloads/gm-studio/release-notes-studio-old.html
         // https://web.archive.org/web/20150304025626/https://store.yoyogames.com/downloads/gm-studio/release-notes-studio.html
         // Early Access: https://web.archive.org/web/20181002232646/http://store.yoyogames.com:80/downloads/gm-studio-ea/release-notes-studio.html
@@ -518,12 +515,11 @@ namespace UndertaleModLib
         /// <summary>
         /// Sets the GMS2+ version flag in GeneralInfo.
         /// </summary>
-        public void SetGMS2Version(UndertaleGeneralInfo.RuntimeVersion ver) 
+        public void SetGMS2Version(UndertaleGeneralInfo.RuntimeVersion ver)
         {
             VerifyMajorGMS2Version(ver.Major);
             GeneralInfo.Version = ver;
         }
-
 
         /// <summary>
         /// Sets the GMS2+ version flag in GeneralInfo.
