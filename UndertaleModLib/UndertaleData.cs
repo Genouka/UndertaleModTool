@@ -74,8 +74,8 @@ namespace UndertaleModLib
                 if (!typeof(UndertaleResource).IsAssignableFrom(resourceType))
                     throw new NotSupportedException($"\"{resourceType.FullName}\" is not an UndertaleResource.");
 
-                var property = GetType().GetProperties().Where(x => x.PropertyType.Name == "IList`1")
-                                                        .FirstOrDefault(x => x.PropertyType.GetGenericArguments()[0] == resourceType);
+                PropertyInfo property = AllListProperties.FirstOrDefault(x => x.PropertyType.GetGenericArguments()[0] == resourceType);
+
                 if (property is null)
                     throw new MissingMemberException($"\"UndertaleData\" doesn't contain a resource list of type \"{resourceType.FullName}\".");
 
@@ -86,8 +86,8 @@ namespace UndertaleModLib
                 if (!typeof(UndertaleResource).IsAssignableFrom(resourceType))
                     throw new NotSupportedException($"\"{resourceType.FullName}\" is not an UndertaleResource.");
 
-                var property = GetType().GetProperties().Where(x => x.PropertyType.Name == "IList`1")
-                                                        .FirstOrDefault(x => x.PropertyType.GetGenericArguments()[0] == resourceType);
+                PropertyInfo property = AllListProperties.FirstOrDefault(x => x.PropertyType.GetGenericArguments()[0] == resourceType);
+
                 if (property is null)
                     throw new MissingMemberException($"\"UndertaleData\" doesn't contain a resource list of type \"{resourceType.FullName}\".");
 
