@@ -65,8 +65,8 @@ public class SKImageViewer : Control
             }
             else
             {
-                foreach (var i in subscriptions)
-                    i.Dispose();
+                foreach (IDisposable subscription in subscriptions)
+                    subscription.Dispose();
                 subscriptions.Clear();
 
                 Invalidate();
@@ -124,7 +124,10 @@ public class SKImageViewer : Control
                     }
                 }
 
-                SKImage image = SKImage.FromPixelCopy(new SKImageInfo(maskEntry.Width, maskEntry.Height, SKColorType.Gray8), pixels);
+                SKImage? image = SKImage.FromPixelCopy(new SKImageInfo(maskEntry.Width, maskEntry.Height, SKColorType.Gray8), pixels);
+                if (image is null)
+                    return null;
+
                 return new SKImageDrawOperation(image);
             }
             return null;
