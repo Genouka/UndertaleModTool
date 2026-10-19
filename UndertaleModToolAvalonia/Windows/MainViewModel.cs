@@ -1167,7 +1167,7 @@ public partial class MainViewModel : ObservableObject
 
             if (Project is not null)
             {
-                if (vm.Resource is IProjectAsset { ProjectExportable: true } projectAsset)
+                if (vm.Resource is IProjectAsset projectAsset)
                 {
                     TabIsMarkedForExport = Project.IsAssetMarkedForExport(projectAsset);
                     TabCanMarkedForExport = true;
