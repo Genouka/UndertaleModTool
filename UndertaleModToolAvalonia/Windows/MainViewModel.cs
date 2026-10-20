@@ -459,6 +459,8 @@ public partial class MainViewModel : ObservableObject
 
         Tabs.TabCloseAllWithoutSaving();
 
+        UndertaleCodeViewModel.ResetLocalizationData();
+
         ClearProject();
 
         Data = null;

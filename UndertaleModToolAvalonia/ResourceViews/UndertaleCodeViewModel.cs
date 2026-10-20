@@ -1,6 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -247,6 +252,57 @@ public partial class UndertaleCodeViewModel : ObservableObject, IUndertaleResour
         _ => throw new NotImplementedException(),
     };
 
+    private static Dictionary<string, string>? localizationData = null;
+
+    public static void ResetLocalizationData()
+    {
+        localizationData = null;
+    }
+
+    private static void ParseLocalizationDataFromScript(UndertaleData data, UndertaleCode gettextCode, MainViewModel mainVM)
+    {
+        localizationData = new Dictionary<string, string>();
+        GlobalDecompileContext context = new(data);
+        string[] decompilationOutput;
+        try
+        {
+            decompilationOutput = new Underanalyzer.Decompiler.DecompileContext(context, gettextCode, data.ToolInfo.DecompilerSettings).DecompileToString().Split('\n');
+        }
+        catch (Exception)
+        {
+            decompilationOutput = Array.Empty<string>();
+        }
+
+        Regex textdataRegex = new(@"^ds_map_add\(global\.text_data_en, ""(.*?)"", [""'](.*)[""']\)", RegexOptions.Compiled);
+        foreach (var line in decompilationOutput)
+        {
+            Match m = textdataRegex.Match(line);
+            if (m.Success)
+            {
+                try
+                {
+                    if (!data.IsGameMaker2() && m.Groups[2].Value.Contains("'\"'"))
+                    {
+                        localizationData.Add(m.Groups[1].Value, $"\"{m.Groups[2].Value}\"");
+                    }
+                    else
+                    {
+                        localizationData.Add(m.Groups[1].Value, m.Groups[2].Value);
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    _ = mainVM.View?.MessageDialog("There is a duplicate key in textdata_en, being " + m.Groups[1].Value + ". This may cause errors in the comment display of text.");
+                }
+                catch
+                {
+                    _ = mainVM.View?.MessageDialog("Unknown error in textdata_en. This may cause errors in the comment display of text.");
+                }
+            }
+        }
+    }
+    private static readonly Regex localizationFunctionRegex = new(@"(?:scr_gettext|scr_84_get_lang_string)\(\""(.*?)\""\)", RegexOptions.Compiled);
+
     async Task<bool> DecompileToGML()
     {
         Debug.WriteLine("DecompileToGML");
@@ -281,6 +337,71 @@ public partial class UndertaleCodeViewModel : ObservableObject, IUndertaleResour
             }
         }
 
+        if (MainVM.Settings.EnableLocalizationStringPreview)
+        {
+            if (localizationData == null && MainVM.Data?.Code != null)
+            {
+                await Task.Run(() => {
+                    localizationData = new Dictionary<string, string>();
+
+                    UndertaleCode? gettextCode = MainVM.Data.Code.ByName("gml_Script_textdata_en");
+
+                    if (gettextCode != null)
+                    {
+                        ParseLocalizationDataFromScript(MainVM.Data, gettextCode, MainVM);
+                    }
+                    else
+                    {
+                        string? dataPath = Path.GetDirectoryName(MainVM.DataPath);
+                        if (dataPath is not null)
+                        {
+                            string localizationJsonPath = Path.Join(dataPath, "lang", "lang_en.json");
+                            if (!File.Exists(localizationJsonPath))
+                                localizationJsonPath = Path.Join(dataPath, "lang", "lang_en_ch1.json");
+                            
+                            if (File.Exists(localizationJsonPath))
+                            {
+                                try
+                                {
+                                    localizationData = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(localizationJsonPath));
+                                }
+                                catch (Exception e)
+                                {
+                                    localizationData = new Dictionary<string, string>();
+                                    _ = MainVM.View?.MessageDialog($"Failed to parse language file {localizationJsonPath}. Error: {e.Message}");
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Add `// string` at the end of lines with `scr_gettext()` or `scr_84_get_lang_string()`
+            if (text is not null && localizationData is not null)
+            {
+                StringReader decompLinesReader = new(text);
+                StringBuilder decompLinesBuilder = new();
+
+                string? line;
+                while ((line = decompLinesReader.ReadLine()) is not null)
+                {
+                    var matches = localizationFunctionRegex.Matches(line).Where(m => m.Success).ToArray();
+
+                    decompLinesBuilder.Append(line);
+
+                    foreach (var match in matches)
+                    {
+                        string locText = localizationData.GetValueOrDefault(match.Groups[1].Value, "<localization fetch error>");
+                        decompLinesBuilder.Append($" // {locText}");
+                    }
+
+                    decompLinesBuilder.Append("\n");
+                }
+
+                text = decompLinesBuilder.ToString();
+            }
+        }
+
         GMLTextDocument!.Text = text;
         GMLTabState = TabState.Ok;
 
@@ -310,6 +431,10 @@ public partial class UndertaleCodeViewModel : ObservableObject, IUndertaleResour
                 title: "GML compilation error - UndertaleModTooAvalonia v" + App.VersionString);
             return false;
         }
+
+        // Invalidate `localizationData` if necessary
+        if (Code.Name?.Content == "gml_Script_textdata_en")
+            localizationData = null;
 
         if (MainVM.Project is not null)
         {

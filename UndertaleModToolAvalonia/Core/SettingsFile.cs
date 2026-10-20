@@ -136,5 +136,7 @@ public partial class SettingsFile
 
     public string InstanceIdPrefix { get; set; } = "inst_";
 
+    public bool EnableLocalizationStringPreview { get; set; } = true;
+
     public Underanalyzer.Decompiler.DecompileSettings DecompileSettings { get; set; } = new();
 }
