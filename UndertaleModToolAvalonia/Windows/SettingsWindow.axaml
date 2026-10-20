@@ -49,7 +49,7 @@
                 <CheckBox Content="Always save to the project's designated data file for saving"
                             IsChecked="{Binding MainVM.Settings.AlwaysSaveDataInProjectDestination}"/>
                 <CheckBox Content="Enable localization strings preview"
-                            ToolTip.Tip="If enabled, decompiled code of Undertale and Deltarune chapter 1 will show previews of localized strings as comments."
+                            ToolTip.Tip="If enabled, decompiled code of Undertale and Deltarune Chapter 1 will show previews of localized strings as comments."
                             IsChecked="{Binding MainVM.Settings.EnableLocalizationStringPreview}"/>
             </StackPanel>
 
