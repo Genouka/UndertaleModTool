@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace UndertaleModToolAvalonia;
@@ -37,6 +38,18 @@ public partial class TabItemViewModel : ObservableObject
     [ObservableProperty]
     public partial bool CanGoForward { get; set; } = false;
 
+    /// <summary>
+    /// The content currently realized in the tab's view. Lags behind <see cref="Content"/> while the
+    /// new content is being loaded, so a progress bar can be shown instead of a frozen window.
+    /// </summary>
+    [ObservableProperty]
+    public partial ITabContent? DisplayedContent { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsContentLoading { get; set; } = false;
+
+    private int contentLoadVersion = 0;
+
     private readonly List<ITabContent> history = [];
     private int historyPosition = -1;
 
@@ -47,6 +60,65 @@ public partial class TabItemViewModel : ObservableObject
 
         history.Add(Content);
         historyPosition = 0;
+    }
+
+    /// <summary>
+    /// Starts realizing <see cref="Content"/> if it is not being displayed yet. The expensive part
+    /// (creating the content's control tree and laying it out) is deferred to a dispatcher pass
+    /// that runs after the frame with the progress bar has been rendered.
+    /// </summary>
+    private void BeginContentLoad()
+    {
+        if (ReferenceEquals(DisplayedContent, Content))
+            return;
+
+        int version = ++contentLoadVersion;
+
+        // Show the progress bar (and drop the previous content) before the UI thread is blocked.
+        DisplayedContent = null;
+        IsContentLoading = true;
+
+        // DispatcherPriority.Loaded runs after layout and render, so the progress bar has been
+        // painted by the time this callback starts blocking the UI thread.
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (version != contentLoadVersion)
+                return;
+
+            // Instantiates the content's data template synchronously and lays it out in the
+            // following layout pass.
+            DisplayedContent = Content;
+
+            // Runs after that pass too, so the progress bar is hidden only once the content is up.
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (version != contentLoadVersion)
+                    return;
+
+                IsContentLoading = false;
+            }, DispatcherPriority.Loaded);
+        }, DispatcherPriority.Loaded);
+    }
+
+    partial void OnContentChanged(ITabContent value)
+    {
+        if (IsSelected)
+            BeginContentLoad();
+    }
+
+    partial void OnIsSelectedChanged(bool value)
+    {
+        if (value)
+        {
+            BeginContentLoad();
+        }
+        else
+        {
+            // Cancel a pending load; it is restarted when the tab is selected again.
+            // DisplayedContent is kept so switching back doesn't rebuild the view.
+            contentLoadVersion++;
+            IsContentLoading = false;
+        }
     }
 
     public void OnOpen()
