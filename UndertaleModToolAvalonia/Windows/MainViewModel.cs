@@ -660,7 +660,10 @@ public partial class MainViewModel : ObservableObject
 
         // Save to temp
 
-        string tempFileName = Path.GetTempFileName();
+        string localAppData = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UndertaleModToolAvalonia");
+        Directory.CreateDirectory(localAppData);
+
+        string tempFileName = Path.Join(localAppData, "TempRun");
 
         if (!await SaveDataToFilePath(tempFileName, useTempFile: false))
         {
