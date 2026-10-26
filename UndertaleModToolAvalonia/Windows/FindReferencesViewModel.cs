@@ -97,8 +97,9 @@ public partial class FindReferencesViewModel : ObservableObject
                 // If it's a list, loop its values
                 if (obj is IList objList)
                 {
-                    foreach (object? item in objList)
+                    for (int i = 0; i < objList.Count; i++)
                     {
+                        object? item = objList[i];
                         if (item is not null)
                         {
                             var t = item.GetType();
@@ -106,7 +107,7 @@ public partial class FindReferencesViewModel : ObservableObject
                                 break;
 
                             // Add []
-                            RecurseProperties(item, topObject, $"{propChain}[{item}]");
+                            RecurseProperties(item, topObject, $"{propChain}[{i}]");
                         }
                     }
                 }
