@@ -275,6 +275,9 @@ jobs:
 
     needs: [build_gui, build_cli, build_avalonia_gui, build_avalonia_android]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     steps:
     - name: Download artifacts
       uses: actions/download-artifact@v8
@@ -463,3 +466,13 @@ jobs:
         # （仓库中并没有 CHANGELOG.md，原先那个链接是失效的）。
         generate_release_notes: true
         previous_tag: ${{ steps.previous.outputs.tag }}
+
+    - name: Trigger MirrorChyanUploading
+      shell: bash
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPO: ${{ github.repository }}
+        RELEASE_TAG: ${{ inputs.version }}
+      run: |
+        gh workflow run mirrorchyan_release.yml --repo "$GH_REPO" -f tag="$RELEASE_TAG"
+        gh workflow run mirrorchyan_release_note.yml --repo "$GH_REPO" -f tag="$RELEASE_TAG"

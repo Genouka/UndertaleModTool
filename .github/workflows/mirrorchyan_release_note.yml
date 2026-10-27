@@ -1,0 +1,73 @@
+name: MirrorChyan release notes
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Stable release tag (empty for the latest stable release)'
+        default: ''
+        required: false
+        type: string
+  release:
+    types: [edited]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: mirrorchyan-release-notes-${{ inputs.tag || github.event.release.tag_name || 'latest' }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    if: ${{ github.event_name != 'release' || (!github.event.release.draft && !github.event.release.prerelease) }}
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - name: Resolve stable release
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: Genouka/UndertaleModTool
+          REQUESTED_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          args=()
+          if [[ -n "$REQUESTED_TAG" ]]; then
+            args+=("$REQUESTED_TAG")
+          fi
+          release=$(gh release view "${args[@]}" --json tagName,isDraft,isPrerelease)
+          if [[ $(jq -r '.isDraft or .isPrerelease' <<< "$release") != false ]]; then
+            echo "::error::Only published stable releases are supported."
+            exit 1
+          fi
+          echo "tag=$(jq -r '.tagName' <<< "$release")" >> "$GITHUB_OUTPUT"
+
+  mirrorchyan:
+    if: ${{ github.repository_owner == 'Genouka' }}
+    needs: resolve
+    name: ${{ matrix.rid }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid:
+          - UndertaleModTool-Genouka
+          - UndertaleModToolSingleFile-Genouka
+          - UndertaleModToolAvalonia-Genouka
+          - UndertaleModCli-Genouka
+          - UndertaleModToolAndroid-Genouka
+          - UndertaleModToolAndroidPreinstall-Genouka
+    steps:
+      - uses: MirrorChyan/release-note-action@v1
+        with:
+          mirrorchyan_rid: ${{ matrix.rid }}
+          version_name: ${{ needs.resolve.outputs.tag }}
+          channel: stable
+
+          owner: Genouka
+          repo: UndertaleModTool
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          upload_token: ${{ secrets.MirrorChyanUploadToken }}
