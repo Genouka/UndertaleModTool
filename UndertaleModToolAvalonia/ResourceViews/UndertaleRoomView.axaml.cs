@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -20,6 +21,8 @@ public partial class UndertaleRoomView : UserControl
     bool treeOverlayOpen;
     bool propertiesOverlayOpen;
     GridLength savedSideWidth = new(2, GridUnitType.Star);
+    UndertaleRoomViewModel? subscribedRoomVM;
+    bool attachedToVisualTree;
 
     public UndertaleRoomView()
     {
@@ -43,20 +46,63 @@ public partial class UndertaleRoomView : UserControl
 
         DataContextChanged += (_, _) =>
         {
-            if (DataContext is UndertaleRoomViewModel vm)
-            {
-                vm.PropertyChanged += (source, e) =>
-                {
-                    if (e.PropertyName == nameof(UndertaleRoomViewModel.RoomTreeItemsSelectedItem))
-                    {
-                        var item = vm.RoomTreeItemsSelectedItem;
-                        ExpandToTreeViewItem(GetTreeViewItem(RoomItemsTreeView, item));
-                    }
-                };
+            UpdateRoomVMSubscription();
 
+            if (DataContext is UndertaleRoomViewModel vm)
                 vm.RoomTreeItemsSelectedItem = RoomItemsTreeView.Items[0];
-            }
         };
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        attachedToVisualTree = true;
+        UpdateRoomVMSubscription();
+
+        if (subscribedRoomVM is { } vm)
+            ExpandToTreeViewItem(GetTreeViewItem(RoomItemsTreeView, vm.RoomTreeItemsSelectedItem));
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        attachedToVisualTree = false;
+        UnsubscribeRoomVM();
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    // Subscribing only while attached prevents a room view-model that is still in the tab's
+    // back/forward history from keeping this (potentially large) control tree alive.
+    void UpdateRoomVMSubscription()
+    {
+        UndertaleRoomViewModel? vm = attachedToVisualTree
+            ? DataContext as UndertaleRoomViewModel
+            : null;
+
+        if (ReferenceEquals(subscribedRoomVM, vm))
+            return;
+
+        UnsubscribeRoomVM();
+        subscribedRoomVM = vm;
+        if (vm is not null)
+            vm.PropertyChanged += RoomViewModel_PropertyChanged;
+    }
+
+    void UnsubscribeRoomVM()
+    {
+        if (subscribedRoomVM is null)
+            return;
+
+        subscribedRoomVM.PropertyChanged -= RoomViewModel_PropertyChanged;
+        subscribedRoomVM = null;
+    }
+
+    void RoomViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(UndertaleRoomViewModel.RoomTreeItemsSelectedItem)
+            || subscribedRoomVM is not { } vm)
+            return;
+
+        ExpandToTreeViewItem(GetTreeViewItem(RoomItemsTreeView, vm.RoomTreeItemsSelectedItem));
     }
 
     #region Side panel placement (inline vs slide-in drawer)

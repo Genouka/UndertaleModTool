@@ -121,6 +121,23 @@ public partial class TabItemViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Drops the realized view and the navigation history. Called when the tab is closed, so a
+    /// closed tab that is still referenced (for example by a stale selection) cannot keep its
+    /// control tree and every previously opened content alive.
+    /// </summary>
+    private void ReleaseContent()
+    {
+        contentLoadVersion++;
+        IsContentLoading = false;
+        DisplayedContent = null;
+
+        history.Clear();
+        historyPosition = -1;
+        CanGoBack = false;
+        CanGoForward = false;
+    }
+
     public void OnOpen()
     {
         Content.OnAttached();
@@ -129,6 +146,7 @@ public partial class TabItemViewModel : ObservableObject
     public void OnClose()
     {
         Content.OnDetached();
+        ReleaseContent();
     }
 
     public async Task<bool> Save()
