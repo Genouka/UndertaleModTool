@@ -347,13 +347,16 @@ jobs:
           UndertaleModToolAvalonia_Android-${{ matrix.arch }}-Preinstall-Signed.apk
 
   upload:
-    # 关键：即使某些 build job 被跳过，也仍然要跑 upload。
-    # 使用 always() 让 needs 里的 skipped 不阻断，再用 contains 检查真正的失败/取消。
+    # 只有"有东西可发"时才跑：needs 里的 build job 被 changes 判定为无需构建时会 skip，
+    # 此时若仍然跑 upload，download-artifact 拿不到任何文件，Release 步骤会因
+    # '*/*' 不匹配而失败（并且此前已删掉旧的 nightly release）。
+    # 用 always() 顶掉 skipped 的阻断，再要求至少有一个 build 成功。
     needs: [build_gui, build_cli, build_avalonia_gui, build_avalonia_android]
     if: |
       always() &&
       !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled')
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.*.result, 'success')
     runs-on: ubuntu-latest
     steps:
     - name: Download artifacts

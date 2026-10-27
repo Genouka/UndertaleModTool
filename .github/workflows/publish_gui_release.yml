@@ -277,7 +277,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
+      actions: read
     steps:
     - name: Download artifacts
       uses: actions/download-artifact@v8
@@ -467,12 +467,137 @@ jobs:
         generate_release_notes: true
         previous_tag: ${{ steps.previous.outputs.tag }}
 
-    - name: Trigger MirrorChyanUploading
-      shell: bash
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GH_REPO: ${{ github.repository }}
-        RELEASE_TAG: ${{ inputs.version }}
-      run: |
-        gh workflow run mirrorchyan_release.yml --repo "$GH_REPO" -f tag="$RELEASE_TAG"
-        gh workflow run mirrorchyan_release_note.yml --repo "$GH_REPO" -f tag="$RELEASE_TAG"
+  # ---------------------------------------------------------------------------
+  # MirrorChyan 上传 / 发行说明同步
+  #
+  # 只在这条"发布稳定版 release"的链路里运行：两个 job 都 needs upload（release 已创建），
+  # 而本 workflow 只有 workflow_dispatch 触发。PR（publish_pr.yml）与 push/commit
+  # （publish_gui_nightly.yml）都不会走到这里。
+  #
+  # 不能用 on: release: [published] 触发：softprops/action-gh-release 使用的是
+  # GITHUB_TOKEN，由它创建的 release 事件不会级联启动其他 workflow。
+  # ---------------------------------------------------------------------------
+  mirrorchyan_upload:
+    if: ${{ github.repository_owner == 'Genouka' }}
+    needs: upload
+    name: MirrorChyan upload / ${{ matrix.rid }} (${{ matrix.os }}, ${{ matrix.arch }})
+    runs-on: macos-latest
+    permissions:
+      contents: read
+      issues: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: UndertaleModTool-Genouka
+            os: win
+            arch: x64
+            filename: 'UndertaleModTool_*-Windows.zip'
+          - rid: UndertaleModToolSingleFile-Genouka
+            os: win
+            arch: x64
+            filename: 'UndertaleModTool_*-Windows-SingleFile.zip'
+          - rid: UndertaleModToolAvalonia-Genouka
+            os: win
+            arch: x64
+            filename: 'UndertaleModToolAvalonia_*-Windows.zip'
+          - rid: UndertaleModToolAvalonia-Genouka
+            os: linux
+            arch: x64
+            filename: 'UndertaleModToolAvalonia_*-Linux.zip'
+          - rid: UndertaleModToolAvalonia-Genouka
+            os: macos
+            arch: arm64
+            filename: 'UndertaleModToolAvalonia_*-macOS.zip'
+          - rid: UndertaleModToolAvalonia-Genouka
+            os: macos
+            arch: x64
+            filename: 'UndertaleModToolAvalonia_*-macOS-x86.zip'
+          - rid: UndertaleModToolAvalonia-Genouka
+            os: android
+            arch: arm64
+            filename: 'UndertaleModToolAvalonia_*-Android-arm64.zip'
+          - rid: UndertaleModToolAvalonia-Genouka
+            os: android
+            arch: x64
+            filename: 'UndertaleModToolAvalonia_*-Android-x64.zip'
+          - rid: UndertaleModCli-Genouka
+            os: win
+            arch: x64
+            filename: 'UTMT_CLI_*-Windows.zip'
+          - rid: UndertaleModCli-Genouka
+            os: linux
+            arch: x64
+            filename: 'UTMT_CLI_*-Ubuntu.zip'
+          - rid: UndertaleModCli-Genouka
+            os: macos
+            arch: arm64
+            filename: 'UTMT_CLI_*-macOS.zip'
+          - rid: UndertaleModCli-Genouka
+            os: macos
+            arch: x64
+            filename: 'UTMT_CLI_*-macOS-x86.zip'
+          - rid: UndertaleModToolAndroid-Genouka
+            os: android
+            arch: arm64
+            filename: 'UndertaleModToolAvalonia_*-Android-arm64-Signed.apk'
+          - rid: UndertaleModToolAndroid-Genouka
+            os: android
+            arch: x64
+            filename: 'UndertaleModToolAvalonia_*-Android-x64-Signed.apk'
+          - rid: UndertaleModToolAndroidPreinstall-Genouka
+            os: android
+            arch: arm64
+            filename: 'UndertaleModToolAvalonia_Android-arm64-Preinstall-Signed.apk'
+          - rid: UndertaleModToolAndroidPreinstall-Genouka
+            os: android
+            arch: x64
+            filename: 'UndertaleModToolAvalonia_Android-x64-Preinstall-Signed.apk'
+    steps:
+      - name: Upload release assets
+        uses: MirrorChyan/uploading-action@v1
+        with:
+          filetype: latest-release
+          filename: ${{ matrix.filename }}
+          mirrorchyan_rid: ${{ matrix.rid }}
+          tag: ${{ inputs.version }}
+          channel: stable
+
+          os: ${{ matrix.os }}
+          arch: ${{ matrix.arch }}
+
+          owner: Genouka
+          repo: UndertaleModTool
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          upload_token: ${{ secrets.MirrorChyanUploadToken }}
+
+  mirrorchyan_notes:
+    if: ${{ github.repository_owner == 'Genouka' }}
+    needs: upload
+    name: MirrorChyan notes / ${{ matrix.rid }}
+    runs-on: macos-latest
+    permissions:
+      contents: read
+      issues: write
+    strategy:
+      fail-fast: false
+      matrix:
+        rid:
+          - UndertaleModTool-Genouka
+          - UndertaleModToolSingleFile-Genouka
+          - UndertaleModToolAvalonia-Genouka
+          - UndertaleModCli-Genouka
+          - UndertaleModToolAndroid-Genouka
+          - UndertaleModToolAndroidPreinstall-Genouka
+    steps:
+      - name: Update release notes
+        uses: MirrorChyan/release-note-action@v1
+        with:
+          mirrorchyan_rid: ${{ matrix.rid }}
+          version_name: ${{ inputs.version }}
+          channel: stable
+
+          owner: Genouka
+          repo: UndertaleModTool
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          upload_token: ${{ secrets.MirrorChyanUploadToken }}
