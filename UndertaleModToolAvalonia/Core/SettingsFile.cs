@@ -194,6 +194,18 @@ public partial class SettingsFile
     /// <summary>Check for a newer nightly build automatically when the app starts.</summary>
     public bool CheckForUpdates { get; set; } = true;
 
+    /// <summary>Which update channel to use: published stable releases or nightly CI builds.</summary>
+    public UpdateChannel UpdateChannel { get; set; } = global::UndertaleModToolAvalonia.UpdateChannel.Nightly;
+
+    /// <summary>Where stable releases are downloaded from.</summary>
+    public UpdateSource UpdateSource { get; set; } = global::UndertaleModToolAvalonia.UpdateSource.GitHub;
+
+    /// <summary>MirrorChyan activation key. Required to download stable builds from MirrorChyan.</summary>
+    public string MirrorChyanCdk { get; set; } = "";
+
+    /// <summary>Tag of the last stable release installed through the update flow.</summary>
+    public string LastStableVersion { get; set; } = "";
+
     public enum DrawerModeValue
     {
         /// <summary>Expanded (push layout) on wide screens, collapsed (overlay drawer) on narrow ones.</summary>

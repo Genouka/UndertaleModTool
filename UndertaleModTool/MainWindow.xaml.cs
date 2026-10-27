@@ -32,18 +32,16 @@ using UndertaleModLib.Scripting;
 using UndertaleModLib.Util;
 using UndertaleModTool.Windows;
 using UndertaleModTool.Localization;
+using UndertaleModTool.Update;
 using System.IO.Pipes;
 using Ookii.Dialogs.Wpf;
 
-using System.Text.RegularExpressions;
 using System.Windows.Data;
 using System.Security.Cryptography;
 using System.Collections.Concurrent;
 using System.Runtime;
 using SystemJson = System.Text.Json;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Globalization;
 using System.Windows.Controls.Primitives;
@@ -188,8 +186,6 @@ namespace UndertaleModTool
         public object LastOpenedObject { get; set; } // for restoring the object that was opened before room rendering
 
         public bool IsAppClosed { get; set; }
-
-        private HttpClient httpClient;
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
@@ -3020,21 +3016,17 @@ namespace UndertaleModTool
         }
 
 
-        private async Task<HttpResponseMessage> HttpGetAsync(string uri)
+        /// <summary>
+        /// Resolves the update package selected by the update settings, downloads and prepares it for
+        /// the updater, then restarts the application through the updater.
+        /// </summary>
+        /// <param name="window">Settings window whose update button is disabled while running.</param>
+        /// <param name="skipUpdatePrompt">
+        /// Whether the user already confirmed the update (used by the automatic check), so no
+        /// confirmation prompts are shown again.
+        /// </param>
+        public async void UpdateApp(SettingsWindow window = null, bool skipUpdatePrompt = false)
         {
-            try
-            {
-                return await httpClient.GetAsync(uri);
-            }
-            catch (Exception exp) when (exp is not NullReferenceException)
-            {
-                return null;
-            }
-        }
-        public async void UpdateApp(SettingsWindow window = null)
-        {
-            //TODO: rewrite this slightly + comment this out so this is clearer on what this does.
-
             window ??= new SettingsWindow
             {
                 Owner = this,
@@ -3046,22 +3038,13 @@ namespace UndertaleModTool
 
             window.UpdateButtonEnabled = false;
 
-            httpClient = new();
-            httpClient.DefaultRequestHeaders.Accept.Clear();
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
-
-            // remove the invalid characters (everything within square brackets) from the version string.
-            Regex invalidChars = new Regex(@"Git:|[ (),/:;<=>?@[\]{}]");
-            string version = invalidChars.Replace(Version, "");
-            httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("UndertaleModTool", version));
             double bytesToMB = 1024 * 1024;
 
             if (!Environment.Is64BitOperatingSystem)
             {
                 this.ShowWarning(LocalizationSource.GetString("Msg_32BitOSWarning"));
                 window.UpdateButtonEnabled = true;
-                    return;
-
+                return;
             }
 
             string sysDriveLetter = Path.GetTempPath()[0].ToString();
@@ -3073,61 +3056,55 @@ namespace UndertaleModTool
             }
 
             bool isSingleFile = !File.Exists(Path.Join(ExePath, "UndertaleModTool.dll"));
-            string patchName = $"UndertaleModTool_nightly-Windows{(isSingleFile ? "-SingleFile" : "")}";
 
-            string baseUrl = "https://api.github.com/repos/genouka/UndertaleModTool/actions/";
-            string detectedActionName = "Publish continuous release of UndertaleModTool";
-
-            // Fetch the latest workflow run
-            var result = await HttpGetAsync(baseUrl + "runs?branch=master&status=success&per_page=20");
-            if (result?.IsSuccessStatusCode != true)
+            UpdateCheckResult check;
+            using (HttpClient client = UpdateChecker.CreateHttpClient())
             {
-                string errText = $"{(result is null ? LocalizationSource.GetString("Msg_CheckInternetConnection") : string.Format(LocalizationSource.GetString("Msg_HTTPError"), result.ReasonPhrase))}";
-                this.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToFetchBuild"), errText));
+                check = await UpdateChecker.CheckAsync(client, isSingleFile, forcePackage: true,
+                    localBuildTime: File.GetLastWriteTime(Path.Join(ExePath, "UndertaleModTool.exe")));
+            }
+
+            if (ReportUpdateCheckFailure(check, window))
+                return;
+
+            UpdatePackage package = check.Package;
+            if (package is null)
+            {
+                if (check.Status == UpdateCheckStatus.UpToDate)
+                    this.ShowMessage(LocalizationSource.GetString("Msg_UpToDate"));
+
                 window.UpdateButtonEnabled = true;
                 return;
             }
-            // Parse it as JSON
-            var actionInfo = JObject.Parse(await result.Content.ReadAsStringAsync());
-            var actionList = (JArray)actionInfo["workflow_runs"];
-            JObject action = null;
 
-            for (int index = 0; index < actionList.Count; index++)
+            bool isNewer = check.Status == UpdateCheckStatus.UpdateAvailable;
+
+            // MirrorChyan cannot serve a package without a CDK, so explain why GitHub is used instead.
+            if (check.CdkRequired
+                && this.ShowQuestion(LocalizationSource.GetString("Msg_MirrorChyanCdkRequired")) != MessageBoxResult.Yes)
             {
-                var currentAction = (JObject)actionList[index];
-                if (currentAction["name"].ToString() == detectedActionName)
+                window.UpdateButtonEnabled = true;
+                return;
+            }
+
+            if (!skipUpdatePrompt)
+            {
+                if (isNewer)
                 {
-                    action = currentAction;
-                    break;
+                    if (package.Channel == UpdateChannel.Stable
+                        && this.ShowQuestion(string.Format(LocalizationSource.GetString("Msg_UpdateAvailableWithVersion"),
+                            package.VersionLabel, UpdateChecker.GetLocalVersion())) != MessageBoxResult.Yes)
+                    {
+                        window.UpdateButtonEnabled = true;
+                        return;
+                    }
                 }
-            }
-            if (action == null)
-            {
-                this.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToFindBuild"), detectedActionName));
-                window.UpdateButtonEnabled = true;
-                return;
-            }
-
-            DateTime currDate = File.GetLastWriteTime(Path.Join(ExePath, "UndertaleModTool.exe"));
-            DateTime lastDate = (DateTime)action["updated_at"];
-            if (lastDate.Subtract(currDate).TotalMinutes <= 10)
-                if (this.ShowQuestion(LocalizationSource.GetString("Msg_AlreadyUpToDate")) != MessageBoxResult.Yes)
+                else if (this.ShowQuestion(LocalizationSource.GetString("Msg_AlreadyUpToDate")) != MessageBoxResult.Yes)
                 {
                     window.UpdateButtonEnabled = true;
                     return;
                 }
-
-            var result2 = await HttpGetAsync($"{baseUrl}runs/{action["id"]}/artifacts"); // Grab information about the artifacts
-            if (result2?.IsSuccessStatusCode != true)
-            {
-                string errText = $"{(result2 is null ? LocalizationSource.GetString("Msg_CheckInternetConnection") : string.Format(LocalizationSource.GetString("Msg_HTTPError"), result2.ReasonPhrase))}";
-                this.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToFetchBuild"), errText));
-                window.UpdateButtonEnabled = true;
-                return;
             }
-
-            var artifactInfo = JObject.Parse(await result2.Content.ReadAsStringAsync()); // And now parse them as JSON
-            var artifactList = (JArray) artifactInfo["artifacts"];                       // Grab the array of artifacts
 
             if (Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess)
             {
@@ -3137,28 +3114,6 @@ namespace UndertaleModTool
                     return;
                 }
             }
-
-            JObject artifact = null;
-            for (int index = 0; index < artifactList.Count; index++)
-            {
-                var currentArtifact = (JObject) artifactList[index];
-                string artifactName = (string)currentArtifact["name"];
-
-                // If the tool ever becomes cross platform this needs to check the OS
-                if (artifactName.Equals(patchName))
-                    artifact = currentArtifact;
-            }
-            if (artifact is null)
-            {
-                this.ShowError(LocalizationSource.GetString("Msg_FailedToFindArtifact"));
-                window.UpdateButtonEnabled = true;
-                return;
-            }
-
-            // GitHub doesn't let anonymous users download artifacts, so let's use nightly.link
-
-            string baseDownloadUrl = artifact["archive_download_url"].ToString();
-            string downloadUrl = baseDownloadUrl.Replace("api.github.com/repos", "nightly.link").Replace("/zip", ".zip");
 
             string tempFolder = Path.Join(Path.GetTempPath(), "UndertaleModTool");
             Directory.CreateDirectory(tempFolder); // We're about to download, so make sure the download dir actually exists
@@ -3176,126 +3131,268 @@ namespace UndertaleModTool
 
             try
             {
-                _ = Task.Run(async () =>
-                {
-                    using (HttpClient httpClient = new() { Timeout = TimeSpan.FromMinutes(5) })
-                    {
-                        // Read HTTP response
-                        using (HttpResponseMessage response = await httpClient.GetAsync(new Uri(downloadUrl), HttpCompletionOption.ResponseHeadersRead))
-                        {
-                            // Read header
-                            response.EnsureSuccessStatusCode();
-                            long totalBytes = response.Content.Headers.ContentLength ?? throw new Exception("Missing content length");
-
-                            // Start reading content
-                            using Stream contentStream = await response.Content.ReadAsStreamAsync();
-                            const int downloadBufferSize = 8192;
-                            byte[] downloadBuffer = new byte[downloadBufferSize];
-
-                            // Download content and save to file
-                            using FileStream fs = new(downloadOutput, FileMode.Create, FileAccess.Write, FileShare.None, downloadBufferSize, true);
-                            int bytesRead = await contentStream.ReadAsync(downloadBuffer);
-                            long totalBytesDownloaded = 0;
-                            long bytesToUpdateProgress = totalBytes / 500;
-                            long bytesToProgressCounter = 0;
-                            while (bytesRead > 0)
-                            {
-                                // Write current data to file
-                                await fs.WriteAsync(downloadBuffer.AsMemory(0, bytesRead));
-
-                                // Update progress
-                                totalBytesDownloaded += bytesRead;
-                                bytesToProgressCounter += bytesRead;
-                                if (bytesToProgressCounter >= bytesToUpdateProgress)
-                                {
-                                    bytesToProgressCounter -= bytesToUpdateProgress;
-                                    UpdateProgressStatus(LocalizationSource.GetString("Msg_DownloadedMB") + " " + (totalBytesDownloaded / bytesToMB).ToString("F2", CultureInfo.InvariantCulture));
-                                }
-
-                                // Read next bytes
-                                bytesRead = await contentStream.ReadAsync(downloadBuffer);
-                            }
-                        }
-                    }
-
-                    // Download complete, hide progress bar
-                    HideProgressBar();
-
-                    // Extract ZIP
-                    string updaterFolderTemp = Path.Join(tempFolder, "Updater");
-                    bool extractedSuccessfully = false;
-                    try
-                    {
-                        // Unzip double-zipped update
-                        ZipFile.ExtractToDirectory(downloadOutput, tempFolder, true);
-                        File.Move(Path.Join(tempFolder, $"{patchName}.zip"), Path.Join(tempFolder, "Update.zip"), true);
-                        File.Delete(downloadOutput);
-
-                        string updaterFolder = Path.Join(ExePath, "Updater");
-                        if (!File.Exists(Path.Join(updaterFolder, "UndertaleModToolUpdater.exe")))
-                        {
-                            this.ShowError(string.Format(LocalizationSource.GetString("Msg_UpdaterNotFound"), updaterFolder));
-                            return;
-                        }
-
-                        try
-                        {
-                            if (Directory.Exists(updaterFolderTemp))
-                                Directory.Delete(updaterFolderTemp, true);
-
-                            Directory.CreateDirectory(updaterFolderTemp);
-                            foreach (string file in Directory.GetFiles(updaterFolder))
-                            {
-                                File.Copy(file, Path.Join(updaterFolderTemp, Path.GetFileName(file)));
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            this.ShowError(string.Format(LocalizationSource.GetString("Msg_CantCopyUpdater"), ex));
-                            return;
-                        }
-                        File.WriteAllText(Path.Join(updaterFolderTemp, "actualAppFolder"), ExePath);
-
-                        extractedSuccessfully = true;
-                    }
-                    finally
-                    {
-                        _ = Dispatcher.BeginInvoke(() =>
-                        {
-                            window.UpdateButtonEnabled = !extractedSuccessfully;
-                        });
-                    }
-
-                    Dispatcher.Invoke(() =>
-                    {
-                        this.ShowMessage(LocalizationSource.GetString("Msg_WillCloseToUpdate"));
-
-                        // Invoke updater
-                        Process.Start(new ProcessStartInfo(Path.Join(updaterFolderTemp, "UndertaleModToolUpdater.exe"))
-                        {
-                            WorkingDirectory = updaterFolderTemp
-                        });
-
-                        CloseOtherWindows();
-
-                        Closing -= DataWindow_Closing; // disable "on window closed" event handler
-                        Close();
-                    });
-                });
+                await DownloadUpdatePackageAsync(package, downloadOutput, bytesToMB);
             }
             catch (Exception e)
             {
-                string errMsg;
-                if (e.InnerException?.InnerException is Exception ex)
-                    errMsg = ex.Message;
-                else if (e.InnerException is Exception ex1)
-                    errMsg = ex1.Message;
-                else
-                    errMsg = e.Message;
-
-                this.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"), errMsg));
+                HideProgressBar();
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"), GetInnermostMessage(e)));
                 window.UpdateButtonEnabled = true;
+                return;
             }
+
+            // Download complete, hide progress bar
+            HideProgressBar();
+
+            string updaterFolderTemp = Path.Join(tempFolder, "Updater");
+            try
+            {
+                PrepareUpdateZip(downloadOutput, tempFolder);
+
+                string updaterFolder = Path.Join(ExePath, "Updater");
+                if (!File.Exists(Path.Join(updaterFolder, "UndertaleModToolUpdater.exe")))
+                {
+                    this.ShowError(string.Format(LocalizationSource.GetString("Msg_UpdaterNotFound"), updaterFolder));
+                    window.UpdateButtonEnabled = true;
+                    return;
+                }
+
+                try
+                {
+                    if (Directory.Exists(updaterFolderTemp))
+                        Directory.Delete(updaterFolderTemp, true);
+
+                    Directory.CreateDirectory(updaterFolderTemp);
+                    foreach (string file in Directory.GetFiles(updaterFolder))
+                    {
+                        File.Copy(file, Path.Join(updaterFolderTemp, Path.GetFileName(file)));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.ShowError(string.Format(LocalizationSource.GetString("Msg_CantCopyUpdater"), ex));
+                    window.UpdateButtonEnabled = true;
+                    return;
+                }
+                File.WriteAllText(Path.Join(updaterFolderTemp, "actualAppFolder"), ExePath);
+            }
+            catch (Exception e)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"), GetInnermostMessage(e)));
+                window.UpdateButtonEnabled = true;
+                return;
+            }
+
+            // Remember the installed stable release so later checks compare against it.
+            if (package.Channel == UpdateChannel.Stable)
+            {
+                Settings.Instance.LastStableVersion = package.VersionLabel;
+                Settings.Save();
+            }
+
+            this.ShowMessage(LocalizationSource.GetString("Msg_WillCloseToUpdate"));
+
+            // Invoke updater
+            Process.Start(new ProcessStartInfo(Path.Join(updaterFolderTemp, "UndertaleModToolUpdater.exe"))
+            {
+                WorkingDirectory = updaterFolderTemp
+            });
+
+            CloseOtherWindows();
+
+            Closing -= DataWindow_Closing; // disable "on window closed" event handler
+            Close();
+        }
+
+        /// <summary>
+        /// Shows the error of a failed update check. Returns whether the check failed.
+        /// </summary>
+        private bool ReportUpdateCheckFailure(UpdateCheckResult result, SettingsWindow window)
+        {
+            bool nightly = (Settings.Instance?.UpdateChannel ?? UpdateChannel.Nightly) == UpdateChannel.Nightly;
+
+            string message;
+            switch (result.Status)
+            {
+                case UpdateCheckStatus.NotFound:
+                    message = nightly
+                        ? string.Format(LocalizationSource.GetString("Msg_FailedToFindBuild"), UpdateChecker.WorkflowName)
+                        : LocalizationSource.GetString("Msg_UpdateNoAsset");
+                    break;
+                case UpdateCheckStatus.NoAsset:
+                    message = nightly
+                        ? LocalizationSource.GetString("Msg_FailedToFindArtifact")
+                        : LocalizationSource.GetString("Msg_UpdateNoAsset");
+                    break;
+                case UpdateCheckStatus.Failed:
+                    message = result.IsMirrorChyanError
+                        ? result.ErrorMessage
+                        : string.Format(LocalizationSource.GetString("Msg_FailedToFetchBuild"),
+                            result.ErrorMessage ?? LocalizationSource.GetString("Msg_CheckInternetConnection"));
+                    break;
+                default:
+                    return false;
+            }
+
+            this.ShowError(message);
+            window.UpdateButtonEnabled = true;
+            return true;
+        }
+
+        /// <summary>
+        /// Downloads the package, trying every URL in order until one succeeds.
+        /// </summary>
+        private async Task DownloadUpdatePackageAsync(UpdatePackage package, string outputPath, double bytesToMB)
+        {
+            Exception lastError = null;
+
+            foreach (string url in package.DownloadUrls)
+            {
+                if (string.IsNullOrWhiteSpace(url))
+                    continue;
+
+                try
+                {
+                    await DownloadFileAsync(url, outputPath, bytesToMB);
+                    return;
+                }
+                catch (Exception e)
+                {
+                    lastError = e;
+                    try
+                    {
+                        if (File.Exists(outputPath))
+                            File.Delete(outputPath);
+                    }
+                    catch
+                    {
+                        // Ignore: the next attempt overwrites the file anyway.
+                    }
+                }
+            }
+
+            throw lastError ?? new InvalidOperationException(LocalizationSource.GetString("Msg_CheckInternetConnection"));
+        }
+
+        private async Task DownloadFileAsync(string url, string outputPath, double bytesToMB)
+        {
+            using HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) };
+
+            // Read HTTP response
+            using HttpResponseMessage response = await client.GetAsync(new Uri(url), HttpCompletionOption.ResponseHeadersRead);
+
+            // Read header
+            response.EnsureSuccessStatusCode();
+            long totalBytes = response.Content.Headers.ContentLength ?? throw new Exception("Missing content length");
+
+            // Start reading content
+            using Stream contentStream = await response.Content.ReadAsStreamAsync();
+            const int downloadBufferSize = 8192;
+            byte[] downloadBuffer = new byte[downloadBufferSize];
+
+            // Download content and save to file
+            using FileStream fs = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.None, downloadBufferSize, true);
+            int bytesRead = await contentStream.ReadAsync(downloadBuffer);
+            long totalBytesDownloaded = 0;
+            long bytesToUpdateProgress = totalBytes / 500;
+            long bytesToProgressCounter = 0;
+            while (bytesRead > 0)
+            {
+                // Write current data to file
+                await fs.WriteAsync(downloadBuffer.AsMemory(0, bytesRead));
+
+                // Update progress
+                totalBytesDownloaded += bytesRead;
+                bytesToProgressCounter += bytesRead;
+                if (bytesToUpdateProgress > 0 && bytesToProgressCounter >= bytesToUpdateProgress)
+                {
+                    bytesToProgressCounter -= bytesToUpdateProgress;
+                    UpdateProgressStatus(LocalizationSource.GetString("Msg_DownloadedMB") + " " + (totalBytesDownloaded / bytesToMB).ToString("F2", CultureInfo.InvariantCulture));
+                }
+
+                // Read next bytes
+                bytesRead = await contentStream.ReadAsync(downloadBuffer);
+            }
+        }
+
+        /// <summary>
+        /// Turns the downloaded archive into <c>Update.zip</c> in the temporary folder. Nightly
+        /// artifacts are a zip which wraps a single inner zip, while stable release archives already
+        /// contain the application files.
+        /// </summary>
+        private void PrepareUpdateZip(string downloadedFile, string tempFolder)
+        {
+            if (!IsZipArchive(downloadedFile))
+                throw new InvalidDataException("The downloaded file is not a ZIP archive.");
+
+            string updateZip = Path.Join(tempFolder, "Update.zip");
+            string innerZipName = FindSingleInnerZip(downloadedFile);
+
+            if (innerZipName is null)
+            {
+                File.Move(downloadedFile, updateZip, true);
+                return;
+            }
+
+            // Unzip double-zipped update
+            ZipFile.ExtractToDirectory(downloadedFile, tempFolder, true);
+            File.Move(Path.Join(tempFolder, innerZipName), updateZip, true);
+            File.Delete(downloadedFile);
+        }
+
+        /// <summary>
+        /// Returns the name of the single top-level zip entry of an archive, or null when the archive
+        /// does not wrap exactly one inner zip.
+        /// </summary>
+        private static string FindSingleInnerZip(string archivePath)
+        {
+            using ZipArchive archive = ZipFile.OpenRead(archivePath);
+
+            string found = null;
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                string name = entry.FullName;
+                if (!name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains('/') || name.Contains('\\'))
+                {
+                    continue;
+                }
+
+                if (found is not null)
+                    return null; // More than one inner archive: the download itself is the package.
+
+                found = name;
+            }
+
+            return found;
+        }
+
+        private static bool IsZipArchive(string path)
+        {
+            try
+            {
+                using FileStream stream = File.OpenRead(path);
+                Span<byte> signature = stackalloc byte[4];
+                if (stream.Read(signature) < signature.Length)
+                    return false;
+
+                // "PK\x03\x04" for a zip with entries, "PK\x05\x06" for an empty one.
+                return signature[0] == (byte)'P' && signature[1] == (byte)'K'
+                    && signature[2] == 3 && (signature[3] == 4 || signature[3] == 6);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string GetInnermostMessage(Exception e)
+        {
+            if (e.InnerException?.InnerException is Exception innermost)
+                return innermost.Message;
+            if (e.InnerException is Exception inner)
+                return inner.Message;
+            return e.Message;
         }
 
         /// <summary>
@@ -3309,45 +3406,25 @@ namespace UndertaleModTool
 
             try
             {
-                httpClient = new();
-                httpClient.DefaultRequestHeaders.Accept.Clear();
-                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+                bool isSingleFile = !File.Exists(Path.Join(ExePath, "UndertaleModTool.dll"));
 
-                Regex invalidChars = new(@"Git:|[ (),/:;<=>?@[\]{}]");
-                string version = invalidChars.Replace(Version, "");
-                httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("UndertaleModTool", version));
-
-                string baseUrl = "https://api.github.com/repos/genouka/UndertaleModTool/actions/";
-                string detectedActionName = "Publish continuous release of UndertaleModTool";
-
-                // Fetch the latest workflow run
-                var result = await HttpGetAsync(baseUrl + "runs?branch=master&status=success&per_page=20");
-                if (result?.IsSuccessStatusCode != true)
-                    return;
-
-                var actionInfo = JObject.Parse(await result.Content.ReadAsStringAsync());
-                var actionList = (JArray)actionInfo["workflow_runs"];
-                JObject action = null;
-
-                for (int index = 0; index < actionList.Count; index++)
+                UpdateCheckResult check;
+                using (HttpClient client = UpdateChecker.CreateHttpClient())
                 {
-                    var currentAction = (JObject)actionList[index];
-                    if (currentAction["name"].ToString() == detectedActionName)
-                    {
-                        action = currentAction;
-                        break;
-                    }
+                    check = await UpdateChecker.CheckAsync(client, isSingleFile, forcePackage: false,
+                        localBuildTime: File.GetLastWriteTime(Path.Join(ExePath, "UndertaleModTool.exe")));
                 }
-                if (action is null)
+
+                if (check.Status != UpdateCheckStatus.UpdateAvailable || check.Package is null)
                     return;
 
-                DateTime currDate = File.GetLastWriteTime(Path.Join(ExePath, "UndertaleModTool.exe"));
-                DateTime lastDate = (DateTime)action["updated_at"];
-                if (lastDate.Subtract(currDate).TotalMinutes <= 10)
-                    return;
+                string message = check.Package.Channel == UpdateChannel.Nightly
+                    ? LocalizationSource.GetString("Msg_UpdateAvailable")
+                    : string.Format(LocalizationSource.GetString("Msg_UpdateAvailableWithVersion"),
+                        check.Package.VersionLabel, UpdateChecker.GetLocalVersion());
 
-                if (this.ShowQuestion(LocalizationSource.GetString("Msg_UpdateAvailable")) == MessageBoxResult.Yes)
-                    UpdateApp();
+                if (this.ShowQuestion(message) == MessageBoxResult.Yes)
+                    UpdateApp(null, skipUpdatePrompt: true);
             }
             catch
             {

@@ -1,5 +1,6 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using UndertaleModTool.Localization;
 
 namespace UndertaleModToolAvalonia;
@@ -20,5 +21,15 @@ public partial class SettingsWindow : Window
                 }
             }
         };
+    }
+
+    async void MirrorChyanGetCdkClick(object? sender, RoutedEventArgs e)
+    {
+        string url = LocalizationSource.Instance.CurrentCulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+            ? "https://mirrorchyan.com/zh/get-key"
+            : "https://mirrorchyan.com/en/get-key";
+
+        if (DataContext is SettingsViewModel vm && vm.MainVM.View is { } view)
+            await view.LaunchUriAsync(new Uri(url));
     }
 }

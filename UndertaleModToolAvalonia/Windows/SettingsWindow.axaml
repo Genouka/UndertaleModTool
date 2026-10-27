@@ -72,6 +72,40 @@
                 <CheckBox Content="{l:Loc Settings_CheckForUpdates}"
                             ToolTip.Tip="{l:Loc Settings_CheckForUpdatesToolTip}"
                             IsChecked="{Binding MainVM.Settings.CheckForUpdates}"/>
+
+                <Grid ColumnDefinitions="Auto,1*" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center"
+                           Content="{l:Loc Settings_UpdateChannel}"
+                           ToolTip.Tip="{l:Loc Settings_UpdateChannelToolTip}"/>
+                    <ComboBox Grid.Column="1" SelectedIndex="{Binding UpdateChannelIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="{l:Loc Settings_UpdateChannelStable}"/>
+                        <ComboBoxItem Content="{l:Loc Settings_UpdateChannelNightly}"/>
+                    </ComboBox>
+                </Grid>
+
+                <Grid ColumnDefinitions="Auto,1*" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center"
+                           Content="{l:Loc Settings_UpdateSource}"
+                           ToolTip.Tip="{l:Loc Settings_UpdateSourceToolTip}"/>
+                    <ComboBox Grid.Column="1" SelectedIndex="{Binding UpdateSourceIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="{l:Loc Settings_UpdateSourceGitHub}"/>
+                        <ComboBoxItem Content="{l:Loc Settings_UpdateSourceMirrorChyan}"/>
+                    </ComboBox>
+                </Grid>
+
+                <Grid ColumnDefinitions="Auto,1*,Auto" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center"
+                           Content="{l:Loc Settings_MirrorChyanCdk}"
+                           ToolTip.Tip="{l:Loc Settings_MirrorChyanCdkToolTip}"/>
+                    <TextBox Grid.Column="1" PasswordChar="*"
+                             IsEnabled="{Binding IsMirrorChyanSource}"
+                             Text="{Binding MainVM.Settings.MirrorChyanCdk, Mode=TwoWay}"/>
+                    <Button Grid.Column="2" Margin="8,0,0,0"
+                            IsEnabled="{Binding IsMirrorChyanSource}"
+                            Content="{l:Loc Settings_MirrorChyanGetCdk}"
+                            Click="MirrorChyanGetCdkClick"/>
+                </Grid>
+
                 <Button Content="{l:Loc Settings_UpdateApp}"
                         Command="{Binding MainVM.HelpUpdateApp}"
                         HorizontalAlignment="Left" Margin="0,4,0,0"/>
