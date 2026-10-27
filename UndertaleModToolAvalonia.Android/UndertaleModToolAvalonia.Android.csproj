@@ -15,6 +15,12 @@
         <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
         <AndroidUseFastDeployment>False</AndroidUseFastDeployment>
 
+        <!-- Local builds target the phone ABI by default. CI passes -r per matrix entry; pass
+             -p:RuntimeIdentifiers="android-arm64;android-x64" for a universal local APK. -->
+        <RuntimeIdentifiers Condition="'$(RuntimeIdentifiers)' == '' and '$(RuntimeIdentifier)' == ''">android-arm64</RuntimeIdentifiers>
+        <!-- Only the sideloaded APK is shipped; generating an AAB as well doubles packaging time. -->
+        <AndroidPackageFormats>apk</AndroidPackageFormats>
+
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 
         <!-- Compile against the real Avalonia assemblies so the simulated windowing platform
@@ -26,8 +32,20 @@
         <ApplicationTitle>QiuUTMTv5</ApplicationTitle>
 
         <AndroidUseAapt2>true</AndroidUseAapt2>
-        <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+        <!--
+            Mono AOT is enabled for Release only: Debug stays JIT/interpreter so the edit-build
+            loop is not paying for AOT. Profiled AOT (the SDK default profile) compiles the hot
+            code paths instead of every method, which is what keeps the Release build short; pass
+            -p:AndroidEnableProfiledAot=false for a full AOT build.
+            ILLink + AOT peak around several GB of RAM; on laptops with little free memory append
+            -m:1 to the dotnet publish command to keep the build below that peak.
+            Do not switch to NativeAOT: the script engine compiles C# at runtime, which requires
+            the Mono JIT. Release uses JIT for those dynamic assemblies regardless of AOT.
+        -->
         <RunAOTCompilation>false</RunAOTCompilation>
+        <RunAOTCompilation Condition="'$(Configuration)' == 'Release'">true</RunAOTCompilation>
+        <AndroidEnableProfiledAot Condition="'$(RunAOTCompilation)' == 'true'">true</AndroidEnableProfiledAot>
+        <UseInterpreter Condition="'$(RunAOTCompilation)' == 'true'">false</UseInterpreter>
         <EnableLLVM>false</EnableLLVM>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     </PropertyGroup>
@@ -43,7 +61,10 @@
         <!-- 安全网：共享项目会把桌面包 Magick.NET-Q8-AnyCPU 传递进来，这里显式排除其 runtimes，
              确保 linux-* 的 .so 永远不会混进 Android APK -->
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0" ExcludeAssets="runtimes;native" />
-        <PackageReference Include="SDL3-CS.Android" Version="3.4.14.1" />
+        <!-- The AAR already carries the same jni/<abi>/libSDL3.so files under lib/, so the
+             runtimes/<rid>/native copies only produce a duplicate-entry warning (XA4301) while
+             packing. Exclude the redundant native assets and let the AAR provide the library. -->
+        <PackageReference Include="SDL3-CS.Android" Version="3.4.14.1" ExcludeAssets="native" />
         <PackageReference Include="SDL3-CS.Android.Mixer" Version="3.2.4.9" />
     </ItemGroup>
 
@@ -87,14 +108,35 @@
         <!--
             The managed AIDL proxies (obj/<config>/<tfm>/aidl/*.cs, generated from the submodule's
             api/umapi/src/main/aidl/.../IUmApi.aidl) are nullable-oblivious: they declare each parcel
-            argument as a
-            non-nullable local, assign what they read back to it, and cast the replies. Compiling
-            that generated file with nullable analysis on reports dozens of CS86xx warnings that the
-            generator cannot fix, so those four codes are silenced for the project - everything else
-            (including CS0618, which also fires once in the generated file) still shows up.
+            argument as a non-nullable local, assign what they read back to it, and cast the
+            replies. Compiling that generated file with nullable analysis on reports dozens of CS86xx
+            warnings that the generator cannot fix, so those four codes are silenced for the
+            project.
         -->
         <NoWarn>$(NoWarn);CS8600;CS8603;CS8604;CS8765</NoWarn>
     </PropertyGroup>
+
+    <!--
+        The managed AIDL generator in the .NET Android SDK still emits calls to the obsolete
+        Android.OS.BinderConsts API. The generated file cannot be edited and the generator has no
+        option to emit the replacement, so prepend a pragma to the generated proxy. This keeps
+        CS0618 enabled for the project's own source, where a deprecation must stay visible.
+    -->
+    <Target Name="SuppressObsoleteWarningsInGeneratedAidl"
+            AfterTargets="_RunManagedAidlTool"
+            Condition="Exists('$(IntermediateOutputPath)aidl\IUmApi.cs')">
+        <ReadLinesFromFile File="$(IntermediateOutputPath)aidl\IUmApi.cs">
+            <Output TaskParameter="Lines" ItemName="_GeneratedAidlLines" />
+        </ReadLinesFromFile>
+        <!-- Idempotent: drop a pragma left by a previous run before prepending it again. -->
+        <ItemGroup>
+            <_GeneratedAidlLines Remove="@(_GeneratedAidlLines)" Condition="'%(_GeneratedAidlLines.Identity)' == '#pragma warning disable CS0618'" />
+        </ItemGroup>
+        <WriteLinesToFile File="$(IntermediateOutputPath)aidl\IUmApi.cs"
+                          Lines="#pragma warning disable CS0618;@(_GeneratedAidlLines)"
+                          Overwrite="true"
+                          WriteOnlyWhenDifferent="true" />
+    </Target>
 
     <!--
         Android script support: the Roslyn scripting engine (Core/Scripting.cs) resolves metadata
@@ -105,9 +147,16 @@
         ScriptAssemblyExtractor extracts them to internal storage and Scripting.RunScript uses that
         folder as the script compilation references.
 
-        Source of the DLLs: the unshrunk (and non-AOT) per-ABI assembly copies produced by
-        _LinkAssembliesNoShrink into $(MonoAndroidIntermediateAssemblyDir)<abi>\. Only the first
-        supported ABI is packaged - the managed assemblies are identical across ABIs.
+        Source of the DLLs:
+        - untrimmed Debug: the copies produced by _LinkAssembliesNoShrink into
+          $(MonoAndroidIntermediateAssemblyDir)<abi>\;
+        - trimmed/AOT Release: the ILLink output (@(_ShrunkAssemblies), linked\shrunk\). Packaging
+          the trimmed assemblies keeps the script metadata surface identical to what actually runs.
+        Only the first supported ABI is packaged - the managed assemblies are identical across
+        ABIs. Only script-reference candidates are packaged (same prefixes as
+        ScriptReferencePrefixes in Core/Scripting.cs); the rest are never handed to the compiler and
+        only inflated the APK and its extraction time.
+
         Hooked before _ComputeAndroidAssetsPaths (the target inside UpdateAndroidAssets that consumes
         @(AndroidAsset)), so the new asset entries always reach the aapt2 packaging regardless of
         incremental build state. Note: hooking UpdateAndroidAssets itself is too late - a target's
@@ -119,20 +168,32 @@
             Condition="'$(EmbedAssembliesIntoApk)' == 'True'">
         <PropertyGroup>
             <_ScriptAssembliesAbi>$(AndroidSupportedAbis.Split(';')[0])</_ScriptAssembliesAbi>
-            <_ScriptAssembliesDir>$(MonoAndroidIntermediateAssemblyDir)$(_ScriptAssembliesAbi)</_ScriptAssembliesDir>
+            <_ScriptAssembliesDir Condition="'$(PublishTrimmed)' != 'true'">$(MonoAndroidIntermediateAssemblyDir)$(_ScriptAssembliesAbi)</_ScriptAssembliesDir>
         </PropertyGroup>
-        <ItemGroup Condition="'$(_ScriptAssembliesAbi)' != '' And Exists('$(_ScriptAssembliesDir)')">
+        <ItemGroup>
+            <_ScriptDll Condition="'$(PublishTrimmed)' != 'true' And '$(_ScriptAssembliesAbi)' != '' And Exists('$(_ScriptAssembliesDir)')"
+                        Include="$(_ScriptAssembliesDir)\*.dll" />
+            <!-- A universal (multi-ABI) publish has one copy per ABI; package the first ABI only,
+                 like the untrimmed path above. DestinationSubPath starts with the ABI name. -->
+            <_ScriptDll Condition="'$(PublishTrimmed)' == 'true' And '$(_ScriptAssembliesAbi)' != '' And $([System.String]::Copy('%(_ShrunkAssemblies.DestinationSubPath)').StartsWith('$(_ScriptAssembliesAbi)'))"
+                        Include="@(_ShrunkAssemblies)" />
+        </ItemGroup>
+        <Error Condition="'$(PublishTrimmed)' == 'true' And '@(_ScriptDll)' == ''"
+               Text="BundleScriptAssembliesToAssets: no trimmed assemblies were found. _PrepareAssemblies must run before _ComputeAndroidAssetsPaths." />
+        <ItemGroup>
             <!-- Two-step item construction: well-known metadata (%(Filename)/%(Extension)) of glob
                  items is not yet computed when other metadata on the SAME ItemGroup entry is
                  evaluated, so Link would end up empty. Reading them via %(_ScriptDll.Filename)
                  in a second ItemGroup yields the real value. Link must carry the "Assets\" prefix:
                  AndroidComputeResPaths strips it and keeps the remainder as the asset path inside
-                 assets/ScriptAssemblies/. -->
-            <_ScriptDll Include="$(_ScriptAssembliesDir)\*.dll" />
+                 assets/ScriptAssemblies/.
+                 Keep the prefix list in sync with ScriptReferencePrefixes in Core/Scripting.cs. -->
+            <_ScriptDllFiltered Include="@(_ScriptDll)"
+                                Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(_ScriptDll.Filename)', '(?i)^(System|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft)(\..*)?$'))" />
         </ItemGroup>
-        <ItemGroup Condition="'$(_ScriptAssembliesAbi)' != '' And Exists('$(_ScriptAssembliesDir)')">
-            <AndroidAsset Include="@(_ScriptDll)"
-                          Link="Assets\ScriptAssemblies\%(_ScriptDll.Filename)%(_ScriptDll.Extension)" />
+        <ItemGroup>
+            <AndroidAsset Include="@(_ScriptDllFiltered)"
+                          Link="Assets\ScriptAssemblies\%(_ScriptDllFiltered.Filename)%(_ScriptDllFiltered.Extension)" />
         </ItemGroup>
     </Target>
 

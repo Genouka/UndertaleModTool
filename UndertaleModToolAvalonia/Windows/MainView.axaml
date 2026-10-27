@@ -19,6 +19,7 @@
         <FilesDropBehavior Command="{Binding OpenDroppedFilesCommand}" />
     </Interaction.Behaviors>
 
+    <Grid>
     <DockPanel>
         <l:AppMenuBar DockPanel.Dock="Top" />
 
@@ -66,4 +67,22 @@
             </l:DrawerPage.DrawerContent>
         </l:DrawerPage>
     </DockPanel>
+
+        <!-- Shown while MainViewModel.InitializeAsync loads settings/styles and rebuilds the
+             welcome tab. It is the last Grid child so it covers the partially initialized UI. -->
+        <Border IsVisible="{Binding IsLoading}"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                IsHitTestVisible="True">
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8">
+                <ProgressBar IsIndeterminate="True"
+                             MinWidth="220"
+                             MinHeight="6" />
+                <TextBlock Text="{l:Loc Main_LoadingEllipsis}"
+                           HorizontalAlignment="Center"
+                           Opacity="0.7" />
+            </StackPanel>
+        </Border>
+    </Grid>
 </UserControl>

@@ -10,7 +10,7 @@
         WindowStartupLocation="CenterOwner"
         Title="{Binding Header}">
     <DockPanel Margin="8">
-        <TextBox x:Name="FilterTextBox" DockPanel.Dock="Top" Watermark="..."/>
+        <TextBox x:Name="FilterTextBox" DockPanel.Dock="Top" PlaceholderText="..."/>
         <ListBox x:Name="SymbolsListBox" DockPanel.Dock="Bottom" Margin="0,8,0,0"
                  ItemsSource="{Binding Resources}"
                  SelectedItem="{Binding SelectedResource, Mode=TwoWay}"

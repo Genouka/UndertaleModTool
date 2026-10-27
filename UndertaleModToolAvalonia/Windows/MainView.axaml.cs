@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -12,7 +13,7 @@ namespace UndertaleModToolAvalonia;
 public partial class MainView : UserControl, IView
 {
     ProjectAssetsWindow? projectAssetsWindow = null;
-
+    MainViewModel? mainViewModel;
     /// <summary>Screen width (DIPs) above which the auto drawer mode uses the expanded layout.</summary>
     private const double AutoExpandMinWidth = 700;
 
@@ -25,9 +26,14 @@ public partial class MainView : UserControl, IView
 
         DataContextChanged += (_, __) =>
         {
-            if (DataContext is MainViewModel vm)
+            if (mainViewModel is not null)
+                mainViewModel.PropertyChanged -= MainViewModel_PropertyChanged;
+
+            mainViewModel = DataContext as MainViewModel;
+            if (mainViewModel is not null)
             {
-                vm.View = this;
+                mainViewModel.View = this;
+                mainViewModel.PropertyChanged += MainViewModel_PropertyChanged;
             }
             ApplyDrawerSettings();
         };
@@ -36,11 +42,19 @@ public partial class MainView : UserControl, IView
         {
             if (DataContext is MainViewModel vm)
             {
-                vm.OnLoaded();
+                // Not awaited: the handler runs the one-time startup checks and reports failures
+                // through the view; blocking the Loaded event would freeze the loading overlay.
+                _ = vm.OnLoadedAsync();
             }
         };
 
         CommandTextBox.AddHandler(TextBox.KeyDownEvent, CommandTextBox_KeyDown_Tunnel, RoutingStrategies.Tunnel);
+    }
+
+    private void MainViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.Settings))
+            ApplyDrawerSettings();
     }
 
     private TopLevel? _sizeTrackingTopLevel;

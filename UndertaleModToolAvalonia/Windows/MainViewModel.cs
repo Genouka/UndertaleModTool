@@ -35,7 +35,8 @@ public partial class MainViewModel : ObservableObject
     public List<string> LazyErrorMessages = [];
 
     // Settings
-    public SettingsFile Settings { get; init; }
+    [ObservableProperty]
+    public partial SettingsFile Settings { get; set; } = new();
 
     // Scripting
     public Scripting Scripting = null!;
@@ -52,6 +53,13 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool IsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// True while the asynchronous startup work (settings, custom styles, localization, welcome
+    /// tab) is running. The main view overlays a progress indicator while this is set.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool IsLoading { get; set; } = true;
 
     // Data
     [ObservableProperty]
@@ -116,9 +124,7 @@ public partial class MainViewModel : ObservableObject
     {
         ServiceProvider = serviceProvider;
 
-        Settings = LoadSettings();
-
-        WindowState = Settings.StartMaximized ? WindowState.Maximized : WindowState.Normal;
+        Scripting = new(this);
 
         AudioPlayer.Init(
             f => Dispatcher.UIThread.Post(f),
@@ -133,81 +139,123 @@ public partial class MainViewModel : ObservableObject
 
         DataExplorer = new(this);
         Tabs = new(this);
-
-        _ = TabOpen(new DescriptionViewModel(
-            LocalizationSource.GetString("Main_WelcomeHeading"),
-            LocalizationSource.GetString("Main_WelcomeDescription")));
     }
 
-    SettingsFile LoadSettings()
+    Task? initializationTask;
+
+    /// <summary>
+    /// Runs the startup work that does not need to block window creation: settings and custom
+    /// styles are read off the UI thread, then applied here; the scripting engine is already
+    /// available from the constructor so API clients can run scripts while the UI is loading.
+    /// Idempotent; the main view and <see cref="OnLoadedAsync"/> both await this.
+    /// </summary>
+    public Task InitializeAsync()
+        => initializationTask ??= InitializeCoreAsync();
+
+    async Task InitializeCoreAsync()
     {
-        (SettingsFile settingsFile, Exception? ex) = SettingsFile.Load();
+        IsLoading = true;
+        IsEnabled = false;
 
-        if (ex is not null)
+        try
         {
-            LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorSettingsLoading")}\n{ex.Message}\n{LocalizationSource.GetString("Msg_DefaultSettingsLoaded")}");
-        }
+            (SettingsFile settings, Exception? settingsEx) = await SettingsFile.LoadAsync();
+            Settings = settings;
 
-        Exception? stylesEx = SettingsFile.LoadStyles();
-        if (stylesEx is not null)
+            if (settingsEx is not null)
+            {
+                LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorSettingsLoading")}\n{settingsEx.Message}\n{LocalizationSource.GetString("Msg_DefaultSettingsLoaded")}");
+            }
+
+            Settings.ApplyTheme();
+            WindowState = Settings.StartMaximized ? WindowState.Maximized : WindowState.Normal;
+
+            Exception? stylesEx = await SettingsFile.LoadStylesAsync();
+            if (stylesEx is not null)
+            {
+                LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorStylesLoading")}\n{stylesEx.Message}");
+            }
+
+            if (!string.IsNullOrEmpty(Settings.Language))
+                LocalizationSource.Instance.CurrentCulture = new System.Globalization.CultureInfo(Settings.Language);
+
+            await TabOpen(new DescriptionViewModel(
+                LocalizationSource.GetString("Main_WelcomeHeading"),
+                LocalizationSource.GetString("Main_WelcomeDescription")));
+        }
+        catch (Exception ex)
         {
-            LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorStylesLoading")}\n{stylesEx.Message}");
+            LazyErrorMessages.Add(string.Format(LocalizationSource.GetString("Msg_LoadError"), ex.Message));
         }
-
-        return settingsFile;
-    }
-
-    public void Initialize()
-    {
-        Scripting = new(ServiceProvider);
-
-        if (!string.IsNullOrEmpty(Settings.Language))
-            LocalizationSource.Instance.CurrentCulture = new System.Globalization.CultureInfo(Settings.Language);
+        finally
+        {
+            IsEnabled = true;
+            IsLoading = false;
+        }
     }
 
     /// <summary>
-    /// Guards the one-time startup work in <see cref="OnLoaded"/>. Single-window platforms
+    /// Guards the one-time startup work in <see cref="OnLoadedAsync"/>. Single-window platforms
     /// (Android) move the main view in and out of the visual tree every time a modal dialog opens
     /// or closes, which re-fires Avalonia's <c>Loaded</c> event and would otherwise re-run the
     /// startup checks (e.g. the automatic update check) on every dialog dismissal.
     /// </summary>
     bool onLoadedRan = false;
 
-    public async void OnLoaded()
+    public async Task OnLoadedAsync()
     {
         if (onLoadedRan)
             return;
         onLoadedRan = true;
 
-        foreach (string message in LazyErrorMessages)
+        try
         {
-            await View!.MessageDialog(message);
-        }
-        LazyErrorMessages.Clear();
+            // Settings/styles/localization are loaded asynchronously so the window can be shown
+            // (with IsLoading=true) before touching the filesystem or parsing Styles.xaml.
+            await InitializeAsync();
 
-        // Storage access first: on Android 10 the answer decides whether the user has to be walked
-        // through the preinstall APK flow, and asking before the update check keeps the two dialogs
-        // from stacking on top of each other.
-        await CheckStorageAccessAsync();
-
-        CheckForUpdatesAutomatically();
-
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            if (desktop.Args?.Length >= 1)
+            foreach (string message in LazyErrorMessages)
             {
-                try
+                await View!.MessageDialog(message);
+            }
+            LazyErrorMessages.Clear();
+
+            // Storage access first: on Android 10 the answer decides whether the user has to be walked
+            // through the preinstall APK flow, and asking before the update check keeps the two dialogs
+            // from stacking on top of each other.
+            await CheckStorageAccessAsync();
+
+            CheckForUpdatesAutomatically();
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                if (desktop.Args?.Length >= 1)
                 {
-                    using FileStream stream = File.OpenRead(desktop.Args[0]);
-                    if (await LoadData(stream))
+                    try
                     {
-                        DataPath = stream.Name;
+                        using FileStream stream = File.OpenRead(desktop.Args[0]);
+                        if (await LoadData(stream))
+                        {
+                            DataPath = stream.Name;
+                        }
+                    }
+                    catch (SystemException e)
+                    {
+                        await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_ErrorOpeningDataFileArgument"), e.Message));
                     }
                 }
-                catch (SystemException e)
-                {
-                    await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_ErrorOpeningDataFileArgument"), e.Message));
-                }
+            }
+        }
+        catch (Exception e)
+        {
+            // This runs from a Loaded event handler; an escaping exception would crash the app.
+            if (View is { } view)
+            {
+                await view.MessageDialog(string.Format(LocalizationSource.GetString("Msg_LoadError"), e.Message));
+            }
+            else
+            {
+                Debug.WriteLine(e);
             }
         }
     }
@@ -427,7 +475,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 audioGroupDataList[audioGroupId] = audioGroupData;
                 return audioGroupData;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return null;
             }
@@ -1021,7 +1069,8 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         // Check if the save directory is empty, and warn if so
         try
         {
-            if (!Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(destinationDataPath)).Any())
+            if (Path.GetDirectoryName(destinationDataPath) is { } destinationDirectory &&
+                !Directory.EnumerateFileSystemEntries(destinationDirectory).Any())
             {
                 await View!.MessageDialog(LocalizationSource.GetString("Msg_EmptyDirectoryWarning"));
             }

@@ -1553,7 +1553,7 @@ public class UndertaleRoomEditor : Control
         if (vm is null)
             return;
 
-        object sel = vm.RoomTreeItemsSelectedItem;
+        object? sel = vm.RoomTreeItemsSelectedItem;
         UndertaleRoom.Layer? layer = scene?.FindItem(sel)?.Layer ?? (vm.FindCategoryOfItem(sel) as UndertaleRoom.Layer);
 
         IList? list = sel switch
@@ -2321,7 +2321,7 @@ internal sealed class RoomScene
             UndertaleBackground? tilesBG = tilesData?.Background;
             UndertaleTexturePageItem? texture = tilesBG?.Texture;
             GMImage? pageImage = texture?.TexturePage?.TextureData?.Image;
-            if (pageImage is null)
+            if (tilesData is null || tilesBG is null || texture is null || pageImage is null)
                 return;
 
             IImage? image = cache.GetCachedImageFromGMImage(pageImage);
@@ -2332,7 +2332,7 @@ internal sealed class RoomScene
             }
 
             uint maxTileID = 0;
-            foreach (UndertaleBackground.TileID tileID in tilesBG!.GMS2TileIds)
+            foreach (UndertaleBackground.TileID tileID in tilesBG.GMS2TileIds)
                 maxTileID = Math.Max(maxTileID, tileID.ID);
 
             TilemapItem item = new()
@@ -2863,22 +2863,29 @@ internal sealed class TilemapItem : SceneItem
 
     public override void Refresh()
     {
+        if (Layer is not { } layer)
+        {
+            Valid = false;
+            return;
+        }
+
         Valid = TileWidth > 0 && TileHeight > 0 && Page.Size.Width > 0;
-        Bounds = Valid ? new Rect(Layer.XOffset, Layer.YOffset, TileWidth * TilesX, TileHeight * TilesY) : default;
+        Bounds = Valid ? new Rect(layer.XOffset, layer.YOffset, TileWidth * TilesX, TileHeight * TilesY) : default;
     }
 
     public override void Draw(DrawingContext context, Rect viewport)
     {
-        if (!Valid || Layer.TilesData?.TileData is not { } tileData || tileData.Length == 0)
+        if (!Valid || Layer is not { } layer || layer.TilesData is not { } tilesData ||
+            tilesData.TileData is not { } tileData || tileData.Length == 0)
             return;
 
-        uint tilesX = Layer.TilesData.TilesX;
-        uint tilesY = Layer.TilesData.TilesY;
+        uint tilesX = tilesData.TilesX;
+        uint tilesY = tilesData.TilesY;
         if (tilesX == 0 || tilesY == 0)
             return;
 
-        double mapX = Layer.XOffset;
-        double mapY = Layer.YOffset;
+        double mapX = layer.XOffset;
+        double mapY = layer.YOffset;
 
         int x0 = (int)Math.Max(0, Math.Floor((viewport.X - mapX) / TileWidth));
         int y0 = (int)Math.Max(0, Math.Floor((viewport.Y - mapY) / TileHeight));
@@ -2930,11 +2937,11 @@ internal sealed class TilemapItem : SceneItem
     public override bool HitTest(Point roomPoint)
     {
         // Matches the WPF TileLayerImage hit testing: only cells with a non-zero tile are hit.
-        if (!Valid || Layer.TilesData?.TileData is not { } tileData)
+        if (!Valid || Layer is not { } layer || layer.TilesData?.TileData is not { } tileData)
             return false;
 
-        double mapX = Layer.XOffset;
-        double mapY = Layer.YOffset;
+        double mapX = layer.XOffset;
+        double mapY = layer.YOffset;
 
         int x = (int)Math.Floor((roomPoint.X - mapX) / TileWidth);
         int y = (int)Math.Floor((roomPoint.Y - mapY) / TileHeight);

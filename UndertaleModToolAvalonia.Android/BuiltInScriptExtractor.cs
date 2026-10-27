@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
@@ -25,11 +26,11 @@ public static class BuiltInScriptExtractor
     private const string TargetFolderPrefix = "BuiltInScripts_";
 
     /// <summary>
-    /// Extracts the scripts synchronously. Must run before the UI is created (Application
-    /// <c>OnCreate</c>, which precedes any Activity), because the menu is built once at startup
-    /// and there is no per-open callback to refresh it later.
+    /// Registers the user-visible script folder synchronously, then extracts the built-in scripts
+    /// on a worker thread. The Scripts menu is rebuilt when extraction finishes; the UI no longer
+    /// waits for the copy before it can be shown.
     /// </summary>
-    public static void Install()
+    public static Task InstallAsync()
     {
         // Register the user-provided script folder in public storage up front - independently of
         // the asset extraction below, which may early-return. Listing it requires the "All files
@@ -40,6 +41,15 @@ public static class BuiltInScriptExtractor
         if (!BuiltInScripts.ExtraRootDirectories.Contains(externalScripts))
             BuiltInScripts.ExtraRootDirectories.Add(externalScripts);
 
+        // Let an already-built menu pick up the user-provided folder now; extraction completion
+        // sends another change notification for the built-in tree.
+        BuiltInScripts.NotifyScriptsChanged();
+
+        return Task.Run(ExtractIntoInternalStorage);
+    }
+
+    private static void ExtractIntoInternalStorage()
+    {
         try
         {
             // Already prepared by an earlier invocation of this app run.
@@ -92,6 +102,7 @@ public static class BuiltInScriptExtractor
                     }
                 }
             }
+            BuiltInScripts.NotifyScriptsChanged();
         }
         catch (Exception)
         {

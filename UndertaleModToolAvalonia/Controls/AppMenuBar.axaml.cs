@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.Input;
 using UndertaleModTool.Localization;
 
@@ -28,6 +29,8 @@ namespace UndertaleModToolAvalonia;
 public partial class AppMenuBar : UserControl
 {
     private bool _menuInstalled;
+    private int _menuVersion = -1;
+    private List<KeyBinding>? _menuKeyBindings;
 
     public AppMenuBar()
     {
@@ -37,7 +40,21 @@ public partial class AppMenuBar : UserControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        BuiltInScripts.ScriptsChanged -= OnScriptsChanged;
+        BuiltInScripts.ScriptsChanged += OnScriptsChanged;
         InstallMenuIfNeeded();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        BuiltInScripts.ScriptsChanged -= OnScriptsChanged;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnScriptsChanged()
+    {
+        // Android extracts the built-in scripts on a worker thread; menu objects are UI-bound.
+        Dispatcher.UIThread.Post(RebuildMenu);
     }
 
     protected override void OnDataContextChanged(EventArgs e)
@@ -49,17 +66,41 @@ public partial class AppMenuBar : UserControl
     private void InstallMenuIfNeeded()
     {
         if (_menuInstalled)
+        {
+            // An extraction may have finished while this view was detached; catch up.
+            if (_menuVersion != BuiltInScripts.ScriptsVersion)
+                RebuildMenu();
+            return;
+        }
+
+        if (TopLevel.GetTopLevel(this) is null)
             return;
 
+        if (DataContext is not MainViewModel)
+            return;
+
+        RebuildMenu();
+    }
+
+    private void RebuildMenu()
+    {
         if (TopLevel.GetTopLevel(this) is not { } topLevel)
             return;
 
         if (DataContext is not MainViewModel vm)
             return;
 
+        if (_menuKeyBindings is not null)
+        {
+            foreach (KeyBinding binding in _menuKeyBindings)
+                topLevel.KeyBindings.Remove(binding);
+        }
+
         NativeMenu menu = BuildMenu(vm);
         NativeMenu.SetMenu(topLevel, menu);
-        topLevel.KeyBindings.AddRange(CollectKeyBindings(menu));
+        _menuKeyBindings = CollectKeyBindings(menu);
+        topLevel.KeyBindings.AddRange(_menuKeyBindings);
+        _menuVersion = BuiltInScripts.ScriptsVersion;
         _menuInstalled = true;
     }
 

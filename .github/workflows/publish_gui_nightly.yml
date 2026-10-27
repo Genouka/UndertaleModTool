@@ -307,8 +307,9 @@ jobs:
           echo "UMT_ANDROID_KEY_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
         } >> "$GITHUB_ENV"
     - name: Publish Avalonia Android APK
+      # Release enables the profiled Mono AOT configured in the Android csproj.
       run: |
-        dotnet publish UndertaleModToolAvalonia.Android -c Debug -r ${{ matrix.rid }} --self-contained true -p:AndroidSdkDirectory="$env:ANDROID_HOME" -p:AndroidPreinstallChannel=nightly --output ${{ github.workspace }}\Avalonia-Android-${{ matrix.rid }}
+        dotnet publish UndertaleModToolAvalonia.Android -c Release -r ${{ matrix.rid }} --self-contained true -p:AndroidSdkDirectory="$env:ANDROID_HOME" -p:AndroidPreinstallChannel=nightly --output ${{ github.workspace }}\Avalonia-Android-${{ matrix.rid }}
     - name: Publish Android storage setup (preinstall) APK
       # Android 10 only: the real APK targets a far newer API level, so granting the storage
       # permission there is worthless without the legacy storage model - which Android 10 only keeps

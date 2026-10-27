@@ -31,7 +31,6 @@ public partial class App : Application
         Services = collection.BuildServiceProvider();
 
         MainViewModel vm = Services.GetRequiredService<MainViewModel>();
-        vm.Initialize();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -72,5 +71,9 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+
+        // Start the asynchronous view-model startup only after the window/root view exists, so the
+        // loading overlay can render while settings/styles are read off the UI thread.
+        _ = vm.InitializeAsync();
     }
 }

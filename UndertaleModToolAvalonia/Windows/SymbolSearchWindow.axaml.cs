@@ -67,7 +67,7 @@ public partial class SymbolSearchWindow : Window
         if (items.Count == 0)
             return;
 
-        int index = items.IndexOf(vm.SelectedResource);
+        int index = vm.SelectedResource is { } selected ? items.IndexOf(selected) : -1;
         int newIndex = index + delta;
         if (newIndex < 0) newIndex = 0;
         if (newIndex >= items.Count) newIndex = items.Count - 1;

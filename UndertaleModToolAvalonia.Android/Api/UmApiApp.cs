@@ -32,13 +32,18 @@ internal static class UmApiApp
         if (!ready.Task.IsCompleted)
             await Task.WhenAny(ready.Task, Task.Delay(Math.Max(1000, timeoutMillis))).ConfigureAwait(false);
 
-        // The view model is resolvable as soon as App.Services exists, but its scripting engine is
-        // only created by MainViewModel.Initialize(), so that is the real "app is usable" signal.
+        // The view model is resolvable as soon as App.Services exists; its scripting engine is
+        // created in the MainViewModel constructor and settings finish loading asynchronously
+        // afterwards. Wait for both before handing it to an API request.
         Stopwatch stopwatch = Stopwatch.StartNew();
         while (true)
         {
-            if (App.Services?.GetService(typeof(MainViewModel)) is MainViewModel vm && vm.Scripting is not null)
+            if (App.Services?.GetService(typeof(MainViewModel)) is MainViewModel vm &&
+                vm.Scripting is not null &&
+                !vm.IsLoading)
+            {
                 return vm;
+            }
 
             if (stopwatch.ElapsedMilliseconds > 5000)
                 return null;

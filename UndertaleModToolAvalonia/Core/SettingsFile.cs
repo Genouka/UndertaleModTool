@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using Avalonia.Threading;
 
 namespace UndertaleModToolAvalonia;
 
@@ -45,29 +47,49 @@ public partial class SettingsFile
         return (settings, null);
     }
 
-    public static Exception? LoadStyles()
+    /// <summary>
+    /// Reads and deserializes <c>Settings.json</c> on a worker thread. Theme application is
+    /// deferred (see <see cref="ApplyTheme"/>) because the UI thread may not exist yet.
+    /// </summary>
+    public static Task<(SettingsFile settingsFile, Exception? exception)> LoadAsync()
+        => Task.Run(static () => Load());
+
+    /// <summary>
+    /// Reads and parses <c>Styles.xaml</c>, then installs the parsed styles. The file read runs
+    /// asynchronously; the parse/install part must run on the UI thread (Avalonia resources and
+    /// <see cref="Application.Styles"/> are UI-thread objects).
+    /// </summary>
+    public static async Task<Exception?> LoadStylesAsync()
     {
         // Load Styles.xaml
         string stylesPath = Path.Join(roamingAppData, "Styles.xaml");
 
-        if (File.Exists(stylesPath))
+        if (!File.Exists(stylesPath))
+            return null;
+
+        string xaml;
+        try
         {
-            Styles styles;
-            try
-            {
-                string xaml = File.ReadAllText(stylesPath);
-                styles = AvaloniaRuntimeXamlLoader.Parse<Styles>(xaml);
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
+            xaml = await File.ReadAllTextAsync(stylesPath);
+        }
+        catch (Exception ex)
+        {
+            return ex;
+        }
+
+        try
+        {
+            Styles styles = AvaloniaRuntimeXamlLoader.Parse<Styles>(xaml);
 
             if (App.CurrentCustomStyles is not null)
                 App.Current!.Styles.Remove(App.CurrentCustomStyles);
 
             App.CurrentCustomStyles = styles;
             App.Current!.Styles.Add(styles);
+        }
+        catch (Exception ex)
+        {
+            return ex;
         }
 
         return null;
@@ -108,14 +130,26 @@ public partial class SettingsFile
         set
         {
             field = value;
-            App.Current?.RequestedThemeVariant = value switch
-            {
-                ThemeValue.SystemDefault => ThemeVariant.Default,
-                ThemeValue.Light => ThemeVariant.Light,
-                ThemeValue.Dark => ThemeVariant.Dark,
-                _ => throw new NotImplementedException(),
-            };
+            ApplyTheme();
         }
+    }
+
+    /// <summary>
+    /// Applies <see cref="Theme"/> to the running application. Safe to call after loading settings
+    /// on a worker thread: it only touches Avalonia when called on the UI thread.
+    /// </summary>
+    public void ApplyTheme()
+    {
+        if (App.Current is null || !Dispatcher.UIThread.CheckAccess())
+            return;
+
+        App.Current.RequestedThemeVariant = Theme switch
+        {
+            ThemeValue.SystemDefault => ThemeVariant.Default,
+            ThemeValue.Light => ThemeVariant.Light,
+            ThemeValue.Dark => ThemeVariant.Dark,
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public bool StartMaximized { get; set; } = true;

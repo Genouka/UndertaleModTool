@@ -14,7 +14,6 @@ using Avalonia.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
-using Microsoft.Extensions.DependencyInjection;
 using Underanalyzer.Decompiler;
 using UndertaleModLib;
 using UndertaleModLib.Decompiler;
@@ -54,11 +53,13 @@ public class Scripting
     public static string? ExePathOverride { get; set; }
 
     /// <summary>
-    /// Name prefixes of the assemblies that scripts may bind against. The Android assembly
-    /// extractor dumps every linked assembly (the whole Avalonia/Skia/SDL/interop stack included)
-    /// next to the app, but scripts never use those; feeding all of them to the compiler balloons
-    /// its metadata graph - a real problem on memory-constrained devices, and it deepens the
-    /// binder's recursion during compilation.
+    /// Name prefixes of the assemblies that scripts may bind against. This is the single source
+    /// of truth for the script reference surface - the Android packager ships exactly the
+    /// assemblies matching these prefixes (see BundleScriptAssembliesToAssets in the Android
+    /// csproj, which keeps its own prefix list in sync) and the extractor copies them next to the
+    /// app. Everything else in the Avalonia/Skia/SDL/interop stack is neither packaged nor handed
+    /// to the compiler: feeding all of it in balloons the compiler's metadata graph - a real
+    /// problem on memory-constrained devices, and it deepens the binder's recursion.
     /// </summary>
     static readonly string[] ScriptReferencePrefixes =
     [
@@ -104,9 +105,9 @@ public class Scripting
         return false;
     }
 
-    public Scripting(IServiceProvider serviceProvider)
+    public Scripting(MainViewModel mainVM)
     {
-        MainVM = serviceProvider.GetRequiredService<MainViewModel>();
+        MainVM = mainVM;
     }
 
     /// <summary>

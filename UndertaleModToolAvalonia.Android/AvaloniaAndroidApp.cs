@@ -44,9 +44,9 @@ public class AvaloniaAndroidApp : AvaloniaAndroidApplication<App>
         ScriptAssemblyExtractor.Install();
 
         // Extract the built-in utility scripts (assets/Scripts) into internal storage and point
-        // the Scripts menu at them. Synchronous, because the menu is built once when the activity
-        // UI is created - which still happens after this method completes.
-        BuiltInScriptExtractor.Install();
+        // the Scripts menu at them. This runs in the background; AppMenuBar rebuilds the menu when
+        // extraction finishes, so the UI does not wait for the copy before it can be shown.
+        _ = BuiltInScriptExtractor.InstallAsync();
 
         // Scripts build their scratch ("Packager") folders under ExePath and write results next to
         // it; on Android Environment.ProcessPath resolves to the read-only /system/bin, so point
