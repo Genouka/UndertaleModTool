@@ -161,9 +161,13 @@
         @(AndroidAsset)), so the new asset entries always reach the aapt2 packaging regardless of
         incremental build state. Note: hooking UpdateAndroidAssets itself is too late - a target's
         DependsOnTargets run before BeforeTargets hooks.
+
+        _RemoveRegisterAttribute is a dependency because it is what creates the linked\shrunk copies
+        on a trimmed build. The AOT publish path can reach _CreateBaseApk without having run it, and
+        the asset pipeline would then fail on the missing source files (XA2001).
     -->
     <Target Name="BundleScriptAssembliesToAssets"
-            DependsOnTargets="_LinkAssembliesNoShrink;_ResolveAndroidTooling"
+            DependsOnTargets="_LinkAssembliesNoShrink;_RemoveRegisterAttribute;_ResolveAndroidTooling"
             BeforeTargets="_ComputeAndroidAssetsPaths"
             Condition="'$(EmbedAssembliesIntoApk)' == 'True'">
         <PropertyGroup>
