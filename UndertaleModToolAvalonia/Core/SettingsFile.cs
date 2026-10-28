@@ -194,6 +194,12 @@ public partial class SettingsFile
     /// <summary>Check for a newer nightly build automatically when the app starts.</summary>
     public bool CheckForUpdates { get; set; } = true;
 
+    /// <summary>
+    /// Ask for confirmation before running a script. Defaults to on for touch platforms, where a
+    /// menu item can be activated by an accidental tap next to the intended entry.
+    /// </summary>
+    public bool ConfirmBeforeRunningScripts { get; set; } = OperatingSystem.IsAndroid();
+
     /// <summary>Which update channel to use: published stable releases or nightly CI builds.</summary>
     public UpdateChannel UpdateChannel { get; set; } = global::UndertaleModToolAvalonia.UpdateChannel.Nightly;
 

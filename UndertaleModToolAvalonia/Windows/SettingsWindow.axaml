@@ -64,6 +64,9 @@
                             IsChecked="{Binding MainVM.Settings.ShowRoomEditorDebugInfo}"/>
                 <CheckBox Content="{l:Loc Settings_EnableProjectBackup}"
                             IsChecked="{Binding MainVM.Settings.EnableProjectBackup}"/>
+                <CheckBox Content="Confirm before running scripts"
+                            ToolTip.Tip="Show a confirmation dialog before executing a script selected from the Scripts menu. Enabled by default on Android."
+                            IsChecked="{Binding MainVM.Settings.ConfirmBeforeRunningScripts}"/>
                 <CheckBox Content="Always save to the project's designated data file for saving"
                             IsChecked="{Binding MainVM.Settings.AlwaysSaveDataInProjectDestination}"/>
                 <CheckBox Content="{l:Loc Settings_RecompileOnSave}"

@@ -951,6 +951,10 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         if (files.Count != 1)
             return;
 
+        string? filePath = files[0].TryGetLocalPath();
+        if (!await ConfirmRunScriptAsync(Path.GetFileName(filePath) ?? files[0].Name, filePath))
+            return;
+
         string text;
         using (Stream stream = await files[0].OpenReadAsync())
         {
@@ -958,7 +962,6 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             text = streamReader.ReadToEnd();
         }
 
-        string? filePath = files[0].TryGetLocalPath();
         await Scripting.RunScript(WithLineDirective(text, filePath), filePath);
 
         CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(filePath) ?? "Script");
@@ -966,6 +969,9 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
     public async void ScriptsRunScript(string filePath)
     {
+        if (!await ConfirmRunScriptAsync(Path.GetFileName(filePath), filePath))
+            return;
+
         string text = File.ReadAllText(filePath);
 
         await Scripting.RunScript(WithLineDirective(text, filePath), filePath);
@@ -989,6 +995,9 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             return;
         }
 
+        if (!await ConfirmRunScriptAsync(Path.GetFileName(path), path))
+            return;
+
         string text;
         using (StreamReader streamReader = new(path))
         {
@@ -998,6 +1007,22 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         await Scripting.RunScript(WithLineDirective(text, path), path);
 
         CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(path));
+    }
+
+    /// <summary>
+    /// Guards script execution with a confirmation dialog. Scripts can modify the loaded data and
+    /// run arbitrary code, so a menu entry must not execute on the first accidental tap.
+    /// </summary>
+    async Task<bool> ConfirmRunScriptAsync(string scriptName, string? filePath)
+    {
+        if (!Settings.ConfirmBeforeRunningScripts)
+            return true;
+
+        string target = string.IsNullOrEmpty(filePath) ? scriptName : filePath;
+        string message = string.Format(LocalizationSource.GetString("Msg_RunScriptQuestion"), target);
+        return await View!.MessageDialog(message,
+            title: LocalizationSource.GetString("Msg_RunScriptTitle"),
+            buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes;
     }
 
     /// <summary>
