@@ -1,10 +1,12 @@
 using System;
 using Android.App;
+using Android.Content;
 using Android.Content.PM;
 using Android.OS;
+using Android.Views;
+using Android.Views.InputMethods;
 using Avalonia.Android;
 using Org.Libsdl.App;
-using Android.Views;
 
 namespace UndertaleModToolAvalonia.Android;
 
@@ -54,9 +56,28 @@ public class MainActivity : AvaloniaMainActivity
         PlatformHaptics.LongPressFeedback = () => RunOnUiThread(() => decorView.PerformHapticFeedback(FeedbackConstants.LongPress));
         PlatformHaptics.TapFeedback = () => RunOnUiThread(() => decorView.PerformHapticFeedback(FeedbackConstants.VirtualKey));
 
+        // Avalonia only re-applies its IME client when focus changes. Tapping an already focused
+        // code editor therefore cannot re-open a keyboard the user dismissed. ShowSoftInput on
+        // the focused platform view is the only reliable way to bring it back on Android.
+        PlatformSoftKeyboard.ShowHandler = ShowSoftKeyboard;
+
         // Wire the in-app updater: report the installed package's last update time as the local
         // build date, and hand downloaded update APKs to the system package installer.
         ApkUpdateInstaller.Install();
+    }
+
+    bool ShowSoftKeyboard()
+    {
+        if (GetSystemService(Context.InputMethodService) is not InputMethodManager inputMethodManager)
+            return false;
+
+        View? focusedView = CurrentFocus ?? Window?.DecorView?.FindFocus();
+        if (focusedView is null)
+            return false;
+
+        // Resize the activity instead of panning the code editor behind the keyboard.
+        Window?.SetSoftInputMode(SoftInput.AdjustResize);
+        return inputMethodManager.ShowSoftInput(focusedView, ShowFlags.Implicit);
     }
 
     public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)

@@ -82,8 +82,7 @@ public partial class UndertaleCodeView : UserControl
     bool codeEditorTouchScrolled;
     bool codeEditorTouchSelecting;           // a long-press selection is being extended by drag
     int codeEditorSelectionAnchorOffset = -1;
-    double codeEditorPinchStartDistance;
-    double codeEditorPinchStartFontSize;
+    double codeEditorPinchLastDistance;
     DispatcherTimer? codeEditorLongPressTimer;
     DispatcherTimer? codeEditorKeyboardCheckTimer;
 
@@ -664,18 +663,23 @@ public partial class UndertaleCodeView : UserControl
             codeEditorTouchSelecting = false;
             codeEditorSelectionAnchorOffset = -1;
             codeEditorTouchSecondaryId = id;
-            StopCodeEditorLongPressTimer();
             codeEditorTouchPinching = true;
+            StopCodeEditorLongPressTimer();
+            double startDistance;
             if (codeEditorTouchPrimaryId is long primaryId
                 && codeEditorTouchPoints.TryGetValue(primaryId, out Point p1))
             {
-                codeEditorPinchStartDistance = Distance(pos, p1);
+                startDistance = Distance(pos, p1);
             }
             else
             {
-                codeEditorPinchStartDistance = 1;
+                startDistance = 1;
             }
-            codeEditorPinchStartFontSize = editor.FontSize > 0 ? editor.FontSize : 12;
+            // Scale relative to the distance of the previous move instead of the initial
+            // distance: when the font size hits a limit the accumulated factor must not have to
+            // be "unwound" before a reverse pinch becomes visible (that felt like the zoom
+            // running in the opposite direction).
+            codeEditorPinchLastDistance = startDistance;
         }
     }
 
@@ -697,11 +701,13 @@ public partial class UndertaleCodeView : UserControl
                 && codeEditorTouchPoints.TryGetValue(primaryId, out Point p1) && codeEditorTouchPoints.TryGetValue(secondaryId, out Point p2))
             {
                 double distance = Distance(p1, p2);
-                if (distance > 1 && codeEditorPinchStartDistance > 1)
+                if (distance > 1 && codeEditorPinchLastDistance > 1)
                 {
-                    double factor = distance / codeEditorPinchStartDistance;
-                    double size = Math.Clamp(codeEditorPinchStartFontSize * factor, CodeEditorFontSizeMin, CodeEditorFontSizeMax);
-                    if (size != editor.FontSize)
+                    double currentSize = editor.FontSize > 0 ? editor.FontSize : (Settings?.CodeEditorFontSize ?? 12);
+                    double factor = distance / codeEditorPinchLastDistance;
+                    codeEditorPinchLastDistance = distance;
+                    double size = Math.Clamp(currentSize * factor, CodeEditorFontSizeMin, CodeEditorFontSizeMax);
+                    if (Math.Abs(size - currentSize) > 0.01)
                         SetCodeEditorFontSize(size);
                 }
             }
@@ -930,25 +936,20 @@ public partial class UndertaleCodeView : UserControl
     }
 
     /// <summary>
-    /// Keeps the soft keyboard visible after a touch tap that did not change focus. When the
-    /// editor was already focused, <c>Focus()</c> is a no-op and the platform is not told about
-    /// the tap at all, so on Android the keyboard can retract even though the IME client stays
-    /// attached - a state that plain taps can never re-show (the platform only shows the input
-    /// pane when the client is (re)applied). Re-asserting the client here, now and once more
-    /// shortly after the gesture, brings the keyboard back.
+    /// Keeps the soft keyboard visible after a touch tap. When the editor is already focused,
+    /// <c>Focus()</c> is a no-op and the platform is not told about the tap at all, so on Android
+    /// the keyboard can stay dismissed even though the IME client is still attached. Ask the
+    /// platform to show the keyboard now and once more shortly after the gesture (the IME may
+    /// restart asynchronously after the caret move).
     /// </summary>
     void EnsureCodeEditorKeyboardVisible(TextEditor editor, bool wasFocusedBeforeTap)
     {
-        if (!wasFocusedBeforeTap)
-            return; // the fresh focus-gain path already re-applies the IME client
-
-        // Re-check shortly after the gesture as well: the platform may hide the keyboard
-        // asynchronously (e.g. an IME restart triggered by the caret move).
         StopCodeEditorKeyboardCheckTimer();
         codeEditorKeyboardCheckTimer = new DispatcherTimer(CodeEditorKeyboardCheckDelay, DispatcherPriority.Background, (_, _) => CodeEditorKeyboardCheckTimer_Tick(editor));
         codeEditorKeyboardCheckTimer.Start();
 
-        CodeEditorKeyboardCheck(editor);
+        if (wasFocusedBeforeTap)
+            CodeEditorKeyboardCheck(editor);
     }
 
     void CodeEditorKeyboardCheckTimer_Tick(TextEditor editor)
@@ -968,6 +969,12 @@ public partial class UndertaleCodeView : UserControl
             return; // no software keyboard on this platform
         if (pane.State == InputPaneState.Open)
             return; // the keyboard is already visible
+
+        // Prefer the platform's own IME call when available (Android: ShowSoftInput). Toggling
+        // the input method below only re-applies Avalonia's client, which does not necessarily
+        // make the system show the keyboard again once the IME has dismissed it.
+        if (PlatformSoftKeyboard.Show())
+            return;
 
         // The editor is focused but the soft keyboard is not shown: re-apply the IME client so
         // the platform shows the input pane again (Android shows the keyboard on SetClient).
