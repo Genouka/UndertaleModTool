@@ -184,6 +184,7 @@ public partial class AppMenuBar : UserControl
         NativeMenu help = new();
         Item(help, "Menu_Help_CheckForUpdates", command: new RelayCommand(vm.HelpCheckForUpdates));
         help.Items.Add(new NativeMenuItemSeparator());
+        LiteralItem(help, "Contributors & translators", command: new RelayCommand(vm.HelpContributors));
         Item(help, "Menu_Help_GitHub", command: new RelayCommand(vm.HelpGitHub));
         Item(help, "Menu_Help_About", command: new RelayCommand(vm.HelpAbout), gesture: new KeyGesture(Key.F1));
 

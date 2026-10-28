@@ -1413,6 +1413,12 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectClosed");
     }
 
+    public void HelpContributors()
+    {
+        if (View is Control view)
+            WindowHost.Show(WindowHost.ResolveOwner(view), new ContributorsWindow());
+    }
+
     public async void HelpGitHub()
     {
         await View!.LaunchUriAsync(new Uri("https://github.com/Genouka/UndertaleModTool"));

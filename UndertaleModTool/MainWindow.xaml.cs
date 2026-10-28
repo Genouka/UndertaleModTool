@@ -2949,6 +2949,11 @@ namespace UndertaleModTool
             return dlg.InputText;
         }
 
+        private void MenuItem_Contributors_Click(object sender, RoutedEventArgs e)
+        {
+            new ContributorsWindow { Owner = this }.ShowDialog();
+        }
+
         private void MenuItem_GitHub_Click(object sender, RoutedEventArgs e)
         {
             OpenBrowser("https://github.com/genouka/UndertaleModTool");
