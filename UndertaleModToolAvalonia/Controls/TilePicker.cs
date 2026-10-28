@@ -387,11 +387,9 @@ public abstract class TilePicker : Control
 
         base.Render(context);
 
-        TopLevel topLevel = TopLevel.GetTopLevel(this)!;
-        topLevel.RequestAnimationFrame(_ =>
-        {
-            InvalidateVisual();
-        });
+        // Keep an animation-frame loop only while attached to a live visual tree. Deliberately no
+        // platform-root fallback here: a detached control must not keep re-rendering forever.
+        TopLevel.GetTopLevel(this)?.RequestAnimationFrame(_ => InvalidateVisual());
     }
 
     Bitmap? GetTexturePageItemBitmap()

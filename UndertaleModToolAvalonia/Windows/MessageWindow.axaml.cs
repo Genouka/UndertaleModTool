@@ -82,7 +82,7 @@ public partial class MessageWindow : Window
 
     public async void Copy()
     {
-        TopLevel topLevel = TopLevel.GetTopLevel(this)!;
-        await topLevel.Clipboard!.SetTextAsync(Message);
+        if (WindowHost.TryGetTopLevel(this)?.Clipboard is { } clipboard)
+            await clipboard.SetTextAsync(Message);
     }
 }

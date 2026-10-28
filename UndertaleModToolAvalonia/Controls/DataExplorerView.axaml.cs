@@ -208,8 +208,8 @@ public partial class DataExplorerView : UserControl
 
             if (name is not null)
             {
-                TopLevel topLevel = TopLevel.GetTopLevel(this)!;
-                await topLevel.Clipboard!.SetTextAsync(name);
+                if (WindowHost.TryGetTopLevel(this)?.Clipboard is { } clipboard)
+                    await clipboard.SetTextAsync(name);
             }
         }
     }
