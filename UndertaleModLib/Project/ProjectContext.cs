@@ -289,9 +289,17 @@ public partial class ProjectContext
             throw new ProjectException($"Project file already exists at \"{mainFilePath}\"");
         }
 
-        // If the directory isn't empty, we don't want to overwrite anything else accidentally
+        // If the directory isn't empty, we don't want to overwrite anything else accidentally.
+        // The destination data file is exempt: the project is going to write to it anyway, and
+        // some platform file pickers (Android's SAF) create the selected file immediately, which
+        // would otherwise make creating a project in that same folder fail as "not empty".
         Directory.CreateDirectory(MainDirectory);
-        if (Directory.EnumerateFileSystemEntries(MainDirectory).Any())
+        string savingDataFullPath = Path.GetFullPath(savingDataPath);
+        StringComparison pathComparison = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (Directory.EnumerateFileSystemEntries(MainDirectory)
+            .Any(entry => !string.Equals(Path.GetFullPath(entry), savingDataFullPath, pathComparison)))
         {
             throw new ProjectException("Project directory is not empty");
         }

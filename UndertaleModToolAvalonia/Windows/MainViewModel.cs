@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -1133,7 +1134,17 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
         // Project folder
         IReadOnlyList<IStorageFolder> projectFolderList = await View!.OpenFolderDialog(new() { Title = LocalizationSource.GetString("Msg_SelectProjectFolder") });
-        string? projectFolderPath = projectFolderList.ElementAtOrDefault(0)?.TryGetLocalPath();
+        string? pickedFolderPath = projectFolderList.ElementAtOrDefault(0)?.TryGetLocalPath();
+        if (pickedFolderPath is null)
+        {
+            CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
+            return;
+        }
+
+        // The project itself needs an empty folder, but some folder pickers (notably Android's
+        // SAF picker) cannot create new folders, so whatever the user can pick often already
+        // contains files. Offer a project-named subfolder in that case instead of failing.
+        string? projectFolderPath = await ResolveProjectFolder(pickedFolderPath, projectName);
         if (projectFolderPath is null)
         {
             CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
@@ -1158,7 +1169,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
         catch (ProjectException e)
         {
-            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedCreateProject"), e.Message));
+            await View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_FailedCreateProject"));
             CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectCreationFailed");
             return;
         }
@@ -1173,6 +1184,48 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         DataPath = destinationDataPath;
         SetProject(projectContext);
         CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ProjectCreated"), projectName);
+    }
+
+    /// <summary>
+    /// Resolves the folder to create a project in. The project needs an empty folder; when the
+    /// picked one isn't (some pickers, notably Android's SAF folder picker, cannot even create
+    /// new folders), offers a project-named subfolder instead. Returns <see langword="null"/> if
+    /// the user declined.
+    /// </summary>
+    async Task<string?> ResolveProjectFolder(string pickedFolderPath, string projectName)
+    {
+        try
+        {
+            if (!Directory.EnumerateFileSystemEntries(pickedFolderPath).Any())
+                return pickedFolderPath;
+        }
+        catch (Exception)
+        {
+            // Can't inspect the folder; let creating the project report the real error.
+            return pickedFolderPath;
+        }
+
+        string subfolderPath = Path.Join(pickedFolderPath, GetSafeProjectFolderName(projectName));
+        MessageWindow.Result result = await View!.MessageDialog(
+            string.Format(LocalizationSource.GetString("Msg_ProjectFolderNotEmptyUseSubfolder"), subfolderPath),
+            buttons: MessageWindow.Buttons.YesNo);
+        return result == MessageWindow.Result.Yes ? subfolderPath : null;
+    }
+
+    /// <summary>
+    /// Turns a project name into a folder name that is valid on every platform the app runs on,
+    /// including FAT-formatted SD cards, where characters such as ':' are not allowed.
+    /// </summary>
+    static string GetSafeProjectFolderName(string projectName)
+    {
+        StringBuilder builder = new(projectName.Length);
+        foreach (char c in projectName)
+        {
+            builder.Append(c < 32 || "<>:\"/\\|?*".Contains(c) ? '_' : c);
+        }
+
+        string name = builder.ToString().Trim().TrimEnd('.');
+        return name.Length == 0 ? $"{LocalizationSource.GetString("Msg_NewMod")} Mod" : name;
     }
 
     public async void ProjectOpen()
@@ -1241,7 +1294,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
         catch (ProjectException e)
         {
-            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedLoadProject"), e.Message));
+            await View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_FailedLoadProject"));
             CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectFailedToOpen");
             return;
         }
@@ -1281,7 +1334,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
         catch (ProjectException e)
         {
-            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedSaveProject"), e.Message));
+            await View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_FailedSaveProject"));
         }
         catch (Exception e)
         {
@@ -1325,7 +1378,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
         catch (ProjectException e)
         {
-            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedLoadProject"), e.Message));
+            await View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_FailedLoadProject"));
             return;
         }
         catch (Exception e)
