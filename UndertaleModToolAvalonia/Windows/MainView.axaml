@@ -25,7 +25,7 @@
 
         <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto">
             <TextBox Grid.Column="0" Name="CommandTextBox" Text="{Binding CommandTextBoxText}" AcceptsReturn="True" />
-            <CheckBox Grid.Column="1" Content="{l:Loc Ctrl_MarkedForExport}" IsChecked="{Binding TabIsMarkedForExport}" IsEnabled="{Binding TabCanMarkedForExport}" />
+            <CheckBox Grid.Column="1" Content="{l:Loc Ctrl_MarkedForExport}" IsChecked="{Binding TabIsMarkedForExport}" IsVisible="{Binding TabCanMarkedForExport}" />
             <Label Grid.Column="2" Content="{Binding TabSelectedResourceIdString}" MinWidth="100" HorizontalContentAlignment="Right"
                    ToolTip.Tip="{l:Loc Ctrl_ObjectID_Tooltip}"/>
         </Grid>

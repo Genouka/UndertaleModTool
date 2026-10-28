@@ -20,6 +20,8 @@ namespace UndertaleModToolAvalonia;
 
 public partial class DataExplorerView : UserControl
 {
+    HierarchicalTreeDataGridSource<DataExplorerViewModel.Item>? treeDataGridSource;
+
     public DataExplorerView()
     {
         InitializeComponent();
@@ -35,7 +37,7 @@ public partial class DataExplorerView : UserControl
         vm.OnExpandItemOnTree = ExpandItemOnTree;
         vm.OnSelectValueInTree = SelectValueInTree;
 
-        MainTreeDataGrid.Source = new HierarchicalTreeDataGridSource<DataExplorerViewModel.Item>(vm.TreeDataGridData)
+        treeDataGridSource = new HierarchicalTreeDataGridSource<DataExplorerViewModel.Item>(vm.TreeDataGridData)
         {
             Columns = {
                 new HierarchicalExpanderColumn<DataExplorerViewModel.Item>(
@@ -75,6 +77,10 @@ public partial class DataExplorerView : UserControl
                     childSelector: x => x.Children)
             }
         };
+
+        treeDataGridSource.RowSelection!.SingleSelect = false;
+
+        MainTreeDataGrid.Source = treeDataGridSource;
 
         base.OnInitialized();
     }
@@ -160,6 +166,7 @@ public partial class DataExplorerView : UserControl
                 "AnimationCurves" => vm.MainVM.Data.AnimationCurves as IList,
                 "ParticleSystems" => vm.MainVM.Data.ParticleSystems as IList,
                 "ParticleSystemEmitters" => vm.MainVM.Data.ParticleSystemEmitters as IList,
+                "UINodes" => vm.MainVM.Data.UINodes as IList,
                 _ => null,
             })!;
 
@@ -169,49 +176,45 @@ public partial class DataExplorerView : UserControl
 
     public void ContextMenu_Open_Click(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is not DataExplorerViewModel vm)
+        if (DataContext is not DataExplorerViewModel vm || vm.MainVM.Data is null)
             return;
 
         DataExplorerViewModel.Item? item = GetItemFromTreeDataGridControl(e.Source);
-        if (item is not null && vm.MainVM.Data is not null)
-        {
-            _ = vm.MainVM.TabOpen(item.Value);
-        }
+        _ = vm.MainVM.TabOpen(item?.Value);
     }
 
     public void ContextMenu_OpenInNewTab_Click(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is not DataExplorerViewModel vm)
+        if (DataContext is not DataExplorerViewModel vm || vm.MainVM.Data is null || treeDataGridSource is null)
             return;
 
-        DataExplorerViewModel.Item? item = GetItemFromTreeDataGridControl(e.Source);
-        if (item is not null && vm.MainVM.Data is not null)
+        foreach (var item in treeDataGridSource.RowSelection!.SelectedItems)
         {
-            _ = vm.MainVM.TabOpen(item.Value, inNewTab: true);
+            _ = vm.MainVM.TabOpen(item?.Value, inNewTab: true);
         }
     }
 
     public async void ContextMenu_CopyName_Click(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is not DataExplorerViewModel vm)
+        if (DataContext is not DataExplorerViewModel vm || vm.MainVM.Data is null || treeDataGridSource is null)
             return;
 
-        DataExplorerViewModel.Item? item = GetItemFromTreeDataGridControl(e.Source);
-        if (item is not null && vm.MainVM.Data is not null)
+        List<string> names = new();
+
+        foreach (var item in treeDataGridSource.RowSelection!.SelectedItems)
         {
-            string? name = item.Value switch
+            string name = item?.Value switch
             {
                 UndertaleNamedResource namedResource => namedResource.Name?.Content,
                 UndertaleString _string => _string.Content,
                 _ => null,
-            };
+            } ?? "";
 
-            if (name is not null)
-            {
-                if (WindowHost.TryGetTopLevel(this)?.Clipboard is { } clipboard)
-                    await clipboard.SetTextAsync(name);
-            }
+            names.Add(name);
         }
+
+        if (WindowHost.TryGetTopLevel(this)?.Clipboard is { } clipboard)
+            await clipboard.SetTextAsync(string.Join("\n", names));
     }
 
     public async void ContextMenu_FindReferences_Click(object? sender, RoutedEventArgs e)

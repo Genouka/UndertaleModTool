@@ -26,13 +26,13 @@ namespace UndertaleModToolAvalonia;
 // off the UI thread (e.g. exports).
 public class ImageCache
 {
-    abstract record ImageKey();
-    record GMImageImageKey(GMImage GMImage) : ImageKey;
-    record TexturePageItemImageKey(GMImage GMImage, ushort SourceX, ushort SourceY,
-        ushort SourceWidth, ushort SourceHeight) : ImageKey;
-    record TileImageKey(GMImage GMImage, ushort SourceX, ushort SourceY, ushort TargetX, ushort TargetY,
-        int TileSourceX, int TileSourceY, uint Width, uint Height) : ImageKey;
-    record LayerTileImageKey(GMImage GMImage, ushort SourceX, ushort SourceY, uint TileId,
+    interface ImageKey;
+    readonly record struct GMImageImageKey(GMImage GMImage) : ImageKey;
+    readonly record struct TexturePageItemImageKey(GMImage GMImage, ushort SourceX, ushort SourceY, ushort SourceWidth, ushort SourceHeight,
+        ushort TargetX, ushort TargetY, ushort TargetWidth, ushort TargetHeight,
+        ushort BoundingWidth, ushort BoundingHeight) : ImageKey;
+    readonly record struct TileImageKey(TexturePageItemImageKey TexturePageItemImageKey, int TileSourceX, int TileSourceY, uint Width, uint Height) : ImageKey;
+    readonly record struct LayerTileImageKey(GMImage GMImage, ushort SourceX, ushort SourceY, uint TileId,
         uint TileColumns, uint TileWidth, uint TileHeight, uint TileBorderX, uint TileBorderY) : ImageKey;
 
     sealed class PageEntry
@@ -81,7 +81,11 @@ public class ImageCache
     {
         if (texturePageItem.TexturePage is null
             || texturePageItem.TexturePage.TextureData is null
-            || texturePageItem.TexturePage.TextureData.Image is null)
+            || texturePageItem.TexturePage.TextureData.Image is null
+            || texturePageItem.SourceWidth == 0
+            || texturePageItem.SourceHeight == 0
+            || texturePageItem.BoundingWidth == 0
+            || texturePageItem.BoundingHeight == 0)
             return null;
 
         GMImage gmImage = texturePageItem.TexturePage.TextureData.Image;
@@ -95,7 +99,13 @@ public class ImageCache
             texturePageItem.SourceX,
             texturePageItem.SourceY,
             texturePageItem.SourceWidth,
-            texturePageItem.SourceHeight);
+            texturePageItem.SourceHeight,
+            texturePageItem.TargetX,
+            texturePageItem.TargetY,
+            texturePageItem.TargetWidth,
+            texturePageItem.TargetHeight,
+            texturePageItem.BoundingWidth,
+            texturePageItem.BoundingHeight);
 
         Bitmap? cached = TryGetCrop(key);
         if (cached is not null)
@@ -109,17 +119,32 @@ public class ImageCache
 
     public Bitmap? GetCachedImageFromTile(UndertaleRoom.Tile tile, Action? onImageReady = null, bool waitForLoad = false)
     {
-        if (tile.Tpag is null || tile.Tpag.TexturePage is null || tile.Tpag.TexturePage.TextureData is null || tile.Width == 0 || tile.Height == 0)
+        if (tile.Tpag is null
+            || tile.Tpag.TexturePage is null
+            || tile.Tpag.TexturePage.TextureData is null
+            || tile.Width == 0
+            || tile.Height == 0
+            || tile.SourceX < 0
+            || tile.SourceY < 0
+            || tile.SourceX + tile.Width > tile.Tpag.BoundingWidth
+            || tile.SourceY + tile.Height > tile.Tpag.BoundingHeight)
             return null;
 
         GMImage gmImage = tile.Tpag.TexturePage.TextureData.Image;
 
         TileImageKey key = new(
-            gmImage,
-            tile.Tpag.SourceX,
-            tile.Tpag.SourceY,
-            tile.Tpag.TargetX,
-            tile.Tpag.TargetY,
+            new TexturePageItemImageKey(
+                tile.Tpag.TexturePage.TextureData.Image,
+                tile.Tpag.SourceX,
+                tile.Tpag.SourceY,
+                tile.Tpag.SourceWidth,
+                tile.Tpag.SourceHeight,
+                tile.Tpag.TargetX,
+                tile.Tpag.TargetY,
+                tile.Tpag.TargetWidth,
+                tile.Tpag.TargetHeight,
+                tile.Tpag.BoundingWidth,
+                tile.Tpag.BoundingHeight),
             tile.SourceX,
             tile.SourceY,
             tile.Width,
@@ -137,7 +162,7 @@ public class ImageCache
             int r = (int)Math.Min(l + tile.Width, tile.Tpag.SourceX + tile.Tpag.SourceWidth);
             int b = (int)Math.Min(t + tile.Height, tile.Tpag.SourceY + tile.Tpag.SourceHeight);
 
-            if (l >= r || t >= b)
+            if (r <= l || b <= t)
                 return null;
 
             return CropBitmap(page, l, t, r - l, b - t);
