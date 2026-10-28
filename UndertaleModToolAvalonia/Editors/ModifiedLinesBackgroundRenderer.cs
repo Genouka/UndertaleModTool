@@ -15,7 +15,7 @@ public class ModifiedLinesBackgroundRenderer : AvaloniaEdit.Rendering.IBackgroun
 {
     private readonly HashSet<int> _modifiedLineNumbers = new();
     private string _originalText = "";
-    private TextDocument _document;
+    private TextDocument? _document;
 
     public static readonly IBrush DefaultModifiedBrush =
         new SolidColorBrush(Color.FromArgb(40, 255, 152, 0));

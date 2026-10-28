@@ -237,6 +237,7 @@
                     </MenuItem>
                 </local:MenuItemDark>
                 <local:MenuItemDark Header="{loc:Loc Menu_Help}">
+                    <MenuItem Header="Contributors &amp; translators" Click="MenuItem_Contributors_Click"/>
                     <MenuItem Header="{loc:Loc Menu_Help_GitHub}" Click="MenuItem_GitHub_Click"/>
                     <MenuItem Header="{loc:Loc Menu_Help_About}" Click="MenuItem_About_Click"/>
                 </local:MenuItemDark>
@@ -345,7 +346,7 @@
                                 <Style.Resources>
                                     <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                         <VisualBrush.Visual>
-                                            <Label Content="{loc:Loc Common_FilterByName}" Foreground="Gray" />
+                                            <TextBlock Text="{loc:Loc Common_FilterByName}" Foreground="Gray" />
                                         </VisualBrush.Visual>
                                     </VisualBrush>
                                 </Style.Resources>

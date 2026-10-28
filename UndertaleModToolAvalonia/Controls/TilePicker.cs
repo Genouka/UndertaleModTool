@@ -140,7 +140,6 @@ public abstract class RoomOrLegacyTilePicker : TilePicker
             SelectedTileSourceRect = new(x, y, TileWidth, TileHeight);
         }
     }
-
 }
 
 public class LayerTilePicker : TilePicker
@@ -266,7 +265,6 @@ public class LayerTilePicker : TilePicker
     }
 
     public override void SelectTileTo(Point point) => SelectTileAt(point); // TODO: Multiple tile select
-
 }
 
 public abstract class TilePicker : Control
@@ -389,11 +387,9 @@ public abstract class TilePicker : Control
 
         base.Render(context);
 
-        TopLevel topLevel = TopLevel.GetTopLevel(this)!;
-        topLevel.RequestAnimationFrame(_ =>
-        {
-            InvalidateVisual();
-        });
+        // Keep an animation-frame loop only while attached to a live visual tree. Deliberately no
+        // platform-root fallback here: a detached control must not keep re-rendering forever.
+        TopLevel.GetTopLevel(this)?.RequestAnimationFrame(_ => InvalidateVisual());
     }
 
     Bitmap? GetTexturePageItemBitmap()

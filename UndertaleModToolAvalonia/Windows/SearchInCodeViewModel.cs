@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Threading;
+using AvaloniaEdit.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using UndertaleModLib;
@@ -135,7 +136,7 @@ public partial class SearchInCodeViewModel : ObservableObject
 
         resultsAreInAssembly = IsInAssembly;
 
-        Results = [.. sortedResultsList];
+        Results.AddRange(sortedResultsList);
 
         // Set status bar text
         string str = string.Format(LocalizationSource.GetString("Search_FoundResults"),

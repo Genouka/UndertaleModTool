@@ -14,25 +14,36 @@ public interface IView
 
     public async Task<IReadOnlyList<IStorageFile>> OpenFileDialog(FilePickerOpenOptions options)
     {
-        TopLevel topLevel = TopLevel.GetTopLevel(View)!;
-        return await topLevel.StorageProvider.OpenFilePickerAsync(options);
+        if (WindowHost.TryGetTopLevel(View)?.StorageProvider is not { } storageProvider)
+            return [];
+
+        return await storageProvider.OpenFilePickerAsync(options);
     }
 
     public async Task<IStorageFile?> SaveFileDialog(FilePickerSaveOptions options)
     {
-        TopLevel topLevel = TopLevel.GetTopLevel(View)!;
-        return await topLevel.StorageProvider.SaveFilePickerAsync(options);
+        if (WindowHost.TryGetTopLevel(View)?.StorageProvider is not { } storageProvider)
+            return null;
+
+        return await storageProvider.SaveFilePickerAsync(options);
     }
 
     public async Task<IReadOnlyList<IStorageFolder>> OpenFolderDialog(FolderPickerOpenOptions options)
     {
-        TopLevel topLevel = TopLevel.GetTopLevel(View)!;
-        return await topLevel.StorageProvider.OpenFolderPickerAsync(options);
+        if (WindowHost.TryGetTopLevel(View)?.StorageProvider is not { } storageProvider)
+            return [];
+
+        return await storageProvider.OpenFolderPickerAsync(options);
     }
 
     public async Task<bool> LaunchUriAsync(Uri uri)
     {
-        TopLevel topLevel = TopLevel.GetTopLevel(View)!;
+        // A view without a top-level (detached by a simulated window stack, or a headless
+        // host) cannot launch anything; returning false keeps async event handlers from
+        // faulting, which would surface as an unhandled exception on the UI thread.
+        if (WindowHost.TryGetTopLevel(View) is not { } topLevel)
+            return false;
+
         return await topLevel.Launcher.LaunchUriAsync(uri);
     }
 
@@ -57,8 +68,5 @@ public interface IView
     }
 
     public IInputElement? GetFocusedElement()
-    {
-        TopLevel topLevel = TopLevel.GetTopLevel(View)!;
-        return topLevel.FocusManager?.GetFocusedElement();
-    }
+        => WindowHost.TryGetTopLevel(View)?.FocusManager?.GetFocusedElement();
 }

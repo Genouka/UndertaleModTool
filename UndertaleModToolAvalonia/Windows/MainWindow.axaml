@@ -11,66 +11,10 @@
         Title="{Binding Title}"
         WindowState="{Binding WindowState}"
         IsEnabled="{Binding IsEnabled}">
-    <NativeMenu.Menu>
-        <NativeMenu>
-            <NativeMenuItem Header="{l:Loc Menu_File}">
-                <NativeMenu>
-                    <NativeMenuItem Header="{l:Loc Menu_File_New}" Command="{Binding FileNew}" Gesture="{OnPlatform 'Ctrl+N', macOS='Meta+N'}"/>
-                    <NativeMenuItem Header="{l:Loc Menu_File_Open}" Command="{Binding FileOpen}" Gesture="{OnPlatform 'Ctrl+O', macOS='Meta+O'}"/>
-                    <NativeMenuItem Header="{l:Loc Menu_File_Save}" Command="{Binding FileSave}" Gesture="{OnPlatform 'Ctrl+S', macOS='Meta+S'}"/>
-                    <NativeMenuItem Header="{l:Loc Menu_File_Close}" Command="{Binding FileClose}"/>
-                    <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_File_TempRun}" Command="{Binding FileTempRun}" Gesture="F5"/>
-                    <NativeMenuItem Header="_Run with data/project runner" Command="{Binding FileRun}" Gesture="Alt+F5"/>
-                    <NativeMenuItem Header="{l:Loc Menu_File_RunOtherRunner}" Command="{Binding FileRunWithOther}"/>
-                    <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="Clear audio group cache" Command="{Binding FileClearAudioGroupCache}"/>
-                    <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_File_Settings}" Command="{Binding FileSettings}" Gesture="F4"/>
-                    <NativeMenuItem Header="{l:Loc Menu_File_Exit}" Command="{Binding FileExit}" Gesture="{OnPlatform 'Ctrl+Q', macOS='Meta+Q'}"/>
-                </NativeMenu>
-            </NativeMenuItem>
-            <NativeMenuItem Header="{l:Loc Menu_Tools}">
-                <NativeMenu>
-                    <NativeMenuItem Header="{l:Loc Menu_Find_SearchInCode}" Command="{Binding ToolsSearchInCode}" Gesture="{OnPlatform 'Ctrl+Shift+F', macOS='Meta+Shift+F'}"/>
-                    <NativeMenuItem Header="{l:Loc Menu_Edit_FindReferences}" Command="{Binding ToolsFindReferences}"/>
-                </NativeMenu>
-            </NativeMenuItem>
-            <NativeMenuItem Header="{l:Loc Menu_Scripts}" />
-            <NativeMenuItem Header="{l:Loc Menu_Project}">
-                <NativeMenu>
-                    <NativeMenuItem Header="{l:Loc Menu_Project_New}" Command="{Binding ProjectNew}"/>
-                    <NativeMenuItem Header="{l:Loc Menu_Project_Open}" Command="{Binding ProjectOpen}"/>
-                    <NativeMenuItem Header="{l:Loc Menu_Project_Save}" Command="{Binding ProjectSave}" IsEnabled="{Binding ProjectActive}"/>
-                    <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_Project_Reload}" Command="{Binding ProjectReload}" IsEnabled="{Binding ProjectActive}"/>
-                    <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_Project_ViewUnexportedAssets}" Command="{Binding ProjectViewUnexportedAssets}" IsEnabled="{Binding ProjectActive}"/>
-                    <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_Project_Close}" Command="{Binding ProjectClose}" IsEnabled="{Binding ProjectActive}"/>
-                </NativeMenu>
-            </NativeMenuItem>
-            <NativeMenuItem Header="{l:Loc Menu_Help}">
-                <NativeMenu>
-                    <NativeMenuItem Header="{l:Loc Menu_Help_CheckForUpdates}" Command="{Binding HelpCheckForUpdates}"/>
-                    <NativeMenuItemSeparator Header="-" />
-                    <NativeMenuItem Header="{l:Loc Menu_Help_GitHub}" Command="{Binding HelpGitHub}"/>
-                    <NativeMenuItem Header="{l:Loc Menu_Help_About}" Command="{Binding HelpAbout}" Gesture="F1"/>
-                </NativeMenu>
-            </NativeMenuItem>
-        </NativeMenu>
-    </NativeMenu.Menu>
-
+    <!-- The application menu (and the command key bindings derived from it) is built and
+         attached to this window by the AppMenuBar control inside MainView. Only tab shortcuts
+         that have no menu entry are declared here. -->
     <Window.KeyBindings>
-        <KeyBinding Gesture="{OnPlatform 'Ctrl+N', macOS='Meta+N'}" Command="{Binding FileNew}" />
-        <KeyBinding Gesture="{OnPlatform 'Ctrl+O', macOS='Meta+O'}" Command="{Binding FileOpen}" />
-        <KeyBinding Gesture="{OnPlatform 'Ctrl+S', macOS='Meta+S'}" Command="{Binding FileSave}" />
-        <KeyBinding Gesture="F5" Command="{Binding FileTempRun}" />
-        <KeyBinding Gesture="Alt+F5" Command="{Binding FileRun}" />
-        <KeyBinding Gesture="F4" Command="{Binding FileSettings}" />
-        <KeyBinding Gesture="{OnPlatform 'Ctrl+Q', macOS='Meta+Q'}" Command="{Binding FileExit}" />
-        <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+F', macOS='Meta+Shift+F'}" Command="{Binding ToolsSearchInCode}" />
-        <KeyBinding Gesture="F1" Command="{Binding HelpAbout}" />
         <KeyBinding Gesture="{OnPlatform 'Ctrl+W', macOS='Meta+W'}" Command="{Binding Tabs.TabCloseSelected}" />
         <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+W', macOS='Meta+Shift+W'}" Command="{Binding Tabs.TabCloseAll}" />
         <KeyBinding Gesture="{OnPlatform 'Ctrl+Shift+Tab', macOS='Meta+Shift+Tab'}" Command="{Binding Tabs.TabSetToPrevious}" />

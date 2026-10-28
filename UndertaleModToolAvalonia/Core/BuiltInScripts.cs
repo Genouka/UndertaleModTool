@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -37,6 +38,23 @@ public static class BuiltInScripts
     /// reinstalling the app.
     /// </summary>
     public static List<string> ExtraRootDirectories { get; } = [];
+
+    /// <summary>
+    /// Raised when the set of script files may have changed (e.g. Android finished extracting the
+    /// built-in scripts after the menu was built). The menu bar rebuilds itself on the UI thread.
+    /// </summary>
+    public static event Action? ScriptsChanged;
+
+    private static int scriptsVersion;
+
+    /// <summary>Increments whenever the available script set may have changed.</summary>
+    public static int ScriptsVersion => Volatile.Read(ref scriptsVersion);
+
+    public static void NotifyScriptsChanged()
+    {
+        Interlocked.Increment(ref scriptsVersion);
+        ScriptsChanged?.Invoke();
+    }
 
     /// <summary>The directory the built-in scripts are loaded from.</summary>
     public static string GetRootDirectory()

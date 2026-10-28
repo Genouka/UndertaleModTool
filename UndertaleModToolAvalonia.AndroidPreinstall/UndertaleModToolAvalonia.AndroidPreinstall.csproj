@@ -20,6 +20,13 @@
         -->
         <SupportedOSPlatformVersion>29.0</SupportedOSPlatformVersion>
 
+        <!--
+            The manifest deliberately declares targetSdkVersion 29 (see Properties/AndroidManifest.xml)
+            while the project compiles against API 36. XA4211 and XA1006 recommend raising it, but that
+            would defeat the purpose of this helper, so both are expected and suppressed here.
+        -->
+        <NoWarn>$(NoWarn);XA1006;XA4211</NoWarn>
+
         <OutputType>Exe</OutputType>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>

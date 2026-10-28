@@ -72,4 +72,29 @@
         <DefineConstants Condition="'$(AndroidPreinstallChannel)' == 'stable'">$(DefineConstants);ANDROID_PREINSTALL_STABLE</DefineConstants>
     </PropertyGroup>
 
+    <!--
+        Fixed APK signing. When the UMT_ANDROID_KEYSTORE_PATH environment variable is set (the CI
+        workflows do this after materialising the ANDROID_KEYSTORE_BASE64 repo secret into a file
+        under $RUNNER_TEMP), both APKs are signed with that one fixed keystore - the app and the
+        preinstall helper share one application id, so the system only accepts installing either
+        of them over the other if both carry the same signature. MSBuild exposes environment
+        variables as properties by themselves, so the workflows pass nothing on the dotnet command
+        line and the secrets never get echoed.
+
+        Without those variables (local development) this group is skipped and the build falls back
+        to the auto-generated per-machine debug keystore, as before. Remember that a debug-signed
+        APK can never install over a release-signed one (and vice versa) - uninstall in between.
+
+        PKCS12 keystores (keytool's default) force the key password to equal the store password,
+        so one secret covers both.
+    -->
+    <PropertyGroup Condition="'$(UMT_ANDROID_KEYSTORE_PATH)' != ''">
+        <AndroidKeyStore>True</AndroidKeyStore>
+        <AndroidSigningKeyStore>$(UMT_ANDROID_KEYSTORE_PATH)</AndroidSigningKeyStore>
+        <AndroidSigningKeyAlias Condition="'$(UMT_ANDROID_KEY_ALIAS)' != ''">$(UMT_ANDROID_KEY_ALIAS)</AndroidSigningKeyAlias>
+        <AndroidSigningKeyAlias Condition="'$(UMT_ANDROID_KEY_ALIAS)' == ''">qiuutmtv5</AndroidSigningKeyAlias>
+        <AndroidSigningStorePass>$(UMT_ANDROID_KEY_PASSWORD)</AndroidSigningStorePass>
+        <AndroidSigningKeyPass>$(UMT_ANDROID_KEY_PASSWORD)</AndroidSigningKeyPass>
+    </PropertyGroup>
+
 </Project>

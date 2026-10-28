@@ -14,7 +14,6 @@ using Avalonia.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
-using Microsoft.Extensions.DependencyInjection;
 using Underanalyzer.Decompiler;
 using UndertaleModLib;
 using UndertaleModLib.Decompiler;
@@ -54,11 +53,13 @@ public class Scripting
     public static string? ExePathOverride { get; set; }
 
     /// <summary>
-    /// Name prefixes of the assemblies that scripts may bind against. The Android assembly
-    /// extractor dumps every linked assembly (the whole Avalonia/Skia/SDL/interop stack included)
-    /// next to the app, but scripts never use those; feeding all of them to the compiler balloons
-    /// its metadata graph - a real problem on memory-constrained devices, and it deepens the
-    /// binder's recursion during compilation.
+    /// Name prefixes of the assemblies that scripts may bind against. This is the single source
+    /// of truth for the script reference surface - the Android packager ships exactly the
+    /// assemblies matching these prefixes (see BundleScriptAssembliesToAssets in the Android
+    /// csproj, which keeps its own prefix list in sync) and the extractor copies them next to the
+    /// app. Everything else in the Avalonia/Skia/SDL/interop stack is neither packaged nor handed
+    /// to the compiler: feeding all of it in balloons the compiler's metadata graph - a real
+    /// problem on memory-constrained devices, and it deepens the binder's recursion.
     /// </summary>
     static readonly string[] ScriptReferencePrefixes =
     [
@@ -104,13 +105,38 @@ public class Scripting
         return false;
     }
 
-    public Scripting(IServiceProvider serviceProvider)
+    public Scripting(MainViewModel mainVM)
     {
-        MainVM = serviceProvider.GetRequiredService<MainViewModel>();
+        MainVM = mainVM;
     }
 
-    public async Task<object?> RunScript(string text, string? filePath = null)
+    /// <summary>
+    /// Compiles and runs a script.
+    /// </summary>
+    /// <param name="text">The script source (typically prefixed with a <c>#line</c> directive).</param>
+    /// <param name="filePath">Path the script was loaded from, used for diagnostics and
+    /// <see cref="IScriptInterface.ScriptPath"/>.</param>
+    /// <param name="hostFactory">
+    /// Optional factory for the host object the script runs with (the object a script sees as
+    /// <c>this</c>/globals, normally a <see cref="ScriptGlobals"/>). Hosts without a UI - the
+    /// Android cross-app API - pass a capturing host so that an externally requested script never
+    /// opens dialogs; passing null uses the regular UI-backed host.
+    /// </param>
+    /// <param name="errorHandler">
+    /// Optional handler for the error dialogs <see cref="RunScript"/> itself shows (compilation
+    /// failures and script exceptions). UI-less hosts pass one to capture the text into their own
+    /// result; null opens the regular dialog through <c>MainVM.View</c>.
+    /// </param>
+    public async Task<object?> RunScript(string text, string? filePath = null,
+                                         Func<Scripting, string?, IScriptInterface>? hostFactory = null,
+                                         Func<string, string?, Task>? errorHandler = null)
     {
+        // Report failures through the caller's handler when it has one, as a dialog otherwise.
+        Task ReportErrorAsync(string message, string title)
+            => errorHandler is { } handler
+                ? handler(message, title)
+                : MainVM.View!.MessageDialog(message, title: title);
+
         try
         {
             MainVM.IsEnabled = false;
@@ -155,11 +181,13 @@ public class Scripting
                 // Roslyn's scripting engine always converts two assemblies to metadata references
                 // through Assembly.Location: the core library (typeof(object).Assembly) and the
                 // globals-type host assembly (IScriptInterface's UndertaleModLib). On Android those
-                // locations are fabricated paths inside the APK (e.g. "/System.Private.CoreLib.dll")
-                // and do not exist on disk, which crashed compilation with FileNotFoundException no
-                // matter how many explicit references were supplied. Redirect every such conversion
-                // to the extracted plain DLL copies instead (Roslyn >= 4.4 provides
-                // ScriptOptions.WithCreateFromFileFunc for exactly this purpose).
+                // locations are names inside the APK, not filesystem paths: "/System.Private.CoreLib.dll"
+                // without AOT, but just "System.Private.CoreLib" (no extension) with Mono AOT, plus
+                // bare relative names like "UndertaleModLib.dll". None of them exist on disk, which
+                // crashed compilation with FileNotFoundException no matter how many explicit
+                // references were supplied. Redirect every such conversion to the extracted plain
+                // DLL copies instead (Roslyn >= 4.4 provides ScriptOptions.WithCreateFromFileFunc
+                // for exactly this purpose).
                 options = TryUseFileBasedAssemblyReferences(options, ScriptAssembliesDirectory);
             }
             else
@@ -184,7 +212,7 @@ public class Scripting
                 // Compilation infrastructure failures (e.g. missing reference assemblies on
                 // platforms that don't support scripting) must surface as a dialog, not escape the
                 // async void command handler and crash the whole app.
-                await MainVM.View!.MessageDialog(e.ToString(), title: LocalizationSource.GetString("Msg_ScriptCompilationError"));
+                await ReportErrorAsync(e.ToString(), LocalizationSource.GetString("Msg_ScriptCompilationError"));
 
                 return null;
             }
@@ -193,12 +221,14 @@ public class Scripting
             if (errors.Any())
             {
                 string message = String.Join("\n", errors);
-                await MainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptCompilationError"));
+                await ReportErrorAsync(message, LocalizationSource.GetString("Msg_ScriptCompilationError"));
 
                 return null;
             }
 
-            ScriptGlobals scripting = new(this, filePath);
+            // Platforms that drive scripts without a UI (the Android cross-app API) pass their own
+            // capturing host; everything else runs with the regular UI-backed host.
+            IScriptInterface scripting = hostFactory?.Invoke(this, filePath) ?? new ScriptGlobals(this, filePath);
 
             try
             {
@@ -214,15 +244,15 @@ public class Scripting
             }
             catch (ScriptException e)
             {
-                await MainVM.View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_ErrorFromScript"));
+                await ReportErrorAsync(e.Message, LocalizationSource.GetString("Msg_ErrorFromScript"));
             }
             catch (Exception e)
             {
-                await MainVM.View!.MessageDialog(e.ToString(), title: LocalizationSource.GetString("Msg_ScriptExecutionError"));
+                await ReportErrorAsync(e.ToString(), LocalizationSource.GetString("Msg_ScriptExecutionError"));
             }
             finally
             {
-                scripting.Dispose();
+                (scripting as IDisposable)?.Dispose();
             }
         }
         finally
@@ -267,7 +297,8 @@ public class Scripting
     /// <summary>
     /// Redirects Roslyn's implicit "Assembly → metadata reference" conversions (used for the core
     /// library <c>typeof(object).Assembly</c> and for the globals-type host assembly) away from
-    /// <see cref="Assembly.Location"/> — a fabricated in-APK path like "/System.Private.CoreLib.dll"
+    /// <see cref="Assembly.Location"/> — an in-APK name like "/System.Private.CoreLib.dll" without
+    /// AOT, or a bare name like "System.Private.CoreLib" (no extension) under Mono AOT
     /// on Android — to the plain DLL copies inside <paramref name="assembliesDirectory"/>.
     /// Roslyn exposes <c>ScriptOptions.WithCreateFromFileFunc</c> for exactly this purpose; it is
     /// internal and its return type is inaccessible, so the delegate is assembled via expression
@@ -328,8 +359,8 @@ public class Scripting
 
     /// <summary>
     /// Body of the <c>CreateFromFileFunc</c> delegate: resolves <paramref name="path"/> against the
-    /// extracted script-assembly copies when the original location does not exist on disk and
-    /// returns an in-memory metadata reference. The actual return value is Roslyn's internal
+    /// extracted script-assembly copies when the runtime-reported location does not exist on disk
+    /// and returns an in-memory metadata reference. The actual return value is Roslyn's internal
     /// <c>MetadataImageReference</c>, hence the <see cref="object"/> signature.
     /// </summary>
     private static object CreateScriptAssemblyReference(string path,
@@ -337,14 +368,7 @@ public class Scripting
                                                         MetadataReferenceProperties properties,
                                                         string assembliesDirectory)
     {
-        string localCandidate = Path.Combine(assembliesDirectory, Path.GetFileName(path));
-        if (File.Exists(localCandidate))
-        {
-            path = localCandidate;
-        }
-        // Otherwise keep Roslyn's original location, which is valid on platforms where real
-        // on-disk assemblies exist.
-
+        path = ResolveExtractedPath(path, assembliesDirectory) ?? path;
         Stream stream = File.OpenRead(path);
         try
         {
@@ -355,6 +379,56 @@ public class Scripting
             stream.Dispose();
             throw;
         }
+    }
+
+    /// <summary>
+    /// Maps an assembly location reported by the runtime onto the extracted plain DLL copy, or
+    /// null when no extracted copy matches (desktop: real on-disk assemblies are returned as-is).
+    /// Under Mono AOT the reported locations need normalization: the core library is reported
+    /// without its ".dll" extension (e.g. "System.Private.CoreLib"), the host assembly as a bare
+    /// relative file name, and AOT native images live under names like
+    /// "libaot-System.Private.CoreLib.dll.so" - none of which exist on the filesystem.
+    /// </summary>
+    private static string? ResolveExtractedPath(string path, string assembliesDirectory)
+    {
+        string fileName = Path.GetFileName(path);
+        if (string.IsNullOrEmpty(fileName))
+            return null;
+
+        // Fast path: the reported file name matches the extracted copy directly.
+        string candidate = Path.Combine(assembliesDirectory, fileName);
+        if (File.Exists(candidate))
+            return candidate;
+
+        string baseName = fileName;
+        if (baseName.EndsWith(".dll.so", StringComparison.OrdinalIgnoreCase))
+            baseName = baseName[..^3]; // AOT native image ("libaot-Foo.dll.so")
+        else if (baseName.EndsWith(".so", StringComparison.OrdinalIgnoreCase))
+            baseName = baseName[..^3]; // non-AOT native image ("libFoo.dll.so")
+        baseName = TrimAotPrefix(baseName);
+        if (!baseName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            baseName += ".dll";
+
+        candidate = Path.Combine(assembliesDirectory, baseName);
+        if (File.Exists(candidate))
+            return candidate;
+
+        // Android's filesystem is case-sensitive while the reported name may differ in case, so
+        // fall back to matching by simple name.
+        return Directory
+            .EnumerateFiles(assembliesDirectory, Path.GetFileNameWithoutExtension(baseName) + ".dll",
+                            SearchOption.TopDirectoryOnly)
+            .FirstOrDefault();
+    }
+
+    /// <summary>Strips the Mono AOT native-image name prefixes ("libaot-" / "lib").</summary>
+    private static string TrimAotPrefix(string name)
+    {
+        if (name.StartsWith("libaot-", StringComparison.OrdinalIgnoreCase))
+            return name["libaot-".Length..];
+        if (name.StartsWith("lib", StringComparison.OrdinalIgnoreCase))
+            return name[3..];
+        return name;
     }
 }
 
@@ -372,7 +446,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         this.scriptPath = scriptPath;
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         // Runs on whatever thread the script ended on; closing the simulated window touches the
         // visual tree, so it must be marshaled to the UI thread.
@@ -387,23 +461,23 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public string? ScriptPath => scriptPath;
 
-    public object Highlighted => throw new NotImplementedException();
+    public virtual object Highlighted => throw new NotImplementedException();
 
-    public object Selected => throw new NotImplementedException();
+    public virtual object Selected => throw new NotImplementedException();
 
-    public bool CanSave => throw new NotImplementedException();
+    public virtual bool CanSave => throw new NotImplementedException();
 
-    public bool ScriptExecutionSuccess => throw new NotImplementedException();
+    public virtual bool ScriptExecutionSuccess => throw new NotImplementedException();
 
-    public string ScriptErrorMessage => throw new NotImplementedException();
+    public virtual string ScriptErrorMessage => throw new NotImplementedException();
 
     public string? ExePath => Scripting.ExePathOverride ?? Path.GetDirectoryName(Environment.ProcessPath);
 
-    public string ScriptErrorType => throw new NotImplementedException();
+    public virtual string ScriptErrorType => throw new NotImplementedException();
 
-    public bool IsAppClosed => throw new NotImplementedException();
+    public virtual bool IsAppClosed => throw new NotImplementedException();
 
-    public Action<Action> MainThreadAction => Dispatcher.UIThread.Invoke;
+    public virtual Action<Action> MainThreadAction => Dispatcher.UIThread.Invoke;
 
     /// <summary>
     /// Shows a dialog on the UI thread and blocks the caller until it is dismissed. Scripts run
@@ -427,7 +501,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
             Dispatcher.UIThread.InvokeAsync(dialog).GetAwaiter().GetResult();
     }
 
-    public void AddProgress(int amount)
+    public virtual void AddProgress(int amount)
     {
         loaderValue += amount;
 
@@ -437,7 +511,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void AddProgressParallel(int amount)
+    public virtual void AddProgressParallel(int amount)
     {
         Interlocked.Add(ref loaderValue, amount);
 
@@ -452,17 +526,17 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         // TODO: Implement
     }
 
-    public Task ClickableSearchOutput(string title, string query, int resultsCount, IOrderedEnumerable<KeyValuePair<string, List<(int lineNum, string codeLine)>>> resultsDict, bool showInDecompiledView, IOrderedEnumerable<string>? failedList = null)
+    public virtual Task ClickableSearchOutput(string title, string query, int resultsCount, IOrderedEnumerable<KeyValuePair<string, List<(int lineNum, string codeLine)>>> resultsDict, bool showInDecompiledView, IOrderedEnumerable<string>? failedList = null)
     {
         throw new NotImplementedException();
     }
 
-    public Task ClickableSearchOutput(string title, string query, int resultsCount, IDictionary<string, List<(int lineNum, string codeLine)>> resultsDict, bool showInDecompiledView, IEnumerable<string>? failedList = null)
+    public virtual Task ClickableSearchOutput(string title, string query, int resultsCount, IDictionary<string, List<(int lineNum, string codeLine)>> resultsDict, bool showInDecompiledView, IEnumerable<string>? failedList = null)
     {
         throw new NotImplementedException();
     }
 
-    public void EnableUI()
+    public virtual void EnableUI()
     {
         Dispatcher.UIThread.Invoke(() => mainVM.IsEnabled = true);
     }
@@ -490,12 +564,12 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         return code.Disassemble(mainVM.Data!.Variables, mainVM.Data!.CodeLocals?.For(code));
     }
 
-    public int GetProgress()
+    public virtual int GetProgress()
     {
         return loaderValue;
     }
 
-    public void HideProgressBar()
+    public virtual void HideProgressBar()
     {
         Dispatcher.UIThread.Invoke(CloseLoaderWindow);
     }
@@ -506,7 +580,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         loaderWindow = null;
     }
 
-    public void IncrementProgress()
+    public virtual void IncrementProgress()
     {
         loaderValue++;
 
@@ -516,7 +590,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void IncrementProgressParallel()
+    public virtual void IncrementProgressParallel()
     {
         Interlocked.Increment(ref loaderValue);
 
@@ -526,23 +600,23 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         }, DispatcherPriority.Background);
     }
 
-    public void InitializeScriptDialog()
+    public virtual void InitializeScriptDialog()
     {
         // TODO: Implement
     }
 
-    public bool LintUMTScript(string path)
+    public virtual bool LintUMTScript(string path)
     {
         throw new NotImplementedException();
     }
 
-    public bool MakeNewDataFile()
+    public virtual bool MakeNewDataFile()
     {
         Dispatcher.UIThread.Invoke(() => mainVM.NewData());
         return true;
     }
 
-    public string? PromptChooseDirectory()
+    public virtual string? PromptChooseDirectory()
     {
         // The dialog is shown on the UI thread while this (script) thread blocks: the Android SAF
         // pickers need the main thread to launch their intent and deliver the result.
@@ -557,7 +631,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         return folders[0].TryGetLocalPath();
     }
 
-    public string? PromptLoadFile(string? defaultExt, string? filter)
+    public virtual string? PromptLoadFile(string? defaultExt, string? filter)
     {
         // TODO: filter
         var files = ShowDialogBlocking(() => mainVM.View!.OpenFileDialog(new FilePickerOpenOptions()
@@ -572,7 +646,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         return files[0].TryGetLocalPath();
     }
 
-    public string? PromptSaveFile(string defaultExt, string filter)
+    public virtual string? PromptSaveFile(string defaultExt, string filter)
     {
         // TODO: filter
         var file = ShowDialogBlocking(() => mainVM.View!.SaveFileDialog(new FilePickerSaveOptions()
@@ -588,12 +662,12 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         return file.TryGetLocalPath();
     }
 
-    public bool RunUMTScript(string path)
+    public virtual bool RunUMTScript(string path)
     {
         throw new NotImplementedException();
     }
 
-    public void ScriptError(string error, string? title = null, bool SetConsoleText = true)
+    public virtual void ScriptError(string error, string? title = null, bool SetConsoleText = true)
     {
         ShowDialogBlocking(() => mainVM.View!.MessageDialog(error, title ?? LocalizationSource.GetString("Common_Error")));
 
@@ -603,38 +677,38 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         }
     }
 
-    public string? ScriptInputDialog(string title, string label, string defaultInput, string cancelText, string submitText, bool isMultiline, bool preventClose)
+    public virtual string? ScriptInputDialog(string title, string label, string defaultInput, string cancelText, string submitText, bool isMultiline, bool preventClose)
     {
         // TODO: cancelText, submitText, preventClose
         return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultInput, title: title, isMultiline: isMultiline));
     }
 
-    public void ScriptMessage(string message)
+    public virtual void ScriptMessage(string message)
     {
         ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptMessageTitle")));
     }
 
-    public void ScriptOpenURL(string url)
+    public virtual void ScriptOpenURL(string url)
     {
         ShowDialogBlocking(() => mainVM.View!.LaunchUriAsync(new(url)));
     }
 
-    public bool ScriptQuestion(string message)
+    public virtual bool ScriptQuestion(string message)
     {
         return ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, LocalizationSource.GetString("Msg_ScriptQuestionTitle"), MessageWindow.Buttons.YesNo)) == MessageWindow.Result.Yes;
     }
 
-    public void ScriptWarning(string message)
+    public virtual void ScriptWarning(string message)
     {
         ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptWarningTitle")));
     }
 
-    public void SetFinishedMessage(bool isFinishedMessageEnabled)
+    public virtual void SetFinishedMessage(bool isFinishedMessageEnabled)
     {
         // TODO: Implement
     }
 
-    public void SetProgress(int value)
+    public virtual void SetProgress(int value)
     {
         loaderValue = value;
 
@@ -644,7 +718,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void SetProgressBar(string message, string status, double progressValue, double maxValue)
+    public virtual void SetProgressBar(string message, string status, double progressValue, double maxValue)
     {
         loaderValue = (int)progressValue;
 
@@ -659,7 +733,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void SetProgressBar()
+    public virtual void SetProgressBar()
     {
         Dispatcher.UIThread.Invoke(() =>
         {
@@ -668,39 +742,39 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void SetUMTConsoleText(string message)
+    public virtual void SetUMTConsoleText(string message)
     {
         Dispatcher.UIThread.Invoke(() => mainVM.CommandTextBoxText = message);
     }
 
-    public string? SimpleTextInput(string title, string label, string defaultValue, bool allowMultiline, bool showDialog = true)
+    public virtual string? SimpleTextInput(string title, string label, string defaultValue, bool allowMultiline, bool showDialog = true)
     {
         // TODO: showDialog
         return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultValue, title: title, isMultiline: allowMultiline));
     }
 
-    public void SimpleTextOutput(string title, string label, string message, bool allowMultiline)
+    public virtual void SimpleTextOutput(string title, string label, string message, bool allowMultiline)
     {
         ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, message, title: title, isMultiline: allowMultiline, isReadOnly: true));
     }
 
-    public void StartProgressBarUpdater()
+    public virtual void StartProgressBarUpdater()
     {
         // TODO: Implement
     }
 
-    public Task StopProgressBarUpdater()
+    public virtual Task StopProgressBarUpdater()
     {
         // TODO: Implement
         return Task.CompletedTask;
     }
 
-    public void UpdateProgressBar(string message, string status, double progressValue, double maxValue)
+    public virtual void UpdateProgressBar(string message, string status, double progressValue, double maxValue)
     {
         SetProgressBar(message, status, progressValue, maxValue);
     }
 
-    public void UpdateProgressStatus(string status)
+    public virtual void UpdateProgressStatus(string status)
     {
         Dispatcher.UIThread.Post(() =>
         {
@@ -708,7 +782,7 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         });
     }
 
-    public void UpdateProgressValue(double progressValue)
+    public virtual void UpdateProgressValue(double progressValue)
     {
         loaderValue = (int)progressValue;
 

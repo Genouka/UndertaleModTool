@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Underanalyzer.Decompiler;
 using UndertaleModTool.Localization;
+using UndertaleModTool.Update;
 
 namespace UndertaleModTool
 {
@@ -51,6 +52,28 @@ namespace UndertaleModTool
         public bool AutomaticFileAssociation { get; set; } = true;
         public bool TempRunMessageShow { get; set; } = true;
         public bool CheckForUpdates { get; set; } = true;
+
+        /// <summary>
+        /// Which update channel is used when checking for updates.
+        /// </summary>
+        public UpdateChannel UpdateChannel { get; set; } = Update.UpdateChannel.Nightly;
+
+        /// <summary>
+        /// Where stable releases are downloaded from. Nightly builds always come from GitHub.
+        /// </summary>
+        public UpdateSource UpdateSource { get; set; } = Update.UpdateSource.GitHub;
+
+        /// <summary>
+        /// MirrorChyan activation key used to download stable releases. Stored in the local settings
+        /// file only and never shown in messages or logs.
+        /// </summary>
+        public string MirrorChyanCdk { get; set; } = "";
+
+        /// <summary>
+        /// Tag of the last stable release installed through the updater; used as the installed
+        /// version for stable update checks.
+        /// </summary>
+        public string LastStableVersion { get; set; } = "";
 
         public bool WarnOnClose { get; set; } = true;
 

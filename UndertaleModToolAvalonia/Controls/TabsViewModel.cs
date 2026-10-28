@@ -107,7 +107,14 @@ public partial class TabsViewModel : ObservableObject
 
         Tabs.Remove(tab);
 
-        if (TabSelected != selected)
+        if (Tabs.Count == 0)
+        {
+            // The selection binding may not clear itself when the last tab is removed; leaving a
+            // stale TabSelected keeps the closed tab (and its content) alive.
+            TabSelected = null;
+            TabSelectedIndex = -1;
+        }
+        else if (TabSelected != selected)
         {
             if (index >= Tabs.Count)
                 index = Tabs.Count - 1;
@@ -137,6 +144,8 @@ public partial class TabsViewModel : ObservableObject
             tab.OnClose();
         }
         Tabs.Clear();
+        TabSelected = null;
+        TabSelectedIndex = -1;
     }
 
     public async Task<bool> TabSaveAll()

@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using Avalonia.Threading;
 
 namespace UndertaleModToolAvalonia;
 
@@ -45,29 +47,49 @@ public partial class SettingsFile
         return (settings, null);
     }
 
-    public static Exception? LoadStyles()
+    /// <summary>
+    /// Reads and deserializes <c>Settings.json</c> on a worker thread. Theme application is
+    /// deferred (see <see cref="ApplyTheme"/>) because the UI thread may not exist yet.
+    /// </summary>
+    public static Task<(SettingsFile settingsFile, Exception? exception)> LoadAsync()
+        => Task.Run(static () => Load());
+
+    /// <summary>
+    /// Reads and parses <c>Styles.xaml</c>, then installs the parsed styles. The file read runs
+    /// asynchronously; the parse/install part must run on the UI thread (Avalonia resources and
+    /// <see cref="Application.Styles"/> are UI-thread objects).
+    /// </summary>
+    public static async Task<Exception?> LoadStylesAsync()
     {
         // Load Styles.xaml
         string stylesPath = Path.Join(roamingAppData, "Styles.xaml");
 
-        if (File.Exists(stylesPath))
+        if (!File.Exists(stylesPath))
+            return null;
+
+        string xaml;
+        try
         {
-            Styles styles;
-            try
-            {
-                string xaml = File.ReadAllText(stylesPath);
-                styles = AvaloniaRuntimeXamlLoader.Parse<Styles>(xaml);
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
+            xaml = await File.ReadAllTextAsync(stylesPath);
+        }
+        catch (Exception ex)
+        {
+            return ex;
+        }
+
+        try
+        {
+            Styles styles = AvaloniaRuntimeXamlLoader.Parse<Styles>(xaml);
 
             if (App.CurrentCustomStyles is not null)
                 App.Current!.Styles.Remove(App.CurrentCustomStyles);
 
             App.CurrentCustomStyles = styles;
             App.Current!.Styles.Add(styles);
+        }
+        catch (Exception ex)
+        {
+            return ex;
         }
 
         return null;
@@ -108,14 +130,26 @@ public partial class SettingsFile
         set
         {
             field = value;
-            App.Current?.RequestedThemeVariant = value switch
-            {
-                ThemeValue.SystemDefault => ThemeVariant.Default,
-                ThemeValue.Light => ThemeVariant.Light,
-                ThemeValue.Dark => ThemeVariant.Dark,
-                _ => throw new NotImplementedException(),
-            };
+            ApplyTheme();
         }
+    }
+
+    /// <summary>
+    /// Applies <see cref="Theme"/> to the running application. Safe to call after loading settings
+    /// on a worker thread: it only touches Avalonia when called on the UI thread.
+    /// </summary>
+    public void ApplyTheme()
+    {
+        if (App.Current is null || !Dispatcher.UIThread.CheckAccess())
+            return;
+
+        App.Current.RequestedThemeVariant = Theme switch
+        {
+            ThemeValue.SystemDefault => ThemeVariant.Default,
+            ThemeValue.Light => ThemeVariant.Light,
+            ThemeValue.Dark => ThemeVariant.Dark,
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public bool StartMaximized { get; set; } = true;
@@ -159,6 +193,39 @@ public partial class SettingsFile
 
     /// <summary>Check for a newer nightly build automatically when the app starts.</summary>
     public bool CheckForUpdates { get; set; } = true;
+
+    /// <summary>
+    /// Ask for confirmation before running a script. Defaults to on for touch platforms, where a
+    /// menu item can be activated by an accidental tap next to the intended entry.
+    /// </summary>
+    public bool ConfirmBeforeRunningScripts { get; set; } = OperatingSystem.IsAndroid();
+
+    /// <summary>Which update channel to use: published stable releases or nightly CI builds.</summary>
+    public UpdateChannel UpdateChannel { get; set; } = global::UndertaleModToolAvalonia.UpdateChannel.Nightly;
+
+    /// <summary>Where stable releases are downloaded from.</summary>
+    public UpdateSource UpdateSource { get; set; } = global::UndertaleModToolAvalonia.UpdateSource.GitHub;
+
+    /// <summary>MirrorChyan activation key. Required to download stable builds from MirrorChyan.</summary>
+    public string MirrorChyanCdk { get; set; } = "";
+
+    /// <summary>Tag of the last stable release installed through the update flow.</summary>
+    public string LastStableVersion { get; set; } = "";
+
+    public enum DrawerModeValue
+    {
+        /// <summary>Expanded (push layout) on wide screens, collapsed (overlay drawer) on narrow ones.</summary>
+        Auto = 0,
+        /// <summary>Desktop-style layout: the explorer sidebar is permanently visible and resizable.</summary>
+        AlwaysExpanded = 1,
+        /// <summary>Phone-style layout: the explorer is a slide-in drawer opened by button, edge swipe or back gesture.</summary>
+        AlwaysCollapsed = 2,
+    }
+
+    /// <summary>
+    /// How the asset explorer sidebar (the former fixed left panel) is displayed.
+    /// </summary>
+    public DrawerModeValue DrawerMode { get; set; } = DrawerModeValue.Auto;
 
     public bool AlwaysSaveDataInProjectDestination { get; set; } = true;
 

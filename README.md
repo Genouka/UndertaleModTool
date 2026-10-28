@@ -1,7 +1,7 @@
 # UndertaleModTool (Genouka Fork)
 
 ![GitHub Release](https://img.shields.io/github/v/release/genouka/UndertaleModTool?style=flat) [![GitHub](https://img.shields.io/github/license/genouka/UndertaleModTool?logo=github)](https://github.com/UnderminersTeam/UndertaleModTool/blob/master/LICENSE.txt)
-![GitHub Repo stars](https://img.shields.io/github/stars/genouka/UndertaleModTool?style=flat) [![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/svg-badge.svg)](https://hosted.weblate.org/engage/qiuutmtv4/) [![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126) [![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200)
+![GitHub Repo stars](https://img.shields.io/github/stars/genouka/UndertaleModTool?style=flat) ![Download total](https://img.shields.io/github/downloads/genouka/UndertaleModTool/total) [![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/svg-badge.svg)](https://hosted.weblate.org/engage/qiuutmtv4/) [![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126) [![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200) [![Static Badge](https://img.shields.io/badge/QQ_Group-517549773-purple?style=flat-square)](https://qm.qq.com/q/hu0rdlwbYY)
 
 **This is an unofficial fork of UndertaleModTool!**
 
@@ -28,9 +28,7 @@ If you are looking for the official version instead of the version I forked, ple
 
 如果你在找官方的版本而不是我Fork的版本，请前往[这里](https://github.com/UnderminersTeam/UndertaleModTool/)
 
-[QQ群](https://qm.qq.com/q/V1LyuIu3IY) |  [哔哩哔哩](https://space.bilibili.com/3493116076100126)
-
-## What do I change?/我做了什么修改？
+## What do this fork changed?/这个版本做了什么修改？
 
 - Avalonia App for Windows/Linux/MacOS/Android 跨平台支持
 
@@ -136,12 +134,18 @@ If you are looking for the official version instead of the version I forked, ple
 Without the following projects as a foundation, this project would never have been born!
 
 - [UndertaleModTool(UnderminersTeam)](https://github.com/UnderminersTeam/UndertaleModTool/) Original version of UndertaleModTool
-- [UndertaleModTool(luizzeroxis)](https://github.com/luizzeroxis/UndertaleModTool/) Avalonia version for desktop
-- [GUTMT4A(Genouka)](https://github.com/QiumingOrg/GUTMT4A) Android version(v3)
-- [QiuUTMTv4(Genouka)](https://github.com/QiumingOrg/QiuUTMTv4) Android version(v4)
-- [QiuMagickNet(Genouka)](https://github.com/orgs/QiuMagickNet/repositories) Build `Magick.NET` nupkgs for Android.
+- [UndertaleModTool(luizzeroxis)](https://github.com/luizzeroxis/UndertaleModTool/) An avalonia version fork for desktop
+- [GUTMT4A(Genouka)](https://github.com/QiumingOrg/GUTMT4A) An old MAUI android version (QiuUTMTv3)
+- [QiuUTMTv4(Genouka)](https://github.com/QiumingOrg/QiuUTMTv4) An old avalonia android version (QiuUTMTv4)
+- [QiuMagickNet(Genouka)](https://github.com/orgs/QiuMagickNet/repositories) Build unofficial `Magick.NET` nupkgs for Android.
+- [SDL3-CS](https://github.com/edwardgushchin/SDL3-CS) A wonderful c# binding for SDL3
   
 ## 捐赠/Donate
 
-Wechat/微信:
-![mm_reward_qrcode](https://github.com/user-attachments/assets/8f442af8-fba5-41fb-ac19-0977744520a0)
+* Afdian/爱发电：
+
+  https://afdian.com/a/genouka
+
+*  Wechat/微信:
+
+  ![mm_reward_qrcode](https://github.com/user-attachments/assets/8f442af8-fba5-41fb-ac19-0977744520a0)

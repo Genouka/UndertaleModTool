@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -35,7 +36,8 @@ public partial class MainViewModel : ObservableObject
     public List<string> LazyErrorMessages = [];
 
     // Settings
-    public SettingsFile Settings { get; init; }
+    [ObservableProperty]
+    public partial SettingsFile Settings { get; set; } = new();
 
     // Scripting
     public Scripting Scripting = null!;
@@ -52,6 +54,13 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool IsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// True while the asynchronous startup work (settings, custom styles, localization, welcome
+    /// tab) is running. The main view overlays a progress indicator while this is set.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool IsLoading { get; set; } = true;
 
     // Data
     [ObservableProperty]
@@ -116,9 +125,7 @@ public partial class MainViewModel : ObservableObject
     {
         ServiceProvider = serviceProvider;
 
-        Settings = LoadSettings();
-
-        WindowState = Settings.StartMaximized ? WindowState.Maximized : WindowState.Normal;
+        Scripting = new(this);
 
         AudioPlayer.Init(
             f => Dispatcher.UIThread.Post(f),
@@ -133,81 +140,123 @@ public partial class MainViewModel : ObservableObject
 
         DataExplorer = new(this);
         Tabs = new(this);
-
-        _ = TabOpen(new DescriptionViewModel(
-            LocalizationSource.GetString("Main_WelcomeHeading"),
-            LocalizationSource.GetString("Main_WelcomeDescription")));
     }
 
-    SettingsFile LoadSettings()
+    Task? initializationTask;
+
+    /// <summary>
+    /// Runs the startup work that does not need to block window creation: settings and custom
+    /// styles are read off the UI thread, then applied here; the scripting engine is already
+    /// available from the constructor so API clients can run scripts while the UI is loading.
+    /// Idempotent; the main view and <see cref="OnLoadedAsync"/> both await this.
+    /// </summary>
+    public Task InitializeAsync()
+        => initializationTask ??= InitializeCoreAsync();
+
+    async Task InitializeCoreAsync()
     {
-        (SettingsFile settingsFile, Exception? ex) = SettingsFile.Load();
+        IsLoading = true;
+        IsEnabled = false;
 
-        if (ex is not null)
+        try
         {
-            LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorSettingsLoading")}\n{ex.Message}\n{LocalizationSource.GetString("Msg_DefaultSettingsLoaded")}");
-        }
+            (SettingsFile settings, Exception? settingsEx) = await SettingsFile.LoadAsync();
+            Settings = settings;
 
-        Exception? stylesEx = SettingsFile.LoadStyles();
-        if (stylesEx is not null)
+            if (settingsEx is not null)
+            {
+                LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorSettingsLoading")}\n{settingsEx.Message}\n{LocalizationSource.GetString("Msg_DefaultSettingsLoaded")}");
+            }
+
+            Settings.ApplyTheme();
+            WindowState = Settings.StartMaximized ? WindowState.Maximized : WindowState.Normal;
+
+            Exception? stylesEx = await SettingsFile.LoadStylesAsync();
+            if (stylesEx is not null)
+            {
+                LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorStylesLoading")}\n{stylesEx.Message}");
+            }
+
+            if (!string.IsNullOrEmpty(Settings.Language))
+                LocalizationSource.Instance.CurrentCulture = new System.Globalization.CultureInfo(Settings.Language);
+
+            await TabOpen(new DescriptionViewModel(
+                LocalizationSource.GetString("Main_WelcomeHeading"),
+                LocalizationSource.GetString("Main_WelcomeDescription")));
+        }
+        catch (Exception ex)
         {
-            LazyErrorMessages.Add($"{LocalizationSource.GetString("Msg_ErrorStylesLoading")}\n{stylesEx.Message}");
+            LazyErrorMessages.Add(string.Format(LocalizationSource.GetString("Msg_LoadError"), ex.Message));
         }
-
-        return settingsFile;
-    }
-
-    public void Initialize()
-    {
-        Scripting = new(ServiceProvider);
-
-        if (!string.IsNullOrEmpty(Settings.Language))
-            LocalizationSource.Instance.CurrentCulture = new System.Globalization.CultureInfo(Settings.Language);
+        finally
+        {
+            IsEnabled = true;
+            IsLoading = false;
+        }
     }
 
     /// <summary>
-    /// Guards the one-time startup work in <see cref="OnLoaded"/>. Single-window platforms
+    /// Guards the one-time startup work in <see cref="OnLoadedAsync"/>. Single-window platforms
     /// (Android) move the main view in and out of the visual tree every time a modal dialog opens
     /// or closes, which re-fires Avalonia's <c>Loaded</c> event and would otherwise re-run the
     /// startup checks (e.g. the automatic update check) on every dialog dismissal.
     /// </summary>
     bool onLoadedRan = false;
 
-    public async void OnLoaded()
+    public async Task OnLoadedAsync()
     {
         if (onLoadedRan)
             return;
         onLoadedRan = true;
 
-        foreach (string message in LazyErrorMessages)
+        try
         {
-            await View!.MessageDialog(message);
-        }
-        LazyErrorMessages.Clear();
+            // Settings/styles/localization are loaded asynchronously so the window can be shown
+            // (with IsLoading=true) before touching the filesystem or parsing Styles.xaml.
+            await InitializeAsync();
 
-        // Storage access first: on Android 10 the answer decides whether the user has to be walked
-        // through the preinstall APK flow, and asking before the update check keeps the two dialogs
-        // from stacking on top of each other.
-        await CheckStorageAccessAsync();
-
-        CheckForUpdatesAutomatically();
-
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            if (desktop.Args?.Length >= 1)
+            foreach (string message in LazyErrorMessages)
             {
-                try
+                await View!.MessageDialog(message);
+            }
+            LazyErrorMessages.Clear();
+
+            // Storage access first: on Android 10 the answer decides whether the user has to be walked
+            // through the preinstall APK flow, and asking before the update check keeps the two dialogs
+            // from stacking on top of each other.
+            await CheckStorageAccessAsync();
+
+            CheckForUpdatesAutomatically();
+
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                if (desktop.Args?.Length >= 1)
                 {
-                    using FileStream stream = File.OpenRead(desktop.Args[0]);
-                    if (await LoadData(stream))
+                    try
                     {
-                        DataPath = stream.Name;
+                        using FileStream stream = File.OpenRead(desktop.Args[0]);
+                        if (await LoadData(stream))
+                        {
+                            DataPath = stream.Name;
+                        }
+                    }
+                    catch (SystemException e)
+                    {
+                        await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_ErrorOpeningDataFileArgument"), e.Message));
                     }
                 }
-                catch (SystemException e)
-                {
-                    await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_ErrorOpeningDataFileArgument"), e.Message));
-                }
+            }
+        }
+        catch (Exception e)
+        {
+            // This runs from a Loaded event handler; an escaping exception would crash the app.
+            if (View is { } view)
+            {
+                await view.MessageDialog(string.Format(LocalizationSource.GetString("Msg_LoadError"), e.Message));
+            }
+            else
+            {
+                Debug.WriteLine(e);
             }
         }
     }
@@ -427,7 +476,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 audioGroupDataList[audioGroupId] = audioGroupData;
                 return audioGroupData;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return null;
             }
@@ -907,6 +956,10 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         if (files.Count != 1)
             return;
 
+        string? filePath = files[0].TryGetLocalPath();
+        if (!await ConfirmRunScriptAsync(Path.GetFileName(filePath) ?? files[0].Name, filePath))
+            return;
+
         string text;
         using (Stream stream = await files[0].OpenReadAsync())
         {
@@ -914,7 +967,6 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             text = streamReader.ReadToEnd();
         }
 
-        string? filePath = files[0].TryGetLocalPath();
         await Scripting.RunScript(WithLineDirective(text, filePath), filePath);
 
         CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(filePath) ?? "Script");
@@ -922,6 +974,9 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
     public async void ScriptsRunScript(string filePath)
     {
+        if (!await ConfirmRunScriptAsync(Path.GetFileName(filePath), filePath))
+            return;
+
         string text = File.ReadAllText(filePath);
 
         await Scripting.RunScript(WithLineDirective(text, filePath), filePath);
@@ -945,6 +1000,9 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             return;
         }
 
+        if (!await ConfirmRunScriptAsync(Path.GetFileName(path), path))
+            return;
+
         string text;
         using (StreamReader streamReader = new(path))
         {
@@ -954,6 +1012,22 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         await Scripting.RunScript(WithLineDirective(text, path), path);
 
         CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(path));
+    }
+
+    /// <summary>
+    /// Guards script execution with a confirmation dialog. Scripts can modify the loaded data and
+    /// run arbitrary code, so a menu entry must not execute on the first accidental tap.
+    /// </summary>
+    async Task<bool> ConfirmRunScriptAsync(string scriptName, string? filePath)
+    {
+        if (!Settings.ConfirmBeforeRunningScripts)
+            return true;
+
+        string target = string.IsNullOrEmpty(filePath) ? scriptName : filePath;
+        string message = string.Format(LocalizationSource.GetString("Msg_RunScriptQuestion"), target);
+        return await View!.MessageDialog(message,
+            title: LocalizationSource.GetString("Msg_RunScriptTitle"),
+            buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes;
     }
 
     /// <summary>
@@ -1026,7 +1100,8 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         // Check if the save directory is empty, and warn if so
         try
         {
-            if (!Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(destinationDataPath)).Any())
+            if (Path.GetDirectoryName(destinationDataPath) is { } destinationDirectory &&
+                !Directory.EnumerateFileSystemEntries(destinationDirectory).Any())
             {
                 await View!.MessageDialog(LocalizationSource.GetString("Msg_EmptyDirectoryWarning"));
             }
@@ -1089,7 +1164,17 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
         // Project folder
         IReadOnlyList<IStorageFolder> projectFolderList = await View!.OpenFolderDialog(new() { Title = LocalizationSource.GetString("Msg_SelectProjectFolder") });
-        string? projectFolderPath = projectFolderList.ElementAtOrDefault(0)?.TryGetLocalPath();
+        string? pickedFolderPath = projectFolderList.ElementAtOrDefault(0)?.TryGetLocalPath();
+        if (pickedFolderPath is null)
+        {
+            CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
+            return;
+        }
+
+        // The project itself needs an empty folder, but some folder pickers (notably Android's
+        // SAF picker) cannot create new folders, so whatever the user can pick often already
+        // contains files. Offer a project-named subfolder in that case instead of failing.
+        string? projectFolderPath = await ResolveProjectFolder(pickedFolderPath, projectName);
         if (projectFolderPath is null)
         {
             CommandTextBoxText = LocalizationSource.GetString("Msg_CancelledNewProject");
@@ -1114,7 +1199,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
         catch (ProjectException e)
         {
-            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedCreateProject"), e.Message));
+            await View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_FailedCreateProject"));
             CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectCreationFailed");
             return;
         }
@@ -1129,6 +1214,48 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         DataPath = destinationDataPath;
         SetProject(projectContext);
         CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ProjectCreated"), projectName);
+    }
+
+    /// <summary>
+    /// Resolves the folder to create a project in. The project needs an empty folder; when the
+    /// picked one isn't (some pickers, notably Android's SAF folder picker, cannot even create
+    /// new folders), offers a project-named subfolder instead. Returns <see langword="null"/> if
+    /// the user declined.
+    /// </summary>
+    async Task<string?> ResolveProjectFolder(string pickedFolderPath, string projectName)
+    {
+        try
+        {
+            if (!Directory.EnumerateFileSystemEntries(pickedFolderPath).Any())
+                return pickedFolderPath;
+        }
+        catch (Exception)
+        {
+            // Can't inspect the folder; let creating the project report the real error.
+            return pickedFolderPath;
+        }
+
+        string subfolderPath = Path.Join(pickedFolderPath, GetSafeProjectFolderName(projectName));
+        MessageWindow.Result result = await View!.MessageDialog(
+            string.Format(LocalizationSource.GetString("Msg_ProjectFolderNotEmptyUseSubfolder"), subfolderPath),
+            buttons: MessageWindow.Buttons.YesNo);
+        return result == MessageWindow.Result.Yes ? subfolderPath : null;
+    }
+
+    /// <summary>
+    /// Turns a project name into a folder name that is valid on every platform the app runs on,
+    /// including FAT-formatted SD cards, where characters such as ':' are not allowed.
+    /// </summary>
+    static string GetSafeProjectFolderName(string projectName)
+    {
+        StringBuilder builder = new(projectName.Length);
+        foreach (char c in projectName)
+        {
+            builder.Append(c < 32 || "<>:\"/\\|?*".Contains(c) ? '_' : c);
+        }
+
+        string name = builder.ToString().Trim().TrimEnd('.');
+        return name.Length == 0 ? $"{LocalizationSource.GetString("Msg_NewMod")} Mod" : name;
     }
 
     public async void ProjectOpen()
@@ -1197,7 +1324,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
         catch (ProjectException e)
         {
-            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedLoadProject"), e.Message));
+            await View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_FailedLoadProject"));
             CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectFailedToOpen");
             return;
         }
@@ -1237,7 +1364,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
         catch (ProjectException e)
         {
-            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedSaveProject"), e.Message));
+            await View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_FailedSaveProject"));
         }
         catch (Exception e)
         {
@@ -1281,7 +1408,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
         catch (ProjectException e)
         {
-            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedLoadProject"), e.Message));
+            await View!.MessageDialog(e.Message, title: LocalizationSource.GetString("Msg_FailedLoadProject"));
             return;
         }
         catch (Exception e)
@@ -1314,6 +1441,12 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
         ClearProject();
         CommandTextBoxText = LocalizationSource.GetString("Msg_ProjectClosed");
+    }
+
+    public void HelpContributors()
+    {
+        if (View is Control view)
+            WindowHost.Show(WindowHost.ResolveOwner(view), new ContributorsWindow());
     }
 
     public async void HelpGitHub()
@@ -1384,8 +1517,8 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
     public bool IsUpdating { get; private set; } = false;
 
     /// <summary>
-    /// Automatically checks for a new nightly build on startup (if enabled in settings) and
-    /// prompts the user to update when one is available.
+    /// Automatically checks for a new build on startup (if enabled in settings) and prompts the
+    /// user to update when one is available.
     /// </summary>
     public async void CheckForUpdatesAutomatically()
     {
@@ -1397,14 +1530,17 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         try
         {
             using HttpClient client = UpdateChecker.CreateHttpClient();
-            UpdateChecker.UpdateInfo? info = await UpdateChecker.FetchLatestBuildAsync(client);
-            if (info is null || !UpdateChecker.IsNewerThanLocal(info))
+            UpdateCheckResult result = await UpdateChecker.CheckForUpdateAsync(client, Settings);
+            if (result.Status != UpdateCheckStatus.UpdateAvailable || result.Update is null)
                 return;
 
-            if (await View!.MessageDialog(LocalizationSource.GetString("Msg_UpdateAvailable"),
+            if (!await ConfirmMirrorChyanFallbackAsync(result))
+                return;
+
+            if (await View!.MessageDialog(GetUpdateAvailableMessage(result.Update!),
                     buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes)
             {
-                await UpdateAppAsync(info);
+                await UpdateAppAsync(result.Update);
             }
         }
         catch
@@ -1425,23 +1561,31 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         try
         {
             using HttpClient client = UpdateChecker.CreateHttpClient();
-            UpdateChecker.UpdateInfo? info = await UpdateChecker.FetchLatestBuildAsync(client);
-            if (info is null)
+            UpdateCheckResult result = await UpdateChecker.CheckForUpdateAsync(client, Settings);
+
+            if (result.Status == UpdateCheckStatus.Failed)
             {
-                await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToFindBuild"), UpdateChecker.WorkflowName));
+                await View!.MessageDialog(GetUpdateCheckFailureMessage(result));
                 return;
             }
-
-            if (!UpdateChecker.IsNewerThanLocal(info))
+            if (result.Status is UpdateCheckStatus.NotFound or UpdateCheckStatus.NoAsset)
+            {
+                await View!.MessageDialog(GetUpdateCheckNotFoundMessage(result));
+                return;
+            }
+            if (result.Status != UpdateCheckStatus.UpdateAvailable || result.Update is null)
             {
                 await View!.MessageDialog(LocalizationSource.GetString("Msg_UpToDate"));
                 return;
             }
 
-            if (await View!.MessageDialog(LocalizationSource.GetString("Msg_UpdateAvailable"),
+            if (!await ConfirmMirrorChyanFallbackAsync(result))
+                return;
+
+            if (await View!.MessageDialog(GetUpdateAvailableMessage(result.Update!),
                     buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes)
             {
-                await UpdateAppAsync(info);
+                await UpdateAppAsync(result.Update!);
             }
         }
         catch (Exception e)
@@ -1460,14 +1604,20 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         try
         {
             using HttpClient client = UpdateChecker.CreateHttpClient();
-            UpdateChecker.UpdateInfo? info = await UpdateChecker.FetchLatestBuildAsync(client);
-            if (info is null)
+            UpdateCheckResult result = await UpdateChecker.CheckForUpdateAsync(client, Settings, forcePackage: true);
+
+            if (result.Status == UpdateCheckStatus.Failed)
             {
-                await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToFindBuild"), UpdateChecker.WorkflowName));
+                await View!.MessageDialog(GetUpdateCheckFailureMessage(result));
+                return;
+            }
+            if (result.Status is UpdateCheckStatus.NotFound or UpdateCheckStatus.NoAsset)
+            {
+                await View!.MessageDialog(GetUpdateCheckNotFoundMessage(result));
                 return;
             }
 
-            if (!UpdateChecker.IsNewerThanLocal(info))
+            if (result.Status == UpdateCheckStatus.UpToDate)
             {
                 if (await View!.MessageDialog(LocalizationSource.GetString("Msg_AlreadyUpToDate"),
                         buttons: MessageWindow.Buttons.YesNo) != MessageWindow.Result.Yes)
@@ -1476,7 +1626,15 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 }
             }
 
-            await UpdateAppAsync(info);
+            if (!await ConfirmMirrorChyanFallbackAsync(result))
+                return;
+
+            // Stable + MirrorChyan only offers a package when a newer build exists, so there may be
+            // nothing to download even after the user asked to reinstall.
+            if (result.Update is null)
+                return;
+
+            await UpdateAppAsync(result.Update!);
         }
         catch (Exception e)
         {
@@ -1484,8 +1642,48 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
     }
 
-    /// <summary>Downloads and installs the given nightly build, then restarts the app.</summary>
-    async Task UpdateAppAsync(UpdateChecker.UpdateInfo info)
+    string GetUpdateAvailableMessage(UpdateInfo info)
+    {
+        if (info.Channel != UpdateChannel.Stable)
+            return LocalizationSource.GetString("Msg_UpdateAvailable");
+
+        return string.Format(LocalizationSource.GetString("Msg_UpdateAvailableWithVersion"),
+            info.Version, UpdateChecker.GetLocalVersion(Settings));
+    }
+
+    string GetUpdateCheckFailureMessage(UpdateCheckResult result)
+    {
+        if (result.IsMirrorChyanError && !string.IsNullOrWhiteSpace(result.ErrorMessage))
+            return result.ErrorMessage!;
+
+        return string.Format(LocalizationSource.GetString("Msg_FailedToFetchBuild"),
+            result.ErrorMessage ?? LocalizationSource.GetString("Msg_CheckInternetConnection"));
+    }
+
+    string GetUpdateCheckNotFoundMessage(UpdateCheckResult result)
+    {
+        if (result.Status == UpdateCheckStatus.NoAsset)
+            return LocalizationSource.GetString("Msg_UpdateNoAsset");
+        if (Settings.UpdateChannel == UpdateChannel.Nightly)
+            return string.Format(LocalizationSource.GetString("Msg_FailedToFindBuild"), UpdateChecker.WorkflowName);
+        return LocalizationSource.GetString("Msg_UpdateNoAsset");
+    }
+
+    /// <summary>
+    /// Asks for confirmation when MirrorChyan was selected without a CDK, since the update is then
+    /// downloaded from GitHub instead.
+    /// </summary>
+    async Task<bool> ConfirmMirrorChyanFallbackAsync(UpdateCheckResult result)
+    {
+        if (!result.CdkRequired)
+            return true;
+
+        return await View!.MessageDialog(LocalizationSource.GetString("Msg_MirrorChyanCdkRequired"),
+            buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes;
+    }
+
+    /// <summary>Downloads and installs the given update package, then restarts the app.</summary>
+    async Task UpdateAppAsync(UpdateInfo info)
     {
         if (updateInProgress)
             return;
@@ -1525,7 +1723,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             loader.SetMessage(LocalizationSource.GetString("Main_Downloading"));
             loader.SetMaximum(1000);
 
-            string downloadOutput = Path.Join(tempFolder, "Update.zip.zip");
+            string downloadOutput = GetUpdateDownloadPath(tempFolder, info);
 
             // Reuse a download of this exact build that is already cached (for example from an
             // earlier attempt whose install never completed) instead of downloading it again.
@@ -1534,10 +1732,9 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 // Drop the stale marker first: the file is about to be rewritten, and a partial
                 // download must never be mistaken for a complete one on a later check.
                 ClearCachedUpdateMarker(tempFolder);
-
                 using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) })
                 {
-                    bool downloaded = await DownloadUpdateAsync(client, info, downloadOutput, loader);
+                    bool downloaded = await DownloadUpdateAsync(client, info.DownloadUrls, downloadOutput, loader);
                     if (!downloaded)
                     {
                         await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"),
@@ -1577,6 +1774,9 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
             await View!.MessageDialog(LocalizationSource.GetString("Msg_WillCloseToUpdate"));
 
+            // A stable install is about to be applied; remember its version for the next check.
+            RecordInstalledStableVersion(info);
+
             Process.Start(new ProcessStartInfo(updaterExe)
             {
                 WorkingDirectory = updaterFolderTemp,
@@ -1603,11 +1803,11 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
     }
 
     /// <summary>
-    /// Android update flow: the app can't replace its own installed files, so download the build
-    /// zip, extract the update APK and hand it to the system package installer (which replaces the
-    /// app once the user confirms). This app instance keeps running in case the user cancels.
+    /// Android update flow: the app can't replace its own installed files, so the update package
+    /// (an APK or a zip containing one) is handed to the system package installer (which replaces
+    /// the app once the user confirms). This app instance keeps running in case the user cancels.
     /// </summary>
-    async Task UpdateAppAndroidAsync(UpdateChecker.UpdateInfo info)
+    async Task UpdateAppAndroidAsync(UpdateInfo info)
     {
         if (PlatformUpdateInstaller.InstallPackageAsync is null)
             return;
@@ -1623,7 +1823,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             // instead of downloading the same build again.
             string tempFolder = Path.Join(Path.GetTempPath(), "UndertaleModToolAvalonia");
             Directory.CreateDirectory(tempFolder);
-            string downloadOutput = Path.Join(tempFolder, "Update.zip.zip");
+            string downloadOutput = GetUpdateDownloadPath(tempFolder, info);
 
             if (!HasCachedUpdateDownload(tempFolder, info))
             {
@@ -1633,7 +1833,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
                 using (HttpClient client = new() { Timeout = TimeSpan.FromMinutes(5) })
                 {
-                    if (!await DownloadUpdateAsync(client, info, downloadOutput, loader))
+                    if (!await DownloadUpdateAsync(client, info.DownloadUrls, downloadOutput, loader))
                     {
                         await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_FailedToDownload"),
                             LocalizationSource.GetString("Msg_CheckInternetConnection")));
@@ -1645,23 +1845,33 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 MarkCachedUpdateComplete(tempFolder, info);
             }
 
-            // Extract the downloaded zip (single or double zipped) and locate the update APK.
-            loader.SetStatus(LocalizationSource.GetString("Msg_ExtractingUpdate"));
-            string updateFolder = Path.Join(tempFolder, "Update");
-            if (Directory.Exists(updateFolder))
-                Directory.Delete(updateFolder, true);
-            await Task.Run(() => ExtractUpdateZip(downloadOutput, updateFolder));
-
-            // Prefer the signed APK: the Android build also emits an unsigned one next to it, and
-            // the system package installer rejects unsigned packages.
-            string? apkPath = Directory.EnumerateFiles(updateFolder, "*-Signed.apk", SearchOption.AllDirectories).FirstOrDefault()
-                ?? Directory.EnumerateFiles(updateFolder, "*.apk", SearchOption.AllDirectories).FirstOrDefault();
-            if (apkPath is null)
+            // Stable Android packages are already an APK; nightly packages are a zip with the APK
+            // inside (single or double zipped).
+            string apkPath;
+            if (info.IsApk)
             {
-                // Older releases shipped without an APK inside the zip - fall back to the releases page.
-                await View!.MessageDialog(LocalizationSource.GetString("Msg_UpdatePackageMissing"));
-                await View!.LaunchUriAsync(new Uri(info.ReleasePageUrl));
-                return;
+                apkPath = downloadOutput;
+            }
+            else
+            {
+                loader.SetStatus(LocalizationSource.GetString("Msg_ExtractingUpdate"));
+                string updateFolder = Path.Join(tempFolder, "Update");
+                if (Directory.Exists(updateFolder))
+                    Directory.Delete(updateFolder, true);
+                await Task.Run(() => ExtractUpdateZip(downloadOutput, updateFolder));
+
+                // Prefer the signed APK: the Android build also emits an unsigned one next to it,
+                // and the system package installer rejects unsigned packages.
+                string? extractedApkPath = Directory.EnumerateFiles(updateFolder, "*-Signed.apk", SearchOption.AllDirectories).FirstOrDefault()
+                    ?? Directory.EnumerateFiles(updateFolder, "*.apk", SearchOption.AllDirectories).FirstOrDefault();
+                if (extractedApkPath is null)
+                {
+                    // Older releases shipped without an APK inside the zip - fall back to the releases page.
+                    await View!.MessageDialog(LocalizationSource.GetString("Msg_UpdatePackageMissing"));
+                    await View!.LaunchUriAsync(new Uri(info.ReleasePageUrl));
+                    return;
+                }
+                apkPath = extractedApkPath;
             }
 
             loader.Close();
@@ -1673,6 +1883,9 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 await View!.MessageDialog(LocalizationSource.GetString("Msg_AndroidInstallPermission"));
                 return;
             }
+
+            // The system installer accepted the package: remember its version for the next check.
+            RecordInstalledStableVersion(info);
         }
         finally
         {
@@ -1680,30 +1893,34 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
     }
 
-    /// <summary>
-    /// Whether a previously completed download of the given build is cached in the update temp
-    /// folder and can be reused. A cached file is only trusted when its marker records the same
-    /// workflow run id and the file is non-empty with a zip header, so an interrupted download or
-    /// a download of a different build is always fetched again.
-    /// </summary>
-    static bool HasCachedUpdateDownload(string tempFolder, UpdateChecker.UpdateInfo info)
-    {
-        string downloadOutput = Path.Join(tempFolder, "Update.zip.zip");
-        string runIdFile = Path.Join(tempFolder, "Update.zip.runid");
+    /// <summary>File recording which package the cached download in the temp folder belongs to.</summary>
+    const string UpdateCacheMarkerName = "Update.cachekey";
 
-        if (!File.Exists(downloadOutput) || !File.Exists(runIdFile))
+    /// <summary>
+    /// Whether a previously completed download of the given package is cached in the update temp
+    /// folder and can be reused. A cached file is only trusted when its marker records the same
+    /// package cache key and the file is non-empty with a zip header, so an interrupted download
+    /// or a download of a different build is always fetched again.
+    /// </summary>
+    static bool HasCachedUpdateDownload(string tempFolder, UpdateInfo info)
+    {
+        string downloadOutput = GetUpdateDownloadPath(tempFolder, info);
+        string markerFile = Path.Join(tempFolder, UpdateCacheMarkerName);
+
+        if (!File.Exists(downloadOutput) || !File.Exists(markerFile))
             return false;
 
         try
         {
-            if (File.ReadAllText(runIdFile).Trim() != info.RunId.ToString())
+            if (File.ReadAllText(markerFile).Trim() != info.CacheKey)
                 return false;
 
             using FileStream fs = new(downloadOutput, FileMode.Open, FileAccess.Read, FileShare.Read);
             if (fs.Length <= 0)
                 return false;
 
-            // Quick sanity check that the cached file looks like a zip archive before reusing it.
+            // Quick sanity check that the cached file looks like a zip archive (APKs are zip
+            // archives too) before reusing it.
             Span<byte> header = stackalloc byte[2];
             if (fs.Read(header) != 2 || header[0] != (byte)'P' || header[1] != (byte)'K')
                 return false;
@@ -1720,29 +1937,40 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         return true;
     }
 
+    /// <summary>Returns the file the update package is downloaded to.</summary>
+    static string GetUpdateDownloadPath(string tempFolder, UpdateInfo info)
+        => Path.Join(tempFolder, info.IsApk ? "Update.apk" : "Update.zip.zip");
+
     /// <summary>Removes the marker recording which build the cached download belongs to. Best effort.</summary>
     static void ClearCachedUpdateMarker(string tempFolder)
     {
-        try
+        TryDelete(Path.Join(tempFolder, UpdateCacheMarkerName));
+        TryDelete(Path.Join(tempFolder, "Update.zip.zip"));
+        TryDelete(Path.Join(tempFolder, "Update.apk"));
+
+        static void TryDelete(string path)
         {
-            File.Delete(Path.Join(tempFolder, "Update.zip.runid"));
-        }
-        catch (IOException)
-        {
-            // Best effort: at worst the next check downloads the build again.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Best effort: at worst the next check downloads the build again.
+            try
+            {
+                File.Delete(path);
+            }
+            catch (IOException)
+            {
+                // Best effort: at worst the next check downloads the build again.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Best effort: at worst the next check downloads the build again.
+            }
         }
     }
 
-    /// <summary>Records that the cached download belongs to the given build. Best effort.</summary>
-    static void MarkCachedUpdateComplete(string tempFolder, UpdateChecker.UpdateInfo info)
+    /// <summary>Records that the cached download belongs to the given package. Best effort.</summary>
+    static void MarkCachedUpdateComplete(string tempFolder, UpdateInfo info)
     {
         try
         {
-            File.WriteAllText(Path.Join(tempFolder, "Update.zip.runid"), info.RunId.ToString());
+            File.WriteAllText(Path.Join(tempFolder, UpdateCacheMarkerName), info.CacheKey);
         }
         catch (IOException)
         {
@@ -1755,14 +1983,26 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
     }
 
-    /// <summary>Downloads the update, trying the GitHub release asset first and nightly.link as a fallback.</summary>
-    static async Task<bool> DownloadUpdateAsync(HttpClient client, UpdateChecker.UpdateInfo info, string downloadOutput, ILoaderWindow loader)
+    /// <summary>Records the version of an installed stable build so the next check compares against it.</summary>
+    void RecordInstalledStableVersion(UpdateInfo info)
+    {
+        if (info.Channel != UpdateChannel.Stable)
+            return;
+
+        Settings.LastStableVersion = info.Version;
+        Settings.Save();
+    }
+
+    /// <summary>Downloads the update, trying the package's download URLs in order.</summary>
+    static async Task<bool> DownloadUpdateAsync(HttpClient client, IReadOnlyList<string> urls, string downloadOutput, ILoaderWindow loader)
     {
         double bytesToMB = 1024 * 1024;
-        string[] urls = [info.ReleaseDownloadUrl, info.NightlyLinkDownloadUrl];
 
         foreach (string url in urls)
         {
+            if (string.IsNullOrWhiteSpace(url))
+                continue;
+
             try
             {
                 using HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);

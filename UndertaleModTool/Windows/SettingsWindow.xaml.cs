@@ -16,12 +16,19 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using UndertaleModTool.Localization;
+using UndertaleModTool.Update;
 
 namespace UndertaleModTool
 {
     public partial class SettingsWindow : Window
     {
         private static readonly MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
+
+        /// <summary>
+        /// Prevents the channel/source combo boxes from bouncing changes off each other while their
+        /// selection is being synchronized.
+        /// </summary>
+        private bool suppressUpdateSettingSync;
 
         public static string GameMakerStudioPath
         {
@@ -81,6 +88,16 @@ namespace UndertaleModTool
             set
             {
                 Settings.Instance.CheckForUpdates = value;
+                Settings.Save();
+            }
+        }
+
+        public static string MirrorChyanCdk
+        {
+            get => Settings.Instance.MirrorChyanCdk;
+            set
+            {
+                Settings.Instance.MirrorChyanCdk = value ?? "";
                 Settings.Save();
             }
         }
@@ -349,6 +366,34 @@ namespace UndertaleModTool
             this.DataContext = this;
             Settings.Load();
 
+            // The nightly channel is always served by GitHub, and MirrorChyan only mirrors stable releases.
+            bool updateSettingsChanged = false;
+            if (Settings.Instance.UpdateChannel == UpdateChannel.Nightly && Settings.Instance.UpdateSource != UpdateSource.GitHub)
+            {
+                Settings.Instance.UpdateSource = UpdateSource.GitHub;
+                updateSettingsChanged = true;
+            }
+            if (Settings.Instance.UpdateSource == UpdateSource.MirrorChyan && Settings.Instance.UpdateChannel != UpdateChannel.Stable)
+            {
+                Settings.Instance.UpdateChannel = UpdateChannel.Stable;
+                updateSettingsChanged = true;
+            }
+            if (updateSettingsChanged)
+                Settings.Save();
+
+            suppressUpdateSettingSync = true;
+            try
+            {
+                UpdateChannelComboBox.SelectedIndex = Settings.Instance.UpdateChannel == UpdateChannel.Stable ? 1 : 0;
+                UpdateSourceComboBox.SelectedIndex = Settings.Instance.UpdateSource == UpdateSource.MirrorChyan ? 1 : 0;
+            }
+            finally
+            {
+                suppressUpdateSettingSync = false;
+            }
+            UpdateCdkControlsEnabled();
+            MirrorChyanCdkBox.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
+
             string lang = Settings.Instance.Language ?? "en";
             for (int i = 0; i < LanguageComboBox.Items.Count; i++)
             {
@@ -398,6 +443,87 @@ namespace UndertaleModTool
 
                 MainWindow.ApplyCodeEditorThemes();
             }
+        }
+
+        private void UpdateChannelComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (suppressUpdateSettingSync)
+                return;
+            if (UpdateChannelComboBox?.SelectedItem is not ComboBoxItem item
+                || !Enum.TryParse(item.Tag as string, out UpdateChannel channel)
+                || Settings.Instance is null)
+            {
+                return;
+            }
+
+            Settings.Instance.UpdateChannel = channel;
+
+            // Nightly builds are always downloaded from GitHub.
+            if (channel == UpdateChannel.Nightly && Settings.Instance.UpdateSource != UpdateSource.GitHub)
+            {
+                Settings.Instance.UpdateSource = UpdateSource.GitHub;
+                suppressUpdateSettingSync = true;
+                try
+                {
+                    UpdateSourceComboBox.SelectedIndex = 0;
+                }
+                finally
+                {
+                    suppressUpdateSettingSync = false;
+                }
+            }
+
+            Settings.Save();
+            UpdateCdkControlsEnabled();
+        }
+
+        private void UpdateSourceComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (suppressUpdateSettingSync)
+                return;
+            if (UpdateSourceComboBox?.SelectedItem is not ComboBoxItem item
+                || !Enum.TryParse(item.Tag as string, out UpdateSource source)
+                || Settings.Instance is null)
+            {
+                return;
+            }
+
+            Settings.Instance.UpdateSource = source;
+
+            // MirrorChyan only mirrors stable releases.
+            if (source == UpdateSource.MirrorChyan && Settings.Instance.UpdateChannel != UpdateChannel.Stable)
+            {
+                Settings.Instance.UpdateChannel = UpdateChannel.Stable;
+                suppressUpdateSettingSync = true;
+                try
+                {
+                    UpdateChannelComboBox.SelectedIndex = 1;
+                }
+                finally
+                {
+                    suppressUpdateSettingSync = false;
+                }
+            }
+
+            Settings.Save();
+            UpdateCdkControlsEnabled();
+        }
+
+        private void UpdateCdkControlsEnabled()
+        {
+            bool enabled = Settings.Instance.UpdateSource == UpdateSource.MirrorChyan;
+            MirrorChyanCdkBox.IsEnabled = enabled;
+            MirrorChyanGetCdkButton.IsEnabled = enabled;
+        }
+
+        private void MirrorChyanGetCdkButton_Click(object sender, RoutedEventArgs e)
+        {
+            string language = Settings.Instance.Language ?? "en";
+            string url = language.StartsWith("zh", StringComparison.OrdinalIgnoreCase)
+                ? "https://mirrorchyan.com/zh/get-key"
+                : "https://mirrorchyan.com/en/get-key";
+
+            MainWindow.OpenBrowser(url);
         }
 
         private void AppDataButton_Click(object sender, RoutedEventArgs e)

@@ -44,17 +44,24 @@ public class AvaloniaAndroidApp : AvaloniaAndroidApplication<App>
         ScriptAssemblyExtractor.Install();
 
         // Extract the built-in utility scripts (assets/Scripts) into internal storage and point
-        // the Scripts menu at them. Synchronous, because the menu is built once when the activity
-        // UI is created - which still happens after this method completes.
-        BuiltInScriptExtractor.Install();
+        // the Scripts menu at them. This runs in the background; AppMenuBar rebuilds the menu when
+        // extraction finishes, so the UI does not wait for the copy before it can be shown.
+        _ = BuiltInScriptExtractor.InstallAsync();
 
         // Scripts build their scratch ("Packager") folders under ExePath and write results next to
         // it; on Android Environment.ProcessPath resolves to the read-only /system/bin, so point
         // ExePath at an app-private directory instead.
         Scripting.ExePathOverride = CacheDir?.AbsolutePath ?? FilesDir?.AbsolutePath;
+
+        // An app can bind the cross-app API service in a process that has no activity, and Android
+        // creates the Application before it delivers the bind - so a request may arrive while the
+        // lines above are still running. Only now is the view model (and its scripting engine)
+        // usable, so this is the point where the API stops replying "still starting up".
+        Api.UmApiApp.NotifyReady();
     }
 
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
         => base.CustomizeAppBuilder(builder)
-            .WithInterFont();
+            .WithInterFont()
+            .With(new SkiaOptions() { MaxGpuResourceSizeBytes = 512 * 1024 * 1024 });
 }

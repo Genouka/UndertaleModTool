@@ -392,6 +392,15 @@ public class MockStackWindow : UserControl
             return;
         }
 
+        // On the main page, the system back button closes the asset-explorer drawer first
+        // (standard navigation-drawer behavior). A non-collapsible drawer (always-expanded
+        // setting) is skipped entirely.
+        if (mainView is { } view && view.Drawer is { } drawer && drawer.IsCollapsible && drawer.IsDrawerOpen)
+        {
+            drawer.CloseDrawer();
+            return;
+        }
+
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             desktop.Shutdown();
     }

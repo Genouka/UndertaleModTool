@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+      NU1900 is raised by NuGet audit when the vulnerability feed cannot be reached (offline or
+      restricted-network builds). It is an environment warning, not a problem in the project, and
+      there is nothing actionable to fix in the repository. Keep the actual advisory warnings
+      (NU1901-NU1904) enabled.
+  -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);NU1900</NoWarn>
+  </PropertyGroup>
+
+</Project>

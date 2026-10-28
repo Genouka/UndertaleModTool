@@ -14,19 +14,19 @@
     <ScrollViewer>
         <StackPanel>
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*" Classes="PaddedProperties">
-                <Label Content="{l:Loc Common_Name}"/>
+                <TextBlock Text="{l:Loc Common_Name}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding Background.Name}" />
 
-                <Label Content="{l:Loc Common_Transparent}"/>
+                <TextBlock Text="{l:Loc Common_Transparent}"/>
                 <CheckBox IsChecked="{Binding Background.Transparent}" />
 
-                <Label Content="{l:Loc Common_Smooth}"/>
+                <TextBlock Text="{l:Loc Common_Smooth}"/>
                 <CheckBox IsChecked="{Binding Background.Smooth}" />
         
-                <Label Content="{l:Loc Common_Preload}"/>
+                <TextBlock Text="{l:Loc Common_Preload}"/>
                 <CheckBox IsChecked="{Binding Background.Preload}" />
 
-                <Label Content="{l:Loc Common_Texture}"/>
+                <TextBlock Text="{l:Loc Common_Texture}"/>
                 <l:UndertaleResourceReferenceView Reference="{Binding Background.Texture}" ReferenceType="undertalem:UndertaleTexturePageItem" />
             </Grid>
 
@@ -35,13 +35,13 @@
                   Converter={StaticResource VersionCompareConverter},
                   ConverterParameter=GE2}">
 
-                <Label Content="{l:Loc Editor_BG_GMTilesetVersion}"/>
+                <TextBlock Text="{l:Loc Editor_BG_GMTilesetVersion}"/>
                 <TextBox Text="{Binding Background.GMS2TilesetVersion}" />
 
-                <Label Content="{l:Loc Editor_BG_TileWidth}"/>
+                <TextBlock Text="{l:Loc Editor_BG_TileWidth}"/>
                 <TextBox Text="{Binding Background.GMS2TileWidth}" />
 
-                <Label Content="{l:Loc Editor_BG_TileHeight}"/>
+                <TextBlock Text="{l:Loc Editor_BG_TileHeight}"/>
                 <TextBox Text="{Binding Background.GMS2TileHeight}" />
             </Grid>
 
@@ -49,10 +49,10 @@
                   IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                   Converter={StaticResource VersionCompareConverter},
                   ConverterParameter=GE2024.14.1}">
-                <Label Content="{l:Loc Editor_BG_TileSeparationX}"/>
+                <TextBlock Text="{l:Loc Editor_BG_TileSeparationX}"/>
                 <TextBox Text="{Binding Background.GMS2TileSeparationX}" />
 
-                <Label Content="{l:Loc Editor_BG_TileSeparationY}"/>
+                <TextBlock Text="{l:Loc Editor_BG_TileSeparationY}"/>
                 <TextBox Text="{Binding Background.GMS2TileSeparationY}" />
             </Grid>
 
@@ -60,28 +60,28 @@
                   IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                   Converter={StaticResource VersionCompareConverter},
                   ConverterParameter=GE2}">
-                <Label Content="{l:Loc Editor_BG_OutputBorderX}"/>
+                <TextBlock Text="{l:Loc Editor_BG_OutputBorderX}"/>
                 <TextBox Text="{Binding Background.GMS2OutputBorderX}" />
 
-                <Label Content="{l:Loc Editor_BG_OutputBorderY}"/>
+                <TextBlock Text="{l:Loc Editor_BG_OutputBorderY}"/>
                 <TextBox Text="{Binding Background.GMS2OutputBorderY}" />
 
-                <Label Content="{l:Loc Editor_BG_TileColumns}"/>
+                <TextBlock Text="{l:Loc Editor_BG_TileColumns}"/>
                 <TextBox Text="{Binding Background.GMS2TileColumns}" />
 
-                <Label Content="{l:Loc Editor_BG_ItemsPerTile}"/>
+                <TextBlock Text="{l:Loc Editor_BG_ItemsPerTile}"/>
                 <TextBox Text="{Binding Background.GMS2ItemsPerTileCount}" />
 
-                <Label Content="{l:Loc Editor_BG_TileCount}"/>
+                <TextBlock Text="{l:Loc Editor_BG_TileCount}"/>
                 <TextBox Text="{Binding Background.GMS2TileCount}" />
 
-                <Label Content="{l:Loc Editor_BG_ExportedSprite}"/>
+                <TextBlock Text="{l:Loc Editor_BG_ExportedSprite}"/>
                 <l:UndertaleResourceReferenceView Reference="{Binding Background.GMS2ExportedSprite}" ReferenceType="undertalem:UndertaleSprite"/>
 
-                <Label Content="{l:Loc Editor_BG_FrameTime}"/>
+                <TextBlock Text="{l:Loc Editor_BG_FrameTime}"/>
                 <TextBox Text="{Binding Background.GMS2FrameLength}" />
 
-                <Label Content="{l:Loc Editor_BG_TileIDs}"/>
+                <TextBlock Text="{l:Loc Editor_BG_TileIDs}"/>
                 <Expander Header="{l:Loc Common_List}">
                     <l:EditableDataGrid ItemsSource="{Binding Background.GMS2TileIds}" ItemFactory="{Binding CreateTileID}" HeadersVisibility="None">
                         <l:EditableDataGrid.Columns>

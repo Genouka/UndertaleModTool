@@ -790,7 +790,7 @@ Pressing ""No"" will cause the program to ignore these images.");
             
             if (frameIndexes is not [0, ..])
             {
-                throw new ScriptException(spriteName + " is missing an index for frame 0.\nMake sure it is named with \"_0\" at the end accordingly.");
+                //throw new ScriptException(spriteName + " is missing an index for frame 0.\nMake sure it is named with \"_0\" at the end accordingly.");
             }
             for (int i = 0; i < frameIndexes.Length - 1; i++)
             {

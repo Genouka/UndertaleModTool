@@ -55,7 +55,7 @@ public partial class UndertaleCodeView : UserControl
     static readonly Dictionary<string, UndertaleNamedResource> CodeCache = new();
     static readonly Dictionary<string, UndertaleNamedResource> NamedResourcesCache = new();
 
-    readonly List<string> codeLocalsCache = new();
+    readonly List<string?> codeLocalsCache = new();
 
     readonly NumberGenerator gmlNumberGenerator;
     readonly NameGenerator gmlNameGenerator;
@@ -82,8 +82,7 @@ public partial class UndertaleCodeView : UserControl
     bool codeEditorTouchScrolled;
     bool codeEditorTouchSelecting;           // a long-press selection is being extended by drag
     int codeEditorSelectionAnchorOffset = -1;
-    double codeEditorPinchStartDistance;
-    double codeEditorPinchStartFontSize;
+    double codeEditorPinchLastDistance;
     DispatcherTimer? codeEditorLongPressTimer;
     DispatcherTimer? codeEditorKeyboardCheckTimer;
 
@@ -98,7 +97,6 @@ public partial class UndertaleCodeView : UserControl
     DispatcherTimer? _diagnosticsTimer;
     CancellationTokenSource? _diagnosticsCancellation;
     int _diagnosticsGeneration;
-    bool _isLoadingCode;
 
     // Folding
     DispatcherTimer? _foldingTimer;
@@ -474,7 +472,7 @@ public partial class UndertaleCodeView : UserControl
         {
             _diagnosticsTimer?.Stop();
             _diagnosticsCancellation?.Cancel();
-            _diagnosticsRenderer?.SetDiagnostics(Array.Empty<GmlDiagnostic>(), GMLTextEditor?.Document);
+            _diagnosticsRenderer?.SetDiagnostics(Array.Empty<GmlDiagnostic>(), GMLTextEditor.Document);
             if (_lastResultMode == ResultMode.Errors)
                 HideResultsPanel();
             return;
@@ -667,18 +665,23 @@ public partial class UndertaleCodeView : UserControl
             codeEditorTouchSelecting = false;
             codeEditorSelectionAnchorOffset = -1;
             codeEditorTouchSecondaryId = id;
-            StopCodeEditorLongPressTimer();
             codeEditorTouchPinching = true;
+            StopCodeEditorLongPressTimer();
+            double startDistance;
             if (codeEditorTouchPrimaryId is long primaryId
                 && codeEditorTouchPoints.TryGetValue(primaryId, out Point p1))
             {
-                codeEditorPinchStartDistance = Distance(pos, p1);
+                startDistance = Distance(pos, p1);
             }
             else
             {
-                codeEditorPinchStartDistance = 1;
+                startDistance = 1;
             }
-            codeEditorPinchStartFontSize = editor.FontSize > 0 ? editor.FontSize : 12;
+            // Scale relative to the distance of the previous move instead of the initial
+            // distance: when the font size hits a limit the accumulated factor must not have to
+            // be "unwound" before a reverse pinch becomes visible (that felt like the zoom
+            // running in the opposite direction).
+            codeEditorPinchLastDistance = startDistance;
         }
     }
 
@@ -700,11 +703,13 @@ public partial class UndertaleCodeView : UserControl
                 && codeEditorTouchPoints.TryGetValue(primaryId, out Point p1) && codeEditorTouchPoints.TryGetValue(secondaryId, out Point p2))
             {
                 double distance = Distance(p1, p2);
-                if (distance > 1 && codeEditorPinchStartDistance > 1)
+                if (distance > 1 && codeEditorPinchLastDistance > 1)
                 {
-                    double factor = distance / codeEditorPinchStartDistance;
-                    double size = Math.Clamp(codeEditorPinchStartFontSize * factor, CodeEditorFontSizeMin, CodeEditorFontSizeMax);
-                    if (size != editor.FontSize)
+                    double currentSize = editor.FontSize > 0 ? editor.FontSize : (Settings?.CodeEditorFontSize ?? 12);
+                    double factor = distance / codeEditorPinchLastDistance;
+                    codeEditorPinchLastDistance = distance;
+                    double size = Math.Clamp(currentSize * factor, CodeEditorFontSizeMin, CodeEditorFontSizeMax);
+                    if (Math.Abs(size - currentSize) > 0.01)
                         SetCodeEditorFontSize(size);
                 }
             }
@@ -933,25 +938,20 @@ public partial class UndertaleCodeView : UserControl
     }
 
     /// <summary>
-    /// Keeps the soft keyboard visible after a touch tap that did not change focus. When the
-    /// editor was already focused, <c>Focus()</c> is a no-op and the platform is not told about
-    /// the tap at all, so on Android the keyboard can retract even though the IME client stays
-    /// attached - a state that plain taps can never re-show (the platform only shows the input
-    /// pane when the client is (re)applied). Re-asserting the client here, now and once more
-    /// shortly after the gesture, brings the keyboard back.
+    /// Keeps the soft keyboard visible after a touch tap. When the editor is already focused,
+    /// <c>Focus()</c> is a no-op and the platform is not told about the tap at all, so on Android
+    /// the keyboard can stay dismissed even though the IME client is still attached. Ask the
+    /// platform to show the keyboard now and once more shortly after the gesture (the IME may
+    /// restart asynchronously after the caret move).
     /// </summary>
     void EnsureCodeEditorKeyboardVisible(TextEditor editor, bool wasFocusedBeforeTap)
     {
-        if (!wasFocusedBeforeTap)
-            return; // the fresh focus-gain path already re-applies the IME client
-
-        // Re-check shortly after the gesture as well: the platform may hide the keyboard
-        // asynchronously (e.g. an IME restart triggered by the caret move).
         StopCodeEditorKeyboardCheckTimer();
         codeEditorKeyboardCheckTimer = new DispatcherTimer(CodeEditorKeyboardCheckDelay, DispatcherPriority.Background, (_, _) => CodeEditorKeyboardCheckTimer_Tick(editor));
         codeEditorKeyboardCheckTimer.Start();
 
-        CodeEditorKeyboardCheck(editor);
+        if (wasFocusedBeforeTap)
+            CodeEditorKeyboardCheck(editor);
     }
 
     void CodeEditorKeyboardCheckTimer_Tick(TextEditor editor)
@@ -971,6 +971,12 @@ public partial class UndertaleCodeView : UserControl
             return; // no software keyboard on this platform
         if (pane.State == InputPaneState.Open)
             return; // the keyboard is already visible
+
+        // Prefer the platform's own IME call when available (Android: ShowSoftInput). Toggling
+        // the input method below only re-applies Avalonia's client, which does not necessarily
+        // make the system show the keyboard again once the IME has dismissed it.
+        if (PlatformSoftKeyboard.Show())
+            return;
 
         // The editor is focused but the soft keyboard is not shown: re-apply the IME client so
         // the platform shows the input pane again (Android shows the keyboard on SetClient).
@@ -1276,7 +1282,6 @@ public partial class UndertaleCodeView : UserControl
         ASMTextEditor.TextArea.TextView.Redraw();
     }
 
-
     public async Task GoToLastGoToLocation()
     {
         if (DataContext is not UndertaleCodeViewModel vm)
@@ -1369,9 +1374,6 @@ public partial class UndertaleCodeView : UserControl
             vm.MainVM.Project?.MarkAssetForExport(vm.Code);
         }
 
-        if (_isLoadingCode)
-            return;
-
         if (vm.MainVM.Settings?.ChangeTrackingEnabled ?? true)
             _gmlModifiedRenderer.MarkDirty();
 
@@ -1397,9 +1399,6 @@ public partial class UndertaleCodeView : UserControl
         {
             vm.ASMTabState = TabState.NeedsCompile;
         }
-
-        if (_isLoadingCode)
-            return;
 
         if (vm.MainVM.Settings?.ChangeTrackingEnabled ?? true)
             _asmModifiedRenderer.MarkDirty();
@@ -1446,7 +1445,7 @@ public partial class UndertaleCodeView : UserControl
 
         string docText = GMLTextEditor.Text;
         string? codeName = code.Name?.Content;
-        UndertaleData data = vm.MainVM.Data;
+        UndertaleData? data = vm.MainVM.Data;
         if (data is null)
         {
             ApplyDiagnostics(Array.Empty<GmlDiagnostic>());
@@ -1472,7 +1471,7 @@ public partial class UndertaleCodeView : UserControl
         IReadOnlyList<GmlDiagnostic> result;
         try
         {
-            result = await Task.Run(() => GmlLanguageService.ParseDiagnostics(data, docText, codeName), cts.Token);
+            result = await Task.Run(() => GmlLanguageService.ParseDiagnostics(data, docText, codeName ?? ""), cts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -1484,8 +1483,6 @@ public partial class UndertaleCodeView : UserControl
         }
 
         if (generation != _diagnosticsGeneration || cts.IsCancellationRequested)
-            return;
-        if (_isLoadingCode)
             return;
 
         ApplyDiagnostics(result);
@@ -1550,13 +1547,14 @@ public partial class UndertaleCodeView : UserControl
         if (editor is null)
             return;
 
-        if (_completionWindow is not null && e.Text.Length > 0 && (char.IsLetterOrDigit(e.Text[0]) || e.Text[0] == '_'))
+        string entered = e.Text ?? "";
+        if (_completionWindow is not null && entered.Length > 0 && (char.IsLetterOrDigit(entered[0]) || entered[0] == '_'))
             return;
 
-        if (e.Text.Length <= 0)
+        if (entered.Length == 0)
             return;
 
-        char typed = e.Text[0];
+        char typed = entered[0];
         if (typed == '.')
         {
             OpenCompletionWindow(editor, true);
@@ -1604,7 +1602,7 @@ public partial class UndertaleCodeView : UserControl
         if (vm.IsCodeProcessing)
             return;
 
-        UndertaleData data = vm.MainVM.Data;
+        UndertaleData? data = vm.MainVM.Data;
         if (data is null)
             return;
 
@@ -1920,7 +1918,7 @@ public partial class UndertaleCodeView : UserControl
         if (!int.TryParse(numText, out int id))
             return null;
 
-        List<UndertaleNamedResource?> possibleObjects = new();
+        List<UndertaleNamedResource> possibleObjects = new();
         if (id >= 0)
         {
             if (id < data.Sprites.Count && data.Sprites[id] != null) possibleObjects.Add(data.Sprites[id]);
@@ -1933,9 +1931,9 @@ public partial class UndertaleCodeView : UserControl
             if (id < data.Sounds.Count && data.Sounds[id] != null) possibleObjects.Add(data.Sounds[id]);
             if (id < data.Shaders.Count && data.Shaders[id] != null) possibleObjects.Add(data.Shaders[id]);
             if (id < data.Timelines.Count && data.Timelines[id] != null) possibleObjects.Add(data.Timelines[id]);
-            if (id < (data.AnimationCurves?.Count ?? 0) && data.AnimationCurves[id] != null) possibleObjects.Add(data.AnimationCurves[id]);
-            if (id < (data.Sequences?.Count ?? 0) && data.Sequences[id] != null) possibleObjects.Add(data.Sequences[id]);
-            if (id < (data.ParticleSystems?.Count ?? 0) && data.ParticleSystems[id] != null) possibleObjects.Add(data.ParticleSystems[id]);
+            if (data.AnimationCurves is { } animationCurves && id < animationCurves.Count && animationCurves[id] != null) possibleObjects.Add(animationCurves[id]);
+            if (data.Sequences is { } sequences && id < sequences.Count && sequences[id] != null) possibleObjects.Add(sequences[id]);
+            if (data.ParticleSystems is { } particleSystems && id < particleSystems.Count && particleSystems[id] != null) possibleObjects.Add(particleSystems[id]);
         }
 
         StackPanel panel = new() { MaxWidth = 320 };
@@ -1945,7 +1943,7 @@ public partial class UndertaleCodeView : UserControl
 
         if (possibleObjects.Count > 0)
         {
-            foreach (UndertaleNamedResource? obj in possibleObjects)
+            foreach (UndertaleNamedResource obj in possibleObjects)
             {
                 StackPanel row = new() { Orientation = Orientation.Horizontal };
 
@@ -1977,7 +1975,7 @@ public partial class UndertaleCodeView : UserControl
 
                 TextBlock text = new()
                 {
-                    Text = obj?.ToString().Replace("_", "__") ?? "",
+                    Text = obj.ToString()?.Replace("_", "__") ?? "",
                     Foreground = textBrush,
                     VerticalAlignment = VerticalAlignment.Center
                 };
@@ -2138,7 +2136,7 @@ public partial class UndertaleCodeView : UserControl
 
         TextBlock nameBlock = new()
         {
-            Text = val.ToString().Replace("_", "__"),
+            Text = val.ToString()?.Replace("_", "__") ?? "",
             Foreground = textBrush,
             FontWeight = FontWeight.Bold
         };
@@ -2194,7 +2192,8 @@ public partial class UndertaleCodeView : UserControl
         if (data?.GameSpecificRegistry?.MacroResolver is not GlobalMacroTypeResolver resolver)
             return hoverContent;
 
-        if (!TryFindCallArgument(lineText, offsetInLine, out string? functionName, out int argIndex))
+        if (!TryFindCallArgument(lineText, offsetInLine, out string? functionName, out int argIndex) ||
+            functionName is null)
             return hoverContent;
 
         if (GetResolvedFunctionArgType(resolver, functionName) is not IMacroTypeFunctionArgs argsType)
@@ -2416,7 +2415,7 @@ public partial class UndertaleCodeView : UserControl
             DecompileContext context = new(parseContext, anyCode, new DecompileSettings());
             ASTCleaner cleaner = new(context);
             Int16Node node = new((short)value, true);
-            IExpressionNode resolved = node.ResolveMacroType(cleaner, type);
+            IExpressionNode? resolved = node.ResolveMacroType(cleaner, type);
             return resolved switch
             {
                 MacroValueNode macro => macro.ValueName,
@@ -2739,7 +2738,7 @@ public partial class UndertaleCodeView : UserControl
         if (vm.SelectedTab != Tab.GML)
             return;
 
-        UndertaleData data = vm.MainVM.Data;
+        UndertaleData? data = vm.MainVM.Data;
         if (data is null)
             return;
 
@@ -2824,7 +2823,7 @@ public partial class UndertaleCodeView : UserControl
     {
         if (DataContext is not UndertaleCodeViewModel vm)
             return;
-        UndertaleData data = vm.MainVM.Data;
+        UndertaleData? data = vm.MainVM.Data;
         if (data is null)
             return;
 

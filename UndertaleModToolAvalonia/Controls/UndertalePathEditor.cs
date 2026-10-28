@@ -46,8 +46,9 @@ public class UndertalePathEditor : Control
 
         context.DrawGeometry(null, new Pen(pathBrush, thickness: 2), geometry);
 
-        TopLevel topLevel = TopLevel.GetTopLevel(this)!;
-        topLevel.RequestAnimationFrame(_ =>
+        // Keep an animation-frame loop only while attached to a live visual tree. Deliberately no
+        // platform-root fallback here: a detached control must not keep re-rendering forever.
+        TopLevel.GetTopLevel(this)?.RequestAnimationFrame(_ =>
         {
             InvalidateMeasure();
             InvalidateVisual();

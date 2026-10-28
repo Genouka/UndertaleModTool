@@ -44,7 +44,7 @@
                         <ColumnDefinition SharedSizeGroup="g1" Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Label Content="{loc:Loc Settings_Language}"/>
+                    <TextBlock Text="{loc:Loc Settings_Language}"/>
                     <local:ComboBoxDark Grid.Column="1" x:Name="LanguageComboBox" SelectionChanged="LanguageComboBox_SelectionChanged">
                         <!-- TODO: The languages list should be moved to LocalizationSource, but now keep it here. -->
                         <ComboBoxItem Content="en - English" Tag="en"/>
@@ -71,7 +71,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Label Content="{loc:Loc Settings_GMS1Path}"/>
+                    <TextBlock Text="{loc:Loc Settings_GMS1Path}"/>
                     <local:TextBoxDark Grid.Column="1" Text="{Binding GameMakerStudioPath}"/>
                 </Grid>
 
@@ -81,7 +81,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Label Content="{loc:Loc Settings_GMS2Path}"/>
+                    <TextBlock Text="{loc:Loc Settings_GMS2Path}"/>
                     <local:TextBoxDark Grid.Column="1" Text="{Binding GameMakerStudio2RuntimesPath}"/>
                 </Grid>
 
@@ -106,6 +106,43 @@
                         <CheckBox IsChecked="{Binding RecompileAllCodeSourcesOnProjectSave}" Content="{loc:Loc Settings_RecompileOnSave}" ToolTip="{loc:Loc Settings_RecompileOnSaveToolTip}"/>
                         <CheckBox IsChecked="{Binding ChangeTrackingEnabled}" Content="{loc:Loc Settings_ChangeTracking}" ToolTip="{loc:Loc Settings_ChangeTrackingToolTip}"/>
                     </StackPanel>
+                </Grid>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition SharedSizeGroup="g1" Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="{loc:Loc Settings_UpdateChannel}" VerticalAlignment="Center" ToolTip="{loc:Loc Settings_UpdateChannelToolTip}"/>
+                    <local:ComboBoxDark Grid.Row="0" Grid.Column="1" x:Name="UpdateChannelComboBox" MinWidth="200" HorizontalAlignment="Left"
+                                        ToolTip="{loc:Loc Settings_UpdateChannelToolTip}" SelectionChanged="UpdateChannelComboBox_SelectionChanged">
+                        <ComboBoxItem Content="{loc:Loc Settings_UpdateChannelNightly}" Tag="Nightly"/>
+                        <ComboBoxItem Content="{loc:Loc Settings_UpdateChannelStable}" Tag="Stable"/>
+                    </local:ComboBoxDark>
+
+                    <TextBlock Grid.Row="1" Text="{loc:Loc Settings_UpdateSource}" VerticalAlignment="Center" ToolTip="{loc:Loc Settings_UpdateSourceToolTip}"/>
+                    <local:ComboBoxDark Grid.Row="1" Grid.Column="1" x:Name="UpdateSourceComboBox" MinWidth="200" HorizontalAlignment="Left"
+                                        ToolTip="{loc:Loc Settings_UpdateSourceToolTip}" SelectionChanged="UpdateSourceComboBox_SelectionChanged">
+                        <ComboBoxItem Content="{loc:Loc Settings_UpdateSourceGitHub}" Tag="GitHub"/>
+                        <ComboBoxItem Content="{loc:Loc Settings_UpdateSourceMirrorChyan}" Tag="MirrorChyan"/>
+                    </local:ComboBoxDark>
+
+                    <TextBlock Grid.Row="2" Text="{loc:Loc Settings_MirrorChyanCdk}" VerticalAlignment="Center" ToolTip="{loc:Loc Settings_MirrorChyanCdkToolTip}"/>
+                    <Grid Grid.Row="2" Grid.Column="1" ToolTip="{loc:Loc Settings_MirrorChyanCdkToolTip}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <local:TextBoxDark x:Name="MirrorChyanCdkBox" Text="{Binding MirrorChyanCdk}"/>
+                        <local:ButtonDark Grid.Column="1" x:Name="MirrorChyanGetCdkButton" Content="{loc:Loc Settings_MirrorChyanGetCdk}"
+                                          Padding="8,2,8,2" Click="MirrorChyanGetCdkButton_Click"/>
+                    </Grid>
                 </Grid>
 
                 <Separator/>

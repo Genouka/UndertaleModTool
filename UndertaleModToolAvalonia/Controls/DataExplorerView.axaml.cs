@@ -213,8 +213,8 @@ public partial class DataExplorerView : UserControl
             names.Add(name);
         }
 
-        TopLevel topLevel = TopLevel.GetTopLevel(this)!;
-        await topLevel.Clipboard!.SetTextAsync(string.Join("\n", names));
+        if (WindowHost.TryGetTopLevel(this)?.Clipboard is { } clipboard)
+            await clipboard.SetTextAsync(string.Join("\n", names));
     }
 
     public async void ContextMenu_FindReferences_Click(object? sender, RoutedEventArgs e)

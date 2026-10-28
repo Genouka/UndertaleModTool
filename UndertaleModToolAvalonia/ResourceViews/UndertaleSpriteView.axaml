@@ -15,7 +15,7 @@
     <ScrollViewer>
         <StackPanel Classes="PaddedProperties">
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label Content="{l:Loc Common_Name}"/>
+                <TextBlock Text="{l:Loc Common_Name}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding Sprite.Name}" />
 
                 <Label>
@@ -30,7 +30,7 @@
                     <TextBox Grid.Column="1" Text="{Binding Sprite.Height}" />
                 </Grid>
 
-                <Label Content="{l:Loc Editor_Sprite_Margin}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_Margin}"/>
                 <Grid ColumnDefinitions="1*,1*,1*,1*">
                     <TextBox Grid.Column="0" Text="{Binding Sprite.MarginLeft}" />
                     <TextBox Grid.Column="1" Text="{Binding Sprite.MarginRight}" />
@@ -38,29 +38,29 @@
                     <TextBox Grid.Column="3" Text="{Binding Sprite.MarginTop}" />
                 </Grid>
 
-                <Label Content="{l:Loc Common_Transparent}"/>
+                <TextBlock Text="{l:Loc Common_Transparent}"/>
                 <CheckBox IsChecked="{Binding Sprite.Transparent}" />
 
-                <Label Content="{l:Loc Common_Smooth}"/>
+                <TextBlock Text="{l:Loc Common_Smooth}"/>
                 <CheckBox IsChecked="{Binding Sprite.Smooth}" />
 
-                <Label Content="{l:Loc Common_Preload}"/>
+                <TextBlock Text="{l:Loc Common_Preload}"/>
                 <CheckBox IsChecked="{Binding Sprite.Preload}" />
 
-                <Label Content="{l:Loc Editor_Sprite_BoundingBoxMode}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_BoundingBoxMode}"/>
                 <TextBox Text="{Binding Sprite.BBoxMode}" />
 
-                <Label Content="{l:Loc Editor_Sprite_SepMasks}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_SepMasks}"/>
                 <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleSprite+SepMaskType}, Converter={StaticResource EnumTypeToValuesConverter}}"
                           SelectedItem="{Binding Sprite.SepMasks}" />
 
-                <Label Content="{l:Loc Editor_Sprite_Origin}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_Origin}"/>
                 <Grid ColumnDefinitions="1*,1*">
                     <TextBox Grid.Column="0" Text="{Binding Sprite.OriginXWrapper}" />
                     <TextBox Grid.Column="1" Text="{Binding Sprite.OriginYWrapper}" />
                 </Grid>
 
-                <Label Content="{l:Loc Editor_Textures}"/>
+                <TextBlock Text="{l:Loc Editor_Textures}"/>
                 <l:EditableDataGrid Name="TexturesDataGrid" ItemsSource="{Binding Sprite.Textures}" ItemFactory="{Binding CreateTextureEntry}" HeadersVisibility="None"
                                     SelectionChanged="{Binding TexturesSelectedChanged}">
                     <l:EditableDataGrid.Columns>
@@ -85,7 +85,7 @@
             </StackPanel>
 
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label Content="{l:Loc Editor_Sprite_CollisionMasks}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_CollisionMasks}"/>
                 <l:EditableDataGrid Name="CollisionMasksDataGrid" ItemsSource="{Binding Sprite.CollisionMasks}" ItemFactory="{Binding CreateMaskEntry}" HeadersVisibility="None"
                                     SelectionChanged="{Binding CollisionMasksSelectedChanged}">
                     <l:EditableDataGrid.Columns>
@@ -113,13 +113,13 @@
             </StackPanel>
 
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label Content="{l:Loc Editor_Sprite_IsSpecialType}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_IsSpecialType}"/>
                 <CheckBox IsChecked="{Binding Sprite.IsSpecialType}" />
 
-                <Label Content="{l:Loc Editor_Sprite_Version}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_Version}"/>
                 <TextBox Text="{Binding Sprite.SVersion}" />
 
-                <Label Content="{l:Loc Common_Type}"/>
+                <TextBlock Text="{l:Loc Common_Type}"/>
                 <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleSprite+SpriteType}, Converter={StaticResource EnumTypeToValuesConverter}}"
                           SelectedItem="{Binding Sprite.SSpriteType}" />
             </Grid>
@@ -128,51 +128,51 @@
                   IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                   Converter={StaticResource VersionCompareConverter},
                   ConverterParameter=GE2}">
-                <Label Content="{l:Loc Editor_Sprite_PlaybackSpeed}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_PlaybackSpeed}"/>
                 <TextBox Text="{Binding Sprite.GMS2PlaybackSpeed}" />
 
-                <Label Content="{l:Loc Editor_Sprite_PlaybackSpeedType}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_PlaybackSpeedType}"/>
                 <ComboBox ItemsSource="{Binding Source={x:Type undertalem:AnimSpeedType}, Converter={StaticResource EnumTypeToValuesConverter}}"
                           SelectedItem="{Binding Sprite.GMS2PlaybackSpeedType}" />
             </Grid>
 
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*"
                   IsVisible="{Binding ShowNineSlice}">
-                <Label Content="{l:Loc Editor_Sprite_EnableNineSlice}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_EnableNineSlice}"/>
                 <CheckBox IsChecked="{Binding EnableNineSlice}" />
             </Grid>
 
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*"
                   IsVisible="{Binding EnableNineSlice}">
-                <Label Content="{l:Loc Editor_Sprite_Left}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_Left}"/>
                 <TextBox Text="{Binding SpriteNineSlice.Left}" />
 
-                <Label Content="{l:Loc Editor_Sprite_Top}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_Top}"/>
                 <TextBox Text="{Binding SpriteNineSlice.Top}" />
 
-                <Label Content="{l:Loc Editor_Sprite_Right}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_Right}"/>
                 <TextBox Text="{Binding SpriteNineSlice.Right}" />
 
-                <Label Content="{l:Loc Editor_Sprite_Bottom}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_Bottom}"/>
                 <TextBox Text="{Binding SpriteNineSlice.Bottom}" />
 
-                <Label Content="{l:Loc Editor_Sprite_LeftTileMode}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_LeftTileMode}"/>
                 <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleSprite+NineSlice+TileMode}, Converter={StaticResource EnumTypeToValuesConverter}}"
                           SelectedItem="{Binding SpriteNineSlice.TileModes[0]}" />
 
-                <Label Content="{l:Loc Editor_Sprite_TopTileMode}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_TopTileMode}"/>
                 <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleSprite+NineSlice+TileMode}, Converter={StaticResource EnumTypeToValuesConverter}}"
                           SelectedItem="{Binding SpriteNineSlice.TileModes[1]}" />
 
-                <Label Content="{l:Loc Editor_Sprite_RightTileMode}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_RightTileMode}"/>
                 <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleSprite+NineSlice+TileMode}, Converter={StaticResource EnumTypeToValuesConverter}}"
                           SelectedItem="{Binding SpriteNineSlice.TileModes[2]}" />
 
-                <Label Content="{l:Loc Editor_Sprite_BottomTileMode}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_BottomTileMode}"/>
                 <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleSprite+NineSlice+TileMode}, Converter={StaticResource EnumTypeToValuesConverter}}"
                           SelectedItem="{Binding SpriteNineSlice.TileModes[3]}" />
 
-                <Label Content="{l:Loc Editor_Sprite_CenterTileMode}"/>
+                <TextBlock Text="{l:Loc Editor_Sprite_CenterTileMode}"/>
                 <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleSprite+NineSlice+TileMode}, Converter={StaticResource EnumTypeToValuesConverter}}"
                           SelectedItem="{Binding SpriteNineSlice.TileModes[4]}" />
             </Grid>

@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.LogicalTree;
 
 namespace UndertaleModToolAvalonia;
@@ -41,6 +43,26 @@ public static class WindowHost
     /// </summary>
     public static Window? ResolveOwner(Control view)
         => view.FindLogicalAncestorOfType<Window>();
+
+    /// <summary>
+    /// Resolves the <see cref="TopLevel"/> a control belongs to, falling back to the platform's
+    /// root view when the control is currently detached from the visual tree. On single-window
+    /// platforms (Android) the simulated window stack re-parents dialog content into its host,
+    /// which temporarily detaches the main view, so plain <c>TopLevel.GetTopLevel</c> returns
+    /// null even though a top-level exists.
+    /// </summary>
+    public static TopLevel? TryGetTopLevel(Control view)
+    {
+        if (TopLevel.GetTopLevel(view) is { } topLevel)
+            return topLevel;
+
+        return Application.Current?.ApplicationLifetime switch
+        {
+            IClassicDesktopStyleApplicationLifetime desktop => desktop.MainWindow,
+            ISingleViewApplicationLifetime singleView => TopLevel.GetTopLevel(singleView.MainView),
+            _ => null,
+        };
+    }
 
     /// <summary>Shows a dialog window, returning its typed result.</summary>
     public static async Task<TResult> ShowDialog<TResult>(Window? owner, Window dialog)

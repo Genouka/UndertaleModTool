@@ -79,8 +79,8 @@ foreach (string file in dirFiles)
         throw new ScriptException($"Duplicate file detected. There are {dupFiles.Length} files named: {FileNameWithExtension}");
     var prevFrameName = $"{spriteName}_{prevframe}.png";
     string[] previousFrameFiles = Directory.GetFiles(importFolder, prevFrameName, SearchOption.AllDirectories);
-    if (previousFrameFiles.Length < 1)
-        throw new ScriptException($"{spriteName} is missing one or more indexes. The detected missing index is: {prevFrameName}");
+    //if (previousFrameFiles.Length < 1)
+    //    throw new ScriptException($"{spriteName} is missing one or more indexes. The detected missing index is: {prevFrameName}");
 }
 
 // Get directory path

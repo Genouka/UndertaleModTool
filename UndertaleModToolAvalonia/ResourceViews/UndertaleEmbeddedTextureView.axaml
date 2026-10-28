@@ -13,10 +13,10 @@
     <ScrollViewer>
         <StackPanel>
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*" Classes="PaddedProperties">
-                <Label Content="{l:Loc Editor_Scaled}"/>
+                <TextBlock Text="{l:Loc Editor_Scaled}"/>
                 <TextBox Text="{Binding EmbeddedTexture.Scaled}" />
                 
-                <Label Content="{l:Loc Common_Size}"/>
+                <TextBlock Text="{l:Loc Common_Size}"/>
                 <Grid ColumnDefinitions="1*,1*">
                     <TextBox Grid.Column="0" Text="{Binding EmbeddedTexture.TextureData.Width}" IsReadOnly="True" />
                     <TextBox Grid.Column="1" Text="{Binding EmbeddedTexture.TextureData.Height}" IsReadOnly="True" />
@@ -27,7 +27,7 @@
                     IsVisible="{Binding $parent[l:MainView].((l:MainViewModel)DataContext).DataVersion,
                     Converter={StaticResource VersionCompareConverter},
                     ConverterParameter=GE2.0.6}">
-                <Label Content="{l:Loc Editor_GeneratedMips}"/>
+                <TextBlock Text="{l:Loc Editor_GeneratedMips}"/>
                 <TextBox Text="{Binding EmbeddedTexture.GeneratedMips}" />
             </Grid>
 

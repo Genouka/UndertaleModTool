@@ -13,8 +13,8 @@
         WindowStartupLocation="CenterOwner">
     <Grid RowDefinitions="Auto,1*">
         <StackPanel Grid.Row="0" Margin="8">
-            <Label Content="{l:Loc ProjectAssets_Desc1}"/>
-            <Label Content="{l:Loc ProjectAssets_Desc2}"/>
+            <TextBlock Text="{l:Loc ProjectAssets_Desc1}"/>
+            <TextBlock Text="{l:Loc ProjectAssets_Desc2}"/>
         </StackPanel>
         <DataGrid Grid.Row="1" ItemsSource="{x:Null}" Name="AssetsDataGrid" IsReadOnly="True" CanUserResizeColumns="True"
                   DoubleTapped="DataGrid_DoubleTapped"

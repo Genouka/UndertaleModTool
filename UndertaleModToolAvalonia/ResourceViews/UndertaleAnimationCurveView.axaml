@@ -14,14 +14,14 @@
     <ScrollViewer>
         <StackPanel Classes="PaddedProperties">
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label Content="{l:Loc Common_Name}"/>
+                <TextBlock Text="{l:Loc Common_Name}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding AnimationCurve.Name}" />
 
-                <Label Content="{l:Loc AnimCurve_GraphType}"/>
+                <TextBlock Text="{l:Loc AnimCurve_GraphType}"/>
                 <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleAnimationCurve+GraphTypeEnum}, Converter={StaticResource EnumTypeToValuesConverter}}"
                           SelectedItem="{Binding AnimationCurve.GraphType}" />
 
-                <Label Content="{l:Loc AnimCurve_Channels}"/>
+                <TextBlock Text="{l:Loc AnimCurve_Channels}"/>
                 <l:EditableDataGrid Name="ChannelsDataGrid" ItemsSource="{Binding AnimationCurve.Channels}" ItemFactory="{Binding CreateChannel}" HeadersVisibility="None"
                                     SelectionChanged="{Binding ChannelSelectedChanged}">
                     <l:EditableDataGrid.Columns>
@@ -44,17 +44,17 @@
                 </Label>
 
                 <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                    <Label Content="{l:Loc Common_Name}"/>
+                    <TextBlock Text="{l:Loc Common_Name}"/>
                     <l:UndertaleStringReferenceView Reference="{Binding ChannelSelected.Name}"/>
                         
-                    <Label Content="{l:Loc AnimCurve_CurveType}"/>
+                    <TextBlock Text="{l:Loc AnimCurve_CurveType}"/>
                     <ComboBox ItemsSource="{Binding Source={x:Type undertalem:UndertaleAnimationCurve+Channel+CurveType}, Converter={StaticResource EnumTypeToValuesConverter}}"
                                 SelectedItem="{Binding ChannelSelected.Curve}" />
                         
-                    <Label Content="{l:Loc AnimCurve_Iterations}"/>
+                    <TextBlock Text="{l:Loc AnimCurve_Iterations}"/>
                     <TextBox Text="{Binding ChannelSelected.Iterations}" />
 
-                    <Label Content="{l:Loc Editor_Points}"/>
+                    <TextBlock Text="{l:Loc Editor_Points}"/>
                     <l:EditableDataGrid ItemsSource="{Binding ChannelPoints}" ItemFactory="{Binding CreateWrapperPoint}">
                         <l:EditableDataGrid.Columns>
                             <DataGridTemplateColumn Header="{l:Loc Common_H}" Width="1*">

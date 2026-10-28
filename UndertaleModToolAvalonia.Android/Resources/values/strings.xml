@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown by the system in the app-details screen next to the cross-app API permission -->
+    <string name="um_api_permission_description">Run QiuUTMTv5 csx scripts and load or save data files on this app\'s behalf.</string>
+    <!-- android:description of the API service (a reference, because aapt2 requires one) -->
+    <string name="um_api_service_description">Runs csx scripts and loads or saves data files for apps that hold the RUN_SCRIPT permission.</string>
+</resources>
