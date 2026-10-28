@@ -1,0 +1,40 @@
+<Window x:Class="UndertaleModTool.ContributorsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:UndertaleModTool.Localization"
+        Title="Contributors &amp; translators"
+        Width="480"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+    <StackPanel Margin="16">
+        <TextBlock Text="UndertaleModTool is maintained by volunteers. The live pages below list everyone who contributed code, reported bugs, translated the tool, or reviewed changes."
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,12" />
+        <Button Content="Code contributors (this fork)"
+                Tag="https://github.com/Genouka/UndertaleModTool/graphs/contributors?all=1"
+                Click="OpenLinkClick"
+                Padding="8,4"
+                Margin="0,0,0,6"
+                HorizontalContentAlignment="Left" />
+        <Button Content="Code contributors (QiuUTMTv4 upstream)"
+                Tag="https://github.com/QiumingOrg/QiuUTMTv4/graphs/contributors?all=1"
+                Click="OpenLinkClick"
+                Padding="8,4"
+                Margin="0,0,0,6"
+                HorizontalContentAlignment="Left" />
+        <Button Content="Translators (Weblate)"
+                Tag="https://hosted.weblate.org/engage/qiuutmtv4/"
+                Click="OpenLinkClick"
+                Padding="8,4"
+                Margin="0,0,0,6"
+                HorizontalContentAlignment="Left" />
+        <Button Content="{loc:Loc Common_OK}"
+                IsDefault="True"
+                IsCancel="True"
+                Width="75"
+                HorizontalAlignment="Right"
+                Margin="0,12,0,0" />
+    </StackPanel>
+</Window>
