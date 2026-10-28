@@ -150,8 +150,9 @@
         Source of the DLLs:
         - untrimmed Debug: the copies produced by _LinkAssembliesNoShrink into
           $(MonoAndroidIntermediateAssemblyDir)<abi>\;
-        - trimmed/AOT Release: the ILLink output (@(_ShrunkAssemblies), linked\shrunk\). Packaging
-          the trimmed assemblies keeps the script metadata surface identical to what actually runs.
+        - trimmed/AOT Release: the ILLink output (@(_ShrunkAssemblies), linked\shrunk\). The
+          script-reference assemblies are rooted for ILLink (see RootScriptReferenceAssemblies),
+          so they contain their full API surface in both configurations.
         Only the first supported ABI is packaged - the managed assemblies are identical across
         ABIs. Only script-reference candidates are packaged (same prefixes as
         ScriptReferencePrefixes in Core/Scripting.cs); the rest are never handed to the compiler and
@@ -198,6 +199,33 @@
         <ItemGroup>
             <AndroidAsset Include="@(_ScriptDllFiltered)"
                           Link="Assets\ScriptAssemblies\%(_ScriptDllFiltered.Filename)%(_ScriptDllFiltered.Extension)" />
+        </ItemGroup>
+    </Target>
+
+    <!--
+        Roslyn compiles arbitrary user scripts at runtime, so a trimmed reference set breaks even
+        trivial scripts: Roslyn's generated async submission code calls
+        AsyncTaskMethodBuilder<T>.AwaitOnCompleted, which the app itself never uses. The full
+        API surface of every non-framework reference (UndertaleModLib, Underanalyzer, ...) is also
+        part of the scripting contract. Root those assemblies for ILLink, so the compiler sees -
+        and the AOT runtime can execute - their complete API, as in an untrimmed Debug build.
+
+        Rooting every System.* library (root-all) OOMs ILLink on a 16 GB machine, so the framework
+        set keeps the default reachability trimming; the packaged reference DLLs stay usable because
+        the only framework members Roslyn's submissions invoke beyond app-reachable ones are in the
+        reflection/async/linq core paths that the scripting engine itself references.
+
+        System.Private.CoreLib is an implementation assembly (not part of ReferencePath), so it is
+        rooted by name - its namespace prefix would otherwise match the System.* regex anyway.
+        Keep the prefix list in sync with ScriptReferencePrefixes in Core/Scripting.cs.
+    -->
+    <Target Name="RootScriptReferenceAssemblies"
+            BeforeTargets="_RunILLink"
+            Condition="'$(PublishTrimmed)' == 'true' And '$(EmbedAssembliesIntoApk)' == 'True'">
+        <ItemGroup>
+            <TrimmerRootAssembly Include="@(ManagedAssemblyToLink->'%(Filename)')"
+                                 Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Filename)', '(?i)^(System\.Private\.CoreLib|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft)(\..*)?$'))"
+                                 RootMode="All" />
         </ItemGroup>
     </Target>
 

@@ -181,11 +181,13 @@ public class Scripting
                 // Roslyn's scripting engine always converts two assemblies to metadata references
                 // through Assembly.Location: the core library (typeof(object).Assembly) and the
                 // globals-type host assembly (IScriptInterface's UndertaleModLib). On Android those
-                // locations are fabricated paths inside the APK (e.g. "/System.Private.CoreLib.dll")
-                // and do not exist on disk, which crashed compilation with FileNotFoundException no
-                // matter how many explicit references were supplied. Redirect every such conversion
-                // to the extracted plain DLL copies instead (Roslyn >= 4.4 provides
-                // ScriptOptions.WithCreateFromFileFunc for exactly this purpose).
+                // locations are names inside the APK, not filesystem paths: "/System.Private.CoreLib.dll"
+                // without AOT, but just "System.Private.CoreLib" (no extension) with Mono AOT, plus
+                // bare relative names like "UndertaleModLib.dll". None of them exist on disk, which
+                // crashed compilation with FileNotFoundException no matter how many explicit
+                // references were supplied. Redirect every such conversion to the extracted plain
+                // DLL copies instead (Roslyn >= 4.4 provides ScriptOptions.WithCreateFromFileFunc
+                // for exactly this purpose).
                 options = TryUseFileBasedAssemblyReferences(options, ScriptAssembliesDirectory);
             }
             else
@@ -295,7 +297,8 @@ public class Scripting
     /// <summary>
     /// Redirects Roslyn's implicit "Assembly → metadata reference" conversions (used for the core
     /// library <c>typeof(object).Assembly</c> and for the globals-type host assembly) away from
-    /// <see cref="Assembly.Location"/> — a fabricated in-APK path like "/System.Private.CoreLib.dll"
+    /// <see cref="Assembly.Location"/> — an in-APK name like "/System.Private.CoreLib.dll" without
+    /// AOT, or a bare name like "System.Private.CoreLib" (no extension) under Mono AOT
     /// on Android — to the plain DLL copies inside <paramref name="assembliesDirectory"/>.
     /// Roslyn exposes <c>ScriptOptions.WithCreateFromFileFunc</c> for exactly this purpose; it is
     /// internal and its return type is inaccessible, so the delegate is assembled via expression
@@ -356,8 +359,8 @@ public class Scripting
 
     /// <summary>
     /// Body of the <c>CreateFromFileFunc</c> delegate: resolves <paramref name="path"/> against the
-    /// extracted script-assembly copies when the original location does not exist on disk and
-    /// returns an in-memory metadata reference. The actual return value is Roslyn's internal
+    /// extracted script-assembly copies when the runtime-reported location does not exist on disk
+    /// and returns an in-memory metadata reference. The actual return value is Roslyn's internal
     /// <c>MetadataImageReference</c>, hence the <see cref="object"/> signature.
     /// </summary>
     private static object CreateScriptAssemblyReference(string path,
@@ -365,14 +368,7 @@ public class Scripting
                                                         MetadataReferenceProperties properties,
                                                         string assembliesDirectory)
     {
-        string localCandidate = Path.Combine(assembliesDirectory, Path.GetFileName(path));
-        if (File.Exists(localCandidate))
-        {
-            path = localCandidate;
-        }
-        // Otherwise keep Roslyn's original location, which is valid on platforms where real
-        // on-disk assemblies exist.
-
+        path = ResolveExtractedPath(path, assembliesDirectory) ?? path;
         Stream stream = File.OpenRead(path);
         try
         {
@@ -383,6 +379,56 @@ public class Scripting
             stream.Dispose();
             throw;
         }
+    }
+
+    /// <summary>
+    /// Maps an assembly location reported by the runtime onto the extracted plain DLL copy, or
+    /// null when no extracted copy matches (desktop: real on-disk assemblies are returned as-is).
+    /// Under Mono AOT the reported locations need normalization: the core library is reported
+    /// without its ".dll" extension (e.g. "System.Private.CoreLib"), the host assembly as a bare
+    /// relative file name, and AOT native images live under names like
+    /// "libaot-System.Private.CoreLib.dll.so" - none of which exist on the filesystem.
+    /// </summary>
+    private static string? ResolveExtractedPath(string path, string assembliesDirectory)
+    {
+        string fileName = Path.GetFileName(path);
+        if (string.IsNullOrEmpty(fileName))
+            return null;
+
+        // Fast path: the reported file name matches the extracted copy directly.
+        string candidate = Path.Combine(assembliesDirectory, fileName);
+        if (File.Exists(candidate))
+            return candidate;
+
+        string baseName = fileName;
+        if (baseName.EndsWith(".dll.so", StringComparison.OrdinalIgnoreCase))
+            baseName = baseName[..^3]; // AOT native image ("libaot-Foo.dll.so")
+        else if (baseName.EndsWith(".so", StringComparison.OrdinalIgnoreCase))
+            baseName = baseName[..^3]; // non-AOT native image ("libFoo.dll.so")
+        baseName = TrimAotPrefix(baseName);
+        if (!baseName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            baseName += ".dll";
+
+        candidate = Path.Combine(assembliesDirectory, baseName);
+        if (File.Exists(candidate))
+            return candidate;
+
+        // Android's filesystem is case-sensitive while the reported name may differ in case, so
+        // fall back to matching by simple name.
+        return Directory
+            .EnumerateFiles(assembliesDirectory, Path.GetFileNameWithoutExtension(baseName) + ".dll",
+                            SearchOption.TopDirectoryOnly)
+            .FirstOrDefault();
+    }
+
+    /// <summary>Strips the Mono AOT native-image name prefixes ("libaot-" / "lib").</summary>
+    private static string TrimAotPrefix(string name)
+    {
+        if (name.StartsWith("libaot-", StringComparison.OrdinalIgnoreCase))
+            return name["libaot-".Length..];
+        if (name.StartsWith("lib", StringComparison.OrdinalIgnoreCase))
+            return name[3..];
+        return name;
     }
 }
 
