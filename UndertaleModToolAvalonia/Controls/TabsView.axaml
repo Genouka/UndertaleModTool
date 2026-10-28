@@ -135,6 +135,9 @@
                                 <DataTemplate DataType="l:UndertaleParticleSystemEmitterViewModel">
                                     <TextBlock Text="{Binding ParticleSystemEmitter.Name.Content, StringFormat=Particle system emitter - {0}}"/>
                                 </DataTemplate>
+                                <DataTemplate DataType="l:UndertaleUIRootNodeViewModel">
+                                    <TextBlock Text="{Binding UIRootNode.Name.Content, StringFormat=UI root node - {0}}"/>
+                                </DataTemplate>
                             </ContentControl.DataTemplates>
                         </ContentControl>
                         <Button Command="{Binding #Root.DataContext.TabCloseCommand}"
@@ -249,6 +252,9 @@
                             </DataTemplate>
                             <DataTemplate DataType="l:UndertaleParticleSystemEmitterViewModel">
                                 <l:UndertaleParticleSystemEmitterView />
+                            </DataTemplate>
+                            <DataTemplate DataType="l:UndertaleUIRootNodeViewModel">
+                                <l:UndertaleUIRootNodeView />
                             </DataTemplate>
                         </ContentControl.DataTemplates>
                     </ContentControl>

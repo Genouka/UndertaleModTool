@@ -116,6 +116,8 @@ public partial class UndertaleResourceReferenceView : UserControl
                 try
                 {
                     list = mainVM.Data[ReferenceType];
+                    if (list is null)
+                        return null;
                 }
                 catch (Exception e) when (e is NotSupportedException or MissingMemberException)
                 {

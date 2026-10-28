@@ -473,6 +473,7 @@ public class RoomRenderer
                         DrawTinted(ctx, c.Image, new Rect(c.TargetX, c.TargetY, c.TargetWidth, c.TargetHeight), c.Color);
                     }
                 }
+
             }
         }
     }
@@ -502,12 +503,7 @@ public class RoomRenderer
                 double destW = (c.BoundingWidth * c.ScaleX) - (c.BoundingWidth - c.TargetWidth);
                 double destH = (c.BoundingHeight * c.ScaleY) - (c.BoundingHeight - c.TargetHeight);
 
-                double l = Math.Max(ninePatch.Left, 0);
-                double t = Math.Max(ninePatch.Top, 0);
-                double r = Math.Min(ninePatch.Right, c.Image.Size.Width);
-                double b = Math.Min(ninePatch.Bottom, c.Image.Size.Height);
-
-                DrawNinePatch(ctx, c.Image, l, t, r, b, destX, destY, destW, destH, c.Color);
+                DrawNinePatch(ctx, c.Image, ninePatch, destX, destY, destW, destH, c.Color);
             }
             else
             {
@@ -590,17 +586,17 @@ public class RoomRenderer
         }
     }
 
-    static void DrawNinePatch(DrawingContext ctx, IImage image, double l, double t, double r, double b,
+    static void DrawNinePatch(DrawingContext ctx, IImage image, NinePatchData ninePatch,
         double destX, double destY, double destW, double destH, uint tint)
     {
         double imageW = image.Size.Width;
         double imageH = image.Size.Height;
 
         // Clamp the source slice positions into the image bounds
-        l = Math.Min(Math.Max(l, 0), imageW);
-        r = Math.Min(Math.Max(r, 0), imageW);
-        t = Math.Min(Math.Max(t, 0), imageH);
-        b = Math.Min(Math.Max(b, 0), imageH);
+        double l = Math.Clamp(ninePatch.Left, 0, imageW);
+        double t = Math.Clamp(ninePatch.Top, 0, imageH);
+        double r = Math.Clamp(ninePatch.Right, 0, imageW);
+        double b = Math.Clamp(ninePatch.Bottom, 0, imageH);
 
         double[] srcCols = { 0, l, r, imageW };
         double[] srcRows = { 0, t, b, imageH };
@@ -611,17 +607,112 @@ public class RoomRenderer
         {
             for (int col = 0; col < 3; col++)
             {
-                double sw = srcCols[col + 1] - srcCols[col];
-                double sh = srcRows[row + 1] - srcRows[row];
-                double dw = destCols[col + 1] - destCols[col];
-                double dh = destRows[row + 1] - destRows[row];
+                Rect source = new(srcCols[col], srcRows[row], srcCols[col + 1] - srcCols[col], srcRows[row + 1] - srcRows[row]);
+                Rect destination = new(destX + destCols[col], destY + destRows[row],
+                    destCols[col + 1] - destCols[col], destRows[row + 1] - destRows[row]);
 
-                if (dw <= 0 || dh <= 0)
+                if (source.Width <= 0 || source.Height <= 0 || destination.Width <= 0 || destination.Height <= 0)
                     continue;
 
-                DrawTinted(ctx, image,
-                    new Rect(destX + destCols[col], destY + destRows[row], dw, dh),
-                    tint);
+                UndertaleSprite.NineSlice.TileMode tileMode = (col, row) switch
+                {
+                    (1, 1) => ninePatch.TileModeCenter,
+                    (0, 1) => ninePatch.TileModeLeft,
+                    (1, 0) => ninePatch.TileModeTop,
+                    (2, 1) => ninePatch.TileModeRight,
+                    (1, 2) => ninePatch.TileModeBottom,
+                    _ => UndertaleSprite.NineSlice.TileMode.BlankRepeat,
+                };
+
+                DrawNinePatchSlice(ctx, image, source, destination, tileMode, tint);
+            }
+        }
+    }
+
+    static void DrawNinePatchSlice(DrawingContext ctx, IImage image, Rect source, Rect destination,
+        UndertaleSprite.NineSlice.TileMode tileMode, uint tint)
+    {
+        switch (tileMode)
+        {
+            case UndertaleSprite.NineSlice.TileMode.Stretch:
+                DrawImageTinted(ctx, image, source, destination, tint);
+                break;
+
+            case UndertaleSprite.NineSlice.TileMode.Repeat:
+                using (ctx.PushClip(destination))
+                {
+                    for (double cy = destination.Y; cy < destination.Bottom; cy += source.Height)
+                    {
+                        for (double cx = destination.X; cx < destination.Right; cx += source.Width)
+                        {
+                            Rect destDraw = new(cx, cy, Math.Min(source.Width, destination.Right - cx),
+                                Math.Min(source.Height, destination.Bottom - cy));
+                            Rect sourceDraw = new(source.X, source.Y, destDraw.Width, destDraw.Height);
+                            DrawImageTinted(ctx, image, sourceDraw, destDraw, tint);
+                        }
+                    }
+                }
+                break;
+
+            case UndertaleSprite.NineSlice.TileMode.Mirror:
+                using (ctx.PushClip(destination))
+                {
+                    bool flipY = false;
+                    for (double cy = destination.Y; cy < destination.Bottom; cy += source.Height)
+                    {
+                        bool flipX = false;
+                        for (double cx = destination.X; cx < destination.Right; cx += source.Width)
+                        {
+                            double drawW = Math.Min(source.Width, destination.Right - cx);
+                            double drawH = Math.Min(source.Height, destination.Bottom - cy);
+
+                            double sourceX = flipX ? source.Right - drawW : source.Left;
+                            double sourceY = flipY ? source.Bottom - drawH : source.Top;
+
+                            Rect sourceDraw = new(sourceX, sourceY, drawW, drawH);
+                            Rect destDraw = new(0, 0, drawW, drawH);
+
+                            Matrix matrix = Matrix.CreateScale(flipX ? -1 : 1, flipY ? -1 : 1);
+                            if (flipX)
+                                matrix *= Matrix.CreateTranslation(drawW, 0);
+                            if (flipY)
+                                matrix *= Matrix.CreateTranslation(0, drawH);
+                            matrix *= Matrix.CreateTranslation(cx, cy);
+
+                            using (ctx.PushTransform(matrix))
+                                DrawImageTinted(ctx, image, sourceDraw, destDraw, tint);
+
+                            flipX = !flipX;
+                        }
+                        flipY = !flipY;
+                    }
+                }
+                break;
+
+            case UndertaleSprite.NineSlice.TileMode.BlankRepeat:
+                Rect blankDest = new(destination.X, destination.Y,
+                    Math.Min(source.Width, destination.Width), Math.Min(source.Height, destination.Height));
+                Rect blankSource = new(source.X, source.Y, blankDest.Width, blankDest.Height);
+                DrawImageTinted(ctx, image, blankSource, blankDest, tint);
+                break;
+
+            case UndertaleSprite.NineSlice.TileMode.Hide:
+            default:
+                break;
+        }
+    }
+
+    static void DrawImageTinted(DrawingContext ctx, IImage image, Rect source, Rect destination, uint tint)
+    {
+        ctx.DrawImage(image, source, destination);
+
+        if (tint != 0xFFFFFFFF)
+        {
+            Color color = UndertaleColor.ToColor(tint);
+            if (color.A > 0)
+            {
+                Color overlay = new((byte)(color.A / 2), color.R, color.G, color.B);
+                ctx.FillRectangle(new SolidColorBrush(overlay), destination);
             }
         }
     }
@@ -700,13 +791,23 @@ public class RoomRenderer
                     double dw = destCols[col + 1] - destCols[col];
                     double dh = destRows[row + 1] - destRows[row];
 
-                    if (dw <= 0 || dh <= 0)
+                    if (sw <= 0 || sh <= 0 || dw <= 0 || dh <= 0)
                         continue;
 
-                    CompositeRegion(canvas, magick,
+                    UndertaleSprite.NineSlice.TileMode tileMode = (col, row) switch
+                    {
+                        (1, 1) => ninePatch.TileModeCenter,
+                        (0, 1) => ninePatch.TileModeLeft,
+                        (1, 0) => ninePatch.TileModeTop,
+                        (2, 1) => ninePatch.TileModeRight,
+                        (1, 2) => ninePatch.TileModeBottom,
+                        _ => UndertaleSprite.NineSlice.TileMode.BlankRepeat,
+                    };
+
+                    CompositeNinePatchSlice(canvas, magick,
                         srcCols[col], srcRows[row], sw, sh,
-                        destX + destCols[col], destY + destRows[row],
-                        dw / sw, dh / sh, c.Color);
+                        destX + destCols[col], destY + destRows[row], dw, dh,
+                        tileMode, c.Color);
                 }
             }
         }
@@ -790,6 +891,81 @@ public class RoomRenderer
 
         if (region.Width != w || region.Height != h)
             region.InterpolativeResize((uint)w, (uint)h, PixelInterpolateMethod.Bilinear);
+
+        ApplyTint(region, tint);
+
+        canvas.Composite(region, (int)Math.Round(destX), (int)Math.Round(destY), CompositeOperator.Over);
+    }
+
+    static void CompositeNinePatchSlice(MagickImage canvas, MagickImage src,
+        double srcX, double srcY, double srcW, double srcH,
+        double destX, double destY, double destW, double destH,
+        UndertaleSprite.NineSlice.TileMode tileMode, uint tint)
+    {
+        switch (tileMode)
+        {
+            case UndertaleSprite.NineSlice.TileMode.Stretch:
+                CompositeRegion(canvas, src, srcX, srcY, srcW, srcH,
+                    destX, destY, destW / srcW, destH / srcH, tint);
+                break;
+
+            case UndertaleSprite.NineSlice.TileMode.Repeat:
+                for (double cy = destY; cy < destY + destH; cy += srcH)
+                {
+                    for (double cx = destX; cx < destX + destW; cx += srcW)
+                    {
+                        double drawW = Math.Min(srcW, destX + destW - cx);
+                        double drawH = Math.Min(srcH, destY + destH - cy);
+                        CompositeRegion(canvas, src, srcX, srcY, drawW, drawH, cx, cy, 1, 1, tint);
+                    }
+                }
+                break;
+
+            case UndertaleSprite.NineSlice.TileMode.Mirror:
+                bool flipY = false;
+                for (double cy = destY; cy < destY + destH; cy += srcH)
+                {
+                    bool flipX = false;
+                    for (double cx = destX; cx < destX + destW; cx += srcW)
+                    {
+                        double drawW = Math.Min(srcW, destX + destW - cx);
+                        double drawH = Math.Min(srcH, destY + destH - cy);
+
+                        double drawSrcX = flipX ? srcX + srcW - drawW : srcX;
+                        double drawSrcY = flipY ? srcY + srcH - drawH : srcY;
+
+                        CompositeFlippedRegion(canvas, src, drawSrcX, drawSrcY, drawW, drawH,
+                            cx, cy, flipX, flipY, tint);
+
+                        flipX = !flipX;
+                    }
+                    flipY = !flipY;
+                }
+                break;
+
+            case UndertaleSprite.NineSlice.TileMode.BlankRepeat:
+                CompositeRegion(canvas, src, srcX, srcY,
+                    Math.Min(srcW, destW), Math.Min(srcH, destH),
+                    destX, destY, 1, 1, tint);
+                break;
+
+            case UndertaleSprite.NineSlice.TileMode.Hide:
+            default:
+                break;
+        }
+    }
+
+    static void CompositeFlippedRegion(MagickImage canvas, MagickImage src,
+        double srcX, double srcY, double srcW, double srcH,
+        double destX, double destY, bool flipX, bool flipY, uint tint)
+    {
+        using MagickImage region = (MagickImage)src.CloneArea((int)Math.Round(srcX), (int)Math.Round(srcY),
+            (uint)Math.Max(1, Math.Round(srcW)), (uint)Math.Max(1, Math.Round(srcH)));
+
+        if (flipX)
+            region.Flop();
+        if (flipY)
+            region.Flip();
 
         ApplyTint(region, tint);
 

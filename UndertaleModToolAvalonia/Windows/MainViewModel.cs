@@ -513,6 +513,8 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
         Tabs.TabCloseAllWithoutSaving();
 
+        UndertaleCodeViewModel.ResetLocalizationData();
+
         ClearProject();
 
         Data = null;
@@ -748,7 +750,10 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
         // Save to temp
 
-        string tempFileName = Path.GetTempFileName();
+        string localAppData = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UndertaleModToolAvalonia");
+        Directory.CreateDirectory(localAppData);
+
+        string tempFileName = Path.Join(localAppData, "TempRun");
 
         if (!await SaveDataToFilePath(tempFileName, useTempFile: false))
         {
@@ -1940,7 +1945,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
             if (Project is not null)
             {
-                if (vm.Resource is IProjectAsset { ProjectExportable: true } projectAsset)
+                if (vm.Resource is IProjectAsset projectAsset)
                 {
                     TabIsMarkedForExport = Project.IsAssetMarkedForExport(projectAsset);
                     TabCanMarkedForExport = true;

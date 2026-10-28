@@ -172,6 +172,8 @@ public partial class UndertaleCodeView : UserControl
 
         InitializeTextEditorTouchHandling(GMLTextEditor);
         InitializeTextEditorTouchHandling(ASMTextEditor);
+        InitializeTextEditorZoomHandling(GMLTextEditor);
+        InitializeTextEditorZoomHandling(ASMTextEditor);
 
         GMLTextEditor.TextArea.GotFocus += GMLTextEditor_GotFocus;
         ASMTextEditor.TextArea.GotFocus += ASMTextEditor_GotFocus;
@@ -1012,6 +1014,79 @@ public partial class UndertaleCodeView : UserControl
         }
     }
 
+    #region Zoom handling
+
+    void InitializeTextEditorZoomHandling(TextEditor editor)
+    {
+        editor.AddHandler(PointerWheelChangedEvent, TextEditor_MouseWheelChanged, RoutingStrategies.Tunnel);
+        editor.AddHandler(KeyDownEvent, TextEditor_KeyDown, RoutingStrategies.Tunnel);
+    }
+
+    void TextEditor_MouseWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            e.Handled = true;
+            AddZoomFontSize(Math.Sign(e.Delta.Y));
+        }
+    }
+
+    void TextEditor_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
+        {
+            if (e.PhysicalKey is PhysicalKey.Equal or PhysicalKey.NumPadAdd)
+            {
+                e.Handled = true;
+                AddZoomFontSize(1);
+            }
+            else if (e.PhysicalKey is PhysicalKey.Minus or PhysicalKey.NumPadSubtract)
+            {
+                e.Handled = true;
+                AddZoomFontSize(-1);
+            }
+        }
+    }
+
+    void AddZoomFontSize(double zoomValue)
+    {
+        double currentSize = GMLTextEditor.FontSize > 0 ? GMLTextEditor.FontSize : 12;
+        double newSize = Math.Clamp(Math.Floor(currentSize + zoomValue), CodeEditorFontSizeMin, CodeEditorFontSizeMax);
+        if (newSize == currentSize)
+            return;
+
+        // Keep the line that is closest to the middle of the viewport in place while the font
+        // size changes, so zooming doesn't jump around in the document.
+        foreach (TextEditor textEditor in new[] { GMLTextEditor, ASMTextEditor })
+        {
+            TextView view = textEditor.TextArea.TextView;
+
+            DocumentLine line1 = view.GetDocumentLineByVisualTop(view.ScrollOffset.Y);
+            int lineToScrollTo = line1.LineNumber;
+
+            DocumentLine? line2 = line1.NextLine;
+            if (line2 != null)
+            {
+                double line1Top = view.GetVisualTopByDocumentLine(line1.LineNumber);
+                double line2Top = view.GetVisualTopByDocumentLine(line2.LineNumber);
+                double height = line2Top - line1Top;
+                double yAboveScrollOffset = view.ScrollOffset.Y - line1Top;
+
+                // If more than halfway above the scroll offset, jump to next line
+                if (yAboveScrollOffset > height / 2)
+                    lineToScrollTo = line2.LineNumber;
+            }
+
+            textEditor.FontSize = newSize;
+            textEditor.ScrollTo(lineToScrollTo, 1, VisualYPosition.LineTop, 0, 0);
+        }
+
+        SetCodeEditorFontSize(newSize);
+        Settings?.Save();
+    }
+
+    #endregion
+
     void OpenCodeEditorTouchMenu(TextEditor editor, Point positionInEditor)
     {
         // PlacementMode.Pointer tracks the last pointer position, which for a long-press is the
@@ -1200,6 +1275,7 @@ public partial class UndertaleCodeView : UserControl
         GMLTextEditor.TextArea.TextView.Redraw();
         ASMTextEditor.TextArea.TextView.Redraw();
     }
+
 
     public async Task GoToLastGoToLocation()
     {
@@ -3353,6 +3429,17 @@ public partial class UndertaleCodeView : UserControl
             if (Bold)
                 TextRunProperties.SetTypeface(new Typeface(TextRunProperties.Typeface.FontFamily, FontStyle.Normal, FontWeight.Bold, FontStretch.Normal));
             return base.CreateTextRun(startVisualColumn, context);
+        }
+
+        protected override void OnQueryCursor(PointerEventArgs e)
+        {
+            if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
+            {
+                if (e.Source is InputElement element)
+                    element.Cursor = new Cursor(StandardCursorType.Hand);
+
+                e.Handled = true;
+            }
         }
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)

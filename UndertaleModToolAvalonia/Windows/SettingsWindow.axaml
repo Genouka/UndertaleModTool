@@ -66,6 +66,9 @@
                 <Button Content="{l:Loc Settings_UpdateApp}"
                         Command="{Binding MainVM.HelpUpdateApp}"
                         HorizontalAlignment="Left" Margin="0,4,0,0"/>
+                <CheckBox Content="Enable localization strings preview"
+                            ToolTip.Tip="If enabled, decompiled code of Undertale and Deltarune Chapter 1 will show previews of localized strings as comments."
+                            IsChecked="{Binding MainVM.Settings.EnableLocalizationStringPreview}"/>
             </StackPanel>
 
             <StackPanel Classes="Section">

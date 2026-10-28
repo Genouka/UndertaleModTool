@@ -68,6 +68,7 @@ public partial class TabsViewModel : ObservableObject
                 UndertaleAnimationCurve r => new UndertaleAnimationCurveViewModel(r),
                 UndertaleParticleSystem r => new UndertaleParticleSystemViewModel(r),
                 UndertaleParticleSystemEmitter r => new UndertaleParticleSystemEmitterViewModel(r),
+                UndertaleUIRootNode r => new UndertaleUIRootNodeViewModel(r),
                 _ => null,
             };
         }

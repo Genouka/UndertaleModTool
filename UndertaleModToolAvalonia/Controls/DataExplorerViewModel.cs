@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -50,7 +51,7 @@ public partial class DataExplorerViewModel : ObservableObject
                 dataItem.Children.Add(new() { Value = value, Text = text });
         }
 
-        void AddList<T>(IList<T?>? list, string value, string text) where T : class?
+        void AddList(IList? list, string value, string text)
         {
             if (list is not null)
                 dataItem.Children.Add(new() { Tag = "list", Value = value, Text = text, Children = CreateListObservableCollectionView(list) });
@@ -85,21 +86,22 @@ public partial class DataExplorerViewModel : ObservableObject
         AddList(MainVM.Data.AnimationCurves, "AnimationCurves", LocalizationSource.GetString("Tree_ParticleSystems"));
         AddList(MainVM.Data.ParticleSystems, "ParticleSystems", LocalizationSource.GetString("Tree_ParticleSystems"));
         AddList(MainVM.Data.ParticleSystemEmitters, "ParticleSystemEmitters", LocalizationSource.GetString("Tree_ParticleSystemEmitters"));
+        AddList(MainVM.Data.UINodes, "UINodes", "UI nodes");
 
         TreeDataGridData.Add(dataItem);
     }
 
-    ObservableCollectionView<T?, Item>.CustomObservableCollection<Item>? CreateListObservableCollectionView<T>(IList<T?>? list) where T : class?
+    ObservableCollectionView<Item>? CreateListObservableCollectionView(IList? list)
     {
         if (list is not null)
         {
-            ObservableCollectionView<T?, Item> view = new(list,
+            ObservableCollectionView<Item> view = new(list,
                 transform: x => new Item() { Text = "", Value = x },
                 filter: item => AssetNameContainsText(item.Value, MainVM.FilterText));
 
             observableCollectionViewList.Add(view);
 
-            return view.Output;
+            return view;
         }
         return null;
     }

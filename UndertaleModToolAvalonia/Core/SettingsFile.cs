@@ -162,6 +162,8 @@ public partial class SettingsFile
 
     public bool AlwaysSaveDataInProjectDestination { get; set; } = true;
 
+    public bool EnableLocalizationStringPreview { get; set; } = true;
+
     public string InstanceIdPrefix { get; set; } = "inst_";
 
     public string Language { get; set; } = "";

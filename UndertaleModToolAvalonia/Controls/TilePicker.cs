@@ -140,6 +140,7 @@ public abstract class RoomOrLegacyTilePicker : TilePicker
             SelectedTileSourceRect = new(x, y, TileWidth, TileHeight);
         }
     }
+
 }
 
 public class LayerTilePicker : TilePicker
@@ -265,6 +266,7 @@ public class LayerTilePicker : TilePicker
     }
 
     public override void SelectTileTo(Point point) => SelectTileAt(point); // TODO: Multiple tile select
+
 }
 
 public abstract class TilePicker : Control
