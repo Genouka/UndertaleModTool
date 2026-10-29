@@ -434,6 +434,11 @@ jobs:
             } >> release_body.md
           fi
         done
+        {
+          echo ''
+          echo '已有Mirror酱 CDK？前往 Mirror酱 高速下载](https://mirrorchyan.com/zh/projects?rid=UndertaleModTool-Genouka)'
+          echo ''
+        } >> release_body.md
       shell: bash
 
     - name: Find previous stable release tag
@@ -461,7 +466,5 @@ jobs:
         files: |
           */*
         body_path: release_body.md
-        # 由 GitHub 自动生成的发行说明会追加在上面的正文之后，Changelog 由此填充
-        # （仓库中并没有 CHANGELOG.md，原先那个链接是失效的）。
         generate_release_notes: true
         previous_tag: ${{ steps.previous.outputs.tag }}

@@ -6,14 +6,16 @@ body:
   attributes:
     label: Platform
     description: Which platform/version of UndertaleModTool does the bug occur on?
+    multiple: true
     options:
-      - Windows (WPF)
+      - WPF-Windows
       - Avalonia-Windows
       - Avalonia-Linux
       - Avalonia-MacOS (ARM64)
       - Avalonia-MacOS (Intel)
       - Avalonia-Android (ARM64)
       - Avalonia-Android (x64)
+      - QiuUTMTv5 API
       - CLI
       - Other
   validations:
@@ -21,7 +23,7 @@ body:
 - type: textarea
   attributes:
     label: Describe the bug
-    description: A clear description of what the bug is. Please consider adding pictures and/or videos, as they really help!
+    description: A clear description of what the bug is. Please consider adding pictures and/or videos, as they really help! Use English or Chinese only!
     placeholder: |
       When doing X, UndertaleModTool crashes.
   validations:
@@ -46,3 +48,17 @@ body:
       3. GameMaker Game: What GameMaker game was used? Link to it!
   validations:
     required: true
+- type: checkboxes
+  attributes:
+    label: Requirements
+    description: Check all the things below.
+    options:
+      - label: I have confirmed that this issue has not been raised before.
+        required: true
+      - label: I have confirmed that this issue is written in English or Chinese.
+        required: true
+      - label: I have confirmed that I have tried the latest version.
+        required: true
+- type: markdown
+  attributes:
+    value: "If there are multiple issues, please raise them as separate issues."

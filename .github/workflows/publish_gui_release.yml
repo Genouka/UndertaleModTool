@@ -435,6 +435,11 @@ jobs:
             } >> release_body.md
           fi
         done
+        {
+          echo ''
+          echo '已有Mirror酱 CDK？前往 Mirror酱 高速下载](https://mirrorchyan.com/zh/projects?rid=UndertaleModTool-Genouka)'
+          echo ''
+        } >> release_body.md
       shell: bash
 
     - name: Find previous stable release tag

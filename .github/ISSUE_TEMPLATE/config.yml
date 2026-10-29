@@ -1,5 +1,7 @@
 blank_issues_enabled: false
 contact_links:
-  - name: UnderMiners Discord
-    url: https://discord.gg/hnyMDypMbN
-    about: For UndertaleModTool questions, discussion, analysis and feedback
+  - name: QQ group
+    url: https://qm.qq.com/q/hu0rdlwbYY
+  - name: Github discussion
+    url: https://github.com/Genouka/UndertaleModTool/discussions
+    about: For QiuUTMTv5 questions, discussion, analysis and feedback

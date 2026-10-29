@@ -4,17 +4,46 @@ labels: ["enhancement"]
 body:
 - type: dropdown
   attributes:
+    label: Platform
+    description: Which platform/version?
+    multiple: true
+    options:
+      - WPF-Windows
+      - Avalonia-Windows
+      - Avalonia-Linux
+      - Avalonia-MacOS (ARM64)
+      - Avalonia-MacOS (Intel)
+      - Avalonia-Android (ARM64)
+      - Avalonia-Android (x64)
+      - CLI
+      - Other
+  validations:
+    required: true
+- type: dropdown
+  attributes:
     label: Which component should be improved?
-    options: [UI/UX, Decompiler, Compiler, CLI, Lib, Other]
+    options: [UI/UX, Decompiler, Compiler, CLI, Lib, QiuUTMTv5API, Other]
   validations:
     required: true
 - type: textarea
   attributes:
     label: Describe your feature suggestion in more detail
-    description: A clear description of your feature suggestion. Feel free to add pictures or videos directly to this description!
+    description: A clear description of your feature suggestion. Feel free to add pictures or videos directly to this description! Use English or Chinese only!
     placeholder: |
       Give a clear explanation of what you want us to add. 
       Please don't give vague suggestions like "Make button look better" or "Add a new panel".
       How exactly does it work? What are the inputs? What is the expected outcome?
   validations:
     required: true
+- type: checkboxes
+  attributes:
+    label: Requirements
+    description: Check all the things below.
+    options:
+      - label: I have confirmed that this issue has not been raised before.
+        required: true
+      - label: I have confirmed that this issue is written in English or Chinese.
+        required: true
+- type: markdown
+  attributes:
+    value: "If there are multiple issues, please raise them as separate issues."
