@@ -59,7 +59,7 @@
                         </local:ButtonDark>
                     </StackPanel>
                     <local:ButtonDark x:Name="TabListButton" Width="18" Height="18" BorderThickness="0"
-                                      Click="TabListButton_Click" ToolTip="Show all open tabs">
+                                      Click="TabListButton_Click" ToolTip="{loc:Loc Tab_ShowAllOpenTabs}">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="Transparent"/>

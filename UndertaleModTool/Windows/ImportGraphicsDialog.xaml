@@ -61,15 +61,18 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{loc:Loc ImportGraphics_OriginPosition}"/>
                         <local:ComboBoxDark Grid.Column="1" x:Name="OriginPositionComboBox" SelectedIndex="0">
-                            <ComboBoxItem Content="Top Left"/>
-                            <ComboBoxItem Content="Top Center"/>
-                            <ComboBoxItem Content="Top Right"/>
-                            <ComboBoxItem Content="Center Left"/>
-                            <ComboBoxItem Content="Center"/>
-                            <ComboBoxItem Content="Center Right"/>
-                            <ComboBoxItem Content="Bottom Left"/>
-                            <ComboBoxItem Content="Bottom Center"/>
-                            <ComboBoxItem Content="Bottom Right"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_OriginTopLeft}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_OriginTopCenter}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_OriginTopRight}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_OriginCenterLeft}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_OriginCenter}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_OriginCenterRight}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_OriginBottomLeft}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_OriginBottomCenter}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_OriginBottomRight}"/>
+
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_FramesPerSecond}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_FramesPerGameFrame}"/>
                         </local:ComboBoxDark>
                     </Grid>
                     <Grid>
@@ -87,8 +90,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{loc:Loc ImportGraphics_PlaybackType}"/>
                         <local:ComboBoxDark Grid.Column="1" x:Name="PlaybackTypeComboBox" SelectedIndex="1">
-                            <ComboBoxItem Content="Frames Per Second"/>
-                            <ComboBoxItem Content="Frames Per Game Frame"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_FramesPerSecond}"/>
+                            <ComboBoxItem Content="{loc:Loc ImportGraphics_FramesPerGameFrame}"/>
                         </local:ComboBoxDark>
                     </Grid>
                     <Grid>

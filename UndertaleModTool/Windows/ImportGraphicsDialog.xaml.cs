@@ -277,7 +277,7 @@ namespace UndertaleModTool
                 SourceHeight = srcH,
                 CanReplaceInPlace = canReplace,
                 SpriteExists = exists,
-                StatusText = exists ? (canReplace ? "✓ Can replace" : "Dimension mismatch") : "New background",
+                StatusText = exists ? (canReplace ? "✓ " + LocalizationSource.GetString("ImportGraphics_CanReplace") : LocalizationSource.GetString("ImportGraphics_DimensionMismatch")) : LocalizationSource.GetString("ImportGraphics_NewBackground"),
                 ImportMode = canReplace ? ImportMode.KeepOriginalTexturePage : ImportMode.NewTexturePages,
                 OriginalTexturePageIndex = exists ? GetTexturePageIndex(bg?.Texture?.TexturePage) : null,
                 EstimatedTexturePageIndex = null
@@ -329,7 +329,7 @@ namespace UndertaleModTool
                         SourceHeight = srcH,
                         CanReplaceInPlace = canReplace,
                         SpriteExists = exists,
-                        StatusText = exists ? (canReplace ? "✓ Can replace" : "Dimension mismatch") : "New sprite",
+                        StatusText = exists ? (canReplace ? "✓ " + LocalizationSource.GetString("ImportGraphics_CanReplace") : LocalizationSource.GetString("ImportGraphics_DimensionMismatch")) : LocalizationSource.GetString("ImportGraphics_NewSprite"),
                         ImportMode = canReplace ? ImportMode.KeepOriginalTexturePage : ImportMode.NewTexturePages,
                         OriginalTexturePageIndex = exists ? GetTexturePageIndex(tex?.TexturePage) : null,
                         EstimatedTexturePageIndex = null
@@ -389,7 +389,7 @@ namespace UndertaleModTool
                         SourceHeight = srcH,
                         CanReplaceInPlace = canReplace,
                         SpriteExists = exists,
-                        StatusText = exists ? (canReplace ? "✓ Can replace" : "Dimension mismatch") : "New sprite",
+                        StatusText = exists ? (canReplace ? "✓ " + LocalizationSource.GetString("ImportGraphics_CanReplace") : LocalizationSource.GetString("ImportGraphics_DimensionMismatch")) : LocalizationSource.GetString("ImportGraphics_NewSprite"),
                         ImportMode = canReplace ? ImportMode.KeepOriginalTexturePage : ImportMode.NewTexturePages,
                         OriginalTexturePageIndex = exists ? GetTexturePageIndex(tex?.TexturePage) : null,
                         EstimatedTexturePageIndex = null
@@ -428,13 +428,13 @@ namespace UndertaleModTool
 
             string status;
             if (!exists)
-                status = "New sprite";
+                status = LocalizationSource.GetString("ImportGraphics_NewSprite");
             else if (frame < 0 || frame >= sprite.Textures.Count)
-                status = "Frame out of range";
+                status = LocalizationSource.GetString("ImportGraphics_FrameOutOfRange");
             else if (canReplace)
-                status = "✓ Can replace";
+                status = "✓ " + LocalizationSource.GetString("ImportGraphics_CanReplace");
             else
-                status = "Dimension mismatch";
+                status = LocalizationSource.GetString("ImportGraphics_DimensionMismatch");
 
             UndertaleTexturePageItem texItem = null;
             if (exists && frame >= 0 && frame < sprite.Textures.Count)

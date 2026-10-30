@@ -21,7 +21,7 @@
                 <TextBlock Text="{l:Loc Editor_Font_DisplayName}"/>
                 <l:UndertaleStringReferenceView Reference="{Binding Font.DisplayName}" />
         
-                <Label>Font size (em)</Label>
+                <TextBlock Text="{l:Loc Editor_Font_FontSizeEm}" />
                 <TextBox Text="{Binding Font.EmSize}" />
         
                 <TextBlock Text="{l:Loc Editor_Font_Bold}"/>
@@ -91,7 +91,7 @@
                 <StackPanel>
                     <l:EditableDataGrid ItemsSource="{Binding Font.Glyphs}" ItemFactory="{Binding CreateGlyph}" SelectionChanged="{Binding GlyphsSelectedChanged}">
                         <l:EditableDataGrid.Columns>
-                            <DataGridTemplateColumn Header="Code point" Width="3*">
+                            <DataGridTemplateColumn Header="{l:Loc Editor_Font_CodePoint}" Width="3*">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="undertalem:UndertaleFont+Glyph">
                                         <TextBox Text="{Binding Character}" />

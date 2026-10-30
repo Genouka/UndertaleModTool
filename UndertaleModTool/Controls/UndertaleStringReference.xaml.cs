@@ -101,7 +101,7 @@ namespace UndertaleModTool
             var obj = (sender as FrameworkElement)?.DataContext;
             if (obj is not UndertaleResource res)
             {
-                mainWindow.ShowError("The selected object is not an \"UndertaleResource\".");
+                mainWindow.ShowError(LocalizationSource.GetString("Msg_SelectedObjectNotUndertaleResource"));
                 return;
             }
 

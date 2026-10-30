@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using UndertaleModTool.Localization;
 using UndertaleModLib.Models;
 
 namespace UndertaleModTool
@@ -39,7 +40,7 @@ namespace UndertaleModTool
             var editor = sender as TextEditor;
             if (editor is null)
             {
-                mainWindow.ShowError("Cannot load the code of one of the shader properties - the editor is not found?");
+                mainWindow.ShowError(LocalizationSource.GetString("Msg_ShaderEditorNotFoundLoad"));
                 return;
             }
 
@@ -70,7 +71,7 @@ namespace UndertaleModTool
             var srcString = editor.DataContext as UndertaleString;
             if (srcString is null)
             {
-                mainWindow.ShowError("Cannot load the code of one of the shader properties - the source string object is null.");
+                mainWindow.ShowError(LocalizationSource.GetString("Msg_ShaderSourceNullLoad"));
                 return;
             }
 
@@ -82,14 +83,14 @@ namespace UndertaleModTool
             var editor = sender as TextEditor;
             if (editor is null)
             {
-                mainWindow.ShowError("The changes weren't saved - the editor is not found?");
+                mainWindow.ShowError(LocalizationSource.GetString("Msg_ShaderEditorNotFoundSave"));
                 return;
             }
 
             var srcString = editor.DataContext as UndertaleString;
             if (srcString is null)
             {
-                mainWindow.ShowError("The changes weren't saved - the source string object is null.");
+                mainWindow.ShowError(LocalizationSource.GetString("Msg_ShaderSourceNullSave"));
                 return;
             }
 

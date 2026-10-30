@@ -20,6 +20,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using UndertaleModLib;
 using UndertaleModLib.Models;
+using UndertaleModTool.Localization;
 using UndertaleModTool.Windows;
 
 namespace UndertaleModTool
@@ -193,7 +194,7 @@ namespace UndertaleModTool
 
             objRef.ClearRemoveClickHandler();
             objRef.RemoveButton.Click += Remove_Click_Override;
-            objRef.RemoveButton.ToolTip = "Remove action";
+            objRef.RemoveButton.ToolTip = LocalizationSource.GetString("Editor_RemoveAction");
             objRef.RemoveButton.IsEnabled = true;
         }
         private void Remove_Click_Override(object sender, RoutedEventArgs e)
@@ -235,7 +236,7 @@ namespace UndertaleModTool
                     var originalCont = button.Content;
 
                     showingNoChildrenFoundMessage = true;
-                    button.Content = "(no children were found)";
+                    button.Content = LocalizationSource.GetString("Editor_NoChildrenFound");
                     await Task.Delay(2000);
 
                     button.Content = originalCont;
@@ -244,8 +245,7 @@ namespace UndertaleModTool
             }
             catch (Exception ex)
             {
-                mainWindow.ShowError("An error occurred in the object references related window.\n" +
-                                     $"Please report this on GitHub.\n\n{ex}");
+                mainWindow.ShowError(string.Format(LocalizationSource.GetString("Msg_ObjectReferencesWindowError"), ex));
             }
             finally
             {

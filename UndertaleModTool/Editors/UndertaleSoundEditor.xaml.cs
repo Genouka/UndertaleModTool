@@ -133,11 +133,11 @@ namespace UndertaleModTool
                                 waveOut.Play();
                                 break;
                             default:
-                                throw new Exception("Unknown file type.");
+                                throw new Exception(LocalizationSource.GetString("Msg_UnknownAudioFileType"));
                         }
                     }
                     else
-                        throw new Exception("Failed to find audio file.");
+                        throw new Exception(LocalizationSource.GetString("Msg_FailedFindAudioFile"));
                 } catch (Exception ex)
                 {
                     waveOut = null;
@@ -209,12 +209,12 @@ namespace UndertaleModTool
                             waveOut.Play();
                         }
                         else
-                            mainWindow.ShowError("Failed to play audio!\r\nNot a WAV or OGG.", "Audio failure");
+                            mainWindow.ShowError(LocalizationSource.GetString("Msg_FailedToPlayAudioNotWavOgg"), LocalizationSource.GetString("Msg_AudioFailure"));
                     }
                     catch (Exception ex)
                     {
                         waveOut = null;
-                        mainWindow.ShowError("Failed to play audio!\r\n" + ex.Message, "Audio failure");
+                        mainWindow.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToPlayAudio"), ex.Message), LocalizationSource.GetString("Msg_AudioFailure"));
                     }
                 }
             }
