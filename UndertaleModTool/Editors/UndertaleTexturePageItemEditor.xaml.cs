@@ -150,7 +150,7 @@ namespace UndertaleModTool
             OpenFileDialog dlg = new OpenFileDialog();
 
             dlg.DefaultExt = ".png";
-            dlg.Filter = "PNG files (.png)|*.png|All files|*";
+            dlg.Filter = LocalizationSource.GetString("FileFilter_PNG") + "|*.png|" + LocalizationSource.GetString("FileFilter_AllFiles") + "|*";
 
             if (!(dlg.ShowDialog() ?? false))
                 return;
@@ -169,7 +169,7 @@ namespace UndertaleModTool
                 // If texture was DDS, warn user that texture has been converted to PNG
                 if (previousFormat == GMImage.ImageFormat.Dds && currentFormat == GMImage.ImageFormat.Png)
                 {
-                    mainWindow.ShowMessage($"{item.TexturePage} was converted into PNG format since we don't support converting images into DDS format. This might have performance issues in the game.");
+                    mainWindow.ShowMessage(string.Format(LocalizationSource.GetString("Msg_TextureConvertedToPNG"), item.TexturePage));
                 }
 
                 // Refresh the image of "ItemDisplay"
@@ -181,7 +181,7 @@ namespace UndertaleModTool
             }
             catch (Exception ex)
             {
-                mainWindow.ShowError(ex.Message, "Failed to import image");
+                mainWindow.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToImportFile"), ex.Message), LocalizationSource.GetString("Dialog_FailedToImportFile"));
             }
         }
 
@@ -190,7 +190,7 @@ namespace UndertaleModTool
             SaveFileDialog dlg = new SaveFileDialog();
 
             dlg.DefaultExt = ".png";
-            dlg.Filter = "PNG files (.png)|*.png|All files|*";
+            dlg.Filter = LocalizationSource.GetString("FileFilter_PNG") + "|*.png|" + LocalizationSource.GetString("FileFilter_AllFiles") + "|*";
 
             if (dlg.ShowDialog() == true)
             {
@@ -201,7 +201,7 @@ namespace UndertaleModTool
                 }
                 catch (Exception ex)
                 {
-                    mainWindow.ShowError("Failed to export file: " + ex.Message, "Failed to export file");
+                    mainWindow.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToExportFile"), ex.Message), LocalizationSource.GetString("Dialog_FailedToExportFile"));
                 }
             }
         }

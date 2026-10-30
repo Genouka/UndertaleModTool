@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using UndertaleModTool.Localization;
 using UndertaleModLib.Models;
 
 namespace UndertaleModTool
@@ -31,7 +32,7 @@ namespace UndertaleModTool
 
             objRef.ClearRemoveClickHandler();
             objRef.RemoveButton.Click += Remove_Click_Override;
-            objRef.RemoveButton.ToolTip = "Remove script";
+            objRef.RemoveButton.ToolTip = LocalizationSource.GetString("Editor_RemoveScript");
             objRef.RemoveButton.IsEnabled = true;
         }
         private void Remove_Click_Override(object sender, RoutedEventArgs e)

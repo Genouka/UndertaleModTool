@@ -64,11 +64,8 @@
                             IsChecked="{Binding MainVM.Settings.ShowRoomEditorDebugInfo}"/>
                 <CheckBox Content="{l:Loc Settings_EnableProjectBackup}"
                             IsChecked="{Binding MainVM.Settings.EnableProjectBackup}"/>
-                <CheckBox Content="Confirm before running scripts"
-                            ToolTip.Tip="Show a confirmation dialog before executing a script selected from the Scripts menu. Enabled by default on Android."
-                            IsChecked="{Binding MainVM.Settings.ConfirmBeforeRunningScripts}"/>
-                <CheckBox Content="Always save to the project's designated data file for saving"
-                            IsChecked="{Binding MainVM.Settings.AlwaysSaveDataInProjectDestination}"/>
+                <CheckBox Content="{l:Loc Settings_ConfirmBeforeRunningScripts}" ToolTip.Tip="{l:Loc Settings_ConfirmBeforeRunningScriptsToolTip}" IsChecked="{Binding MainVM.Settings.ConfirmBeforeRunningScripts}"/>
+                <CheckBox Content="{l:Loc Settings_AlwaysSaveProjectData}" IsChecked="{Binding MainVM.Settings.AlwaysSaveDataInProjectDestination}"/>
                 <CheckBox Content="{l:Loc Settings_RecompileOnSave}"
                             ToolTip.Tip="{l:Loc Settings_RecompileOnSaveToolTip}"
                             IsChecked="{Binding MainVM.Settings.RecompileAllCodeSourcesOnProjectSave}"/>
@@ -112,9 +109,7 @@
                 <Button Content="{l:Loc Settings_UpdateApp}"
                         Command="{Binding MainVM.HelpUpdateApp}"
                         HorizontalAlignment="Left" Margin="0,4,0,0"/>
-                <CheckBox Content="Enable localization strings preview"
-                            ToolTip.Tip="If enabled, decompiled code of Undertale and Deltarune Chapter 1 will show previews of localized strings as comments."
-                            IsChecked="{Binding MainVM.Settings.EnableLocalizationStringPreview}"/>
+                <CheckBox Content="{l:Loc Settings_EnableLocalizationStringPreview}" ToolTip.Tip="{l:Loc Settings_EnableLocalizationStringPreviewToolTip}" IsChecked="{Binding MainVM.Settings.EnableLocalizationStringPreview}"/>
             </StackPanel>
 
             <StackPanel Classes="Section">
@@ -166,20 +161,17 @@
                 </Grid>
 
                 <Grid ColumnDefinitions="Auto,1*">
-                    <TextBlock Text="Name of unknown enums:"
-                            ToolTip.Tip="The name used for auto-generated enum declarations when integer constants are detected as enums without known types (default: &quot;UnknownEnum&quot;)."/>
+                    <TextBlock Text="{l:Loc Settings_UnknownEnumName}" ToolTip.Tip="{l:Loc Settings_UnknownEnumNameToolTip}"/>
                     <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.UnknownEnumName}"/>
                 </Grid>
 
                 <Grid ColumnDefinitions="Auto,1*">
-                    <TextBlock Text="Pattern of unknown enum value names:"
-                            ToolTip.Tip="Formatting pattern for values inside generated unknown enums. '{0}' is replaced with the underlying number (e.g. 'Value_{0}' produces 'Value_0', 'Value_1'...)."/>
+                    <TextBlock Text="{l:Loc Settings_UnknownEnumValuePattern}" ToolTip.Tip="{l:Loc Settings_UnknownEnumValuePatternToolTip}"/>
                     <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.UnknownEnumValuePattern}"/>
                 </Grid>
 
                 <Grid ColumnDefinitions="Auto,1*">
-                    <TextBlock Text="Pattern of unknown argument names:"
-                            ToolTip.Tip="Formatting pattern for unnamed arguments. '{0}' is replaced with the argument index (e.g. 'arg{0}' produces 'arg0', 'arg1'...)."/>
+                    <TextBlock Text="{l:Loc Settings_UnknownArgumentNamePattern}" ToolTip.Tip="{l:Loc Settings_UnknownArgumentNamePatternToolTip}"/>
                     <TextBox Grid.Column="1" Text="{Binding MainVM.Settings.DecompileSettings.UnknownArgumentNamePattern}"/>
                 </Grid>
 
@@ -218,8 +210,7 @@
                 <CheckBox Content="{l:Loc GML_AroundStaticInitialization}"
                             ToolTip.Tip="{l:Loc GML_AroundStaticInitialization_Tooltip}"
                             IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAroundStaticInitialization}"/>
-                <CheckBox Content="Around enums"
-                            ToolTip.Tip="If enabled, adds an empty line before and after enums."
+                <CheckBox Content="{l:Loc GML_AroundEnums}" ToolTip.Tip="{l:Loc GML_AroundEnums_Tooltip}"
                             IsChecked="{Binding MainVM.Settings.DecompileSettings.EmptyLineAroundEnums}"/>
             </StackPanel>
 

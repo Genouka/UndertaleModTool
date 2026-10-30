@@ -157,10 +157,10 @@ public partial class AppMenuBar : UserControl
         Item(file, "Menu_File_Close", command: new RelayCommand(vm.FileClose));
         file.Items.Add(new NativeMenuItemSeparator());
         Item(file, "Menu_File_TempRun", command: new RelayCommand(vm.FileTempRun), gesture: new KeyGesture(Key.F5));
-        LiteralItem(file, "_Run with data/project runner", command: new RelayCommand(vm.FileRun), gesture: new KeyGesture(Key.F5, KeyModifiers.Alt));
+        Item(file, "Menu_File_RunWithDataProjectRunner", command: new RelayCommand(vm.FileRun), gesture: new KeyGesture(Key.F5, KeyModifiers.Alt));
         Item(file, "Menu_File_RunOtherRunner", command: new RelayCommand(vm.FileRunWithOther));
         file.Items.Add(new NativeMenuItemSeparator());
-        LiteralItem(file, "Clear audio group cache", command: new RelayCommand(vm.FileClearAudioGroupCache));
+        Item(file, "Menu_File_ClearAudioGroupCache", command: new RelayCommand(vm.FileClearAudioGroupCache));
         file.Items.Add(new NativeMenuItemSeparator());
         Item(file, "Menu_File_Settings", command: new RelayCommand(vm.FileSettings), gesture: new KeyGesture(Key.F4));
         Item(file, "Menu_File_Exit", command: new RelayCommand(vm.FileExit), gesture: new KeyGesture(Key.Q, modifier));
@@ -184,7 +184,7 @@ public partial class AppMenuBar : UserControl
         NativeMenu help = new();
         Item(help, "Menu_Help_CheckForUpdates", command: new RelayCommand(vm.HelpCheckForUpdates));
         help.Items.Add(new NativeMenuItemSeparator());
-        LiteralItem(help, "Contributors & translators", command: new RelayCommand(vm.HelpContributors));
+        Item(help, "Menu_Help_Contributors", command: new RelayCommand(vm.HelpContributors));
         Item(help, "Menu_Help_GitHub", command: new RelayCommand(vm.HelpGitHub));
         Item(help, "Menu_Help_About", command: new RelayCommand(vm.HelpAbout), gesture: new KeyGesture(Key.F1));
 

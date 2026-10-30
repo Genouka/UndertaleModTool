@@ -26,7 +26,7 @@
                 <TextBlock Text="{l:Loc Editor_Sprite}"/>
                 <l:UndertaleResourceReferenceView Reference="{Binding GameObject.Sprite}" ReferenceType="undertalem:UndertaleSprite"/>
 
-                <Label>Image</Label>
+                <TextBlock Text="{l:Loc Editor_Image}" />
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" HorizontalAlignment="Center"
                           MaxHeight="{Binding $parent[ScrollViewer].Viewport.Height}">
                     <l:ImageViewer Image="{Binding GameObject.Sprite.Textures[0].Texture}" />

@@ -5,29 +5,16 @@
         xmlns:l="clr-namespace:UndertaleModToolAvalonia"
         mc:Ignorable="d"
         x:Class="UndertaleModToolAvalonia.ContributorsWindow"
-        Title="Contributors &amp; translators"
+        Title="{l:Loc Contributors_Title}"
         Width="480"
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         Classes="MessageWindow">
     <StackPanel Spacing="12" Margin="0,16,0,0">
-        <TextBlock Text="UndertaleModTool is maintained by volunteers. The live pages below list everyone who contributed code, reported bugs, translated the tool, or reviewed changes."
-                   TextWrapping="Wrap" />
-        <Button Content="Code contributors (this fork)"
-                Tag="https://github.com/Genouka/UndertaleModTool/graphs/contributors?all=1"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Click="OpenLinkClick" />
-        <Button Content="Code contributors (QiuUTMTv4 upstream)"
-                Tag="https://github.com/QiumingOrg/QiuUTMTv4/graphs/contributors?all=1"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Click="OpenLinkClick" />
-        <Button Content="Translators (Weblate)"
-                Tag="https://hosted.weblate.org/engage/qiuutmtv4/"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Left"
-                Click="OpenLinkClick" />
+        <TextBlock Text="{l:Loc Contributors_Description}" TextWrapping="Wrap" />
+        <Button Content="{l:Loc Contributors_CodeFork}" Tag="https://github.com/Genouka/UndertaleModTool/graphs/contributors?all=1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OpenLinkClick" />
+        <Button Content="{l:Loc Contributors_CodeUpstream}" Tag="https://github.com/QiumingOrg/QiuUTMTv4/graphs/contributors?all=1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OpenLinkClick" />
+        <Button Content="{l:Loc Contributors_Translators}" Tag="https://hosted.weblate.org/engage/qiuutmtv4/" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Click="OpenLinkClick" />
         <Button Content="{l:Loc Common_OK}"
                 IsDefault="True"
                 HorizontalAlignment="Right"

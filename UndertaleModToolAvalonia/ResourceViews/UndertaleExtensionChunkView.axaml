@@ -14,7 +14,7 @@
     <ScrollViewer>
         <StackPanel Classes="PaddedProperties">
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
-                <Label>Product ID data</Label>
+                <Label>{l:Loc Editor_Extension_ProductIdData}</Label>
                 <l:EditableDataGrid ItemsSource="{Binding ExtensionChunk.productIdData}" ItemFactory="{Binding CreateByteArray}" HeadersVisibility="None">
                     <l:EditableDataGrid.Columns>
                         <DataGridTemplateColumn Header="{l:Loc Common_ByteArray}" Width="1*">

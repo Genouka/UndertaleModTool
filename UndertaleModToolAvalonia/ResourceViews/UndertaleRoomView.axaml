@@ -606,7 +606,7 @@
                                                         <Grid ColumnDefinitions="1*,1*,1*">
                                                             <TextBox Grid.Column="0" Text="{Binding TilesX, UpdateSourceTrigger=LostFocus}" />
                                                             <TextBox Grid.Column="1" Text="{Binding TilesY, UpdateSourceTrigger=LostFocus}" />
-                                                            <Button Grid.Column="2" Command="{Binding #Root.DataContext.AutoSizeTileLayer}">Auto</Button>
+                                                            <Button Grid.Column="2" Command="{Binding #Root.DataContext.AutoSizeTileLayer}">{l:Loc Room_Auto}</Button>
                                                         </Grid>
 
                                                         <TextBlock Text="{l:Loc Room_TileSet}"/>
@@ -621,9 +621,9 @@
                                                     </Grid>
 
                                                     <StackPanel Orientation="Horizontal">
-                                                        <Button Command="{Binding #Root.DataContext.SelectedTileDataFlipX}" HotKey="X">Mirror (X)</Button>
-                                                        <Button Command="{Binding #Root.DataContext.SelectedTileDataFlipY}" HotKey="Y">Flip (Y)</Button>
-                                                        <Button Command="{Binding #Root.DataContext.SelectedTileDataRotateClockwise}" HotKey="Z">Rotate (Z)</Button>
+                                                        <Button Command="{Binding #Root.DataContext.SelectedTileDataFlipX}" HotKey="X">{l:Loc Room_MirrorX}</Button>
+                                                        <Button Command="{Binding #Root.DataContext.SelectedTileDataFlipY}" HotKey="Y">{l:Loc Room_FlipY}</Button>
+                                                        <Button Command="{Binding #Root.DataContext.SelectedTileDataRotateClockwise}" HotKey="Z">{l:Loc Room_RotateZ}</Button>
                                                     </StackPanel>
 
                                                     <l:LayerTilePicker
@@ -860,7 +860,7 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
                     <ToggleButton x:Name="TreeOverlayButton"
                                   Click="TreeOverlayButton_Click"
-                                  ToolTip.Tip="Toggle tree view"
+                                  ToolTip.Tip="{l:Loc Room_ToggleTreeView}"
                                   Padding="6,4">
                         <Panel Width="18" Height="18">
                             <Rectangle Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" RadiusX="2.5" RadiusY="2.5" />
@@ -869,7 +869,7 @@
                     </ToggleButton>
                     <ToggleButton x:Name="PropertiesOverlayButton"
                                   Click="PropertiesOverlayButton_Click"
-                                  ToolTip.Tip="Toggle properties"
+                                  ToolTip.Tip="{l:Loc Room_ToggleProperties}"
                                   Padding="6,4">
                         <!-- Three rows with a knob on each; the knobs are 5px so they keep an even
                              gap to the neighboring rows and don't visually touch them. -->
@@ -886,14 +886,14 @@
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
                     <Button Command="{Binding SaveAsImage}"
-                            ToolTip.Tip="Save as image"
+                            ToolTip.Tip="{l:Loc Room_SaveAsImage}"
                             Padding="6,4">
                         <Path Width="18" Height="18" Stretch="Uniform"
                               Fill="{DynamicResource SystemControlForegroundBaseHighBrush}"
                               Data="M3,3 L13,3 L17,7 L17,17 L3,17 Z M5,3 L5,8 L12,8 L12,3 M5,10 L14,10 L14,17 L5,17 Z" />
                     </Button>
                     <ToggleButton IsChecked="{Binding IsLocked}"
-                                  ToolTip.Tip="Lock"
+                                  ToolTip.Tip="{l:Loc Room_Lock}"
                                   Padding="6,4">
                         <Panel Width="18" Height="18">
                             <Path Data="M6,8 L6,5 A3,3 0 0 1 12,5 L12,8"
@@ -905,14 +905,14 @@
                         </Panel>
                     </ToggleButton>
                     <ToggleButton IsChecked="{Binding IsSelectAnyLayerEnabled}"
-                                  ToolTip.Tip="Select any layer"
+                                  ToolTip.Tip="{l:Loc Room_SelectAnyLayer}"
                                   Padding="6,4">
                         <Path Width="18" Height="18" Stretch="Uniform"
                               Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5"
                               Data="M9,2.5 L15.5,6 L9,9.5 L2.5,6 Z M2.5,9.75 L9,13.25 L15.5,9.75 M2.5,13.25 L9,16.75 L15.5,13.25" />
                     </ToggleButton>
                     <ToggleButton IsChecked="{Binding IsGridEnabled}"
-                                  ToolTip.Tip="Grid"
+                                  ToolTip.Tip="{l:Loc Room_Grid}"
                                   Padding="6,4">
                         <Panel Width="18" Height="18">
                             <Rectangle Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5" RadiusX="2" RadiusY="2" />
@@ -953,7 +953,7 @@
                     <Slider Minimum="0" Maximum="1"
                             Value="{Binding Zoom, Converter={StaticResource ZoomLogConverter}}"
                             Width="140" VerticalAlignment="Center"
-                            ToolTip.Tip="Zoom" />
+                            ToolTip.Tip="{l:Loc Room_Zoom}" />
                     <TextBlock Text="{Binding Zoom, Converter={StaticResource ZoomConverter}, Mode=OneWay}"
                                VerticalAlignment="Center" MinWidth="48" TextAlignment="Right" />
                 </StackPanel>

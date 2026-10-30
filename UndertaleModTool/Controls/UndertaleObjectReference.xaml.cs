@@ -230,7 +230,7 @@ namespace UndertaleModTool
                         // If code already exists, use it (otherwise create new code)
                         if (mainWindow.Data.Code.ByName(name) is UndertaleCode existing)
                         {
-                            mainWindow.ShowWarning("Code entry for room already exists; reusing it.");
+                            mainWindow.ShowWarning(LocalizationSource.GetString("Msg_CodeEntryRoomExists"));
                             ObjectReference = existing;
                         }
                         else
@@ -257,7 +257,7 @@ namespace UndertaleModTool
                 }
                 else
                 {
-                    mainWindow.ShowError("Adding not supported in this situation.");
+                    mainWindow.ShowError(LocalizationSource.GetString("Msg_AddingNotSupported"));
                 }
 
                 if (oldObj != ObjectReference)

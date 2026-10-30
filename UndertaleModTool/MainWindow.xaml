@@ -237,7 +237,7 @@
                     </MenuItem>
                 </local:MenuItemDark>
                 <local:MenuItemDark Header="{loc:Loc Menu_Help}">
-                    <MenuItem Header="Contributors &amp; translators" Click="MenuItem_Contributors_Click"/>
+                    <MenuItem Header="{loc:Loc Contributors_Title}" Click="MenuItem_Contributors_Click"/>
                     <MenuItem Header="{loc:Loc Menu_Help_GitHub}" Click="MenuItem_GitHub_Click"/>
                     <MenuItem Header="{loc:Loc Menu_Help_About}" Click="MenuItem_About_Click"/>
                 </local:MenuItemDark>
@@ -250,7 +250,7 @@
                 </Grid.ColumnDefinitions>
                 <local:TextBoxDark Margin="0,0,15,0" Grid.Column="0" x:Name="CommandBox" AcceptsReturn="True" PreviewKeyDown="CommandBox_PreviewKeyDown"/>
                 <Grid Name="MarkedForExportGroup" Visibility="Collapsed" Grid.Column="1"
-                       ToolTip="Whether the currently open asset is marked to be exported to the currently open project, the next time it is saved."
+                       ToolTip="{loc:Loc Msg_MarkedForExportTooltip}"
                        ToolTipService.InitialShowDelay="200" >
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -262,7 +262,7 @@
                               VerticalAlignment="Top" VerticalContentAlignment="Top"></CheckBox>
                 </Grid>
                 <Label Grid.Column="2"
-                        ToolTip="This is an ID (index) of the currently open asset, item, or object. It starts from 0."
+                        ToolTip="{loc:Loc Msg_ObjectIDTooltip}"
                         ToolTipService.InitialShowDelay="200"
                         Content="{loc:Loc Common_None}" HorizontalAlignment="Right" VerticalAlignment="Top" VerticalContentAlignment="Top" Name="ObjectLabel"/>
             </Grid>
@@ -691,7 +691,7 @@
                                 </local:ButtonDark>
                             </StackPanel>
                             <local:ButtonDark x:Name="TabListButton" Width="18" Height="18" BorderThickness="0"
-                                              Click="TabListButton_Click" ToolTip="Show all open tabs">
+                                              Click="TabListButton_Click" ToolTip="{loc:Loc Tab_ShowAllOpenTabs}">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Setter Property="Background" Value="Transparent"/>

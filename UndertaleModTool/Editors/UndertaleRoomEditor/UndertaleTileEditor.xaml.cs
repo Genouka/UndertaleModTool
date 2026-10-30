@@ -1,3 +1,4 @@
+using UndertaleModTool.Localization;
 #pragma warning disable CA1416 // Validate platform compatibility
 
 using System;
@@ -32,15 +33,15 @@ namespace UndertaleModTool
     [PropertyChanged.AddINotifyPropertyChangedInterface]
     public partial class UndertaleTileEditor : Window
     {
-        public static RoutedUICommand MirrorCommand = new("Mirror the brush", "Mirror", typeof(UndertaleTileEditor));
-        public static RoutedUICommand FlipCommand = new("Flip the brush", "Flip", typeof(UndertaleTileEditor));
-        public static RoutedUICommand RotateCWCommand = new("Rotate the brush 90 degrees clockwise", "RotateCW", typeof(UndertaleTileEditor));
-        public static RoutedUICommand RotateCCWCommand = new("Rotate the brush 90 degrees counterclockwise", "RotateCCW", typeof(UndertaleTileEditor));
-        public static RoutedUICommand ToggleGridCommand = new("Toggle the tile grid", "ToggleGrid", typeof(UndertaleTileEditor));
-        public static RoutedUICommand ToggleBrushTilingCommand = new("Toggle the \"tiling\" behavior on multi-tile brushes", "ToggleBrushTiling", typeof(UndertaleTileEditor));
-        public static RoutedUICommand TogglePreviewCommand = new("Toggle the room preview", "TogglePreview", typeof(UndertaleTileEditor));
-        public static RoutedUICommand UndoCommand = new("Undoes actions", "Undo", typeof(UndertaleTileEditor));
-        public static RoutedUICommand RedoCommand = new("Redoes actions", "Redo", typeof(UndertaleTileEditor));
+        public static RoutedUICommand MirrorCommand = new(LocalizationSource.GetString("Cmd_MirrorBrush"), "Mirror", typeof(UndertaleTileEditor));
+        public static RoutedUICommand FlipCommand = new(LocalizationSource.GetString("Cmd_FlipBrush"), "Flip", typeof(UndertaleTileEditor));
+        public static RoutedUICommand RotateCWCommand = new(LocalizationSource.GetString("Cmd_RotateBrushCW"), "RotateCW", typeof(UndertaleTileEditor));
+        public static RoutedUICommand RotateCCWCommand = new(LocalizationSource.GetString("Cmd_RotateBrushCCW"), "RotateCCW", typeof(UndertaleTileEditor));
+        public static RoutedUICommand ToggleGridCommand = new(LocalizationSource.GetString("Cmd_ToggleTileGrid"), "ToggleGrid", typeof(UndertaleTileEditor));
+        public static RoutedUICommand ToggleBrushTilingCommand = new(LocalizationSource.GetString("Cmd_ToggleBrushTiling"), "ToggleBrushTiling", typeof(UndertaleTileEditor));
+        public static RoutedUICommand TogglePreviewCommand = new(LocalizationSource.GetString("Cmd_ToggleRoomPreview"), "TogglePreview", typeof(UndertaleTileEditor));
+        public static RoutedUICommand UndoCommand = new(LocalizationSource.GetString("Cmd_Undo"), "Undo", typeof(UndertaleTileEditor));
+        public static RoutedUICommand RedoCommand = new(LocalizationSource.GetString("Cmd_Redo"), "Redo", typeof(UndertaleTileEditor));
 
         public TileEditorSettings settings { get; set; } = TileEditorSettings.instance;
 
@@ -264,7 +265,7 @@ namespace UndertaleModTool
         {
             if (
                 !apply && Modified && this.ShowQuestion(
-                    "Cancel changes to the tilemap?", MessageBoxImage.Warning, "Confirmation"
+                    LocalizationSource.GetString("Msg_CancelTilemapChanges"), MessageBoxImage.Warning, LocalizationSource.GetString("Dialog_Confirmation")
                 ) == MessageBoxResult.No
             )
             {
