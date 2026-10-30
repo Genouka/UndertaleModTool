@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia;
@@ -88,6 +89,10 @@ public class MockStackWindow : UserControl
         // Re-derive all chrome colors from the active theme variant from now on.
         ApplyThemeColors();
         ActualThemeVariantChanged += (_, _) => ApplyThemeColors();
+
+        // Keep the simulated main page's tab name in sync with MainViewModel.Title,
+        // which is the single-window equivalent of the title bar on this platform.
+        mainVM.PropertyChanged += OnMainViewModelPropertyChanged;
     }
 
     /// <summary>The simulated main page (the actual UndertaleModTool UI).</summary>
@@ -324,6 +329,29 @@ public class MockStackWindow : UserControl
     {
         if (e.Property == Window.TitleProperty)
             UpdateStack();
+    }
+
+    /// <summary>
+    /// The main simulated page has no real <see cref="Window"/>, so its title can only
+    /// come from <see cref="MainViewModel.Title"/>. When that changes (project loaded,
+    /// data file changed, ...), refresh the main page's title so the main tab page's tab
+    /// name updates — the Android equivalent of the title bar.
+    /// </summary>
+    void OnMainViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(MainViewModel.Title))
+            return;
+
+        foreach (MockPage page in nonModalPages)
+        {
+            if (page.Window is null)
+            {
+                page.Title = mainVM.Title;
+                break;
+            }
+        }
+
+        UpdateStack();
     }
 
     void CloseModalPage(MockPage page)
