@@ -104,6 +104,16 @@
           <Version>1.2.2</Version>
         </PackageReference>
     </ItemGroup>
+    <ItemGroup>
+        <!-- Win7 兼容 shim：GetSystemTimePreciseAsFileTime 是 Windows 8+ 才有的 API，
+             Magick.Native-Q8-x86.dll 硬绑定了 KERNEL32!GetSystemTimePreciseAsFileTime，
+             在 Win7 上加载会直接报“无法定位程序输入点”而无法启动。此 shim 同名导出
+             该函数（内部回退到 GetSystemTimeAsFileTime），构建时会把
+             Magick.Native-Q8-x86.dll 的导入模块重定向到它。 -->
+        <Content Include="Win7Compat\W7Compat.dll" Link="W7Compat.dll" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Win7Compat\W7Compat.dll" Link="runtimes\win-x86\native\W7Compat.dll" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
     <Target Name="AfterResolveReferences">
         <ItemGroup>
             <EmbeddedResource Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'">
@@ -111,6 +121,14 @@
             </EmbeddedResource>
         </ItemGroup>
     </Target>
+    <Target Name="PatchWin7Imports" AfterTargets="AfterBuild"
+            Condition="Exists('$(OutputPath)runtimes\win-x86\native\Magick.Native-Q8-x86.dll')">
+        <!-- 把随带的 Magick.Native-Q8-x86.dll 的导入模块 KERNEL32.dll 重定向到
+             本仓库自带的 Win7Compat.dll，使 GetSystemTimePreciseAsFileTime 在
+             Windows 7 上可解析，避免“无法定位程序输入点”。 -->
+        <Exec Command='powershell -NoProfile -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\build\PatchNativeImports.ps1" -Dll "$(OutputPath)runtimes\win-x86\native\Magick.Native-Q8-x86.dll"' />
+    </Target>
+
     <ItemGroup>
         <TrimmerRootAssembly Include="System.Runtime" />
         <TrimmerRootAssembly Include="System.Runtime.Extensions" />
