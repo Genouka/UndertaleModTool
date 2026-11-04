@@ -1,15 +1,16 @@
 # UndertaleModTool (Genouka Fork)
 
 ![GitHub Release](https://img.shields.io/github/v/release/genouka/UndertaleModTool?style=flat) [![GitHub](https://img.shields.io/github/license/genouka/UndertaleModTool?logo=github)](https://github.com/UnderminersTeam/UndertaleModTool/blob/master/LICENSE.txt)
-![GitHub Repo stars](https://img.shields.io/github/stars/genouka/UndertaleModTool?style=flat) ![Download total](https://img.shields.io/github/downloads/genouka/UndertaleModTool/total) [![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/svg-badge.svg)](https://hosted.weblate.org/engage/qiuutmtv4/) [![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126) [![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200) [![Static Badge](https://img.shields.io/badge/QQ_Group-517549773-purple?style=flat-square)](https://qm.qq.com/q/hu0rdlwbYY)
+![GitHub Repo stars](https://img.shields.io/github/stars/genouka/UndertaleModTool?style=flat) ![Download total](https://img.shields.io/github/downloads/genouka/UndertaleModTool/total) [![Mirror酱](https://img.shields.io/badge/Mirror%E9%85%B1-%239af3f6?logo=countingworkspro&logoColor=4f46e5)](https://mirrorchyan.com/zh/projects?rid=UndertaleModTool-Genouka) [![翻译状态](https://hosted.weblate.org/widget/qiuutmtv4/svg-badge.svg)](https://hosted.weblate.org/engage/qiuutmtv4/) [![Static Badge](https://img.shields.io/badge/Bilibili-%E7%A7%8B%E5%86%A5%E6%95%A3%E9%9B%A8__GenOuka-purple?style=flat-square)](https://space.bilibili.com/3493116076100126) [![Static Badge](https://img.shields.io/badge/Discord-qiuming__official-purple?style=flat-square)](https://discord.com/users/1124397340627845200) [![Static Badge](https://img.shields.io/badge/QQ_Group-517549773-purple?style=flat-square)](https://qm.qq.com/q/hu0rdlwbYY)
 
-**This is an unofficial fork of UndertaleModTool!**
-
-**这是一个非官方的UndertaleModTool分支。**
-
-This repository maintains versions for four platforms: Windows, Linux, MacOS, and Android.
-
-本仓库同时维护 Windows、Linux、MacOS、Android 四个平台的版本。
+> [!NOTE]
+> **这是一个非官方的UndertaleModTool分支。**
+>
+> 本仓库同时维护 Windows、Linux、MacOS、Android 四个平台的 GUI 版本和 Windows、Linux、MacOS 的 CLI 版本。相比与官方，我们不仅支持更多的平台，还添加了很多实用工具和API，同时也有面向AI的MCP服务器。
+> 
+> **This is an unofficial fork of UndertaleModTool.**
+>
+> This repository maintains GUI versions for Windows, Linux, macOS, and Android, as well as CLI versions for Windows, Linux, and macOS. Compared with the official version, we not only support more platforms but also add many useful tools and APIs, along with an MCP server designed for AI.
 
 [Participate in localizing translations on Weblate!](https://hosted.weblate.org/engage/qiuutmtv4/)
 
@@ -24,9 +25,10 @@ This repository maintains versions for four platforms: Windows, Linux, MacOS, an
 |   Stable (稳定版)    | [![Latest Stable Release](https://img.shields.io/github/downloads/genouka/UndertaleModTool/latest/total)](https://github.com/genouka/UndertaleModTool/releases/latest)       |
 |   Nightly (每夜版)   | [![Latest Stable Release](https://img.shields.io/github/downloads/genouka/UndertaleModTool/nightly/total)](https://github.com/genouka/UndertaleModTool/releases/tag/nightly) |
 
-If you are looking for the official version instead of the version I forked, please go to [here](https://github.com/UnderminersTeam/UndertaleModTool/)
-
-如果你在找官方的版本而不是我Fork的版本，请前往[这里](https://github.com/UnderminersTeam/UndertaleModTool/)
+> [!NOTE]
+> If you are looking for the official version instead of the version I forked, please go to [here](https://github.com/UnderminersTeam/UndertaleModTool/)
+>
+> 如果你在找官方的版本而不是我Fork的版本，请前往[这里](https://github.com/UnderminersTeam/UndertaleModTool/)
 
 ## What do this fork changed?/这个版本做了什么修改？
 
