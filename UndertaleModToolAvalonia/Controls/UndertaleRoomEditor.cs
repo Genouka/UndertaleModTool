@@ -363,9 +363,6 @@ public class UndertaleRoomEditor : Control
         uint roomHeight = vm.Room.Height;
 
         context.FillRectangle(RoomEditorAssets.BackdropBrush, new Rect(0, 0, Bounds.Width, Bounds.Height));
-        context.DrawRectangle(null, RoomEditorAssets.RoomBorderPen, new Rect(translation.X - 1, translation.Y - 1,
-            Math.Ceiling(roomWidth * scaling + 1), Math.Ceiling(roomHeight * scaling + 1)));
-
         Rect viewport = new(-translation.X / scaling, -translation.Y / scaling,
             Bounds.Width / scaling, Bounds.Height / scaling);
 
@@ -2517,7 +2514,6 @@ internal static class RoomEditorAssets
     public static readonly IBrush BackdropBrush = Brushes.Gray;
     public static readonly IBrush GridBrush = new SolidColorBrush(Color.FromRgb(128, 128, 128));
     public static readonly IBrush MarkerBrush = new SolidColorBrush(Color.FromRgb(192, 192, 192)); // Silver
-    public static readonly Pen RoomBorderPen = new(Brushes.White, 1);
     public static readonly Pen MarkerPen = new(Brushes.White, 1);
     public static readonly Pen ParticleBorderPen = new(Brushes.DarkCyan, 1);
 }
