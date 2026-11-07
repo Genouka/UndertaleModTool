@@ -121,6 +121,11 @@ namespace UndertaleModTool
         public bool CodeEditorAutoDiagnostics { get; set; } = true;
         public bool CodeEditorCheckArgumentCount { get; set; } = true;
 
+        /// <summary>
+        /// User-defined GML code snippets available in the code editor's context menu.
+        /// </summary>
+        public List<CodeSnippet> CodeSnippets { get; set; } = new();
+
         public string Language { get; set; } = "en";
 
         public static Settings Instance { get; private set; }

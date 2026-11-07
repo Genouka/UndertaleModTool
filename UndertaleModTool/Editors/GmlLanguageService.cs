@@ -180,6 +180,25 @@ namespace UndertaleModTool.Editors
         }
 
         /// <summary>
+        /// Drops cached analysis state for the given game data. Call after renaming symbols or
+        /// adding/removing assets so subsequent diagnostics and completion use fresh lookups.
+        /// </summary>
+        public static void InvalidateParseContext(UndertaleData data)
+        {
+            if (data is null)
+                return;
+
+            lock (_parseContextLock)
+            {
+                _parseContexts.Remove(data);
+            }
+            lock (_completionCacheLock)
+            {
+                _completionCache.Remove(data);
+            }
+        }
+
+        /// <summary>
         /// Mirrors <c>UndertaleModLib.Compiler.CompileGroup</c>'s script-kind guessing logic.
         /// </summary>
         public static CompileScriptKind GuessScriptKindFromName(string codeName)

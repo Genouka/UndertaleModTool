@@ -22,6 +22,10 @@ namespace UndertaleModTool
         public Brush ModifiedLineBrush { get; set; } = DefaultModifiedBrush;
 
         public KnownLayer Layer => KnownLayer.Background;
+        /// <summary>
+        /// The text snapshot the current document is diffed against.
+        /// </summary>
+        public string OriginalText => _originalText;
 
         public void SetOriginalText(string text, TextDocument document)
         {
