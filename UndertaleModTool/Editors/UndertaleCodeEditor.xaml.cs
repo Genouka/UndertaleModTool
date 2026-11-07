@@ -309,6 +309,9 @@ namespace UndertaleModTool
         private readonly List<CodeEditorResultEntry> _resultEntries = new();
         private CancellationTokenSource _diagnosticsCancellation;
         private IEnumerable<object> _pendingTokenItems;
+        private int _contextMenuOffset = -1;
+        private int _contextMenuSelectionStart;
+        private int _contextMenuSelectionLength;
 
         public UndertaleCodeEditor()
         {
@@ -320,6 +323,7 @@ namespace UndertaleModTool
             DisassemblyEditor.TextArea.ContextMenuOpening += EditorContextMenuOpening;
             DecompiledEditor.TextArea.PreviewMouseRightButtonDown += (_, _) => _pendingTokenItems = null;
             DisassemblyEditor.TextArea.PreviewMouseRightButtonDown += (_, _) => _pendingTokenItems = null;
+            DecompiledEditor.TextArea.PreviewKeyDown += DecompiledEditor_PreviewKeyDown;
 
             // Apply background transparency if custom background is active
             if (Settings.Instance is not null && !string.IsNullOrEmpty(Settings.Instance.BackgroundImagePath))
@@ -431,13 +435,744 @@ namespace UndertaleModTool
                     menu.Items.Insert(3, new Separator());
             }
 
+            if (textArea == DecompiledEditor.TextArea && !DecompiledEditor.IsReadOnly)
+            {
+                _contextMenuOffset = GetOffsetAtMouse(textArea);
+                _contextMenuSelectionStart = DecompiledEditor.SelectionStart;
+                _contextMenuSelectionLength = DecompiledEditor.SelectionLength;
+
+                if (menu.Items.Count > 0)
+                    menu.Items.Add(new Separator());
+
+                MenuItemDark refactorMenu = new() { Header = LocalizationSource.GetString("Editor_Refactor") };
+                refactorMenu.Items.Add(CreateContextAction("Editor_Refactor_Rename", (_, _) => RefactorRename()));
+                refactorMenu.Items.Add(CreateContextAction("Editor_Refactor_EncapsulateAsScript", (_, _) => RefactorEncapsulateAsScript()));
+                refactorMenu.Items.Add(new Separator());
+                refactorMenu.Items.Add(CreateContextAction("Editor_Refactor_ConvertSwitchToIfElse", (_, _) => RefactorConvertSwitchToIfElse()));
+                refactorMenu.Items.Add(CreateContextAction("Editor_Refactor_ConvertIfElseToSwitch", (_, _) => RefactorConvertIfElseToSwitch()));
+                menu.Items.Add(refactorMenu);
+
+                MenuItemDark surroundMenu = new() { Header = LocalizationSource.GetString("Editor_SurroundWith") };
+                surroundMenu.Items.Add(CreateSurroundItem("Editor_Surround_For", "for"));
+                surroundMenu.Items.Add(CreateSurroundItem("Editor_Surround_While", "while"));
+                surroundMenu.Items.Add(CreateSurroundItem("Editor_Surround_Repeat", "repeat"));
+                surroundMenu.Items.Add(CreateSurroundItem("Editor_Surround_With", "with"));
+                surroundMenu.Items.Add(CreateSurroundItem("Editor_Surround_Until", "until"));
+                surroundMenu.Items.Add(CreateSurroundItem("Editor_Surround_If", "if"));
+                surroundMenu.Items.Add(CreateSurroundItem("Editor_Surround_Block", "block"));
+                menu.Items.Add(surroundMenu);
+                menu.Items.Add(new Separator());
+                MenuItemDark snippetsMenu = new() { Header = LocalizationSource.GetString("Editor_Snippets") };
+                if (Settings.Instance?.CodeSnippets is { } snippets)
+                {
+                    foreach (CodeSnippet snippet in snippets)
+                    {
+                        if (snippet is null || string.IsNullOrWhiteSpace(snippet.Name))
+                            continue;
+
+                        CodeSnippet captured = snippet;
+                        MenuItemDark item = new()
+                        {
+                            Header = snippet.Name.Replace("_", "__"),
+                            InputGestureText = snippet.Shortcut
+                        };
+                        item.Click += (_, _) => InsertSnippet(captured);
+                        snippetsMenu.Items.Add(item);
+                    }
+                }
+                if (snippetsMenu.Items.Count > 0)
+                    snippetsMenu.Items.Add(new Separator());
+                snippetsMenu.Items.Add(CreateContextAction("Editor_Snippets_Manage", (_, _) => OpenSnippetsManager()));
+                menu.Items.Add(snippetsMenu);
+            }
+
             if (menu.Items.Count > 0)
                 menu.IsOpen = true;
+        }
+
+        private static MenuItemDark CreateContextAction(string localizationKey, RoutedEventHandler handler)
+        {
+            MenuItemDark item = new() { Header = LocalizationSource.GetString(localizationKey) };
+            item.Click += handler;
+            return item;
+        }
+
+        private MenuItemDark CreateSurroundItem(string localizationKey, string template)
+        {
+            return CreateContextAction(localizationKey, (_, _) => ApplySurroundTemplate(template));
+        }
+
+        private void DecompiledEditor_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (DecompiledEditor.IsReadOnly || _completionWindow is not null)
+                return;
+            if (Settings.Instance?.CodeSnippets is not { Count: > 0 } snippets)
+                return;
+
+            Key key = e.Key == Key.System ? e.SystemKey : e.Key;
+            ModifierKeys modifiers = Keyboard.Modifiers;
+
+            foreach (CodeSnippet snippet in snippets)
+            {
+                if (snippet is null || string.IsNullOrWhiteSpace(snippet.Shortcut))
+                    continue;
+                if (!CodeSnippet.TryParseShortcut(snippet.Shortcut, out ModifierKeys expectedModifiers, out Key expectedKey))
+                    continue;
+                if (expectedKey != key || expectedModifiers != modifiers)
+                    continue;
+
+                InsertSnippet(snippet);
+                e.Handled = true;
+                return;
+            }
+        }
+
+        private void InsertSnippet(CodeSnippet snippet)
+        {
+            if (snippet is null || string.IsNullOrEmpty(snippet.Body) || DecompiledEditor.IsReadOnly)
+                return;
+
+            TextDocument document = DecompiledEditor.Document;
+            if (document is null)
+                return;
+
+            int selectionStart = DecompiledEditor.SelectionStart;
+            int selectionLength = DecompiledEditor.SelectionLength;
+            int insertOffset = DecompiledEditor.CaretOffset;
+            int anchor = selectionLength > 0 ? selectionStart : insertOffset;
+            anchor = Math.Clamp(anchor, 0, document.TextLength);
+
+            DocumentLine line = document.GetLineByOffset(anchor);
+            string lineText = document.GetText(line.Offset, line.Length);
+            int indentLength = 0;
+            while (indentLength < lineText.Length &&
+                   (lineText[indentLength] == ' ' || lineText[indentLength] == '\t'))
+            {
+                indentLength++;
+            }
+            string baseIndent = lineText.Substring(0, indentLength);
+            string newline = document.Text.Contains("\r\n") ? "\r\n" : "\n";
+            string text = CodeSnippet.ApplyIndent(snippet.Body, baseIndent, newline);
+
+            DecompiledFocused = true;
+            if (selectionLength > 0)
+                document.Replace(selectionStart, selectionLength, text);
+            else
+                document.Insert(insertOffset, text);
+
+            int endOffset = (selectionLength > 0 ? selectionStart : insertOffset) + text.Length;
+            DecompiledEditor.TextArea.ClearSelection();
+            DecompiledEditor.TextArea.Caret.Offset = endOffset;
+            DecompiledEditor.TextArea.Focus();
+        }
+
+        private void OpenSnippetsManager()
+        {
+            SnippetsWindow window = new() { Owner = Window.GetWindow(this) };
+            window.ShowDialog();
         }
 
         internal void SetPendingTokenItems(IEnumerable<object> tokenItems)
         {
             _pendingTokenItems = tokenItems;
+        }
+
+        /// <summary>
+        /// Returns the document offset under the mouse pointer, falling back to the caret offset.
+        /// </summary>
+        private static int GetOffsetAtMouse(TextArea textArea)
+        {
+            try
+            {
+                Point point = Mouse.GetPosition(textArea.TextView);
+                TextViewPosition? position = textArea.TextView.GetPosition(point);
+                if (position.HasValue && textArea.Document is not null)
+                {
+                    int lineNumber = position.Value.Line;
+                    if (lineNumber >= 1 && lineNumber <= textArea.Document.LineCount)
+                    {
+                        DocumentLine line = textArea.Document.GetLineByNumber(lineNumber);
+                        int column = Math.Clamp(position.Value.Column - 1, 0, line.Length);
+                        return line.Offset + column;
+                    }
+                }
+            }
+            catch
+            {
+                // Fall back to the caret below.
+            }
+            return textArea.Caret.Offset;
+        }
+
+        private bool CanRefactorDecompiled()
+        {
+            return DecompiledTab.IsSelected && DecompiledEditor is not null &&
+                   !DecompiledEditor.IsReadOnly && mainWindow.Data is not null;
+        }
+
+        private int GetRefactorAnchorOffset()
+        {
+            if (_contextMenuSelectionLength > 0)
+                return _contextMenuSelectionStart;
+            if (_contextMenuOffset >= 0 && _contextMenuOffset <= DecompiledEditor.Text.Length)
+                return _contextMenuOffset;
+            return DecompiledEditor.CaretOffset;
+        }
+
+        private void ShowRefactorError(string message)
+        {
+            mainWindow.ShowError(message, LocalizationSource.GetString("Editor_Refactor"));
+        }
+
+        private void RefactorRename()
+        {
+            if (!CanRefactorDecompiled())
+                return;
+
+            UndertaleData data = mainWindow.Data;
+            FillObjectDicts();
+
+            string code = DecompiledEditor.Text;
+            int offset = GetRefactorAnchorOffset();
+            string word = GmlLanguageService.GetWordAtOffset(code, offset, out int wordStart, out _);
+            if (word is null)
+            {
+                ShowRefactorError(LocalizationSource.GetString("Editor_Refactor_NoSymbol"));
+                return;
+            }
+
+            UndertaleCode currentCode = DataContext as UndertaleCode;
+            GmlDefinition definition = GmlLanguageService.ResolveDefinition(
+                data, code, offset, CurrentLocals, currentCode, NamedObjDict, ScriptsDict, FunctionsDict, CodeDict);
+
+            List<UndertaleString> targets = CollectRenameTargets(data, word, wordStart, code, currentCode, definition);
+            if (targets.Count == 0)
+            {
+                ShowRefactorError(LocalizationSource.GetString("Editor_Refactor_UnsupportedSymbol"));
+                return;
+            }
+
+            string newName = mainWindow.ScriptInputDialog(
+                LocalizationSource.GetString("Editor_Refactor_RenameTitle"),
+                string.Format(LocalizationSource.GetString("Editor_Refactor_RenamePrompt"), word),
+                word,
+                LocalizationSource.GetString("Common_Cancel"),
+                LocalizationSource.GetString("Common_OK"),
+                false, false);
+            if (newName is null)
+                return;
+            newName = newName.Trim();
+            if (newName.Length == 0 || newName == word)
+                return;
+            if (!IsValidRefactorIdentifier(newName))
+            {
+                ShowRefactorError(string.Format(LocalizationSource.GetString("Editor_Refactor_InvalidName"), newName));
+                return;
+            }
+            if (data.BuiltinList is not null &&
+                (data.BuiltinList.Functions.ContainsKey(newName) ||
+                 data.BuiltinList.Constants.ContainsKey(newName) ||
+                 data.BuiltinList.InstanceVars.ContainsKey(newName) ||
+                 data.BuiltinList.GlobalVars.ContainsKey(newName) ||
+                 data.BuiltinList.GlobalArrayVars.ContainsKey(newName)))
+            {
+                ShowRefactorError(string.Format(LocalizationSource.GetString("Editor_Refactor_InvalidName"), newName));
+                return;
+            }
+
+            bool changed = false;
+            foreach (UndertaleString target in targets)
+            {
+                string renamed = RenameStringContent(target.Content, word, newName);
+                if (!string.Equals(renamed, target.Content, StringComparison.Ordinal))
+                {
+                    target.Content = renamed;
+                    changed = true;
+                }
+            }
+            if (!changed)
+            {
+                ShowRefactorError(LocalizationSource.GetString("Editor_Refactor_UnsupportedSymbol"));
+                return;
+            }
+
+            for (int i = 0; i < CurrentLocals.Count; i++)
+            {
+                if (CurrentLocals[i] == word)
+                    CurrentLocals[i] = newName;
+            }
+
+            try
+            {
+                GlobalDecompileContext.BuildGlobalFunctionCache(data);
+            }
+            catch
+            {
+                // Keep the rename even if the function cache cannot be rebuilt.
+            }
+            GmlLanguageService.InvalidateParseContext(data);
+
+            bool globalReference = wordStart >= 7 &&
+                                   string.Compare(code, wordStart - 7, "global.", 0, 7, StringComparison.Ordinal) == 0;
+            GmlRefactoring.IdentifierMatch match = GmlRefactoring.IdentifierMatch.Any;
+            if (definition.Kind == GmlDefinition.DefinitionKind.Local)
+                match = GmlRefactoring.IdentifierMatch.Bare;
+            else if (globalReference)
+                match = GmlRefactoring.IdentifierMatch.Global;
+            else if (definition.Kind is GmlDefinition.DefinitionKind.None or GmlDefinition.DefinitionKind.Builtin)
+                match = GmlRefactoring.IdentifierMatch.NonGlobal;
+
+            ReplaceWordInCurrentDocument(word, newName, match);
+        }
+
+        private static List<UndertaleString> CollectRenameTargets(UndertaleData data, string word, int wordStart,
+                                                                  string code, UndertaleCode currentCode,
+                                                                  GmlDefinition definition)
+        {
+            List<UndertaleString> targets = new();
+            void Add(UndertaleString value)
+            {
+                if (value is not null && !targets.Contains(value))
+                    targets.Add(value);
+            }
+            void AddCodeEntryNames(string name)
+            {
+                if (data.Code is null)
+                    return;
+
+                foreach (UndertaleCode entry in data.Code)
+                {
+                    if (entry?.Name?.Content is string entryName &&
+                        (entryName == "gml_Script_" + name || entryName == "gml_GlobalScript_" + name))
+                    {
+                        Add(entry.Name);
+                    }
+                }
+            }
+
+            // Built-in symbols are hard-wired into the runtime and must never be renamed.
+            if (data.BuiltinList is not null &&
+                (data.BuiltinList.Functions.ContainsKey(word) ||
+                 data.BuiltinList.Constants.ContainsKey(word) ||
+                 data.BuiltinList.InstanceVars.ContainsKey(word) ||
+                 data.BuiltinList.GlobalVars.ContainsKey(word) ||
+                 data.BuiltinList.GlobalArrayVars.ContainsKey(word)))
+            {
+                return targets;
+            }
+
+            bool globalReference = wordStart >= 7 &&
+                                   string.Compare(code, wordStart - 7, "global.", 0, 7, StringComparison.Ordinal) == 0;
+
+            if (definition.Kind == GmlDefinition.DefinitionKind.Local)
+            {
+                UndertaleCodeLocals locals = currentCode is not null ? data.CodeLocals?.For(currentCode) : null;
+                if (locals is not null)
+                {
+                    foreach (UndertaleCodeLocals.LocalVar local in locals.Locals)
+                    {
+                        if (local?.Name?.Content == word)
+                        {
+                            Add(local.Name);
+
+                            // The compiler may also keep a variable entry for the local; rename that too
+                            // when it uses a separate string object.
+                            if (data.Variables is not null)
+                            {
+                                foreach (UndertaleVariable variable in data.Variables)
+                                {
+                                    if (variable?.Name?.Content == word &&
+                                        variable.InstanceType == UndertaleInstruction.InstanceType.Local &&
+                                        variable.VarID == (int)local.Index)
+                                    {
+                                        Add(variable.Name);
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                return targets;
+            }
+
+            if (definition.Kind == GmlDefinition.DefinitionKind.Function)
+            {
+                switch (definition.Resource)
+                {
+                    case UndertaleFunction function:
+                        Add(function.Name);
+                        // 2.3+ functions are also instance variables carrying the plain name.
+                        if (data.Variables is not null)
+                        {
+                            foreach (UndertaleVariable variable in data.Variables)
+                            {
+                                if (variable?.Name?.Content == word &&
+                                    (variable.InstanceType == UndertaleInstruction.InstanceType.Self ||
+                                     variable.InstanceType == UndertaleInstruction.InstanceType.Undefined))
+                                {
+                                    Add(variable.Name);
+                                }
+                            }
+                        }
+                        if (data.Scripts is not null)
+                        {
+                            foreach (UndertaleScript script in data.Scripts)
+                            {
+                                if (script?.Name?.Content == word)
+                                    Add(script.Name);
+                            }
+                        }
+                        AddCodeEntryNames(word);
+                        break;
+
+                    case UndertaleScript scriptResource:
+                        Add(scriptResource.Name);
+                        UndertaleFunction scriptFunction = data.Functions?.ByName(word);
+                        if (scriptFunction is not null)
+                            Add(scriptFunction.Name);
+                        AddCodeEntryNames(word);
+                        break;
+                }
+                return targets;
+            }
+
+            if (definition.Kind == GmlDefinition.DefinitionKind.Resource &&
+                definition.Resource is UndertaleNamedResource namedResource)
+            {
+                Add(namedResource.Name);
+                return targets;
+            }
+
+            // Instance / global variables are not resolved by GmlLanguageService; look them up directly.
+            if (data.Variables is not null)
+            {
+                foreach (UndertaleVariable variable in data.Variables)
+                {
+                    if (variable?.Name?.Content != word)
+                        continue;
+
+                    bool isGlobalVariable = variable.InstanceType == UndertaleInstruction.InstanceType.Global;
+                    bool isLocalVariable = variable.InstanceType == UndertaleInstruction.InstanceType.Local;
+                    bool isBuiltinVariable = variable.InstanceType == UndertaleInstruction.InstanceType.Builtin;
+                    bool isStaticVariable = variable.InstanceType == UndertaleInstruction.InstanceType.Static;
+                    bool isArgumentVariable = variable.InstanceType == UndertaleInstruction.InstanceType.Arg;
+                    if (isLocalVariable || isBuiltinVariable || isStaticVariable || isArgumentVariable)
+                        continue;
+                    if (isGlobalVariable == globalReference)
+                    {
+                        Add(variable.Name);
+                        break;
+                    }
+                }
+            }
+
+            return targets;
+        }
+
+        private static string RenameStringContent(string content, string oldName, string newName)
+        {
+            if (content is null)
+                return null;
+            if (content == oldName)
+                return newName;
+            if (content == "gml_Script_" + oldName)
+                return "gml_Script_" + newName;
+            if (content == "gml_GlobalScript_" + oldName)
+                return "gml_GlobalScript_" + newName;
+            return content;
+        }
+
+        private static readonly HashSet<string> RefactorKeywords = new(StringComparer.Ordinal)
+        {
+            "if", "then", "else", "switch", "case", "default", "break", "continue", "exit", "return",
+            "while", "for", "repeat", "do", "until", "with", "var", "globalvar", "not", "and", "or",
+            "xor", "div", "mod", "enum", "try", "catch", "finally", "throw", "new", "delete",
+            "function", "static", "constructor", "begin", "end", "self", "other", "all", "noone", "global"
+        };
+
+        private static bool IsValidRefactorIdentifier(string name)
+        {
+            if (string.IsNullOrEmpty(name) || RefactorKeywords.Contains(name))
+                return false;
+            if (!char.IsAsciiLetter(name[0]) && name[0] != '_')
+                return false;
+            for (int i = 1; i < name.Length; i++)
+            {
+                if (!char.IsAsciiLetterOrDigit(name[i]) && name[i] != '_')
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Replaces all whole-word occurrences of <paramref name="oldWord"/> in the current document,
+        /// without marking the code as edited (the underlying bytecode is unchanged).
+        /// </summary>
+        private void ReplaceWordInCurrentDocument(string oldWord, string newWord, GmlRefactoring.IdentifierMatch match)
+        {
+            if (DecompiledEditor.Document is null)
+                return;
+
+            string text = DecompiledEditor.Text;
+            IReadOnlyList<(int Offset, int Length)> occurrences = GmlRefactoring.FindIdentifierOccurrences(text, oldWord, match);
+            if (occurrences.Count == 0)
+                return;
+
+            bool wasChanged = DecompiledChanged;
+            bool wasFocused = DecompiledFocused;
+            _isLoadingCode = true;
+            try
+            {
+                DecompiledEditor.Document.BeginUpdate();
+                for (int i = occurrences.Count - 1; i >= 0; i--)
+                {
+                    (int offset, int length) = occurrences[i];
+                    DecompiledEditor.Document.Replace(offset, length, newWord);
+                }
+                DecompiledEditor.Document.EndUpdate();
+            }
+            finally
+            {
+                _isLoadingCode = false;
+            }
+            DecompiledChanged = wasChanged;
+            DecompiledFocused = wasFocused;
+
+            if (Settings.Instance?.ChangeTrackingEnabled ?? true)
+            {
+                if (_decompiledModifiedRenderer.OriginalText is string original)
+                {
+                    _decompiledModifiedRenderer.SetOriginalText(
+                        GmlRefactoring.ReplaceIdentifier(original, oldWord, newWord, match), DecompiledEditor.Document);
+                }
+                if (wasChanged)
+                    _decompiledModifiedRenderer.MarkDirty();
+            }
+        }
+
+        private async void RefactorEncapsulateAsScript()
+        {
+            if (!CanRefactorDecompiled())
+                return;
+
+            UndertaleData data = mainWindow.Data;
+            UndertaleCode currentCode = DataContext as UndertaleCode;
+            if (currentCode is null || currentCode.ParentEntry is not null)
+                return;
+
+            int selectionStart = _contextMenuSelectionLength > 0 ? _contextMenuSelectionStart : DecompiledEditor.SelectionStart;
+            int selectionLength = _contextMenuSelectionLength > 0 ? _contextMenuSelectionLength : DecompiledEditor.SelectionLength;
+            if (selectionLength <= 0)
+            {
+                ShowRefactorError(LocalizationSource.GetString("Editor_Script_NoSelection"));
+                return;
+            }
+
+            string selected = DecompiledEditor.Document.GetText(selectionStart, selectionLength);
+            if (string.IsNullOrWhiteSpace(selected))
+            {
+                ShowRefactorError(LocalizationSource.GetString("Editor_Script_NoSelection"));
+                return;
+            }
+
+            string scriptName = mainWindow.ScriptInputDialog(
+                LocalizationSource.GetString("Editor_Script_NameTitle"),
+                LocalizationSource.GetString("Editor_Script_NameLabel"),
+                "scr_new_script",
+                LocalizationSource.GetString("Common_Cancel"),
+                LocalizationSource.GetString("Common_OK"),
+                false, false);
+            if (scriptName is null)
+                return;
+            scriptName = scriptName.Trim();
+            if (!IsValidRefactorIdentifier(scriptName))
+            {
+                ShowRefactorError(string.Format(LocalizationSource.GetString("Editor_Refactor_InvalidName"), scriptName));
+                return;
+            }
+            if (data.Scripts.Any(s => s?.Name?.Content == scriptName))
+            {
+                ShowRefactorError(string.Format(LocalizationSource.GetString("Editor_Refactor_NameExists"), scriptName));
+                return;
+            }
+
+            bool modern = data.IsVersionAtLeast(2, 3);
+            string newline = DecompiledEditor.Text.Contains("\r\n") ? "\r\n" : "\n";
+            string codeName = (modern ? "gml_GlobalScript_" : "gml_Script_") + scriptName;
+            string source;
+            if (modern)
+            {
+                string body = GmlRefactoring.IndentBlock(selected, "    ", newline);
+                source = "function " + scriptName + "()" + newline + "{" + newline +
+                         (body.Length > 0 ? body + newline : "") + "}";
+            }
+            else
+            {
+                source = selected;
+            }
+
+            UndertaleScript script = new() { Name = data.Strings.MakeString(scriptName, true) };
+            UndertaleCode codeEntry = UndertaleCode.CreateEmptyEntry(data, data.Strings.MakeString(codeName, true));
+            script.Code = codeEntry;
+            data.Scripts.Add(script);
+
+            UndertaleGlobalInit globalInit = null;
+            if (modern && data.GlobalInitScripts is not null)
+            {
+                globalInit = new UndertaleGlobalInit() { Code = codeEntry };
+                data.GlobalInitScripts.Add(globalInit);
+            }
+            UndertaleFunction scriptFunction = null;
+            if (!modern)
+                scriptFunction = data.Functions.Define(scriptName, data.Strings);
+
+            bool compiled = await CompileCodeEntryAsync(codeEntry, source);
+            if (!compiled)
+            {
+                // Roll back the partially created assets so the user can retry.
+                data.Scripts.Remove(script);
+                data.Code.Remove(codeEntry);
+                if (data.CodeLocals is not null)
+                {
+                    UndertaleCodeLocals locals = data.CodeLocals.FirstOrDefault(l => l?.Name == codeEntry.Name);
+                    if (locals is not null)
+                        data.CodeLocals.Remove(locals);
+                }
+                if (globalInit is not null)
+                    data.GlobalInitScripts.Remove(globalInit);
+                if (scriptFunction is not null)
+                    data.Functions.Remove(scriptFunction);
+                return;
+            }
+
+            string call = scriptName + "()";
+            DecompiledFocused = true;
+            DecompiledEditor.Document.Replace(selectionStart, selectionLength, call);
+            DecompiledEditor.Select(selectionStart, call.Length);
+            DecompiledEditor.TextArea.Caret.Offset = selectionStart + call.Length;
+            DecompiledEditor.TextArea.Focus();
+
+            try
+            {
+                mainWindow.Project?.MarkAssetForExport(script);
+                mainWindow.Project?.MarkAssetForExport(codeEntry);
+            }
+            catch
+            {
+                // Project export tracking is best-effort.
+            }
+            try
+            {
+                GlobalDecompileContext.BuildGlobalFunctionCache(data);
+            }
+            catch
+            {
+                // Function cache rebuild is best-effort.
+            }
+            GmlLanguageService.InvalidateParseContext(data);
+        }
+
+        private async Task<bool> CompileCodeEntryAsync(UndertaleCode codeEntry, string source)
+        {
+            CompileResult compileResult = new();
+            string rootException = null;
+            var dispatcher = Dispatcher;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    CompileGroup group = new(mainWindow.Data)
+                    {
+                        MainThreadAction = (f) => { dispatcher.Invoke(() => f()); }
+                    };
+                    group.QueueCodeReplace(codeEntry, source);
+                    compileResult = group.Compile();
+                }
+                catch (Exception ex)
+                {
+                    rootException = ex.ToString();
+                }
+            });
+
+            if (rootException is not null)
+            {
+                mainWindow.ShowError(Truncate(rootException, 512), LocalizationSource.GetString("Dialog_CompilerError"));
+                return false;
+            }
+            if (!compileResult.Successful)
+            {
+                mainWindow.ShowError(Truncate(compileResult.PrintAllErrors(false), 512), LocalizationSource.GetString("Dialog_CompilerError"));
+                return false;
+            }
+            return true;
+        }
+
+        private void RefactorConvertSwitchToIfElse()
+        {
+            if (!CanRefactorDecompiled())
+                return;
+
+            int selectionStart = GetRefactorAnchorOffset();
+            int selectionLength = _contextMenuSelectionLength;
+            if (GmlRefactoring.TrySwitchToIfElse(DecompiledEditor.Text, selectionStart, selectionLength,
+                                                 out GmlRefactoring.TextEdit edit, out string error))
+            {
+                ApplyRefactoringEdit(edit);
+            }
+            else
+            {
+                mainWindow.ShowError(string.Format(LocalizationSource.GetString("Editor_Convert_Error"), error),
+                                     LocalizationSource.GetString("Editor_Refactor"));
+            }
+        }
+
+        private void RefactorConvertIfElseToSwitch()
+        {
+            if (!CanRefactorDecompiled())
+                return;
+
+            int selectionStart = GetRefactorAnchorOffset();
+            int selectionLength = _contextMenuSelectionLength;
+            if (GmlRefactoring.TryIfElseToSwitch(DecompiledEditor.Text, selectionStart, selectionLength,
+                                                 out GmlRefactoring.TextEdit edit, out string error))
+            {
+                ApplyRefactoringEdit(edit);
+            }
+            else
+            {
+                mainWindow.ShowError(string.Format(LocalizationSource.GetString("Editor_Convert_Error"), error),
+                                     LocalizationSource.GetString("Editor_Refactor"));
+            }
+        }
+
+        private void ApplySurroundTemplate(string template)
+        {
+            if (!CanRefactorDecompiled())
+                return;
+
+            int selectionStart = GetRefactorAnchorOffset();
+            int selectionLength = _contextMenuSelectionLength;
+            if (GmlRefactoring.TrySurround(DecompiledEditor.Text, selectionStart, selectionLength, template,
+                                           out GmlRefactoring.TextEdit edit, out string error))
+            {
+                ApplyRefactoringEdit(edit);
+            }
+            else
+            {
+                mainWindow.ShowError(string.Format(LocalizationSource.GetString("Editor_Convert_Error"), error),
+                                     LocalizationSource.GetString("Editor_SurroundWith"));
+            }
+        }
+
+        private void ApplyRefactoringEdit(GmlRefactoring.TextEdit edit)
+        {
+            DecompiledFocused = true;
+            DecompiledEditor.Document.Replace(edit.Offset, edit.Length, edit.NewText);
+            DecompiledEditor.Select(edit.SelectionOffset, edit.SelectionLength);
+            DecompiledEditor.TextArea.Caret.Offset = edit.SelectionOffset + edit.SelectionLength;
+            DecompiledEditor.TextArea.Focus();
         }
 
         private void LoadGMLHighlighting(bool isDark)
