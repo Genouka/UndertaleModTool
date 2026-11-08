@@ -343,3 +343,7 @@ UndertaleModLib/gitversion.txt
 
 # Android release signing key - NEVER commit (see build/AndroidSigning.md)
 /signing/
+
+# ButterscotchDbg native build outputs and third-party SDKs
+/extern/
+/build/*

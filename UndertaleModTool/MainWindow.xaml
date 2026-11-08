@@ -43,6 +43,8 @@
         <CommandBinding Command="Print" Executed="Command_Run" />
         <CommandBinding Command="CancelPrint" Executed="Command_RunSpecial" />
         <CommandBinding Command="PrintPreview" Executed="Command_RunDebug" />
+        <CommandBinding Command="{x:Static local:MainWindow.RunButterscotchCommand}" Executed="Command_RunButterscotch" />
+        <CommandBinding Command="{x:Static local:MainWindow.DebugButterscotchCommand}" Executed="Command_DebugButterscotch" />
         <CommandBinding Command="Properties" Executed="Command_Settings" />
         <CommandBinding Command="{x:Static local:UndertaleCodeEditor.GoToDefinition}" Executed="Command_GoToDefinition" CanExecute="Command_CodeEditorNavigation_CanExecute" />
         <CommandBinding Command="{x:Static local:UndertaleCodeEditor.FindReferences}" Executed="Command_FindReferences" CanExecute="Command_CodeEditorNavigation_CanExecute" />
@@ -116,6 +118,21 @@
                         </MenuItem.Style>
                     </MenuItem>
                     <MenuItem Header="{loc:Loc Menu_File_RunOtherRunner}" Command="CancelPrint" InputGestureText="Alt+F5">
+                        <MenuItem.Style>
+                            <Style TargetType="{x:Type MenuItem}">
+                                <Setter Property="IsEnabled" Value="{Binding CanSave}"/>
+                            </Style>
+                        </MenuItem.Style>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem x:Name="RunButterscotchItem" Header="{loc:Loc Menu_File_RunButterscotch}" Command="{x:Static local:MainWindow.RunButterscotchCommand}" InputGestureText="F6">
+                        <MenuItem.Style>
+                            <Style TargetType="{x:Type MenuItem}">
+                                <Setter Property="IsEnabled" Value="{Binding CanSave}"/>
+                            </Style>
+                        </MenuItem.Style>
+                    </MenuItem>
+                    <MenuItem x:Name="DebugButterscotchItem" Header="{loc:Loc Menu_File_DebugButterscotch}" Command="{x:Static local:MainWindow.DebugButterscotchCommand}" InputGestureText="Shift+F6">
                         <MenuItem.Style>
                             <Style TargetType="{x:Type MenuItem}">
                                 <Setter Property="IsEnabled" Value="{Binding CanSave}"/>

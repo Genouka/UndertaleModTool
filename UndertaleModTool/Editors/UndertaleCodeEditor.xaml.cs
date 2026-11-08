@@ -113,6 +113,129 @@ namespace UndertaleModTool
         public UndertaleCode CurrentDecompiled = null;
         public List<string> CurrentLocals = new();
 
+        /// <summary>
+        /// Maps a disassembly editor line number to its bytecode offset.
+        /// Lines that are comments, block labels, fragment headers, local
+        /// variable definitions or blank lines have no bytecode offset.
+        /// </summary>
+        public uint? GetBytecodeOffsetForDisassemblyLine(int lineNumber)
+        {
+            UndertaleCode code = CurrentDisassembled;
+            if (code is null || code.ParentEntry is not null || DisassemblyEditor?.Document is null)
+                return null;
+
+            TextDocument document = DisassemblyEditor.Document;
+            DocumentLine line = document.GetLineByNumber(lineNumber);
+            string lineText = document.GetText(line.Offset, line.Length).Trim();
+            if (lineText.Length == 0 ||
+                lineText[0] == ';' ||
+                lineText[0] == ':' ||
+                lineText[0] == '>' ||
+                lineText.StartsWith(".localvar", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            // Instruction lines are 1:1 with instructions; count how many
+            // instruction-like lines appear before this one and convert that
+            // to a bytecode address.
+            int instructionIndex = 0;
+            DocumentLine current = document.Lines[0];
+            while (current != null && current.LineNumber < lineNumber)
+            {
+                string text = document.GetText(current.Offset, current.Length).Trim();
+                if (text.Length > 0 &&
+                    text[0] != ';' &&
+                    text[0] != ':' &&
+                    text[0] != '>' &&
+                    !text.StartsWith(".localvar", StringComparison.Ordinal))
+                {
+                    instructionIndex++;
+                }
+                current = current.NextLine;
+            }
+
+            if (instructionIndex >= code.Instructions.Count)
+                return null;
+
+            uint offset = 0;
+            for (int i = 0; i < instructionIndex; i++)
+                offset += code.Instructions[i].CalculateInstructionSize();
+            return offset;
+        }
+        /// <summary>Redraws breakpoint markers in the disassembly margin.</summary>
+        public void RefreshBreakpointMargin()
+        {
+            _breakpointMargin?.InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Highlights the line of the instruction the debugger is stopped at
+        /// (yellow background), or clears it when null.
+        /// </summary>
+        public void HighlightStoppedLine(int codeIndex, uint offset)
+        {
+            ClearStoppedLineHighlight();
+
+            UndertaleCode code = CurrentDisassembled;
+            if (code is null || mainWindow?.Data is null ||
+                mainWindow.Data.Code.IndexOf(code) != codeIndex ||
+                !DisassemblyTab.IsSelected)
+            {
+                return;
+            }
+
+            uint pos = 0;
+            int index = 0;
+            foreach (UndertaleInstruction instr in code.Instructions)
+            {
+                if (pos == offset)
+                {
+                    int lineNumber = FindDisassemblyLineForInstructionIndex(index);
+                    if (lineNumber > 0)
+                    {
+                        _stoppedLineRenderer.SetLine(lineNumber);
+                        DisassemblyEditor.ScrollToLine(lineNumber);
+                    }
+                    break;
+                }
+
+                pos += instr.CalculateInstructionSize();
+                index++;
+                if (pos > offset)
+                    break;
+            }
+        }
+
+        /// <summary>Clears the stopped-line highlight.</summary>
+        public void ClearStoppedLineHighlight()
+        {
+            _stoppedLineRenderer?.SetLine(-1);
+        }
+
+        private DebugStoppedLineRenderer _stoppedLineRenderer;
+
+        private int FindDisassemblyLineForInstructionIndex(int instructionIndex)
+        {
+            int seen = 0;
+            foreach (DocumentLine line in DisassemblyEditor.Document.Lines)
+            {
+                string text = DisassemblyEditor.Document.GetText(line.Offset, line.Length).Trim();
+                if (text.Length > 0 &&
+                    text[0] != ';' &&
+                    text[0] != ':' &&
+                    text[0] != '>' &&
+                    !text.StartsWith(".localvar", StringComparison.Ordinal))
+                {
+                    if (seen == instructionIndex)
+                        return line.LineNumber;
+                    seen++;
+                }
+            }
+            return -1;
+        }
+
+
         public bool DecompiledFocused = false;
         public bool DecompiledChanged = false;
         public bool DecompiledYet = false;
@@ -127,6 +250,7 @@ namespace UndertaleModTool
 
         private readonly ModifiedLinesBackgroundRenderer _decompiledModifiedRenderer = new();
         private readonly ModifiedLinesBackgroundRenderer _disassemblyModifiedRenderer = new();
+        private BreakpointMargin _breakpointMargin;
         private readonly NameGenerator _decompiledNameGenerator;
         private readonly NameGenerator _disassemblyNameGenerator;
         private bool _isLoadingCode;
@@ -367,8 +491,11 @@ namespace UndertaleModTool
             LoadVMASMHighlighting(Settings.IsCodeEditorDark);
 
             textArea = DisassemblyEditor.TextArea;
+            _breakpointMargin = new BreakpointMargin(this);
+            textArea.LeftMargins.Add(_breakpointMargin);
+            _stoppedLineRenderer = new DebugStoppedLineRenderer(textArea.TextView);
+            textArea.TextView.BackgroundRenderers.Add(_stoppedLineRenderer);
             _disassemblyNameGenerator = new NameGenerator(this, textArea);
-            textArea.TextView.ElementGenerators.Add(_disassemblyNameGenerator);
             if (Settings.Instance?.ChangeTrackingEnabled ?? true)
                 textArea.TextView.BackgroundRenderers.Add(_disassemblyModifiedRenderer);
 

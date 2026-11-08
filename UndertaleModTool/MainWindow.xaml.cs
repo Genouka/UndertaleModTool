@@ -35,6 +35,8 @@ using UndertaleModTool.Localization;
 using UndertaleModTool.Update;
 using System.IO.Pipes;
 using Ookii.Dialogs.Wpf;
+using UndertaleModTool.Debugging;
+using UndertaleModRunner;
 
 using System.Windows.Data;
 using System.Security.Cryptography;
@@ -65,6 +67,7 @@ namespace UndertaleModTool
         public string FilePath { get; set; }
         public ProjectContext Project { get; set; } = null;
         public string ScriptPath { get; set; } // For the scripting interface specifically
+        public DebugSessionService DebugSession { get; private set; } = null;
 
         public string TitleMain { get; set; }
 
@@ -79,6 +82,8 @@ namespace UndertaleModTool
         public static readonly RoutedUICommand SaveProjectCommand = new(LocalizationSource.GetString("Cmd_SaveProject"), "SaveProject", typeof(MainWindow));
         public static readonly RoutedUICommand ViewProjectAssetsCommand = new(LocalizationSource.GetString("Cmd_ViewProjectAssets"), "ViewProjectAssets", typeof(MainWindow));
         public static readonly RoutedUICommand CloseProjectCommand = new(LocalizationSource.GetString("Cmd_CloseProject"), "CloseProject", typeof(MainWindow));
+        public static readonly RoutedUICommand RunButterscotchCommand = new RoutedUICommand("Run with Butterscotch", "RunButterscotch", typeof(MainWindow), new InputGestureCollection { new KeyGesture(Key.F6) });
+        public static readonly RoutedUICommand DebugButterscotchCommand = new RoutedUICommand("Debug with Butterscotch", "DebugButterscotch", typeof(MainWindow), new InputGestureCollection { new KeyGesture(Key.F6, ModifierKeys.Shift) });
 
         public ObservableCollection<Tab> Tabs { get; set; } = new();
         public Tab CurrentTab
@@ -285,6 +290,20 @@ namespace UndertaleModTool
         {
             InitializeComponent();
             this.DataContext = this;
+            DebugSession = new DebugSessionService(this);
+            DebugSession.Updated += UpdateDebugPanelState;
+            DebugSession.Stopped += state =>
+            {
+                foreach (UndertaleCodeEditor editor in FindVisualChildren<UndertaleCodeEditor>(this))
+                    editor.ClearStoppedLineHighlight();
+
+                StackFrameInfo frame = state?.Stop?.Frame;
+                if (frame is not null)
+                {
+                    foreach (UndertaleCodeEditor editor in FindVisualChildren<UndertaleCodeEditor>(this))
+                        editor.HighlightStoppedLine(frame.CodeIndex, frame.Ip);
+                }
+            };
 
             Highlighted = new DescriptionView(LocalizationSource.GetString("Main_WelcomeHeading"), LocalizationSource.GetString("Main_WelcomeDescription"));
             OpenInTab(Highlighted);
@@ -586,6 +605,10 @@ namespace UndertaleModTool
             }
 
             RunGMSDebuggerItem.Visibility = ToVisibility(Settings.Instance.ShowDebuggerOption);
+
+            Visibility butterscotchVisibility = ToVisibility(Settings.Instance.ShowButterscotchDebug);
+            RunButterscotchItem.Visibility = butterscotchVisibility;
+            DebugButterscotchItem.Visibility = butterscotchVisibility;
 
             IsTabMultiLine = Settings.Instance.TabMultiLine;
             UpdateTabLayout();
@@ -1192,6 +1215,9 @@ namespace UndertaleModTool
         }
         private async void DataWindow_Closing(object sender, CancelEventArgs e)
         {
+            DebugSession?.Dispose();
+            _debugPanel?.Close();
+            _debugPanel = null;
             if (Data != null)
             {
                 e.Cancel = true;
@@ -3628,6 +3654,47 @@ namespace UndertaleModTool
                 Process.Start(runtime.DebuggerPath, "-d=\"" + Path.ChangeExtension(FilePath, ".yydebug") + "\" -t=\"127.0.0.1\" -tp=" + Data.GeneralInfo.DebuggerPort + " -p=\"" + tempProject + "\"");
             }
             Data.GeneralInfo.IsDebuggerDisabled = origDbg;
+        }
+
+        private void Command_RunButterscotch(object sender, ExecutedRoutedEventArgs e) => StartButterscotchSession(false);
+
+        private void Command_DebugButterscotch(object sender, ExecutedRoutedEventArgs e) => StartButterscotchSession(true);
+
+        private async void StartButterscotchSession(bool stopOnEntry)
+        {
+            if (Data == null)
+                return;
+
+            bool saveOk = await DoSaveDialog(true);
+            if (!saveOk)
+                return;
+
+            if (!DebugSession.Start(stopOnEntry))
+                return;
+
+            UpdateDebugPanelState();
+        }
+
+        private DebugPanelWindow _debugPanel;
+
+        private void UpdateDebugPanelState()
+        {
+            // Breakpoint markers live in editor margins; nudge them to redraw.
+            foreach (UndertaleCodeEditor editor in FindVisualChildren<UndertaleCodeEditor>(this))
+                editor.RefreshBreakpointMargin();
+
+            if (!DebugSession.IsActive)
+                return;
+
+            if (_debugPanel is not { IsLoaded: true })
+            {
+                _debugPanel = new DebugPanelWindow { Owner = this };
+                _debugPanel.Show();
+            }
+            else
+            {
+                _debugPanel.Activate();
+            }
         }
 
         private void Command_Settings(object sender, ExecutedRoutedEventArgs e)

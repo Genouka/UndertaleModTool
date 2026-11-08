@@ -289,6 +289,22 @@ namespace UndertaleModTool
             }
         }
 
+        public bool ShowButterscotchDebug
+        {
+            get => Settings.Instance.ShowButterscotchDebug;
+            set
+            {
+                Settings.Instance.ShowButterscotchDebug = value;
+                Settings.Save();
+
+                if (mainWindow is null)
+                    return;
+                Visibility visibility = value ? Visibility.Visible : Visibility.Collapsed;
+                mainWindow.RunButterscotchItem.Visibility = visibility;
+                mainWindow.DebugButterscotchItem.Visibility = visibility;
+            }
+        }
+
         public static bool RememberWindowPlacements
         {
             get => Settings.Instance.RememberWindowPlacements;

@@ -98,6 +98,7 @@ namespace UndertaleModTool
         public CodeEditorThemeKind CodeEditorTheme { get; set; } = CodeEditorThemeKind.FollowApp;
         public bool TabMultiLine { get; set; } = false;
         public bool ShowDebuggerOption { get; set; } = false;
+        public bool ShowButterscotchDebug { get; set; } = true;
         public DecompilerSettings DecompilerSettings { get; set; }
         public const string DefaultInstanceIdPrefix = "inst_";
         public string InstanceIdPrefix { get; set; } = DefaultInstanceIdPrefix;
