@@ -1,0 +1,68 @@
+<Window x:Class="UndertaleModTool.Debugging.DebugPanelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:UndertaleModTool"
+        xmlns:loc="clr-namespace:UndertaleModTool.Localization"
+        Title="{loc:Loc Debug_Panel_Title}"
+        Height="252" Width="560"
+        MinHeight="252" MinWidth="460"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Status -->
+        <Border Grid.Row="0" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+                CornerRadius="4" Padding="10,8" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal">
+                <Ellipse x:Name="StatusDot" Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,8,0"
+                         Fill="Gray"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="StatusText" FontSize="14" FontWeight="SemiBold"
+                               Text="{loc:Loc Debug_Panel_Status_NoSession}"
+                               Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+                    <TextBlock x:Name="DetailText" FontSize="11" Opacity="0.75" Visibility="Collapsed"
+                               Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Execution -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <TextBlock Text="{loc:Loc Debug_Panel_Execution}" FontSize="11" FontWeight="SemiBold" Opacity="0.7"
+                       Margin="2,0,0,6"
+                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <WrapPanel>
+                <local:ButtonDark x:Name="ContinueButton" Content="{loc:Loc Debug_Continue}" Click="ContinueButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
+                <local:ButtonDark x:Name="PauseButton" Content="{loc:Loc Debug_Pause}" Click="PauseButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
+                <local:ButtonDark x:Name="StepIntoButton" Content="{loc:Loc Debug_StepInto}" Click="StepIntoButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
+                <local:ButtonDark x:Name="StepOverButton" Content="{loc:Loc Debug_StepOver}" Click="StepOverButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
+                <local:ButtonDark x:Name="StepOutButton" Content="{loc:Loc Debug_StepOut}" Click="StepOutButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
+                <local:ButtonDark x:Name="StepFrameButton" Content="{loc:Loc Debug_StepFrame}" Click="StepFrameButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
+                <local:ButtonDark x:Name="StopButton" Content="{loc:Loc Debug_Stop}" Click="StopButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
+                <local:ButtonDark x:Name="HotReloadButton" Content="{loc:Loc Debug_HotReload}" Click="HotReloadButton_Click" Padding="14,4" MinWidth="76"/>
+            </WrapPanel>
+        </StackPanel>
+
+        <!-- Diagnostics -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,4">
+            <TextBlock Text="{loc:Loc Debug_Panel_Tools}" FontSize="11" FontWeight="SemiBold" Opacity="0.7"
+                       Margin="2,0,0,6"
+                       Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <WrapPanel>
+                <local:ButtonDark x:Name="BreakpointsButton" Content="{loc:Loc Debug_Breakpoints}" Click="BreakpointsButton_Click" Padding="14,4" Margin="0,0,6,0" MinWidth="96"/>
+                <local:ButtonDark x:Name="VariablesButton" Content="{loc:Loc Debug_Variables}" Click="VariablesButton_Click" Padding="14,4" Margin="0,0,6,0" MinWidth="96"/>
+                <local:ButtonDark x:Name="InstancesButton" Content="{loc:Loc Debug_Instances}" Click="InstancesButton_Click" Padding="14,4" Margin="0,0,6,0" MinWidth="96"/>
+                <local:ButtonDark x:Name="CallStackButton" Content="{loc:Loc Debug_CallStack}" Click="CallStackButton_Click" Padding="14,4" Margin="0,0,6,0" MinWidth="96"/>
+                <local:ButtonDark x:Name="OutputButton" Content="{loc:Loc Debug_Output}" Click="OutputButton_Click" Padding="14,4" MinWidth="96"/>
+            </WrapPanel>
+        </StackPanel>
+    </Grid>
+</Window>

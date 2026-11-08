@@ -45,6 +45,7 @@
         <ProjectReference Include="..\Underanalyzer\Underanalyzer\Underanalyzer.csproj" />
         <ProjectReference Include="..\UndertaleModLib\UndertaleModLib.csproj" />
         <ProjectReference Include="..\UndertaleModToolLocalization\UndertaleModToolLocalization.csproj" />
+        <ProjectReference Include="..\UndertaleModRunner\UndertaleModRunner.csproj" />
         <!-- The wad (GMRT asset package) module is a self-contained library with its own window. -->
         <ProjectReference Include="..\UndertaleModWad\UndertaleModWad.csproj" />
     </ItemGroup>

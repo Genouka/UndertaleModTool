@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UndertaleModLibTests", "Und
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Underanalyzer", "Underanalyzer\Underanalyzer\Underanalyzer.csproj", "{A171D18F-274E-427A-AFB3-D7A161F5B9CF}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UndertaleModRunner", "UndertaleModRunner\UndertaleModRunner.csproj", "{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModMcp", "UndertaleModMcp\UndertaleModMcp.csproj", "{8F33A54C-81B3-4E10-BB02-F6EBEB5A2352}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModToolAvalonia", "UndertaleModToolAvalonia\UndertaleModToolAvalonia.csproj", "{F353AA91-7B76-4725-81D8-2089E82947B4}"
@@ -90,6 +92,18 @@ Global
 		{CC5FDC60-A955-4D0C-B59F-8BD451778237}.Release|x86.ActiveCfg = Release|Any CPU
 		{CC5FDC60-A955-4D0C-B59F-8BD451778237}.Release|x86.Build.0 = Release|Any CPU
 		{1E004B65-F3C8-4A62-B649-1465EA6A3B01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Debug|x64.ActiveCfg = Debug|x64
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Debug|x64.Build.0 = Debug|x64
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Debug|x86.Build.0 = Debug|Any CPU
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Release|x64.ActiveCfg = Release|x64
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Release|x64.Build.0 = Release|x64
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Release|x86.ActiveCfg = Release|Any CPU
+		{3B7E62D9-3C2A-4F7B-9E6A-1D54C0A9F123}.Release|x86.Build.0 = Release|Any CPU
 		{1E004B65-F3C8-4A62-B649-1465EA6A3B01}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E004B65-F3C8-4A62-B649-1465EA6A3B01}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{1E004B65-F3C8-4A62-B649-1465EA6A3B01}.Debug|x64.Build.0 = Debug|Any CPU
