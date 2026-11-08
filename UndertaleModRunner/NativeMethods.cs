@@ -101,6 +101,12 @@ internal static class NativeMethods
     internal static extern int Bsdbg_SetInstanceVariable(IntPtr session, int instanceId, IntPtr name, IntPtr valueJson, out IntPtr errorText);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int Bsdbg_SetGlobalVariable(IntPtr session, IntPtr name, IntPtr valueJson, out IntPtr errorText);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int Bsdbg_SetFrameVariable(IntPtr session, int frameIndex, int isArgument, int slot, IntPtr valueJson, out IntPtr errorText);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int Bsdbg_ApplyCodePatch(IntPtr session, IntPtr json, out IntPtr errorText);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]

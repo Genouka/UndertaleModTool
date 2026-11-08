@@ -2665,6 +2665,24 @@ namespace UndertaleModTool
         {
             OpenCodeEntry(name, -1, editorTab, inNewTab);
         }
+
+        public void OpenCodeEntry(int codeIndex, UndertaleCodeEditor.CodeEditorTab editorTab, bool inNewTab = false)
+        {
+            if (Data?.Code is null || codeIndex < 0 || codeIndex >= Data.Code.Count)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_CantFindCodeEntry"), codeIndex));
+                return;
+            }
+
+            UndertaleCode code = Data.Code[codeIndex];
+            if (string.IsNullOrEmpty(code?.Name?.Content))
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_CantFindCodeEntry"), codeIndex));
+                return;
+            }
+
+            OpenCodeEntry(code.Name.Content, editorTab, inNewTab);
+        }
         public void OpenCodeEntry(string name, int lineNum, UndertaleCodeEditor.CodeEditorTab editorTab, bool inNewTab = false)
         {
             UndertaleCode code = Data.Code.ByName(name);

@@ -1151,6 +1151,137 @@ int32_t Bsdbg_SetInstanceVariableInternal(BsdbgControl* c, int32_t instanceId,
     return result;
 }
 
+int32_t Bsdbg_SetGlobalVariableInternal(BsdbgControl* c, const char* name,
+                                        const char* valueJson, char** errorText) {
+    JsonValue* root;
+    RValue value;
+    Instance* globalScope;
+    int32_t varId;
+
+    if (errorText != NULL)
+        *errorText = NULL;
+
+    if (c == NULL || name == NULL || name[0] == '\0' || valueJson == NULL) {
+        dbgSetError(errorText, "invalid arguments");
+        return -1;
+    }
+
+    root = JsonReader_parse(valueJson);
+    if (root == NULL) {
+        dbgSetError(errorText, "invalid value JSON");
+        return -1;
+    }
+    if (dbgParseValueJson(root, &value, errorText) != 0) {
+        JsonReader_free(root);
+        return -1;
+    }
+    JsonReader_free(root);
+
+    Bsdbg_Lock(c);
+
+    if (c->paused == 0) {
+        Bsdbg_Unlock(c);
+        RValue_free(&value);
+        dbgSetError(errorText, "Runner must be paused");
+        return -1;
+    }
+
+    globalScope = c->vm != NULL ? c->vm->globalScopeInstance : NULL;
+    if (globalScope == NULL) {
+        Bsdbg_Unlock(c);
+        RValue_free(&value);
+        dbgSetError(errorText, "global scope is not available");
+        return -1;
+    }
+
+    varId = dbgFindVarIdByName(c->vm, name);
+    if (varId < 0) {
+        Bsdbg_Unlock(c);
+        RValue_free(&value);
+        dbgSetError(errorText, "unknown global variable '%s'", name);
+        return -1;
+    }
+
+    Instance_setSelfVar(globalScope, varId, value);
+
+    Bsdbg_Unlock(c);
+    RValue_free(&value);
+    return 0;
+}
+
+int32_t Bsdbg_SetFrameVariableInternal(BsdbgControl* c, int32_t frameIndex,
+                                       int32_t isArgument, int32_t slot,
+                                       const char* valueJson, char** errorText) {
+    JsonValue* root;
+    RValue value;
+    CallFrame* frame;
+    int32_t depth;
+    RValue* target;
+
+    if (errorText != NULL)
+        *errorText = NULL;
+
+    if (c == NULL || valueJson == NULL || frameIndex < 0 || slot < 0) {
+        dbgSetError(errorText, "invalid arguments");
+        return -1;
+    }
+
+    root = JsonReader_parse(valueJson);
+    if (root == NULL) {
+        dbgSetError(errorText, "invalid value JSON");
+        return -1;
+    }
+    if (dbgParseValueJson(root, &value, errorText) != 0) {
+        JsonReader_free(root);
+        return -1;
+    }
+    JsonReader_free(root);
+
+    Bsdbg_Lock(c);
+
+    if (c->paused == 0) {
+        Bsdbg_Unlock(c);
+        RValue_free(&value);
+        dbgSetError(errorText, "Runner must be paused");
+        return -1;
+    }
+
+    frame = c->vm != NULL ? c->vm->currentCallFrame : NULL;
+    for (depth = 0; frame != NULL && depth < frameIndex; depth++)
+        frame = frame->parent;
+
+    if (frame == NULL) {
+        Bsdbg_Unlock(c);
+        RValue_free(&value);
+        dbgSetError(errorText, "call frame %d was not found", frameIndex);
+        return -1;
+    }
+
+    if (isArgument != 0) {
+        if (frame->scriptArgs == NULL || slot >= frame->scriptArgsCount) {
+            Bsdbg_Unlock(c);
+            RValue_free(&value);
+            dbgSetError(errorText, "argument slot %d is out of range", slot);
+            return -1;
+        }
+        target = &frame->scriptArgs[slot];
+    } else {
+        if (frame->localVars == NULL || (uint32_t) slot >= frame->localVarsCount) {
+            Bsdbg_Unlock(c);
+            RValue_free(&value);
+            dbgSetError(errorText, "local slot %d is out of range", slot);
+            return -1;
+        }
+        target = &frame->localVars[slot];
+    }
+
+    RValue_free(target);
+    *target = value;
+
+    Bsdbg_Unlock(c);
+    return 0;
+}
+
 /* ===[ VM tick ]=== */
 
 void Bsdbg_OnVmInstruction(VMContext* ctx, uint32_t ip) {

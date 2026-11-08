@@ -1,18 +1,11 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Input;
 using UndertaleModRunner;
 
 namespace UndertaleModTool.Debugging
 {
-    public sealed class VariableRow
-    {
-        public string Source { get; set; }
-        public string Name { get; set; }
-        public string Value { get; set; }
-        public int VarId { get; set; }
-    }
-
     public partial class DebugVariablesWindow : Window
     {
         private readonly ObservableCollection<VariableRow> _rows = new();
@@ -39,6 +32,36 @@ namespace UndertaleModTool.Debugging
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e) => Refresh();
 
+        private void ValueCell_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount < 2)
+                return;
+            if ((sender as FrameworkElement)?.DataContext is not VariableRow row)
+                return;
+
+            e.Handled = true;
+            EditValue(row);
+        }
+
+        private void EditValue(VariableRow row)
+        {
+            DebugSessionService service = DebugSessionService.Instance;
+            if (service is null)
+                return;
+            if (!row.CanEdit)
+            {
+                service.Log($"Editing {row.ValueInfo?.Type ?? "unknown"} values is not supported.");
+                return;
+            }
+
+            DebugEditValueWindow dialog = new(row, service) { Owner = this };
+            if (dialog.ShowDialog() == true)
+            {
+                service.RefreshState();
+                Refresh();
+            }
+        }
+
         private void Refresh()
         {
             Dispatcher.BeginInvoke(() =>
@@ -57,8 +80,12 @@ namespace UndertaleModTool.Debugging
                         {
                             Source = "local",
                             Name = string.IsNullOrEmpty(local.Name) ? $"var_{local.VarId}" : local.Name,
-                            Value = local.Value?.ToString() ?? "undefined",
-                            VarId = local.VarId
+                            EditName = local.Name,
+                            Value = DebugVariableEditing.FormatValue(local.Value),
+                            ValueInfo = local.Value,
+                            VarId = local.VarId,
+                            Slot = local.Slot,
+                            FrameIndex = 0
                         });
                     }
                     foreach (ArgumentInfo arg in frame.Args)
@@ -67,8 +94,12 @@ namespace UndertaleModTool.Debugging
                         {
                             Source = "arg",
                             Name = $"argument[{arg.Slot}]",
-                            Value = arg.Value?.ToString() ?? "undefined",
-                            VarId = -1
+                            EditName = $"argument[{arg.Slot}]",
+                            Value = DebugVariableEditing.FormatValue(arg.Value),
+                            ValueInfo = arg.Value,
+                            VarId = -1,
+                            Slot = arg.Slot,
+                            FrameIndex = 0
                         });
                     }
                 }
@@ -79,8 +110,12 @@ namespace UndertaleModTool.Debugging
                     {
                         Source = "global",
                         Name = string.IsNullOrEmpty(global.Name) ? $"var_{global.VarId}" : global.Name,
-                        Value = global.Value?.ToString() ?? "undefined",
-                        VarId = global.VarId
+                        EditName = global.Name,
+                        Value = DebugVariableEditing.FormatValue(global.Value),
+                        ValueInfo = global.Value,
+                        VarId = global.VarId,
+                        Slot = 0,
+                        FrameIndex = 0
                     });
                 }
             });

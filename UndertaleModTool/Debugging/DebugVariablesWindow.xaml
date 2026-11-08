@@ -17,7 +17,15 @@
                 <GridView>
                     <GridViewColumn Header="{loc:Loc Debug_Variables_Scope}" Width="80" DisplayMemberBinding="{Binding Source}"/>
                     <GridViewColumn Header="{loc:Loc Debug_Variables_Name}" Width="220" DisplayMemberBinding="{Binding Name}"/>
-                    <GridViewColumn Header="{loc:Loc Debug_Variables_Value}" Width="360" DisplayMemberBinding="{Binding Value}"/>
+                    <GridViewColumn Header="{loc:Loc Debug_Variables_Value}" Width="360">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Value}" Padding="2,0"
+                                           ToolTip="{loc:Loc Common_Edit}"
+                                           MouseLeftButtonDown="ValueCell_MouseLeftButtonDown"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                 </GridView>
             </ListView.View>
         </ListView>

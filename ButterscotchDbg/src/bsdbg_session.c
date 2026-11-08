@@ -899,6 +899,56 @@ int32_t Bsdbg_SetInstanceVariable(BsdbgSession* session, int32_t instanceId,
                                              errorText);
 }
 
+int32_t Bsdbg_SetGlobalVariable(BsdbgSession* session, const char* name,
+                                const char* valueJson, char** errorText) {
+    BsdbgControl* c = bs_control(session);
+    int paused;
+
+    if (errorText != nullptr)
+        *errorText = nullptr;
+    if (c == nullptr || name == nullptr || valueJson == nullptr) {
+        bs_set_error(errorText, "invalid arguments");
+        return -1;
+    }
+
+    Bsdbg_Lock(c);
+    paused = bs_atomic_get(&c->paused) != 0;
+    Bsdbg_Unlock(c);
+
+    if (!paused) {
+        bs_set_error(errorText, "the runner is not paused");
+        return -1;
+    }
+
+    return Bsdbg_SetGlobalVariableInternal(c, name, valueJson, errorText);
+}
+
+int32_t Bsdbg_SetFrameVariable(BsdbgSession* session, int32_t frameIndex,
+                               int32_t isArgument, int32_t slot,
+                               const char* valueJson, char** errorText) {
+    BsdbgControl* c = bs_control(session);
+    int paused;
+
+    if (errorText != nullptr)
+        *errorText = nullptr;
+    if (c == nullptr || valueJson == nullptr) {
+        bs_set_error(errorText, "invalid arguments");
+        return -1;
+    }
+
+    Bsdbg_Lock(c);
+    paused = bs_atomic_get(&c->paused) != 0;
+    Bsdbg_Unlock(c);
+
+    if (!paused) {
+        bs_set_error(errorText, "the runner is not paused");
+        return -1;
+    }
+
+    return Bsdbg_SetFrameVariableInternal(c, frameIndex, isArgument, slot,
+                                          valueJson, errorText);
+}
+
 void Bsdbg_FreeString(char* str) {
     free(str);
 }

@@ -10,6 +10,44 @@
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+    <Window.Resources>
+        <!-- Tabler Icons (MIT), https://github.com/tabler/tabler-icons -->
+        <PathGeometry x:Key="IconPlay" Figures="M7 4v16l13 -8l-13 -8"/>
+        <PathGeometry x:Key="IconPause" Figures="M6 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12 M14 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12"/>
+        <PathGeometry x:Key="IconStepInto" Figures="M12 3l0 12 M16 11l-4 4 M8 11l4 4 M11 20a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
+        <PathGeometry x:Key="IconStepOver" Figures="M14 12l-10 0 M14 12l-4 4 M14 12l-4 -4 M20 4l0 16"/>
+        <PathGeometry x:Key="IconStepOut" Figures="M12 3l0 12 M16 7l-4 -4 M8 7l4 -4 M11 20a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>
+        <PathGeometry x:Key="IconStepFrame" Figures="M3 5v14l8 -7l-8 -7 M14 5v14l8 -7l-8 -7"/>
+        <PathGeometry x:Key="IconStop" Figures="M5 7a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2l0 -10"/>
+        <PathGeometry x:Key="IconRefresh" Figures="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4 M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"/>
+        <PathGeometry x:Key="IconBreakpoint" Figures="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/>
+        <PathGeometry x:Key="IconVariable" Figures="M5 4c-2.5 5 -2.5 10 0 16m14 -16c2.5 5 2.5 10 0 16m-10 -11h1c1 0 1 1 2.016 3.527c.984 2.473 .984 3.473 1.984 3.473h1 M8 16c1.5 0 3 -2 4 -3.5s2.5 -3.5 4 -3.5"/>
+        <PathGeometry x:Key="IconInstance" Figures="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5 M12 12l8 -4.5 M12 12l0 9 M12 12l-8 -4.5"/>
+        <PathGeometry x:Key="IconCallStack" Figures="M12 4l-8 4l8 4l8 -4l-8 -4 M4 12l8 4l8 -4 M4 16l8 4l8 -4"/>
+        <PathGeometry x:Key="IconOutput" Figures="M8 9l3 3l-3 3 M13 15l3 0 M3 6a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -12"/>
+
+        <Style x:Key="TablerIcon" TargetType="Path">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Stretch" Value="Uniform"/>
+            <Setter Property="Stroke" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"/>
+            <Setter Property="StrokeThickness" Value="2"/>
+            <Setter Property="StrokeLineJoin" Value="Round"/>
+            <Setter Property="StrokeStartLineCap" Value="Round"/>
+            <Setter Property="StrokeEndLineCap" Value="Round"/>
+            <Setter Property="Fill" Value="Transparent"/>
+        </Style>
+
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
     <Grid Margin="14">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -40,14 +78,46 @@
                        Margin="2,0,0,6"
                        Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
             <WrapPanel>
-                <local:ButtonDark x:Name="ContinueButton" Content="{loc:Loc Debug_Continue}" Click="ContinueButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
-                <local:ButtonDark x:Name="PauseButton" Content="{loc:Loc Debug_Pause}" Click="PauseButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
-                <local:ButtonDark x:Name="StepIntoButton" Content="{loc:Loc Debug_StepInto}" Click="StepIntoButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
-                <local:ButtonDark x:Name="StepOverButton" Content="{loc:Loc Debug_StepOver}" Click="StepOverButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
-                <local:ButtonDark x:Name="StepOutButton" Content="{loc:Loc Debug_StepOut}" Click="StepOutButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
-                <local:ButtonDark x:Name="StepFrameButton" Content="{loc:Loc Debug_StepFrame}" Click="StepFrameButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
-                <local:ButtonDark x:Name="StopButton" Content="{loc:Loc Debug_Stop}" Click="StopButton_Click" Padding="14,4" Margin="0,0,6,6" MinWidth="76"/>
-                <local:ButtonDark x:Name="HotReloadButton" Content="{loc:Loc Debug_HotReload}" Click="HotReloadButton_Click" Padding="14,4" MinWidth="76"/>
+                <local:ButtonDark x:Name="ContinueButton" Style="{StaticResource IconButton}"
+                                  Click="ContinueButton_Click" ToolTip="{loc:Loc Debug_Continue}"
+                                  AutomationProperties.Name="{loc:Loc Debug_Continue}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconPlay}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="PauseButton" Style="{StaticResource IconButton}"
+                                  Click="PauseButton_Click" ToolTip="{loc:Loc Debug_Pause}"
+                                  AutomationProperties.Name="{loc:Loc Debug_Pause}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconPause}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="StepIntoButton" Style="{StaticResource IconButton}"
+                                  Click="StepIntoButton_Click" ToolTip="{loc:Loc Debug_StepInto}"
+                                  AutomationProperties.Name="{loc:Loc Debug_StepInto}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconStepInto}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="StepOverButton" Style="{StaticResource IconButton}"
+                                  Click="StepOverButton_Click" ToolTip="{loc:Loc Debug_StepOver}"
+                                  AutomationProperties.Name="{loc:Loc Debug_StepOver}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconStepOver}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="StepOutButton" Style="{StaticResource IconButton}"
+                                  Click="StepOutButton_Click" ToolTip="{loc:Loc Debug_StepOut}"
+                                  AutomationProperties.Name="{loc:Loc Debug_StepOut}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconStepOut}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="StepFrameButton" Style="{StaticResource IconButton}"
+                                  Click="StepFrameButton_Click" ToolTip="{loc:Loc Debug_StepFrame}"
+                                  AutomationProperties.Name="{loc:Loc Debug_StepFrame}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconStepFrame}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="StopButton" Style="{StaticResource IconButton}"
+                                  Click="StopButton_Click" ToolTip="{loc:Loc Debug_Stop}"
+                                  AutomationProperties.Name="{loc:Loc Debug_Stop}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconStop}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="HotReloadButton" Style="{StaticResource IconButton}"
+                                  Click="HotReloadButton_Click" ToolTip="{loc:Loc Debug_HotReload}"
+                                  AutomationProperties.Name="{loc:Loc Debug_HotReload}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconRefresh}"/>
+                </local:ButtonDark>
             </WrapPanel>
         </StackPanel>
 
@@ -57,11 +127,31 @@
                        Margin="2,0,0,6"
                        Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
             <WrapPanel>
-                <local:ButtonDark x:Name="BreakpointsButton" Content="{loc:Loc Debug_Breakpoints}" Click="BreakpointsButton_Click" Padding="14,4" Margin="0,0,6,0" MinWidth="96"/>
-                <local:ButtonDark x:Name="VariablesButton" Content="{loc:Loc Debug_Variables}" Click="VariablesButton_Click" Padding="14,4" Margin="0,0,6,0" MinWidth="96"/>
-                <local:ButtonDark x:Name="InstancesButton" Content="{loc:Loc Debug_Instances}" Click="InstancesButton_Click" Padding="14,4" Margin="0,0,6,0" MinWidth="96"/>
-                <local:ButtonDark x:Name="CallStackButton" Content="{loc:Loc Debug_CallStack}" Click="CallStackButton_Click" Padding="14,4" Margin="0,0,6,0" MinWidth="96"/>
-                <local:ButtonDark x:Name="OutputButton" Content="{loc:Loc Debug_Output}" Click="OutputButton_Click" Padding="14,4" MinWidth="96"/>
+                <local:ButtonDark x:Name="BreakpointsButton" Style="{StaticResource IconButton}" Margin="0,0,6,0"
+                                  Click="BreakpointsButton_Click" ToolTip="{loc:Loc Debug_Breakpoints}"
+                                  AutomationProperties.Name="{loc:Loc Debug_Breakpoints}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconBreakpoint}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="VariablesButton" Style="{StaticResource IconButton}" Margin="0,0,6,0"
+                                  Click="VariablesButton_Click" ToolTip="{loc:Loc Debug_Variables}"
+                                  AutomationProperties.Name="{loc:Loc Debug_Variables}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconVariable}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="InstancesButton" Style="{StaticResource IconButton}" Margin="0,0,6,0"
+                                  Click="InstancesButton_Click" ToolTip="{loc:Loc Debug_Instances}"
+                                  AutomationProperties.Name="{loc:Loc Debug_Instances}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconInstance}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="CallStackButton" Style="{StaticResource IconButton}" Margin="0,0,6,0"
+                                  Click="CallStackButton_Click" ToolTip="{loc:Loc Debug_CallStack}"
+                                  AutomationProperties.Name="{loc:Loc Debug_CallStack}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconCallStack}"/>
+                </local:ButtonDark>
+                <local:ButtonDark x:Name="OutputButton" Style="{StaticResource IconButton}" Margin="0,0,6,0"
+                                  Click="OutputButton_Click" ToolTip="{loc:Loc Debug_Output}"
+                                  AutomationProperties.Name="{loc:Loc Debug_Output}">
+                    <Path Style="{StaticResource TablerIcon}" Data="{StaticResource IconOutput}"/>
+                </local:ButtonDark>
             </WrapPanel>
         </StackPanel>
     </Grid>

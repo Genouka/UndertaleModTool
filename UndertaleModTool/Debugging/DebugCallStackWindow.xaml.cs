@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Input;
 using UndertaleModRunner;
 
 namespace UndertaleModTool.Debugging
@@ -37,6 +38,22 @@ namespace UndertaleModTool.Debugging
                 foreach (StackFrameInfo frame in DebugSessionService.Instance?.GetCallStack() ?? Array.Empty<StackFrameInfo>())
                     _frames.Add(frame);
             });
+        }
+
+        private void FrameList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (FrameList.SelectedItem is not StackFrameInfo frame)
+                return;
+
+            MainWindow mainWindow = DebugSessionService.Instance?.MainWindow;
+            if (mainWindow is null)
+                return;
+
+            e.Handled = true;
+#pragma warning disable CA1416 // The WPF project targets Windows.
+            mainWindow.Activate();
+            mainWindow.OpenCodeEntry(frame.CodeIndex, UndertaleCodeEditor.CodeEditorTab.Disassembly);
+#pragma warning restore CA1416
         }
     }
 }

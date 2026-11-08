@@ -128,6 +128,44 @@ public sealed class ButterscotchSession : IDisposable
         return result == 0;
     }
 
+    public bool SetGlobalVariable(string name, string valueJson, out string error)
+    {
+        IntPtr namePtr = AllocTempString(name);
+        IntPtr valuePtr = AllocTempString(valueJson);
+        int result;
+        IntPtr errorPtr;
+        try
+        {
+            result = NativeMethods.Bsdbg_SetGlobalVariable(_session, namePtr, valuePtr, out errorPtr);
+        }
+        finally
+        {
+            Marshal.FreeCoTaskMem(namePtr);
+            Marshal.FreeCoTaskMem(valuePtr);
+        }
+
+        error = TakeString(errorPtr);
+        return result == 0;
+    }
+
+    public bool SetFrameVariable(int frameIndex, bool isArgument, int slot, string valueJson, out string error)
+    {
+        IntPtr valuePtr = AllocTempString(valueJson);
+        int result;
+        IntPtr errorPtr;
+        try
+        {
+            result = NativeMethods.Bsdbg_SetFrameVariable(_session, frameIndex, isArgument ? 1 : 0, slot, valuePtr, out errorPtr);
+        }
+        finally
+        {
+            Marshal.FreeCoTaskMem(valuePtr);
+        }
+
+        error = TakeString(errorPtr);
+        return result == 0;
+    }
+
     public bool ApplyCodePatch(string patchJson, out string error)
     {
         IntPtr jsonPtr = AllocTempString(patchJson);

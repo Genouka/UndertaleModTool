@@ -137,6 +137,11 @@ char* Bsdbg_BuildGlobalsJson(BsdbgControl* c);
 int32_t Bsdbg_SetInstanceVariableInternal(BsdbgControl* c, int32_t instanceId,
                                          const char* name, const char* valueJson,
                                          char** errorText);
+int32_t Bsdbg_SetGlobalVariableInternal(BsdbgControl* c, const char* name,
+                                        const char* valueJson, char** errorText);
+int32_t Bsdbg_SetFrameVariableInternal(BsdbgControl* c, int32_t frameIndex,
+                                       int32_t isArgument, int32_t slot,
+                                       const char* valueJson, char** errorText);
 
 /* ===[ hotreload.c ]=== */
 /* Queues a patch (copies json). Returns 0/-1 with *errorText on validation errors. */
