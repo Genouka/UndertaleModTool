@@ -112,6 +112,21 @@ if (Test-Path $BsdbgPatch) {
     & git -C $ButterscotchDir apply --reverse --check $BsdbgPatch 2>&1 | Out-Null
     $patchAlreadyApplied = $LASTEXITCODE -eq 0
     $ErrorActionPreference = 'Stop'
+
+    if (-not $patchAlreadyApplied) {
+        # The hooks may already be committed in the submodule (or the tree may
+        # contain additional local changes), so the patch no longer applies in
+        # either direction. Detect the hook markers instead of relying on the
+        # patch's exact context before trying a forward apply.
+        $logHook = Select-String -Path (Join-Path $ButterscotchDir 'src/log.c') -Pattern 'BsdbgHook_Log' -Quiet
+        $vmHook = Select-String -Path (Join-Path $ButterscotchDir 'src/vm.c') -Pattern 'BsdbgHook_VmInstruction' -Quiet
+        $embeddedTarget = Select-String -Path (Join-Path $ButterscotchDir 'CMakeLists.txt') -Pattern 'PLATFORM STREQUAL "embedded"' -Quiet
+        if ($logHook -and $vmHook -and $embeddedTarget) {
+            $patchAlreadyApplied = $true
+            Write-Step 'Butterscotch BSDBG hooks already present; skipping patch'
+        }
+    }
+
     if (-not $patchAlreadyApplied) {
         Write-Step 'Applying Butterscotch BSDBG hooks patch'
         & git -C $ButterscotchDir apply --whitespace=nowarn $BsdbgPatch
@@ -171,11 +186,18 @@ if (-not $dll) {
 }
 
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-Copy-Item -Force $dll.FullName (Join-Path $OutDir 'bsdbg.dll')
+$stagedDll = Join-Path $OutDir 'bsdbg.dll'
+Copy-Item -Force $dll.FullName $stagedDll
+$stagedAt = Get-Date
+(Get-Item $stagedDll).LastWriteTime = $stagedAt
 Write-Step "Staged $($dll.FullName) -> $OutDir"
 
 if ($Backend -eq 'sdl2') {
-    Copy-Item -Force (Join-Path $SDLRoot 'lib/x64/SDL2.dll') (Join-Path $OutDir 'SDL2.dll')
+    $stagedSdl = Join-Path $OutDir 'SDL2.dll'
+    Copy-Item -Force (Join-Path $SDLRoot 'lib/x64/SDL2.dll') $stagedSdl
+    # Copy-Item preserves the package's old timestamp; touch the staged copy so
+    # MSBuild's incremental Butterscotch target sees it as up to date.
+    (Get-Item $stagedSdl).LastWriteTime = $stagedAt
     Write-Step "Staged SDL2.dll -> $OutDir"
 }
 

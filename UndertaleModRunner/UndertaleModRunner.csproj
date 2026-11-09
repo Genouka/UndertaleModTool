@@ -31,4 +31,40 @@
       <Link>native\win-arm64\%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
+  <!--
+    Rebuild the embedded Butterscotch runner (bsdbg.dll) when its sources or build
+    inputs changed. The target is incremental: MSBuild compares the inputs below
+    with native/win-x64/bsdbg.dll and skips the (already incremental) CMake build
+    when nothing is newer.
+
+    Set -p:BuildButterscotch=false to use the checked-in DLL (e.g. on build agents
+    without the Visual C++ workload / CMake / Ninja).
+  -->
+  <PropertyGroup>
+    <BuildButterscotch Condition="'$(BuildButterscotch)' == ''">true</BuildButterscotch>
+    <ButterscotchBuildScript>$(MSBuildThisFileDirectory)..\tools\build-bsdbg.ps1</ButterscotchBuildScript>
+    <CanBuildButterscotch Condition="'$(OS)' == 'Windows_NT' and Exists('$(ButterscotchBuildScript)')">true</CanBuildButterscotch>
+  </PropertyGroup>
+  <ItemGroup>
+    <ButterscotchBuildInput Include="$(ButterscotchBuildScript)" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\Butterscotch\CMakeLists.txt" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\Butterscotch\src\**\*.c" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\Butterscotch\src\**\*.h" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\Butterscotch\compat\**\*" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\Butterscotch\cmake\**\*" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\Butterscotch\vendor\**\*.c" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\Butterscotch\vendor\**\*.h" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\ButterscotchDbg\include\**\*" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\ButterscotchDbg\src\**\*" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\ButterscotchDbg\patches\**\*" />
+  </ItemGroup>
+  <Target Name="BuildButterscotchRuntime"
+          BeforeTargets="PrepareForBuild"
+          Condition="'$(BuildButterscotch)' == 'true' and '$(CanBuildButterscotch)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(BuildingProject)' == 'true'"
+          Inputs="@(ButterscotchBuildInput)"
+          Outputs="$(MSBuildThisFileDirectory)native\win-x64\bsdbg.dll;$(MSBuildThisFileDirectory)native\win-x64\SDL2.dll">
+    <Message Importance="high" Text="Butterscotch sources changed; rebuilding bsdbg.dll (set -p:BuildButterscotch=false to skip)..." />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ButterscotchBuildScript)&quot; -Configuration Release"
+          ContinueOnError="WarnAndContinue" />
+  </Target>
 </Project>
