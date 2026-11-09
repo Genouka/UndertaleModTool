@@ -58,6 +58,7 @@ typedef struct BsdbgControl {
     volatile LONG stepMode;          /* BSDBG_STEP_* */
     volatile LONG stepSkipOnce;      /* skip the check for the next instruction */
     volatile LONG frameStepRequested;/* run exactly one frame, then stop */
+    volatile LONG crashed;           /* 1 after an isolated native exception */
     volatile LONG stopOnEntryPending;/* break at first instruction */
 
     /* Stable under lock. */

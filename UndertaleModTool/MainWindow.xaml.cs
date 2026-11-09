@@ -3687,6 +3687,54 @@ namespace UndertaleModTool
             if (!saveOk)
                 return;
 
+            ButterscotchArchitecture architecture = Settings.Instance.ButterscotchArchitecture;
+
+            if (architecture == ButterscotchArchitecture.InProcess && !ExternalButterscotch.CanUseEmbeddedSession)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_ButterscotchEmbeddedUnsupported"));
+                return;
+            }
+
+            if (architecture != ButterscotchArchitecture.InProcess)
+            {
+                // Debugging is only available through the embedded bsdbg session.
+                if (stopOnEntry)
+                {
+                    this.ShowError(LocalizationSource.GetString("Msg_ButterscotchExternalDebugUnsupported"));
+                    return;
+                }
+
+                if (_externalButterscotchProcess is { HasExited: false })
+                {
+                    this.ShowError(LocalizationSource.GetString("Msg_ButterscotchExternalAlreadyRunning"));
+                    return;
+                }
+                if (_externalButterscotchProcess is not null)
+                {
+                    _externalButterscotchProcess.Dispose();
+                    _externalButterscotchProcess = null;
+                }
+
+                string dataPath = Project?.SaveDataPath ?? FilePath;
+                if (string.IsNullOrEmpty(dataPath) || !File.Exists(dataPath))
+                {
+                    this.ShowError(LocalizationSource.GetString("Msg_ButterscotchSaveBeforeRun"));
+                    return;
+                }
+
+                if (!ExternalButterscotch.TryStart(architecture, Settings.Instance.ButterscotchExecutablePath,
+                                                   dataPath, out Process process, out string error))
+                {
+                    this.ShowError(error);
+                    return;
+                }
+
+                _externalButterscotchProcess = process;
+                DebugSession.Log($"Started external {ExternalButterscotch.DescribeArchitecture(architecture)} Butterscotch: " +
+                                 $"{process.StartInfo.FileName} (pid {process.Id})");
+                return;
+            }
+
             if (!DebugSession.Start(stopOnEntry))
                 return;
 
@@ -3694,6 +3742,8 @@ namespace UndertaleModTool
         }
 
         private DebugPanelWindow _debugPanel;
+
+        private Process _externalButterscotchProcess;
 
         private void UpdateDebugPanelState()
         {

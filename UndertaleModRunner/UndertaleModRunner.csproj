@@ -15,9 +15,20 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
   <ItemGroup>
+    <!-- bsdbg.dll must stay next to the host executable (DllImport("bsdbg")). -->
     <Content Include="native\win-x64\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Link>%(Filename)%(Extension)</Link>
+    </Content>
+    <!-- External Butterscotch executables live in native/win-<arch>/ so the runner can
+         auto-probe them without clashing with the x64 bsdbg binaries. -->
+    <Content Include="native\win-x86\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>native\win-x86\%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="native\win-arm64\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>native\win-arm64\%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
 </Project>
