@@ -76,6 +76,8 @@ public sealed class ButterscotchSession : IDisposable
     }
 
     public int AbiVersion => NativeMethods.Bsdbg_AbiVersion();
+    /// <summary>Loads the native Butterscotch runtime for the current process and returns its ABI version.</summary>
+    public static int NativeAbiVersion => NativeMethods.Bsdbg_AbiVersion();
     public bool IsRunning => _session != IntPtr.Zero && NativeMethods.Bsdbg_IsRunning(_session) != 0;
     public bool IsPaused => _session != IntPtr.Zero && NativeMethods.Bsdbg_IsPaused(_session) != 0;
     public int FrameCount => _session != IntPtr.Zero ? NativeMethods.Bsdbg_GetFrameCount(_session) : -1;

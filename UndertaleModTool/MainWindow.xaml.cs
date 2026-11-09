@@ -3104,13 +3104,13 @@ namespace UndertaleModTool
                 return;
             }
 
-            bool isSingleFile = !File.Exists(Path.Join(ExePath, "UndertaleModTool.dll"));
+            bool isSingleFile = string.IsNullOrEmpty(Assembly.GetEntryAssembly()?.Location);
 
             UpdateCheckResult check;
             using (HttpClient client = UpdateChecker.CreateHttpClient())
             {
                 check = await UpdateChecker.CheckAsync(client, isSingleFile, forcePackage: true,
-                    localBuildTime: File.GetLastWriteTime(Path.Join(ExePath, "UndertaleModTool.exe")));
+                    localBuildTime: File.GetLastWriteTime(Environment.ProcessPath));
             }
 
             if (ReportUpdateCheckFailure(check, window))
@@ -3455,13 +3455,13 @@ namespace UndertaleModTool
 
             try
             {
-                bool isSingleFile = !File.Exists(Path.Join(ExePath, "UndertaleModTool.dll"));
+                bool isSingleFile = string.IsNullOrEmpty(Assembly.GetEntryAssembly()?.Location);
 
                 UpdateCheckResult check;
                 using (HttpClient client = UpdateChecker.CreateHttpClient())
                 {
                     check = await UpdateChecker.CheckAsync(client, isSingleFile, forcePackage: false,
-                        localBuildTime: File.GetLastWriteTime(Path.Join(ExePath, "UndertaleModTool.exe")));
+                        localBuildTime: File.GetLastWriteTime(Environment.ProcessPath));
                 }
 
                 if (check.Status != UpdateCheckStatus.UpdateAvailable || check.Package is null)

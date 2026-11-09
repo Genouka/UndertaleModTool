@@ -1,12 +1,16 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Builds the ButterscotchDbg embedded runner (bsdbg.dll) for Windows x64.
+    Builds the ButterscotchDbg embedded runner (bsdbg.dll) for Windows.
 
 .DESCRIPTION
     Configures Butterscotch with PLATFORM=embedded and BACKEND=sdl2 (or noop),
     builds the shared bsdbg.dll, and stages it together with SDL2.dll in
-    UndertaleModRunner/native/win-x64.
+    UndertaleModRunner/native/win-<arch>.
+
+.PARAMETER Architecture
+    x64 (default), x86, or all. x86 produces the 32-bit embedded runner used by
+    a 32-bit UndertaleModTool build; all builds both.
 
 .PARAMETER Configuration
     CMake build type: Release (default) or Debug.
@@ -19,6 +23,9 @@
 #>
 [CmdletBinding()]
 param(
+    [ValidateSet('x64', 'x86', 'all')]
+    [string] $Architecture = 'x64',
+
     [ValidateSet('Debug', 'Release', 'RelWithDebInfo', 'MinSizeRel')]
     [string] $Configuration = 'Release',
 
@@ -32,23 +39,24 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$BuildDir = Join-Path $RepoRoot 'build/bsdbg'
-$OutDir = Join-Path $RepoRoot 'UndertaleModRunner/native/win-x64'
+$ButterscotchDir = Join-Path $RepoRoot 'Butterscotch'
 $SDLVersion = '2.30.9'
 $SDLZip = Join-Path $RepoRoot "extern/SDL2-devel-$SDLVersion-VC.zip"
 $SDLRoot = Join-Path $RepoRoot "extern/SDL2-$SDLVersion"
+$Architectures = if ($Architecture -eq 'all') { @('x64', 'x86') } else { @($Architecture) }
 
 function Write-Step([string] $Message) {
     Write-Host "==> $Message" -ForegroundColor Cyan
 }
 
-function Find-VcVars {
+function Find-VcVars([string] $Arch) {
+    $vcvarsName = if ($Arch -eq 'x86') { 'vcvars32.bat' } else { 'vcvars64.bat' }
     $candidates = @(
-        'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat',
-        'C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat',
-        'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat',
-        'C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat',
-        'C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat'
+        "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\$vcvarsName",
+        "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\$vcvarsName",
+        "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\$vcvarsName",
+        "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\$vcvarsName",
+        "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\$vcvarsName"
     )
     foreach ($candidate in $candidates) {
         if (Test-Path $candidate) { return $candidate }
@@ -58,12 +66,12 @@ function Find-VcVars {
     if (Test-Path $vswhere) {
         $install = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
         if ($install) {
-            $vcvars = Join-Path $install 'VC/Auxiliary/Build/vcvars64.bat'
+            $vcvars = Join-Path $install "VC/Auxiliary/Build/$vcvarsName"
             if (Test-Path $vcvars) { return $vcvars }
         }
     }
 
-    throw 'Could not locate vcvars64.bat (Visual Studio 2022 C++ workload required).'
+    throw "Could not locate $vcvarsName (Visual Studio 2022 C++ workload with x86/x64 tools required)."
 }
 
 function Invoke-VcCommand([string] $VcVars, [string] $Command) {
@@ -72,6 +80,15 @@ function Invoke-VcCommand([string] $VcVars, [string] $Command) {
     if ($LASTEXITCODE -ne 0) {
         throw "Command failed with exit code $LASTEXITCODE`: $Command"
     }
+}
+
+function Get-BuildDir([string] $Arch) {
+    if ($Arch -eq 'x64') { return (Join-Path $RepoRoot 'build/bsdbg') }
+    return (Join-Path $RepoRoot "build/bsdbg-$Arch")
+}
+
+function Get-OutDir([string] $Arch) {
+    return (Join-Path $RepoRoot "UndertaleModRunner/native/win-$Arch")
 }
 
 if ($Backend -eq 'sdl2') {
@@ -91,13 +108,14 @@ if ($Backend -eq 'sdl2') {
         Expand-Archive -Path $SDLZip -DestinationPath (Join-Path $RepoRoot 'extern') -Force
     }
 
-    if (-not (Test-Path (Join-Path $SDLRoot 'lib/x64/SDL2.lib'))) {
-        throw "SDL2 x64 import library not found under $SDLRoot"
+    foreach ($arch in $Architectures) {
+        if (-not (Test-Path (Join-Path $SDLRoot "lib/$arch/SDL2.lib"))) {
+            throw "SDL2 $arch import library not found under $SDLRoot"
+        }
     }
 }
 
 # Ensure the Butterscotch submodule is present and carries the BSDBG hooks.
-$ButterscotchDir = Join-Path $RepoRoot 'Butterscotch'
 if (-not (Test-Path (Join-Path $ButterscotchDir 'CMakeLists.txt'))) {
     Write-Step 'Initializing Butterscotch submodule'
     & git -C $RepoRoot submodule update --init Butterscotch
@@ -136,69 +154,88 @@ if (Test-Path $BsdbgPatch) {
     }
 }
 
-# A cached configure from the other backend carries FORCE'd renderer options
-# (noop disables GL), so start from scratch when the backend changed.
-$cacheFile = Join-Path $BuildDir 'CMakeCache.txt'
-if ((Test-Path $cacheFile) -and -not $Clean) {
-    $cachedPlatform = Select-String -Path $cacheFile -Pattern '^PLATFORM:' | Select-Object -First 1
-    $cachedBackend = Select-String -Path $cacheFile -Pattern '^BACKEND:' | Select-Object -First 1
-    $platformOk = $cachedPlatform -and $cachedPlatform.Line -match '=embedded$'
-    $backendOk = $cachedBackend -and $cachedBackend.Line -match "=$([regex]::Escape($Backend))$"
-    if (-not ($platformOk -and $backendOk)) {
-        Write-Step "Build directory configured for a different platform/backend; removing $BuildDir"
-        Remove-Item -Recurse -Force $BuildDir
+if ($Clean) {
+    foreach ($arch in $Architectures) {
+        $dir = Get-BuildDir $arch
+        if (Test-Path $dir) {
+            Write-Step "Removing $dir"
+            Remove-Item -Recurse -Force $dir
+        }
     }
 }
 
-if ($Clean -and (Test-Path $BuildDir)) {
-    Write-Step "Removing $BuildDir"
-    Remove-Item -Recurse -Force $BuildDir
+$results = @()
+foreach ($arch in $Architectures) {
+    $BuildDir = Get-BuildDir $arch
+    $OutDir = Get-OutDir $arch
+
+    # A cached configure from the other backend carries FORCE'd renderer options
+    # (noop disables GL), so start from scratch when the backend changed.
+    $cacheFile = Join-Path $BuildDir 'CMakeCache.txt'
+    if (Test-Path $cacheFile) {
+        $cachedPlatform = Select-String -Path $cacheFile -Pattern '^PLATFORM:' | Select-Object -First 1
+        $cachedBackend = Select-String -Path $cacheFile -Pattern '^BACKEND:' | Select-Object -First 1
+        $platformOk = $cachedPlatform -and $cachedPlatform.Line -match '=embedded$'
+        $backendOk = $cachedBackend -and $cachedBackend.Line -match "=$([regex]::Escape($Backend))$"
+        if (-not ($platformOk -and $backendOk)) {
+            Write-Step "Build directory configured for a different platform/backend; removing $BuildDir"
+            Remove-Item -Recurse -Force $BuildDir
+        }
+    }
+
+    $VcVars = Find-VcVars $arch
+    Write-Step "[$arch] Using $VcVars"
+
+    $cmakeArgs = @(
+        '-S', $ButterscotchDir,
+        '-B', $BuildDir,
+        '-G', 'Ninja',
+        '-DPLATFORM=embedded',
+        "-DBACKEND=$Backend",
+        "-DCMAKE_BUILD_TYPE=$Configuration",
+        '-DVIDEO_BACKEND=none',
+        '-DENABLE_FMOD=OFF'
+    )
+    if ($Backend -eq 'sdl2') {
+        $cmakeArgs += "-DSDL2_ROOT=$($SDLRoot -replace '\\', '/')"
+    }
+
+    Write-Step "[$arch] Configuring"
+    Invoke-VcCommand $VcVars ("cmake " + ($cmakeArgs | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' ')
+
+    Write-Step "[$arch] Building"
+    Invoke-VcCommand $VcVars "cmake --build `"$BuildDir`" --config $Configuration --parallel 2"
+
+    $dll = Get-ChildItem -Path $BuildDir -Recurse -Filter 'bsdbg.dll' |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    if (-not $dll) {
+        throw "bsdbg.dll was not produced under $BuildDir"
+    }
+
+    New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
+    $stagedDll = Join-Path $OutDir 'bsdbg.dll'
+    Copy-Item -Force $dll.FullName $stagedDll
+    $stagedAt = Get-Date
+    (Get-Item $stagedDll).LastWriteTime = $stagedAt
+    Write-Step "[$arch] Staged $($dll.FullName) -> $OutDir"
+
+    if ($Backend -eq 'sdl2') {
+        $stagedSdl = Join-Path $OutDir 'SDL2.dll'
+        Copy-Item -Force (Join-Path $SDLRoot "lib/$arch/SDL2.dll") $stagedSdl
+        # Copy-Item preserves the package's old timestamp; touch the staged copy so
+        # MSBuild's incremental Butterscotch target sees it as up to date.
+        (Get-Item $stagedSdl).LastWriteTime = $stagedAt
+        $sdlLicense = Join-Path $OutDir 'SDL2.COPYING.txt'
+        if (-not (Test-Path $sdlLicense)) {
+            Copy-Item -Force (Join-Path $SDLRoot 'COPYING.txt') $sdlLicense
+        }
+        Write-Step "[$arch] Staged SDL2.dll -> $OutDir"
+    }
+
+    $results += [pscustomobject]@{ Architecture = $arch; Dll = $stagedDll }
 }
 
-$VcVars = Find-VcVars
-Write-Step "Using $VcVars"
-
-$cmakeArgs = @(
-    '-S', (Join-Path $RepoRoot 'Butterscotch'),
-    '-B', $BuildDir,
-    '-G', 'Ninja',
-    "-DPLATFORM=embedded",
-    "-DBACKEND=$Backend",
-    "-DCMAKE_BUILD_TYPE=$Configuration",
-    '-DVIDEO_BACKEND=none',
-    '-DENABLE_FMOD=OFF'
-)
-if ($Backend -eq 'sdl2') {
-    $cmakeArgs += "-DSDL2_ROOT=$($SDLRoot -replace '\\', '/')"
+foreach ($result in $results) {
+    Write-Host "Build succeeded ($($result.Architecture)): $($result.Dll)" -ForegroundColor Green
 }
-
-Write-Step 'Configuring'
-Invoke-VcCommand $VcVars ("cmake " + ($cmakeArgs | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' ')
-
-Write-Step 'Building'
-Invoke-VcCommand $VcVars "cmake --build `"$BuildDir`" --config $Configuration --parallel 2"
-
-$dll = Get-ChildItem -Path $BuildDir -Recurse -Filter 'bsdbg.dll' |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -First 1
-if (-not $dll) {
-    throw "bsdbg.dll was not produced under $BuildDir"
-}
-
-New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
-$stagedDll = Join-Path $OutDir 'bsdbg.dll'
-Copy-Item -Force $dll.FullName $stagedDll
-$stagedAt = Get-Date
-(Get-Item $stagedDll).LastWriteTime = $stagedAt
-Write-Step "Staged $($dll.FullName) -> $OutDir"
-
-if ($Backend -eq 'sdl2') {
-    $stagedSdl = Join-Path $OutDir 'SDL2.dll'
-    Copy-Item -Force (Join-Path $SDLRoot 'lib/x64/SDL2.dll') $stagedSdl
-    # Copy-Item preserves the package's old timestamp; touch the staged copy so
-    # MSBuild's incremental Butterscotch target sees it as up to date.
-    (Get-Item $stagedSdl).LastWriteTime = $stagedAt
-    Write-Step "Staged SDL2.dll -> $OutDir"
-}
-
-Write-Host "Build succeeded: $(Join-Path $OutDir 'bsdbg.dll')" -ForegroundColor Green

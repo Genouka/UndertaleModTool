@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 namespace UndertaleModRunner;
@@ -41,12 +42,49 @@ public static class ExternalButterscotch
 {
 
     /// <summary>
-    /// The embedded bsdbg session is a native x64 DLL, so it can only be loaded by an x64 host.
+    /// Locates the embedded bsdbg.dll matching the current process architecture:
+    /// native/win-&lt;arch&gt;/bsdbg.dll, or a legacy flat bsdbg.dll next to the host
+    /// executable when its PE machine matches.
     /// </summary>
-    public static bool CanUseEmbeddedSession =>
-        Environment.Is64BitProcess &&
-        System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==
-            System.Runtime.InteropServices.Architecture.X64;
+    public static string FindEmbeddedButterscotchLibrary()
+    {
+        string architectureFolder = RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X64 => "win-x64",
+            Architecture.X86 => "win-x86",
+            Architecture.Arm64 => "win-arm64",
+            _ => null,
+        };
+        if (architectureFolder is null)
+            return null;
+
+        string nativePath = Path.Combine(AppContext.BaseDirectory, "native", architectureFolder, "bsdbg.dll");
+        if (File.Exists(nativePath))
+            return nativePath;
+
+        // Legacy layout: bsdbg.dll next to UndertaleModTool.exe. Only accept it when
+        // it matches the current process; otherwise the runtime would fail with a
+        // confusing BadImageFormatException.
+        string flatPath = Path.Combine(AppContext.BaseDirectory, "bsdbg.dll");
+        if (!File.Exists(flatPath))
+            return null;
+        PeMachine expected = ProcessMachine;
+        if (expected == PeMachine.Unknown)
+            return null;
+        PeMachine found = DetectMachine(flatPath, out bool isDll);
+        return !isDll && found == expected ? flatPath : null;
+    }
+
+    private static PeMachine ProcessMachine => RuntimeInformation.ProcessArchitecture switch
+    {
+        Architecture.X64 => PeMachine.X64,
+        Architecture.X86 => PeMachine.X86,
+        Architecture.Arm64 => PeMachine.Arm64,
+        _ => PeMachine.Unknown,
+    };
+
+    /// <summary>True when a matching embedded bsdbg.dll is present for this process.</summary>
+    public static bool CanUseEmbeddedSession => FindEmbeddedButterscotchLibrary() is not null;
 
     /// <summary>Returns the display name of an architecture.</summary>
     public static string DescribeArchitecture(ButterscotchArchitecture architecture) => architecture switch
