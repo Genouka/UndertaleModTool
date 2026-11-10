@@ -107,6 +107,9 @@
 - A more detailed and accurate code analyzer (type propagation and constant folding) 更详细准确的代码分析器（类型传播和常量展开）
 - Actively synchronize upstream code, usually no longer than a week 积极同步上游代码，通常不会超过一周
 - GMRT VM Support. 支持GMRT VM。
+- Support running and debugging games with Butterscotch. 支持使用Butterscotch运行和调试游戏。
+- Support importing yymps files. 支持导入yymps文件。
+- Support Windows 7 and 32-bit systems. 支持Windows 7和32位系统。
 
 ## 鸣谢/Thanks
 

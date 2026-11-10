@@ -12,6 +12,12 @@
 
 #include "loop.h"
 #include "utils.h"
+
+#if defined(_WIN32)
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
 #include "stb_ds.h"
 
 #include <stdarg.h>
@@ -385,6 +391,18 @@ static void bs_free_config(BsdbgConfig* config) {
     memset(config, 0, sizeof(*config));
 }
 
+/* Resolves session paths against the host process' CWD before the runner
+ * switches to the game folder; relative inputs otherwise stop resolving once
+ * the CWD moves. */
+static char* bs_absolute_path(const char* path) {
+#if defined(_WIN32)
+    char* resolved = _fullpath(nullptr, path, 0);
+    if (resolved != nullptr)
+        return resolved;
+#endif
+    return bs_strdup_checked(path);
+}
+
 static int bs_copy_config(BsdbgConfig* destination, const BsdbgConfig* source) {
     int i;
 
@@ -400,11 +418,11 @@ static int bs_copy_config(BsdbgConfig* destination, const BsdbgConfig* source) {
     destination->gameArgCount = source->gameArgCount;
     destination->stopOnEntry = source->stopOnEntry;
 
-    destination->dataWinPath = bs_strdup_checked(source->dataWinPath);
+    destination->dataWinPath = bs_absolute_path(source->dataWinPath);
     if (destination->dataWinPath == nullptr)
         return -1;
     if (source->workingDirectory != nullptr) {
-        destination->workingDirectory = bs_strdup_checked(source->workingDirectory);
+        destination->workingDirectory = bs_absolute_path(source->workingDirectory);
         if (destination->workingDirectory == nullptr)
             return -1;
     }
@@ -435,6 +453,49 @@ static int bs_copy_config(BsdbgConfig* destination, const BsdbgConfig* source) {
     }
 
     return 0;
+}
+
+/* ===[ Working directory ]=== */
+
+/* Games resolve resources relative to the game folder; the host process'
+ * working directory (the tool's own folder for the embedded runner) must not
+ * leak into GML-visible paths or native extension DLLs. Applies the configured
+ * working directory (default: the data.win folder) and returns the previous
+ * one so the host can be restored on shutdown. */
+static bool bs_apply_working_directory(BsdbgControl* c, char** previousOut) {
+    const char* target = c->config.workingDirectory;
+    char* derived = nullptr;
+
+    if (target == nullptr || target[0] == '\0') {
+        derived = bs_strdup_checked(c->config.dataWinPath);
+        if (derived == nullptr)
+            return false;
+        bsGetDirname(derived);
+        target = derived;
+    }
+
+    char previous[1024];
+    previous[0] = '\0';
+    if (getcwd(previous, sizeof(previous)) == nullptr)
+        previous[0] = '\0';
+
+    if (chdir(target) != 0) {
+        logWarn("Bsdbg: could not change the working directory to '%s'\n", target);
+        free(derived);
+        return false;
+    }
+
+    logInfo("Bsdbg: game directory '%s' (working_directory/program_directory)\n", target);
+    *previousOut = previous[0] != '\0' ? bs_strdup_checked(previous) : nullptr;
+    free(derived);
+    return true;
+}
+
+static void bs_restore_working_directory(char* previous) {
+    if (previous == nullptr)
+        return;
+    chdir(previous);
+    free(previous);
 }
 
 /* ===[ Runner thread ]=== */
@@ -616,23 +677,34 @@ static unsigned __stdcall bs_session_thread(void* argument) {
     /* Keep enough reserve for the __except handler after a stack overflow. */
     SetThreadStackGuarantee(&stackGuarantee);
 
+    char* previousWorkingDirectory = nullptr;
+    bs_apply_working_directory(c, &previousWorkingDirectory);
     __try {
         bs_run_session(c);
     } __except (bs_crash_filter(c, GetExceptionInformation(), nullptr)) {
         /* The crash filter already reported the failure. */
     }
+    bs_restore_working_directory(previousWorkingDirectory);
     return 0;
 }
 #elif defined(_WIN32)
 /* TODO: MinGW/other compilers have no SEH __try/__except; use a separate
  * process host if crash isolation is required on those toolchains. */
 static unsigned __stdcall bs_session_thread(void* argument) {
-    bs_run_session((BsdbgControl*) argument);
+    BsdbgControl* c = (BsdbgControl*) argument;
+    char* previousWorkingDirectory = nullptr;
+    bs_apply_working_directory(c, &previousWorkingDirectory);
+    bs_run_session(c);
+    bs_restore_working_directory(previousWorkingDirectory);
     return 0;
 }
 #else
 static void* bs_session_thread(void* argument) {
-    bs_run_session((BsdbgControl*) argument);
+    BsdbgControl* c = (BsdbgControl*) argument;
+    char* previousWorkingDirectory = nullptr;
+    bs_apply_working_directory(c, &previousWorkingDirectory);
+    bs_run_session(c);
+    bs_restore_working_directory(previousWorkingDirectory);
     return nullptr;
 }
 #endif
@@ -726,6 +798,10 @@ int32_t Bsdbg_Start(BsdbgSession* session) {
     bs_atomic_set(&c->running, 0);
     c->stopLocation = BSDBG_STOPLOC_NONE;
     Bsdbg_Unlock(c);
+
+    /* Makes stale-runtime reports diagnosable: the host tool shows this line in
+     * its output window, so an outdated bsdbg.dll is immediately visible. */
+    Bsdbg_Log(c, 1, "ButterscotchDbg runtime built " __DATE__ " " __TIME__ "\n");
 
 #if defined(_WIN32)
     {
