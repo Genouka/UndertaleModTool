@@ -34,9 +34,9 @@ jobs:
     - name: Publish ${{ matrix.os }} GUI
       shell: pwsh
       run: |
-        $arguments = @('-Configuration', '${{ matrix.configuration }}', '-Output', '${{ matrix.os }}')
-        if ('${{ matrix.bundled }}' -eq 'true') { $arguments += '-SelfContained' }
-        if ('${{ matrix.singlefile }}' -eq 'true') { $arguments += '-SingleFile' }
+        $arguments = @{ Configuration = '${{ matrix.configuration }}'; Output = '${{ matrix.os }}' }
+        if ('${{ matrix.bundled }}' -eq 'true') { $arguments.SelfContained = $true }
+        if ('${{ matrix.singlefile }}' -eq 'true') { $arguments.SingleFile = $true }
         ./tools/publish-gui.ps1 @arguments
     - name: Copy external files
       run: |

@@ -47,9 +47,9 @@ jobs:
     - name: Publish ${{ matrix.os }} GUI
       shell: pwsh
       run: |
-        $arguments = @('-Configuration', '${{ matrix.configuration }}', '-Output', '${{ matrix.os }}')
-        if ('${{ matrix.bundled }}' -eq 'true') { $arguments += '-SelfContained' }
-        if ('${{ matrix.singlefile }}' -eq 'true') { $arguments += '-SingleFile' }
+        $arguments = @{ Configuration = '${{ matrix.configuration }}'; Output = '${{ matrix.os }}' }
+        if ('${{ matrix.bundled }}' -eq 'true') { $arguments.SelfContained = $true }
+        if ('${{ matrix.singlefile }}' -eq 'true') { $arguments.SingleFile = $true }
         ./tools/publish-gui.ps1 @arguments
         dotnet publish UndertaleModToolUpdater -c ${{ matrix.configuration }} -r win-x64 --self-contained ${{ matrix.bundled }} -p:PublishSingleFile=false --output ${{ matrix.os }}/Updater
     - name: Copy external files
