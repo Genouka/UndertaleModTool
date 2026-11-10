@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Platform;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -71,6 +72,17 @@ public class MockStackWindow : UserControl
     ContentControl activeContentHost = null!;
     Panel modalOverlay = null!;
 
+    /// <summary>
+    /// Wraps the simulated-window UI so the software keyboard inset can shrink the whole interface
+    /// (see <see cref="UpdateSoftKeyboardInset"/>) without disturbing the safe-area padding that
+    /// <see cref="TopLevel"/> applies to this control itself.
+    /// </summary>
+    readonly Border imeInsetHost = new();
+
+    // Platform insets hooks, resolved from the top level when this control is attached.
+    IInputPane? inputPane;
+    IInsetsManager? insetsManager;
+
     // Simulated-window chrome whose colors track the current theme (see ApplyThemeColors).
     Border headerBorder = null!;
     Border modalSurface = null!;
@@ -127,7 +139,8 @@ public class MockStackWindow : UserControl
         root.Children.Add(modalOverlay);
         BuildModalOverlay();
 
-        Content = root;
+        imeInsetHost.Child = root;
+        Content = imeInsetHost;
     }
 
     Control BuildHeader()
@@ -575,6 +588,21 @@ public class MockStackWindow : UserControl
         TopLevel? topLevel = TopLevel.GetTopLevel(this);
         if (topLevel is not null)
             topLevel.BackRequested += OnBackRequested;
+
+        inputPane = topLevel?.InputPane;
+        insetsManager = topLevel?.InsetsManager;
+
+        // The keyboard covers the bottom of the UI: on Android the app is laid out edge to edge
+        // (forced for targetSdk 35+ on Android 15+), so the platform does not shrink the window
+        // for the IME - it only reports the covered area. Both signals are needed: StateChanged
+        // tracks the IME itself, SafeAreaChanged re-samples the live inset when the system bars
+        // move because of it.
+        if (inputPane is not null)
+            inputPane.StateChanged += OnInputPaneStateChanged;
+        if (insetsManager is not null)
+            insetsManager.SafeAreaChanged += OnSafeAreaChanged;
+
+        UpdateSoftKeyboardInset();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -584,11 +612,53 @@ public class MockStackWindow : UserControl
         TopLevel? topLevel = TopLevel.GetTopLevel(this);
         if (topLevel is not null)
             topLevel.BackRequested -= OnBackRequested;
+
+        if (inputPane is not null)
+            inputPane.StateChanged -= OnInputPaneStateChanged;
+        if (insetsManager is not null)
+            insetsManager.SafeAreaChanged -= OnSafeAreaChanged;
+
+        inputPane = null;
+        insetsManager = null;
     }
 
     void OnBackRequested(object? sender, RoutedEventArgs e)
     {
         e.Handled = true;
         HandleBack();
+    }
+
+    void OnInputPaneStateChanged(object? sender, InputPaneStateEventArgs e)
+    {
+        UpdateSoftKeyboardInset();
+    }
+
+    void OnSafeAreaChanged(object? sender, SafeAreaChangedArgs e)
+    {
+        UpdateSoftKeyboardInset();
+    }
+
+    /// <summary>
+    /// Keeps the whole simulated UI above the software keyboard instead of letting the keyboard
+    /// cover its bottom part.
+    /// <para>
+    /// <see cref="IInputPane.OccludedRect"/> is the part of the window the keyboard hides, in DIPs,
+    /// already net of the navigation bar that the safe area accounts for separately, and it is
+    /// empty while the keyboard is closed. It is also empty where the platform shrinks the window
+    /// for the IME (legacy <c>adjustResize</c>), so nothing has to be reserved there. Reading the
+    /// live value - rather than the event's start/end rectangles - keeps this in step with the
+    /// platform's own inset bookkeeping, which updates the IME state only after raising
+    /// <see cref="IInsetsManager.SafeAreaChanged"/>.
+    /// </para>
+    /// </summary>
+    void UpdateSoftKeyboardInset()
+    {
+        double bottom = inputPane is null
+            ? 0
+            : Math.Max(0, inputPane.OccludedRect.Height);
+
+        Thickness inset = new(0, 0, 0, bottom);
+        if (imeInsetHost.Padding != inset)
+            imeInsetHost.Padding = inset;
     }
 }

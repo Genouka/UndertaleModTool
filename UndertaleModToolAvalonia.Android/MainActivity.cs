@@ -20,6 +20,11 @@ namespace UndertaleModToolAvalonia.Android;
     Label = "QiuUTMTv5",
     Theme = "@style/AppTheme",
     MainLauncher = true,
+    // Resize the activity for the software keyboard instead of panning the UI behind it: with
+    // adjustPan the header and the caret end up off screen. Android 15+ ignores this while the
+    // app is laid out edge to edge (targetSdk 35+); there MockStackWindow reserves the IME inset
+    // itself, because the platform no longer resizes the window for the keyboard.
+    WindowSoftInputMode = SoftInput.AdjustResize,
     ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
 public class MainActivity : AvaloniaMainActivity
 {
@@ -75,8 +80,6 @@ public class MainActivity : AvaloniaMainActivity
         if (focusedView is null)
             return false;
 
-        // Resize the activity instead of panning the code editor behind the keyboard.
-        Window?.SetSoftInputMode(SoftInput.AdjustResize);
         return inputMethodManager.ShowSoftInput(focusedView, ShowFlags.Implicit);
     }
 
