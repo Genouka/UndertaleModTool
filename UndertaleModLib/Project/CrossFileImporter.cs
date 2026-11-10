@@ -28,7 +28,7 @@ public enum NameConflictResolution
     Rename
 }
 
-public sealed class CrossFileImporter : IDisposable
+public sealed class CrossFileImporter : IResourceImportSource
 {
     public UndertaleData TargetData { get; }
     public UndertaleData SourceData { get; private set; }
@@ -57,7 +57,50 @@ public sealed class CrossFileImporter : IDisposable
         SourceData = UndertaleIO.Read(fs, (string warning, bool isImportant) => { }, (_) => { });
     }
 
-    public List<ResourceInfo> GetAvailableResources()
+    /// <inheritdoc/>
+    public void LoadFile(string filePath) => LoadSourceFile(filePath);
+
+    public IReadOnlyList<string> SourceNotices => Array.Empty<string>();
+
+    /// <inheritdoc/>
+    public IReadOnlyList<ImportableResource> EnumerateResources()
+    {
+        List<ResourceInfo> resources = GetAvailableResourceInfos();
+        List<ImportableResource> importable = new(resources.Count);
+
+        foreach (ResourceInfo resource in resources)
+        {
+            importable.Add(new ImportableResource
+            {
+                Name = resource.Name,
+                TypeName = resource.AssetType?.ToInterfaceName() ?? resource.ResourceType.Name,
+                ExistsInTarget = resource.ExistsInTarget,
+                Payload = resource
+            });
+        }
+
+        return importable;
+    }
+
+    /// <inheritdoc/>
+    public CrossFileImportResult ImportResources(
+        IReadOnlyList<ImportableResource> selectedResources,
+        NameConflictResolution conflictResolution,
+        bool importDependencies)
+    {
+        List<ResourceInfo> resources = new(selectedResources.Count);
+        foreach (ImportableResource resource in selectedResources)
+        {
+            if (resource.Payload is not ResourceInfo resourceInfo)
+                throw new ArgumentException($"Resource \"{resource.Name}\" is not from a data file.", nameof(selectedResources));
+
+            resources.Add(resourceInfo);
+        }
+
+        return ImportResourceInfos(resources, conflictResolution, importDependencies);
+    }
+
+    private List<ResourceInfo> GetAvailableResourceInfos()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -123,7 +166,7 @@ public sealed class CrossFileImporter : IDisposable
         };
     }
 
-    public CrossFileImportResult ImportResources(
+    private CrossFileImportResult ImportResourceInfos(
         List<ResourceInfo> selectedResources,
         NameConflictResolution conflictResolution,
         bool importDependencies)
@@ -586,6 +629,7 @@ public sealed class CrossFileImporter : IDisposable
         return string.Compare(a.DataName, b.DataName, StringComparison.Ordinal);
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         if (!_disposed)
