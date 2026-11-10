@@ -6,6 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UndertaleModTool"
         xmlns:loc="clr-namespace:UndertaleModTool.Localization"
+        xmlns:runner="clr-namespace:UndertaleModRunner;assembly=UndertaleModRunner"
         mc:Ignorable="d"
         Title="{loc:Loc Settings_WindowTitle}" Height="Auto" Width="800" SizeToContent="Height" WindowStartupLocation="CenterOwner" UseLayoutRounding="False">
     <Window.Resources>
@@ -107,6 +108,30 @@
                         <CheckBox IsChecked="{Binding RecompileAllCodeSourcesOnProjectSave}" Content="{loc:Loc Settings_RecompileOnSave}" ToolTip="{loc:Loc Settings_RecompileOnSaveToolTip}"/>
                         <CheckBox IsChecked="{Binding ChangeTrackingEnabled}" Content="{loc:Loc Settings_ChangeTracking}" ToolTip="{loc:Loc Settings_ChangeTrackingToolTip}"/>
                     </StackPanel>
+                </Grid>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="{loc:Loc Settings_ButterscotchArchitecture}" ToolTip="{loc:Loc Settings_ButterscotchArchitecture_Tooltip}"/>
+                    <local:ComboBoxDark Grid.Column="1" SelectedValue="{Binding ButterscotchArchitecture}" SelectedValuePath="Tag"
+                              ToolTip="{loc:Loc Settings_ButterscotchArchitecture_Tooltip}">
+                        <ComboBoxItem Content="{loc:Loc Settings_ButterscotchArch_InProcess}" Tag="{x:Static runner:ButterscotchArchitecture.InProcess}"/>
+                        <ComboBoxItem Content="{loc:Loc Settings_ButterscotchArch_X64}" Tag="{x:Static runner:ButterscotchArchitecture.X64}"/>
+                        <ComboBoxItem Content="{loc:Loc Settings_ButterscotchArch_X86}" Tag="{x:Static runner:ButterscotchArchitecture.X86}"/>
+                        <ComboBoxItem Content="{loc:Loc Settings_ButterscotchArch_Arm64}" Tag="{x:Static runner:ButterscotchArchitecture.Arm64}"/>
+                    </local:ComboBoxDark>
+
+                    <TextBlock Grid.Row="1" Text="{loc:Loc Settings_ButterscotchExecutablePath}" ToolTip="{loc:Loc Settings_ButterscotchExecutablePath_Tooltip}"/>
+                    <local:TextBoxDark Grid.Row="1" Grid.Column="1" Text="{Binding ButterscotchExecutablePath}"
+                                       ToolTip="{loc:Loc Settings_ButterscotchExecutablePath_Tooltip}"/>
                 </Grid>
 
                 <Grid>

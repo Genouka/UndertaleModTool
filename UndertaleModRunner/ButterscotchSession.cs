@@ -76,6 +76,8 @@ public sealed class ButterscotchSession : IDisposable
     }
 
     public int AbiVersion => NativeMethods.Bsdbg_AbiVersion();
+    /// <summary>Loads the native Butterscotch runtime for the current process and returns its ABI version.</summary>
+    public static int NativeAbiVersion => NativeMethods.Bsdbg_AbiVersion();
     public bool IsRunning => _session != IntPtr.Zero && NativeMethods.Bsdbg_IsRunning(_session) != 0;
     public bool IsPaused => _session != IntPtr.Zero && NativeMethods.Bsdbg_IsPaused(_session) != 0;
     public int FrameCount => _session != IntPtr.Zero ? NativeMethods.Bsdbg_GetFrameCount(_session) : -1;
@@ -121,6 +123,44 @@ public sealed class ButterscotchSession : IDisposable
         finally
         {
             Marshal.FreeCoTaskMem(namePtr);
+            Marshal.FreeCoTaskMem(valuePtr);
+        }
+
+        error = TakeString(errorPtr);
+        return result == 0;
+    }
+
+    public bool SetGlobalVariable(string name, string valueJson, out string error)
+    {
+        IntPtr namePtr = AllocTempString(name);
+        IntPtr valuePtr = AllocTempString(valueJson);
+        int result;
+        IntPtr errorPtr;
+        try
+        {
+            result = NativeMethods.Bsdbg_SetGlobalVariable(_session, namePtr, valuePtr, out errorPtr);
+        }
+        finally
+        {
+            Marshal.FreeCoTaskMem(namePtr);
+            Marshal.FreeCoTaskMem(valuePtr);
+        }
+
+        error = TakeString(errorPtr);
+        return result == 0;
+    }
+
+    public bool SetFrameVariable(int frameIndex, bool isArgument, int slot, string valueJson, out string error)
+    {
+        IntPtr valuePtr = AllocTempString(valueJson);
+        int result;
+        IntPtr errorPtr;
+        try
+        {
+            result = NativeMethods.Bsdbg_SetFrameVariable(_session, frameIndex, isArgument ? 1 : 0, slot, valuePtr, out errorPtr);
+        }
+        finally
+        {
             Marshal.FreeCoTaskMem(valuePtr);
         }
 

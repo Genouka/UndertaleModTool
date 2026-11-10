@@ -265,6 +265,32 @@ namespace UndertaleModTool.Debugging
             return Session.GetGlobals()?.Globals ?? (IReadOnlyList<InstanceVariableInfo>)Array.Empty<InstanceVariableInfo>();
         }
 
+        public bool SetInstanceVariable(int instanceId, string name, string valueJson, out string error)
+        {
+            error = "No active session.";
+            if (Session is null || !IsPaused)
+                return false;
+            return Session.SetInstanceVariable(instanceId, name, valueJson, out error);
+        }
+
+        public bool SetGlobalVariable(string name, string valueJson, out string error)
+        {
+            error = "No active session.";
+            if (Session is null || !IsPaused)
+                return false;
+            return Session.SetGlobalVariable(name, valueJson, out error);
+        }
+
+        public bool SetFrameVariable(int frameIndex, bool isArgument, int slot, string valueJson, out string error)
+        {
+            error = "No active session.";
+            if (Session is null || !IsPaused)
+                return false;
+            return Session.SetFrameVariable(frameIndex, isArgument, slot, valueJson, out error);
+        }
+
+        public void Log(string message) => AppendLog(message);
+
         public bool HotReload(IEnumerable<UndertaleCode> codes)
         {
             if (Session is null || MainWindow.Data is null)
