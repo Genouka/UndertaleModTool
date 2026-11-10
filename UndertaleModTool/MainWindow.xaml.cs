@@ -3927,13 +3927,41 @@ namespace UndertaleModTool
             ImportFromFileDialog dialog = null;
             try
             {
-                dialog = new(Data);
+                dialog = new(new CrossFileImporter(Data, MainThreadAction),
+                             LocalizationSource.GetString("ImportFile_FileFilter"));
                 dialog.Owner = this;
                 dialog.ShowDialog();
             }
             catch (Exception ex)
             {
                 this.ShowError(string.Format(LocalizationSource.GetString("Msg_ImportFromFileError"), ex.Message));
+            }
+            finally
+            {
+                dialog?.Close();
+            }
+        }
+
+        private void MenuItem_ImportFromYYMPS_Click(object sender, RoutedEventArgs e)
+        {
+            if (Data is null)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_NoDataWinLoaded"));
+                return;
+            }
+
+            ImportFromFileDialog dialog = null;
+            try
+            {
+                dialog = new(new YyPackageImporter(Data, MainThreadAction),
+                             LocalizationSource.GetString("YYMPS_FileFilter"));
+                dialog.Title = LocalizationSource.GetString("Dialog_ImportFromYYMPS");
+                dialog.Owner = this;
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_ImportFromYYMPSError"), ex.Message));
             }
             finally
             {

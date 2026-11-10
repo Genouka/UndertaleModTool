@@ -4,26 +4,25 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using UndertaleModLib.Project;
 using UndertaleModTool.Localization;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace UndertaleModTool.Windows
 {
     public partial class ImportFromFileDialog : Window
     {
-        private static readonly MainWindow mainWindow = Application.Current.MainWindow as MainWindow;
-
-        private CrossFileImporter _importer;
+        private readonly IResourceImportSource _source;
+        private readonly string _fileFilter;
         private ObservableCollection<ResourceDisplayItem> _availableItems = new();
         private ObservableCollection<ResourceDisplayItem> _selectedItems = new();
         private readonly ListCollectionView _availableView;
         private readonly ListCollectionView _selectedView;
-        private List<ResourceInfo> _allResources;
+        private IReadOnlyList<ImportableResource> _allResources;
 
         public bool ImportCompleted { get; private set; }
         public CrossFileImportResult ImportResult { get; private set; }
@@ -37,11 +36,12 @@ namespace UndertaleModTool.Windows
                 MainWindow.SetDarkTitleBarForWindow(this, true, false);
         }
 
-        public ImportFromFileDialog(UndertaleModLib.UndertaleData targetData)
+        public ImportFromFileDialog(IResourceImportSource source, string fileFilter)
         {
             InitializeComponent();
 
-            _importer = new CrossFileImporter(targetData, mainWindow.MainThreadAction);
+            _source = source ?? throw new ArgumentNullException(nameof(source));
+            _fileFilter = fileFilter;
             _availableView = new ListCollectionView(_availableItems);
             _selectedView = new ListCollectionView(_selectedItems);
             AvailableList.ItemsSource = _availableView;
@@ -72,59 +72,57 @@ namespace UndertaleModTool.Windows
         {
             OpenFileDialog dlg = new()
             {
-                DefaultExt = "win",
-                Filter = LocalizationSource.GetString("ImportFile_FileFilter") + "|*.win;*.unx;*.ios;*.droid;*.wad|All files|*.*"
+                Filter = _fileFilter
             };
 
-            if (dlg.ShowDialog() == true)
+            if (dlg.ShowDialog() != true)
+                return;
+
+            SourceFilePathTextBox.Text = dlg.FileName;
+
+            LoaderDialog loader = new(
+                LocalizationSource.GetString("ImportFile_Loading"),
+                LocalizationSource.GetString("ImportFile_LoadingPleaseWait"))
             {
-                SourceFilePathTextBox.Text = dlg.FileName;
+                PreventClose = true,
+                Owner = this
+            };
 
-                LoaderDialog loader = new(
-                    LocalizationSource.GetString("ImportFile_Loading"),
-                    LocalizationSource.GetString("ImportFile_LoadingPleaseWait"))
+            string filePath = dlg.FileName;
+            bool loadSuccess = false;
+            Exception loadError = null;
+
+            loader.Show();
+            Task loadTask = Task.Run(() =>
+            {
+                try
                 {
-                    PreventClose = true,
-                    Owner = this
-                };
-
-                string filePath = dlg.FileName;
-                bool loadSuccess = false;
-                Exception loadError = null;
-
-                loader.Owner = this;
-                System.Threading.Tasks.Task loadTask = System.Threading.Tasks.Task.Run(() =>
-                {
-                    try
-                    {
-                        _importer.LoadSourceFile(filePath);
-                        loadSuccess = true;
-                    }
-                    catch (Exception ex)
-                    {
-                        loadError = ex;
-                    }
-                });
-                //try
-                //{
-                //    _ = Dispatcher.BeginInvoke(new Action(() => { if (!loader.IsClosed) loader.TryShowDialog(); }));
-                //}
-                //catch
-                //{
-                //    // This is still a problem in rare cases for some unknown reason
-                //}//FIXME
-                await loadTask;
-                
-
-                if (!loadSuccess)
-                {
-                    this.ShowError(string.Format(LocalizationSource.GetString("ImportFile_LoadError"), loadError?.Message));
-                    return;
+                    _source.LoadFile(filePath);
+                    loadSuccess = true;
                 }
+                catch (Exception ex)
+                {
+                    loadError = ex;
+                }
+            });
 
-                PopulateResourceLists();
-                ImportButton.IsEnabled = _selectedItems.Count > 0;
+            try
+            {
+                await loadTask;
             }
+            finally
+            {
+                loader.TryClose();
+            }
+
+            if (!loadSuccess)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("ImportFile_LoadError"), loadError?.Message));
+                return;
+            }
+
+            PopulateResourceLists();
+            ImportButton.IsEnabled = _selectedItems.Count > 0;
         }
 
         private void PopulateResourceLists()
@@ -136,7 +134,7 @@ namespace UndertaleModTool.Windows
 
             try
             {
-                _allResources = _importer.GetAvailableResources();
+                _allResources = _source.EnumerateResources();
             }
             catch (Exception ex)
             {
@@ -144,10 +142,14 @@ namespace UndertaleModTool.Windows
                 return;
             }
 
-            foreach (ResourceInfo res in _allResources)
+            foreach (ImportableResource res in _allResources)
             {
                 _availableItems.Add(new ResourceDisplayItem(res));
             }
+
+            IReadOnlyList<string> notices = _source.SourceNotices;
+            SourceNoticesText.Text = notices.Count > 0 ? string.Join(Environment.NewLine, notices) : string.Empty;
+            SourceNoticesText.Visibility = notices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
@@ -227,7 +229,7 @@ namespace UndertaleModTool.Windows
 
             bool importDeps = ImportDependenciesCheck.IsChecked == true;
 
-            List<ResourceInfo> selectedResources = _selectedItems.Select(item => item.ResourceInfo).ToList();
+            List<ImportableResource> selectedResources = _selectedItems.Select(item => item.Resource).ToList();
 
             LoaderDialog loader = new(
                 LocalizationSource.GetString("ImportFile_Importing"),
@@ -240,11 +242,12 @@ namespace UndertaleModTool.Windows
             CrossFileImportResult result = null;
             Exception importError = null;
 
-            System.Threading.Tasks.Task importTask = System.Threading.Tasks.Task.Run(() =>
+            loader.Show();
+            Task importTask = Task.Run(() =>
             {
                 try
                 {
-                    result = _importer.ImportResources(selectedResources, resolution, importDeps);
+                    result = _source.ImportResources(selectedResources, resolution, importDeps);
                 }
                 catch (Exception ex)
                 {
@@ -252,8 +255,14 @@ namespace UndertaleModTool.Windows
                 }
             });
 
-            //loader.ShowDialog();
-            await importTask;
+            try
+            {
+                await importTask;
+            }
+            finally
+            {
+                loader.TryClose();
+            }
 
             if (importError is not null)
             {
@@ -298,28 +307,27 @@ namespace UndertaleModTool.Windows
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            _importer?.Dispose();
+            _source?.Dispose();
             base.OnClosing(e);
         }
     }
 
     public sealed class ResourceDisplayItem
     {
-        public ResourceInfo ResourceInfo { get; }
+        public ImportableResource Resource { get; }
         public string DisplayName { get; }
         public string FullName { get; }
 
-        public ResourceDisplayItem(ResourceInfo resourceInfo)
+        public ResourceDisplayItem(ImportableResource resource)
         {
-            ResourceInfo = resourceInfo;
+            Resource = resource;
 
-            string typeName = resourceInfo.AssetType?.ToInterfaceName() ?? resourceInfo.ResourceType.Name;
-            string conflictMarker = resourceInfo.ExistsInTarget ? " ⚠" : "";
+            string conflictMarker = resource.ExistsInTarget ? " ⚠" : "";
 
-            DisplayName = $"{typeName}: {resourceInfo.Name}{conflictMarker}";
-            FullName = resourceInfo.ExistsInTarget
-                ? $"{typeName}: {resourceInfo.Name} ({LocalizationSource.GetString("ImportFile_ExistsInTarget")})"
-                : $"{typeName}: {resourceInfo.Name}";
+            DisplayName = $"{resource.TypeName}: {resource.Name}{conflictMarker}";
+            FullName = resource.ExistsInTarget
+                ? $"{resource.TypeName}: {resource.Name} ({LocalizationSource.GetString("ImportFile_ExistsInTarget")})"
+                : $"{resource.TypeName}: {resource.Name}";
         }
 
         public override string ToString() => DisplayName;
