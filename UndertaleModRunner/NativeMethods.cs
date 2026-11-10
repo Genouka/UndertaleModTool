@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace UndertaleModRunner;
@@ -6,6 +8,39 @@ namespace UndertaleModRunner;
 internal static class NativeMethods
 {
     internal const string DllName = "bsdbg";
+
+    static NativeMethods()
+    {
+        // Load the bsdbg matching this process architecture instead of relying on
+        // the flat DLL next to the executable: 32-bit and 64-bit builds share one
+        // folder, with native runtimes under native/win-<arch>/.
+        NativeLibrary.SetDllImportResolver(typeof(NativeMethods).Assembly, ResolveNativeLibrary);
+    }
+
+    private static IntPtr ResolveNativeLibrary(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+    {
+        if (!string.Equals(libraryName, DllName, StringComparison.OrdinalIgnoreCase))
+            return IntPtr.Zero;
+
+        string libraryPath = ExternalButterscotch.FindEmbeddedButterscotchLibrary();
+        if (libraryPath is null)
+            return IntPtr.Zero;
+
+        // bsdbg imports SDL2.dll. Load the sibling copy first so the dependency
+        // resolves to the same architecture regardless of DLL search paths.
+        string directory = Path.GetDirectoryName(libraryPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            string sdlPath = Path.Combine(directory, "SDL2.dll");
+            if (File.Exists(sdlPath))
+            {
+                try { NativeLibrary.Load(sdlPath); }
+                catch (Exception) { /* let the bsdbg load surface the error */ }
+            }
+        }
+
+        return NativeLibrary.Load(libraryPath);
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct BsdbgConfig
@@ -99,6 +134,12 @@ internal static class NativeMethods
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int Bsdbg_SetInstanceVariable(IntPtr session, int instanceId, IntPtr name, IntPtr valueJson, out IntPtr errorText);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int Bsdbg_SetGlobalVariable(IntPtr session, IntPtr name, IntPtr valueJson, out IntPtr errorText);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern int Bsdbg_SetFrameVariable(IntPtr session, int frameIndex, int isArgument, int slot, IntPtr valueJson, out IntPtr errorText);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int Bsdbg_ApplyCodePatch(IntPtr session, IntPtr json, out IntPtr errorText);

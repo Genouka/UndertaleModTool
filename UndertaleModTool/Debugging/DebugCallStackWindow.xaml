@@ -6,6 +6,7 @@
         Title="{loc:Loc Debug_CallStack_Title}" Height="360" Width="760" WindowStartupLocation="CenterOwner">
     <Grid Margin="8">
         <ListBox x:Name="FrameList"
+                 MouseDoubleClick="FrameList_MouseDoubleClick"
                  Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
                  Foreground="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"
                  FontFamily="Consolas">

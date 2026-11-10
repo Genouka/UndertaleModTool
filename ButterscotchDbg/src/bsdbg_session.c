@@ -21,6 +21,9 @@
 
 #if defined(_WIN32)
 #  include <process.h>
+#if defined(_WIN32) && defined(_MSC_VER)
+#  include <malloc.h> /* _resetstkoflw */
+#endif
 #endif
 
 BsdbgControl* g_bsdbg = nullptr;
@@ -515,7 +518,114 @@ static void bs_run_session(BsdbgControl* c) {
     Bsdbg_EmitEvent(c, BSDBG_EVENT_EXIT, json);
 }
 
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(_MSC_VER)
+/*
+ * Isolation guard: hot-reloaded GML runs on this dedicated game thread. If a
+ * bad patch faults (access violation, illegal instruction, stack overflow,
+ * ...), unwind to this boundary and report it as a session error instead of
+ * letting the exception terminate UndertaleModTool. The (possibly corrupt)
+ * session is then marked crashed and torn down by the host; the UI process
+ * stays alive.
+ */
+static void bs_emit_crash_event(BsdbgControl* c, int32_t type, const char* json) {
+    BsdbgEventCallback callback = nullptr;
+    void* user = nullptr;
+
+    if (c == nullptr)
+        return;
+
+    /* The fault may have happened while the session lock was held; never
+     * deadlock the crash handler. A best-effort unlocked read is acceptable
+     * on this terminal path. */
+    if (TryEnterCriticalSection(&c->lock)) {
+        callback = c->eventCb;
+        user = c->eventUser;
+        LeaveCriticalSection(&c->lock);
+    } else {
+        callback = c->eventCb;
+        user = c->eventUser;
+    }
+    if (callback != nullptr)
+        callback(user, type, json != nullptr ? json : "null");
+}
+
+static int bs_crash_filter(BsdbgControl* c, EXCEPTION_POINTERS* info, char** errorText) {
+    DWORD code = EXCEPTION_ACCESS_VIOLATION;
+    void* address = nullptr;
+    char message[256];
+    char json[512];
+
+    if (info != nullptr && info->ExceptionRecord != nullptr) {
+        code = info->ExceptionRecord->ExceptionCode;
+        address = info->ExceptionRecord->ExceptionAddress;
+    }
+    if (code == EXCEPTION_STACK_OVERFLOW)
+        _resetstkoflw();
+
+    if (c != nullptr) {
+        bs_atomic_set(&c->crashed, 1);
+        bs_atomic_set(&c->running, 0);
+        bs_atomic_set(&c->paused, 0);
+        bs_atomic_set(&c->stepping, 0);
+        bs_atomic_set(&c->stepMode, BSDBG_STEP_NONE);
+        bs_atomic_set(&c->stepSkipOnce, 0);
+        bs_atomic_set(&c->interruptRequested, 0);
+        bs_atomic_set(&c->frameStepRequested, 0);
+        bs_atomic_set(&c->stopOnEntryPending, 0);
+
+        /* Detach UI readers from the half-torn-down runner. Never free the
+         * runner/data.win here: another thread may still be reading them. */
+        if (TryEnterCriticalSection(&c->lock)) {
+            c->runner = nullptr;
+            c->vm = nullptr;
+            c->dataWin = nullptr;
+            Bsdbg_UpdateActive(c);
+            Bsdbg_NotifyAll(c);
+            LeaveCriticalSection(&c->lock);
+        } else {
+            InterlockedExchangePointer((PVOID volatile*) &c->runner, nullptr);
+            InterlockedExchangePointer((PVOID volatile*) &c->vm, nullptr);
+            InterlockedExchangePointer((PVOID volatile*) &c->dataWin, nullptr);
+        }
+    }
+
+    snprintf(message, sizeof(message),
+             "isolated game-thread exception 0x%08lX at %p; session terminated",
+             (unsigned long) code, address);
+    if (errorText != nullptr)
+        *errorText = bs_strdup_checked(message);
+    snprintf(json, sizeof(json), "{\"message\":\"%s\"}", message);
+    bs_emit_crash_event(c, BSDBG_EVENT_ERROR, json);
+    bs_emit_crash_event(c, BSDBG_EVENT_EXIT, "{\"code\":-1}");
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
+static bool bs_guarded_apply_pending(BsdbgControl* c, char** errorText) {
+    __try {
+        BsdbgHotreload_ApplyPending(c);
+        return true;
+    } __except (bs_crash_filter(c, GetExceptionInformation(), errorText)) {
+        return false;
+    }
+}
+
+static unsigned __stdcall bs_session_thread(void* argument) {
+    BsdbgControl* c = (BsdbgControl*) argument;
+    ULONG stackGuarantee = 256 * 1024;
+
+    /* Keep enough reserve for the __except handler after a stack overflow. */
+    SetThreadStackGuarantee(&stackGuarantee);
+
+    __try {
+        bs_run_session(c);
+    } __except (bs_crash_filter(c, GetExceptionInformation(), nullptr)) {
+        /* The crash filter already reported the failure. */
+    }
+    return 0;
+}
+#elif defined(_WIN32)
+/* TODO: MinGW/other compilers have no SEH __try/__except; use a separate
+ * process host if crash isolation is required on those toolchains. */
 static unsigned __stdcall bs_session_thread(void* argument) {
     bs_run_session((BsdbgControl*) argument);
     return 0;
@@ -899,6 +1009,56 @@ int32_t Bsdbg_SetInstanceVariable(BsdbgSession* session, int32_t instanceId,
                                              errorText);
 }
 
+int32_t Bsdbg_SetGlobalVariable(BsdbgSession* session, const char* name,
+                                const char* valueJson, char** errorText) {
+    BsdbgControl* c = bs_control(session);
+    int paused;
+
+    if (errorText != nullptr)
+        *errorText = nullptr;
+    if (c == nullptr || name == nullptr || valueJson == nullptr) {
+        bs_set_error(errorText, "invalid arguments");
+        return -1;
+    }
+
+    Bsdbg_Lock(c);
+    paused = bs_atomic_get(&c->paused) != 0;
+    Bsdbg_Unlock(c);
+
+    if (!paused) {
+        bs_set_error(errorText, "the runner is not paused");
+        return -1;
+    }
+
+    return Bsdbg_SetGlobalVariableInternal(c, name, valueJson, errorText);
+}
+
+int32_t Bsdbg_SetFrameVariable(BsdbgSession* session, int32_t frameIndex,
+                               int32_t isArgument, int32_t slot,
+                               const char* valueJson, char** errorText) {
+    BsdbgControl* c = bs_control(session);
+    int paused;
+
+    if (errorText != nullptr)
+        *errorText = nullptr;
+    if (c == nullptr || valueJson == nullptr) {
+        bs_set_error(errorText, "invalid arguments");
+        return -1;
+    }
+
+    Bsdbg_Lock(c);
+    paused = bs_atomic_get(&c->paused) != 0;
+    Bsdbg_Unlock(c);
+
+    if (!paused) {
+        bs_set_error(errorText, "the runner is not paused");
+        return -1;
+    }
+
+    return Bsdbg_SetFrameVariableInternal(c, frameIndex, isArgument, slot,
+                                          valueJson, errorText);
+}
+
 void Bsdbg_FreeString(char* str) {
     free(str);
 }
@@ -927,8 +1087,15 @@ int32_t Bsdbg_ApplyCodePatch(BsdbgSession* session, const char* json,
     paused = bs_atomic_get(&c->paused) != 0;
     Bsdbg_Unlock(c);
 
-    if (paused)
+    if (paused) {
+#if defined(_WIN32) && defined(_MSC_VER)
+        /* A malformed patch must not take down the WPF process. */
+        if (!bs_guarded_apply_pending(c, errorText))
+            return -1;
+#else
         BsdbgHotreload_ApplyPending(c);
+#endif
+    }
 
     return 0;
 }

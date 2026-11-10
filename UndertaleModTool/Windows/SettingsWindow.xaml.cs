@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using UndertaleModTool.Localization;
+using UndertaleModRunner;
 using UndertaleModTool.Update;
 
 namespace UndertaleModTool
@@ -302,6 +303,35 @@ namespace UndertaleModTool
                 Visibility visibility = value ? Visibility.Visible : Visibility.Collapsed;
                 mainWindow.RunButterscotchItem.Visibility = visibility;
                 mainWindow.DebugButterscotchItem.Visibility = visibility;
+            }
+        }
+
+        /// <summary>
+        /// Runtime used by "Run with Butterscotch". InProcess keeps the embedded debugger;
+        /// the other values launch an external executable of that architecture.
+        /// </summary>
+        public ButterscotchArchitecture ButterscotchArchitecture
+        {
+            get => Settings.Instance.ButterscotchArchitecture;
+            set
+            {
+                if (Settings.Instance.ButterscotchArchitecture == value)
+                    return;
+                Settings.Instance.ButterscotchArchitecture = value;
+                Settings.Save();
+            }
+        }
+
+        /// <summary>
+        /// Optional standalone Butterscotch executable. Empty means auto-probe.
+        /// </summary>
+        public string ButterscotchExecutablePath
+        {
+            get => Settings.Instance.ButterscotchExecutablePath;
+            set
+            {
+                Settings.Instance.ButterscotchExecutablePath = value ?? "";
+                Settings.Save();
             }
         }
 

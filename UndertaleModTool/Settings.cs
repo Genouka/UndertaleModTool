@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Underanalyzer.Decompiler;
 using UndertaleModTool.Localization;
+using UndertaleModRunner;
 using UndertaleModTool.Update;
 
 namespace UndertaleModTool
@@ -99,6 +100,18 @@ namespace UndertaleModTool
         public bool TabMultiLine { get; set; } = false;
         public bool ShowDebuggerOption { get; set; } = false;
         public bool ShowButterscotchDebug { get; set; } = true;
+
+        /// <summary>
+        /// Which Butterscotch runtime "Run with Butterscotch" uses. InProcess is the embedded
+        /// bsdbg session; the other values launch a standalone executable of that architecture.
+        /// </summary>
+        public ButterscotchArchitecture ButterscotchArchitecture { get; set; } = ButterscotchArchitecture.InProcess;
+
+        /// <summary>
+        /// Optional path to a standalone Butterscotch executable. Empty means auto-probe next to
+        /// UndertaleModTool.exe and in native/win-&lt;arch&gt;.
+        /// </summary>
+        public string ButterscotchExecutablePath { get; set; } = "";
         public DecompilerSettings DecompilerSettings { get; set; }
         public const string DefaultInstanceIdPrefix = "inst_";
         public string InstanceIdPrefix { get; set; } = DefaultInstanceIdPrefix;

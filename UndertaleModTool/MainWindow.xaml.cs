@@ -2665,6 +2665,24 @@ namespace UndertaleModTool
         {
             OpenCodeEntry(name, -1, editorTab, inNewTab);
         }
+
+        public void OpenCodeEntry(int codeIndex, UndertaleCodeEditor.CodeEditorTab editorTab, bool inNewTab = false)
+        {
+            if (Data?.Code is null || codeIndex < 0 || codeIndex >= Data.Code.Count)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_CantFindCodeEntry"), codeIndex));
+                return;
+            }
+
+            UndertaleCode code = Data.Code[codeIndex];
+            if (string.IsNullOrEmpty(code?.Name?.Content))
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_CantFindCodeEntry"), codeIndex));
+                return;
+            }
+
+            OpenCodeEntry(code.Name.Content, editorTab, inNewTab);
+        }
         public void OpenCodeEntry(string name, int lineNum, UndertaleCodeEditor.CodeEditorTab editorTab, bool inNewTab = false)
         {
             UndertaleCode code = Data.Code.ByName(name);
@@ -3086,13 +3104,13 @@ namespace UndertaleModTool
                 return;
             }
 
-            bool isSingleFile = !File.Exists(Path.Join(ExePath, "UndertaleModTool.dll"));
+            bool isSingleFile = string.IsNullOrEmpty(Assembly.GetEntryAssembly()?.Location);
 
             UpdateCheckResult check;
             using (HttpClient client = UpdateChecker.CreateHttpClient())
             {
                 check = await UpdateChecker.CheckAsync(client, isSingleFile, forcePackage: true,
-                    localBuildTime: File.GetLastWriteTime(Path.Join(ExePath, "UndertaleModTool.exe")));
+                    localBuildTime: File.GetLastWriteTime(Environment.ProcessPath));
             }
 
             if (ReportUpdateCheckFailure(check, window))
@@ -3437,13 +3455,13 @@ namespace UndertaleModTool
 
             try
             {
-                bool isSingleFile = !File.Exists(Path.Join(ExePath, "UndertaleModTool.dll"));
+                bool isSingleFile = string.IsNullOrEmpty(Assembly.GetEntryAssembly()?.Location);
 
                 UpdateCheckResult check;
                 using (HttpClient client = UpdateChecker.CreateHttpClient())
                 {
                     check = await UpdateChecker.CheckAsync(client, isSingleFile, forcePackage: false,
-                        localBuildTime: File.GetLastWriteTime(Path.Join(ExePath, "UndertaleModTool.exe")));
+                        localBuildTime: File.GetLastWriteTime(Environment.ProcessPath));
                 }
 
                 if (check.Status != UpdateCheckStatus.UpdateAvailable || check.Package is null)
@@ -3669,6 +3687,54 @@ namespace UndertaleModTool
             if (!saveOk)
                 return;
 
+            ButterscotchArchitecture architecture = Settings.Instance.ButterscotchArchitecture;
+
+            if (architecture == ButterscotchArchitecture.InProcess && !ExternalButterscotch.CanUseEmbeddedSession)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_ButterscotchEmbeddedUnsupported"));
+                return;
+            }
+
+            if (architecture != ButterscotchArchitecture.InProcess)
+            {
+                // Debugging is only available through the embedded bsdbg session.
+                if (stopOnEntry)
+                {
+                    this.ShowError(LocalizationSource.GetString("Msg_ButterscotchExternalDebugUnsupported"));
+                    return;
+                }
+
+                if (_externalButterscotchProcess is { HasExited: false })
+                {
+                    this.ShowError(LocalizationSource.GetString("Msg_ButterscotchExternalAlreadyRunning"));
+                    return;
+                }
+                if (_externalButterscotchProcess is not null)
+                {
+                    _externalButterscotchProcess.Dispose();
+                    _externalButterscotchProcess = null;
+                }
+
+                string dataPath = Project?.SaveDataPath ?? FilePath;
+                if (string.IsNullOrEmpty(dataPath) || !File.Exists(dataPath))
+                {
+                    this.ShowError(LocalizationSource.GetString("Msg_ButterscotchSaveBeforeRun"));
+                    return;
+                }
+
+                if (!ExternalButterscotch.TryStart(architecture, Settings.Instance.ButterscotchExecutablePath,
+                                                   dataPath, out Process process, out string error))
+                {
+                    this.ShowError(error);
+                    return;
+                }
+
+                _externalButterscotchProcess = process;
+                DebugSession.Log($"Started external {ExternalButterscotch.DescribeArchitecture(architecture)} Butterscotch: " +
+                                 $"{process.StartInfo.FileName} (pid {process.Id})");
+                return;
+            }
+
             if (!DebugSession.Start(stopOnEntry))
                 return;
 
@@ -3676,6 +3742,8 @@ namespace UndertaleModTool
         }
 
         private DebugPanelWindow _debugPanel;
+
+        private Process _externalButterscotchProcess;
 
         private void UpdateDebugPanelState()
         {

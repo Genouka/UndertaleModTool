@@ -176,6 +176,18 @@ BSDBG_API int32_t Bsdbg_SetInstanceVariable(BsdbgSession* session, int32_t insta
                                             const char* name, const char* valueJson,
                                             char** errorText);
 
+/* Sets one global variable by name. Value is a single value JSON object.
+ * Returns 0 on success. */
+BSDBG_API int32_t Bsdbg_SetGlobalVariable(BsdbgSession* session, const char* name,
+                                          const char* valueJson, char** errorText);
+
+/* Sets a local variable or script argument in the current call stack.
+ * frameIndex 0 is the topmost frame; isArgument != 0 selects scriptArgs.
+ * slot is the slot reported by Bsdbg_GetCallStackJson. */
+BSDBG_API int32_t Bsdbg_SetFrameVariable(BsdbgSession* session, int32_t frameIndex,
+                                         int32_t isArgument, int32_t slot,
+                                         const char* valueJson, char** errorText);
+
 /* ===[ Hot reload ]=== */
 /*
  * Applies a code patch produced by UndertaleModTool (see UndertaleModRunner.CodePatchBuilder).
