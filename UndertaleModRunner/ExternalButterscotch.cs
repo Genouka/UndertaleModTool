@@ -79,24 +79,28 @@ public static class ExternalButterscotch
     }
 
     /// <summary>
-    /// Probes native/&lt;rid&gt;/libbsdbg.so. An Android app normally packages the library inside
-    /// the APK's lib/&lt;abi&gt; folder, where it cannot be probed with File.Exists; that case is
-    /// covered by <see cref="CanUseEmbeddedSession"/> letting the DllImport resolver try.
+    /// Probes the embedded runtime for non-Windows systems:
+    /// native/&lt;rid&gt;/libbsdbg.so on Linux, libbsdbg.dylib on macOS. An Android app normally
+    /// packages the library inside the APK's lib/&lt;abi&gt; folder, where it cannot be probed with
+    /// File.Exists; that case is covered by <see cref="CanUseEmbeddedSession"/> letting the
+    /// DllImport resolver try.
     /// </summary>
     static string FindNativeUnixLibrary()
     {
         bool android = OperatingSystem.IsAndroid();
+        bool macos = OperatingSystem.IsMacOS();
         string rid = RuntimeInformation.ProcessArchitecture switch
         {
-            Architecture.X64 => android ? "android-x64" : "linux-x64",
-            Architecture.Arm64 => android ? "android-arm64" : "linux-arm64",
+            Architecture.X64 => android ? "android-x64" : macos ? "osx-x64" : "linux-x64",
+            Architecture.Arm64 => android ? "android-arm64" : macos ? "osx-arm64" : "linux-arm64",
             Architecture.Arm => android ? "android-arm" : "linux-arm",
             _ => null,
         };
         if (rid is null)
             return null;
 
-        string path = Path.Combine(AppContext.BaseDirectory, "native", rid, "libbsdbg.so");
+        string fileName = macos ? "libbsdbg.dylib" : "libbsdbg.so";
+        string path = Path.Combine(AppContext.BaseDirectory, "native", rid, fileName);
         return File.Exists(path) ? path : null;
     }
 
@@ -109,12 +113,21 @@ public static class ExternalButterscotch
     };
 
     /// <summary>
-    /// True when an embedded runner can be attempted for this process. On Android the library
-    /// ships inside the APK, so presence cannot be probed from the filesystem; the load attempt
-    /// itself reports the failure.
+    /// True when an embedded runner can be attempted for this process. Android packages native
+    /// libraries inside the APK, so presence cannot be probed on disk; the library is loaded here
+    /// so callers can report "unsupported" instead of failing later with a load error.
     /// </summary>
-    public static bool CanUseEmbeddedSession =>
-        FindEmbeddedButterscotchLibrary() is not null || OperatingSystem.IsAndroid();
+    public static bool CanUseEmbeddedSession
+    {
+        get
+        {
+            if (FindEmbeddedButterscotchLibrary() is not null)
+                return true;
+            if (!OperatingSystem.IsAndroid())
+                return false;
+            return NativeLibrary.TryLoad("bsdbg", typeof(ExternalButterscotch).Assembly, null, out _);
+        }
+    }
 
     /// <summary>Returns the display name of an architecture.</summary>
     public static string DescribeArchitecture(ButterscotchArchitecture architecture) => architecture switch

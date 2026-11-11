@@ -1,0 +1,59 @@
+name: Build bsdbg (Unix)
+
+# Builds the ButterscotchDbg embedded runner for Linux and macOS with
+# tools/build-bsdbg.sh and uploads the staged runtimes. Windows is covered by
+# tools/build-bsdbg.ps1 in the Publish GUI workflow.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ButterscotchDbg/**'
+      - 'Butterscotch/**'
+      - 'tools/build-bsdbg.sh'
+      - '.github/workflows/build-bsdbg.yml'
+  pull_request:
+    paths:
+      - 'ButterscotchDbg/**'
+      - 'Butterscotch/**'
+      - 'tools/build-bsdbg.sh'
+      - '.github/workflows/build-bsdbg.yml'
+
+jobs:
+  build:
+    name: Build (${{ matrix.rid }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Build on the oldest supported Ubuntu so the resulting .so runs on
+          # distributions with an older glibc than the runner image.
+          - os: ubuntu-22.04
+            rid: linux-x64
+          - os: macos-13
+            rid: osx-x64
+          - os: macos-14
+            rid: osx-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Install build dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build libsdl2-dev
+
+      - name: Install build dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja sdl2
+
+      - name: Build bsdbg
+        run: ./tools/build-bsdbg.sh --backend sdl2 --clean
+
+      - name: Upload runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: bsdbg-${{ matrix.rid }}
+          path: UndertaleModRunner/native/${{ matrix.rid }}/*
+          if-no-files-found: error

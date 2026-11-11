@@ -26,11 +26,8 @@ public partial class TabsViewModel : ObservableObject
 
     public async Task<TabItemViewModel?> TabOpen(object? item, bool inNewTab = false)
     {
-        ITabContent? content = item switch
-        {
-            DescriptionViewModel vm => vm,
-            _ => null,
-        };
+        // Any tab content can be opened directly; data items are resolved below.
+        ITabContent? content = item as ITabContent;
 
         if (content is null)
         {

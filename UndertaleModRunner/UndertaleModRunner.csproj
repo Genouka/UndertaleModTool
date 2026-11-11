@@ -29,6 +29,24 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>native\win-arm64\%(Filename)%(Extension)</Link>
     </Content>
+    <!-- Staged by tools/build-bsdbg.sh; copied when present so a Unix build ships
+         the matching runtime next to the app. -->
+    <Content Include="native\linux-x64\**" Condition="Exists('native\linux-x64')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>native\linux-x64\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="native\linux-arm64\**" Condition="Exists('native\linux-arm64')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>native\linux-arm64\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="native\osx-x64\**" Condition="Exists('native\osx-x64')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>native\osx-x64\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="native\osx-arm64\**" Condition="Exists('native\osx-arm64')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>native\osx-arm64\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
   </ItemGroup>
   <!--
     Rebuild the embedded Butterscotch runners (x64 and x86 bsdbg.dll) when their
