@@ -57,3 +57,34 @@ jobs:
           name: bsdbg-${{ matrix.rid }}
           path: UndertaleModRunner/native/${{ matrix.rid }}/*
           if-no-files-found: error
+
+  build-android:
+    name: Build (android-arm64)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      # Pinned to r27c to match the toolchain the runtimes are built with locally.
+      - name: Setup NDK
+        uses: nttld/setup-ndk@v1
+        id: ndk
+        with:
+          ndk-version: r27c
+          add-to-path: false
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Build bsdbg
+        env:
+          ANDROID_NDK_ROOT: ${{ steps.ndk.outputs.ndk-path }}
+        run: ./tools/build-bsdbg-android.sh --abi arm64-v8a --clean
+
+      - name: Upload runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: bsdbg-android-arm64
+          path: UndertaleModRunner/native/android-arm64/*
+          if-no-files-found: error
