@@ -11,6 +11,18 @@
         <!-- KDE treats executables ending in ".Desktop" as desktop entry files, so drop the
              suffix on Linux builds (the executable becomes "UndertaleModToolAvalonia"). -->
         <AssemblyName Condition="$(RuntimeIdentifier.StartsWith('linux')) or $([MSBuild]::IsOSPlatform('Linux'))">UndertaleModToolAvalonia_Desktop</AssemblyName>
+        <!--
+        Roslyn's scripting engine (Core/Scripting.cs) turns the core library and the globals-type
+        host assembly into metadata references through Assembly.Location and throws
+        NotSupportedException ("Can't create a metadata reference to an assembly without location")
+        when an assembly has none. Assemblies bundled by PublishSingleFile always report an empty
+        Location, so every script failed to compile in the single-file desktop packages.
+        IncludeAllContentForSelfExtract makes the host unpack the bundled files to disk before
+        startup, restoring real locations while the build still ships as one executable; the
+        extraction directory becomes AppContext.BaseDirectory, so content lookups keep working.
+        Publishing without PublishSingleFile is unaffected.
+        -->
+        <IncludeAllContentForSelfExtract Condition="'$(PublishSingleFile)' == 'true'">true</IncludeAllContentForSelfExtract>
     </PropertyGroup>
 
     <ItemGroup>
@@ -33,6 +45,7 @@
              BuiltInScripts menu loads them from "{exe directory}/Scripts". -->
         <Content Include="..\UndertaleModTool\Scripts\**\*.csx"
                  CopyToOutputDirectory="PreserveNewest"
+                 ExcludeFromSingleFile="true"
                  Link="Scripts\%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 </Project>
