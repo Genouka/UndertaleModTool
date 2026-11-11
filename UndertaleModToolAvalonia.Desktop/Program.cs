@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using SDL3;
+using UndertaleModLib.Decompiler;
 
 namespace UndertaleModToolAvalonia;
 
@@ -45,6 +46,13 @@ class Program
                 _ = Task.Run(CleanupTempFolder);
                 args = args.Skip(1).ToArray();
             }
+
+            // GameSpecificData is excluded from the single-file bundle and therefore lives next to
+            // the executable, while AppContext.BaseDirectory points at the extraction directory
+            // used by IncludeAllContentForSelfExtract. Resolve the definitions from the real app
+            // directory, like the WPF tool does.
+            GameSpecificResolver.BaseDirectory =
+                Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
 
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args, Avalonia.Controls.ShutdownMode.OnMainWindowClose);
