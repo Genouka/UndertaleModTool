@@ -42,12 +42,15 @@ public static class ExternalButterscotch
 {
 
     /// <summary>
-    /// Locates the embedded bsdbg.dll matching the current process architecture:
-    /// native/win-&lt;arch&gt;/bsdbg.dll, or a legacy flat bsdbg.dll next to the host
-    /// executable when its PE machine matches.
+    /// Locates the embedded runner matching the current process architecture:
+    /// native/win-&lt;arch&gt;/bsdbg.dll (or the legacy flat copy next to the host executable when its
+    /// PE machine matches), and native/&lt;rid&gt;/libbsdbg.so on Android.
     /// </summary>
     public static string FindEmbeddedButterscotchLibrary()
     {
+        if (!OperatingSystem.IsWindows())
+            return FindNativeUnixLibrary();
+
         string architectureFolder = RuntimeInformation.ProcessArchitecture switch
         {
             Architecture.X64 => "win-x64",
@@ -75,6 +78,28 @@ public static class ExternalButterscotch
         return !isDll && found == expected ? flatPath : null;
     }
 
+    /// <summary>
+    /// Probes native/&lt;rid&gt;/libbsdbg.so. An Android app normally packages the library inside
+    /// the APK's lib/&lt;abi&gt; folder, where it cannot be probed with File.Exists; that case is
+    /// covered by <see cref="CanUseEmbeddedSession"/> letting the DllImport resolver try.
+    /// </summary>
+    static string FindNativeUnixLibrary()
+    {
+        bool android = OperatingSystem.IsAndroid();
+        string rid = RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X64 => android ? "android-x64" : "linux-x64",
+            Architecture.Arm64 => android ? "android-arm64" : "linux-arm64",
+            Architecture.Arm => android ? "android-arm" : "linux-arm",
+            _ => null,
+        };
+        if (rid is null)
+            return null;
+
+        string path = Path.Combine(AppContext.BaseDirectory, "native", rid, "libbsdbg.so");
+        return File.Exists(path) ? path : null;
+    }
+
     private static PeMachine ProcessMachine => RuntimeInformation.ProcessArchitecture switch
     {
         Architecture.X64 => PeMachine.X64,
@@ -83,8 +108,13 @@ public static class ExternalButterscotch
         _ => PeMachine.Unknown,
     };
 
-    /// <summary>True when a matching embedded bsdbg.dll is present for this process.</summary>
-    public static bool CanUseEmbeddedSession => FindEmbeddedButterscotchLibrary() is not null;
+    /// <summary>
+    /// True when an embedded runner can be attempted for this process. On Android the library
+    /// ships inside the APK, so presence cannot be probed from the filesystem; the load attempt
+    /// itself reports the failure.
+    /// </summary>
+    public static bool CanUseEmbeddedSession =>
+        FindEmbeddedButterscotchLibrary() is not null || OperatingSystem.IsAndroid();
 
     /// <summary>Returns the display name of an architecture.</summary>
     public static string DescribeArchitecture(ButterscotchArchitecture architecture) => architecture switch

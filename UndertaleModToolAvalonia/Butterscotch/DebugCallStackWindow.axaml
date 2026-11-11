@@ -1,0 +1,31 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="360"
+        x:Class="UndertaleModToolAvalonia.DebugCallStackWindow"
+        x:CompileBindings="False"
+        Title="{l:Loc Debug_CallStack_Title}" Width="760" Height="360"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="8">
+        <ListBox x:Name="FrameList" DoubleTapped="FrameList_DoubleTapped">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="2">
+                        <TextBlock>
+                            <Run Text="{Binding CodeName, Mode=OneWay}" />
+                            <Run Text=" @ 0x" />
+                            <Run Text="{Binding Ip, Mode=OneWay}" />
+                        </TextBlock>
+                        <TextBlock FontSize="11" Opacity="0.7">
+                            <Run Text="self=" /><Run Text="{Binding SelfId, Mode=OneWay}" />
+                            <Run Text=" event=" /><Run Text="{Binding EventType, Mode=OneWay}" />
+                            <Run Text="/" /><Run Text="{Binding EventSubtype, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</Window>

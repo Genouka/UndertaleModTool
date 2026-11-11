@@ -417,6 +417,8 @@ static int bs_copy_config(BsdbgConfig* destination, const BsdbgConfig* source) {
     destination->seed = source->seed;
     destination->gameArgCount = source->gameArgCount;
     destination->stopOnEntry = source->stopOnEntry;
+    destination->embedWindow = source->embedWindow;
+    destination->embedWindowKind = source->embedWindowKind;
 
     destination->dataWinPath = bs_absolute_path(source->dataWinPath);
     if (destination->dataWinPath == nullptr)
@@ -531,10 +533,8 @@ static void bs_run_session(BsdbgControl* c) {
     args.hasSeed = c->config.seed != 0;
     args.debug = false;
     args.disableLogColours = true;
-#ifdef ENABLE_VM_TRACING
-    args.traceBytecodeAfterFrame = 0;
-#endif
-
+    args.embedWindow = c->config.embedWindow;
+    args.embedWindowKind = c->config.embedWindowKind;
     /* argv[0] placeholder + "-game <data.win>" + caller supplied game args. */
     arrput(gameArgs, bs_strdup_checked("<bsdbg>"));
     arrput(gameArgs, bs_strdup_checked("-game"));
@@ -550,6 +550,16 @@ static void bs_run_session(BsdbgControl* c) {
 
     Bsdbg_EmitEvent(c, BSDBG_EVENT_STATE,
                     "{\"running\":true,\"paused\":false,\"frameCount\":0}");
+    /* The platform backends create the window inside loop(), on this thread, so the
+     * host-supplied window (single-window hosts such as Android) has to be registered
+     * right before it runs. Backends without embeddable windows simply decline and the
+     * runner opens its own. */
+    if (args.embedWindow != 0 &&
+        !platformSetEmbeddedWindow(args.embedWindow, args.embedWindowKind)) {
+        logWarn("Bsdbg: this platform backend cannot render into an embedded window; "
+                "the runner will create its own\n");
+    }
+
 
     result = loop(args, "bsdbg");
 

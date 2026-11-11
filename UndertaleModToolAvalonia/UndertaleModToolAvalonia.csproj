@@ -48,6 +48,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\UndertaleModLib\UndertaleModLib.csproj" />
+        <ProjectReference Include="..\UndertaleModRunner\UndertaleModRunner.csproj" />
         <ProjectReference Include="..\UndertaleModToolLocalization\UndertaleModToolLocalization.csproj" />
     </ItemGroup>
 

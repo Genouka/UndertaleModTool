@@ -157,6 +157,11 @@ public partial class UndertaleCodeView : UserControl
 
     public bool IsDarkTheme => ActualThemeVariant != ThemeVariant.Light;
 
+    // Butterscotch debugger integration (disassembly margin + stopped-line highlight)
+    BreakpointMargin? breakpointMargin;
+    DebugStoppedLineRenderer? stoppedLineRenderer;
+    ButterscotchDebugService? debugService;
+
     public UndertaleCodeView()
     {
         InitializeComponent();
@@ -203,6 +208,12 @@ public partial class UndertaleCodeView : UserControl
         _diagnosticsRenderer = new GmlDiagnosticsRenderer(GMLTextEditor.TextArea.TextView);
         GMLTextEditor.TextArea.TextView.BackgroundRenderers.Add(_diagnosticsRenderer);
 
+        // Breakpoints and the stopped-line highlight live in the disassembly editor
+        breakpointMargin = new BreakpointMargin(this);
+        ASMTextEditor.TextArea.LeftMargins.Add(breakpointMargin);
+        stoppedLineRenderer = new DebugStoppedLineRenderer(ASMTextEditor.TextArea.TextView);
+        ASMTextEditor.TextArea.TextView.BackgroundRenderers.Add(stoppedLineRenderer);
+
         InitializeHoverPopup();
         InitializeCompletion();
 
@@ -217,14 +228,170 @@ public partial class UndertaleCodeView : UserControl
 
     public SettingsFile? Settings => (DataContext as UndertaleCodeViewModel)?.MainVM.Settings;
 
+    /// <summary>The code entry currently shown by this view, when it is a code tab.</summary>
+    public UndertaleCodeViewModel? ViewModel => DataContext as UndertaleCodeViewModel;
+
+    void AttachDebugService()
+    {
+        DetachDebugService();
+
+        debugService = TryGetDebugService();
+        if (debugService is null)
+            return;
+
+        debugService.Updated += DebugService_Updated;
+        debugService.Stopped += DebugService_Stopped;
+        breakpointMargin?.InvalidateVisual();
+        UpdateStoppedLineHighlight();
+    }
+
+    void DetachDebugService()
+    {
+        if (debugService is null)
+            return;
+
+        debugService.Updated -= DebugService_Updated;
+        debugService.Stopped -= DebugService_Stopped;
+        debugService = null;
+        stoppedLineRenderer?.SetLine(-1);
+    }
+
+    static ButterscotchDebugService? TryGetDebugService()
+    {
+        if (App.Services is null)
+            return null;
+
+        try
+        {
+            return App.Services.GetService(typeof(MainViewModel)) is MainViewModel mainViewModel
+                ? mainViewModel.Butterscotch
+                : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    void DebugService_Updated() => breakpointMargin?.InvalidateVisual();
+
+    void DebugService_Stopped(UndertaleModRunner.DebugState state) => UpdateStoppedLineHighlight();
+
+    /// <summary>
+    /// Maps a disassembly line number to its bytecode offset. Lines that are comments, block
+    /// labels, fragment headers, local variable definitions or blank lines have no offset.
+    /// </summary>
+    public uint? GetBytecodeOffsetForDisassemblyLine(int lineNumber)
+    {
+        UndertaleCodeViewModel? viewModel = ViewModel;
+        if (viewModel is null || viewModel.Code.ParentEntry is not null || ASMTextEditor.Document is null)
+            return null;
+
+        TextDocument document = ASMTextEditor.Document;
+        if (lineNumber < 1 || lineNumber > document.LineCount)
+            return null;
+
+        DocumentLine line = document.GetLineByNumber(lineNumber);
+        string lineText = document.GetText(line.Offset, line.Length).Trim();
+        if (!IsDisassemblyInstructionLine(lineText))
+            return null;
+
+        // Instruction lines map 1:1 to instructions; count the instruction-like lines before
+        // this one and convert that index into a bytecode address.
+        int instructionIndex = 0;
+        for (DocumentLine current = document.Lines[0];
+             current is not null && current.LineNumber < lineNumber;
+             current = current.NextLine)
+        {
+            if (IsDisassemblyInstructionLine(document.GetText(current.Offset, current.Length).Trim()))
+                instructionIndex++;
+        }
+
+        if (instructionIndex >= viewModel.Code.Instructions.Count)
+            return null;
+
+        uint offset = 0;
+        for (int i = 0; i < instructionIndex; i++)
+            offset += viewModel.Code.Instructions[i].CalculateInstructionSize();
+        return offset;
+    }
+
+    static bool IsDisassemblyInstructionLine(string text)
+        => text.Length > 0 &&
+           text[0] != ';' &&
+           text[0] != ':' &&
+           text[0] != '>' &&
+           !text.StartsWith(".localvar", StringComparison.Ordinal);
+
+    /// <summary>Redraws the breakpoint markers (after a breakpoint was toggled elsewhere).</summary>
+    public void RefreshBreakpointMargin() => breakpointMargin?.InvalidateVisual();
+
+    /// <summary>Highlights the line of the instruction the debugger is stopped at.</summary>
+    public void UpdateStoppedLineHighlight()
+    {
+        stoppedLineRenderer?.SetLine(-1);
+
+        UndertaleCodeViewModel? viewModel = ViewModel;
+        if (viewModel is null || debugService is null || viewModel.SelectedTab != UndertaleCodeViewModel.Tab.ASM)
+            return;
+
+        UndertaleModRunner.StackFrameInfo? frame = debugService.State?.Stop?.Frame;
+        if (frame is null || viewModel.MainVM.Data is null ||
+            viewModel.MainVM.Data.Code.IndexOf(viewModel.Code) != frame.CodeIndex)
+        {
+            return;
+        }
+
+        uint position = 0;
+        int index = 0;
+        foreach (UndertaleModLib.Models.UndertaleInstruction instruction in viewModel.Code.Instructions)
+        {
+            if (position == frame.Ip)
+            {
+                int lineNumber = FindDisassemblyLineForInstructionIndex(index);
+                if (lineNumber > 0)
+                {
+                    stoppedLineRenderer?.SetLine(lineNumber);
+                    ASMTextEditor.ScrollToLine(lineNumber);
+                }
+                break;
+            }
+
+            position += instruction.CalculateInstructionSize();
+            index++;
+            if (position > frame.Ip)
+                break;
+        }
+    }
+
+    int FindDisassemblyLineForInstructionIndex(int instructionIndex)
+    {
+        if (ASMTextEditor.Document is null)
+            return -1;
+
+        int seen = 0;
+        foreach (DocumentLine line in ASMTextEditor.Document.Lines)
+        {
+            if (!IsDisassemblyInstructionLine(ASMTextEditor.Document.GetText(line.Offset, line.Length).Trim()))
+                continue;
+
+            if (seen == instructionIndex)
+                return line.LineNumber;
+            seen++;
+        }
+        return -1;
+    }
+
     private void UndertaleCodeView_Loaded(object? sender, RoutedEventArgs e)
     {
         ApplySettingsToEditors();
         ApplyAllThemes();
+        AttachDebugService();
     }
 
     private void UndertaleCodeView_Unloaded(object? sender, RoutedEventArgs e)
     {
+        DetachDebugService();
         _diagnosticsCancellation?.Cancel();
         _diagnosticsTimer?.Stop();
         _foldingTimer?.Stop();
@@ -540,6 +707,8 @@ public partial class UndertaleCodeView : UserControl
 
             GMLTextEditor.Document.UndoStack.ClearAll();
             ASMTextEditor.Document.UndoStack.ClearAll();
+            breakpointMargin?.InvalidateVisual();
+            UpdateStoppedLineHighlight();
         }
     }
 
@@ -549,6 +718,9 @@ public partial class UndertaleCodeView : UserControl
         {
             switch (e.PropertyName)
             {
+                case nameof(UndertaleCodeViewModel.SelectedTab):
+                    UpdateStoppedLineHighlight();
+                    break;
                 case nameof(UndertaleCodeViewModel.IsCodeProcessing):
                     if (vm.IsCodeProcessing)
                     {

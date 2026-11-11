@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        mc:Ignorable="d" d:DesignWidth="720" d:DesignHeight="460"
+        x:Class="UndertaleModToolAvalonia.DebugVariablesWindow"
+        x:CompileBindings="False"
+        Title="{l:Loc Debug_Variables_Title}" Width="720" Height="460"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="8" RowDefinitions="*,Auto">
+        <DataGrid x:Name="VariableGrid" Grid.Row="0"
+                  AutoGenerateColumns="False" IsReadOnly="True"
+                  CanUserReorderColumns="False" CanUserSortColumns="True"
+                  DoubleTapped="VariableGrid_DoubleTapped">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="{l:Loc Debug_Variables_Scope}" Width="90" Binding="{Binding Source}" />
+                <DataGridTextColumn Header="{l:Loc Debug_Variables_Name}" Width="240" Binding="{Binding Name}" />
+                <DataGridTextColumn Header="{l:Loc Debug_Variables_Value}" Width="*" Binding="{Binding Value}" />
+            </DataGrid.Columns>
+        </DataGrid>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+            <Button Content="{l:Loc Debug_Refresh}" Click="RefreshButton_Click" Padding="14,3" />
+        </StackPanel>
+    </Grid>
+</Window>

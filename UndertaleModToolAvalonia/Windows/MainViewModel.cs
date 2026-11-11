@@ -20,6 +20,7 @@ using UndertaleModLib;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
 using UndertaleModLib.Util;
+using UndertaleModRunner;
 using UndertaleModTool.Localization;
 
 namespace UndertaleModToolAvalonia;
@@ -111,6 +112,13 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     public partial string TabSelectedResourceIdString { get; set; } = "None";
 
+    /// <summary>Owns the embedded Butterscotch session and its debug tool windows.</summary>
+    public ButterscotchDebugService Butterscotch { get; }
+
+    /// <summary>Whether the "Run/Debug with Butterscotch" menu entries are shown.</summary>
+    [ObservableProperty]
+    public partial bool ShowButterscotchMenu { get; set; }
+
     // Command text box
     [ObservableProperty]
     public partial string CommandTextBoxText { get; set; } = "";
@@ -140,6 +148,7 @@ public partial class MainViewModel : ObservableObject
 
         DataExplorer = new(this);
         Tabs = new(this);
+        Butterscotch = new(this);
     }
 
     Task? initializationTask;
@@ -162,6 +171,7 @@ public partial class MainViewModel : ObservableObject
         {
             (SettingsFile settings, Exception? settingsEx) = await SettingsFile.LoadAsync();
             Settings = settings;
+            ShowButterscotchMenu = settings.ShowButterscotchDebug;
 
             if (settingsEx is not null)
             {
@@ -560,6 +570,10 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             }
         }
 
+        // The session runs the data file being closed; the game view (if any) goes away with
+        // its tab below, so stop before the tab content is detached.
+        Butterscotch.Stop();
+
         Tabs.TabCloseAllWithoutSaving();
 
         UndertaleCodeViewModel.ResetLocalizationData();
@@ -914,6 +928,116 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         Process.Start(new ProcessStartInfo(runnerPath, $"-game \"{dataPath}\" launcher") { WorkingDirectory = workingDirectory });
     }
 
+    Process? externalButterscotchProcess;
+
+    /// <summary>
+    /// "Run/Debug with Butterscotch": saves the data file, then either starts the embedded
+    /// bsdbg session (debugging) or launches a standalone runner of the configured architecture.
+    /// </summary>
+    public async void StartButterscotchSession(bool stopOnEntry)
+    {
+        if (Data is null)
+            return;
+
+        string question = $"{LocalizationSource.GetString("Msg_SaveBeforeRun")} {(DataPath is null
+            ? LocalizationSource.GetString("Msg_ItMustBeSavedBeforeRunning")
+            : string.Format(LocalizationSource.GetString("Msg_DataFileAtLastLocation"), DataPath))}";
+
+        if (!await AskFileSave(question))
+            return;
+
+        ButterscotchArchitecture architecture = Settings.ButterscotchArchitecture;
+
+        if (architecture != ButterscotchArchitecture.InProcess)
+        {
+            // Debugging is only available through the embedded bsdbg session.
+            if (stopOnEntry)
+            {
+                await View!.MessageDialog(LocalizationSource.GetString("Msg_ButterscotchExternalDebugUnsupported"));
+                return;
+            }
+
+            if (externalButterscotchProcess is { HasExited: false })
+            {
+                await View!.MessageDialog(LocalizationSource.GetString("Msg_ButterscotchExternalAlreadyRunning"));
+                return;
+            }
+            externalButterscotchProcess?.Dispose();
+            externalButterscotchProcess = null;
+
+            string? externalDataPath = Project?.SaveDataPath ?? DataPath;
+            if (string.IsNullOrEmpty(externalDataPath) || !File.Exists(externalDataPath))
+            {
+                await View!.MessageDialog(LocalizationSource.GetString("Msg_ButterscotchSaveBeforeRun"));
+                return;
+            }
+
+            if (!ExternalButterscotch.TryStart(architecture, Settings.ButterscotchExecutablePath,
+                                               externalDataPath, out Process process, out string error))
+            {
+                await View!.MessageDialog(error);
+                return;
+            }
+
+            externalButterscotchProcess = process;
+            Butterscotch.Log($"Started external {ExternalButterscotch.DescribeArchitecture(architecture)} Butterscotch: " +
+                             $"{process.StartInfo.FileName} (pid {process.Id})");
+            return;
+        }
+
+        if (!ExternalButterscotch.CanUseEmbeddedSession)
+        {
+            await View!.MessageDialog(LocalizationSource.GetString("Msg_ButterscotchEmbeddedUnsupported"));
+            return;
+        }
+
+        // Single-window platforms have no separate game window: host the runner in a native
+        // view inside the app and hand its surface to the engine.
+        if (ButterscotchSurfaceHost.Factory is { } surfaceFactory)
+        {
+            await StartEmbeddedButterscotchInView(surfaceFactory, stopOnEntry);
+            return;
+        }
+
+        Butterscotch.Start(stopOnEntry);
+    }
+
+    async Task StartEmbeddedButterscotchInView(Func<IButterscotchGameSurface?> factory, bool stopOnEntry)
+    {
+        IButterscotchGameSurface? surface = factory();
+        if (surface is null)
+        {
+            await View!.MessageDialog(LocalizationSource.GetString("Msg_ButterscotchEmbeddedUnsupported"));
+            return;
+        }
+
+        await Tabs.TabOpen(new ButterscotchGameViewModel(surface), inNewTab: true);
+
+        // The native view reports its surface once the platform created it; wait for it instead
+        // of failing on the first frame.
+        TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnReady() => ready.TrySetResult();
+        surface.Ready += OnReady;
+        try
+        {
+            if (!surface.IsReady)
+                await Task.WhenAny(ready.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+
+            if (!surface.IsReady)
+            {
+                await View!.MessageDialog("The Butterscotch game view did not become ready, so the session was not started.");
+                return;
+            }
+
+            Butterscotch.Start(Butterscotch.CurrentDataPath, stopOnEntry,
+                               surface.NativeWindowHandle, surface.Kind);
+        }
+        finally
+        {
+            surface.Ready -= OnReady;
+        }
+    }
+
     public void FileClearAudioGroupCache()
     {
         audioGroupDataList.Clear();
@@ -924,10 +1048,16 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
     {
         if (View is MainView mainView)
             await mainView.OpenSettingsDialog(ServiceProvider);
+
+        // The dialog writes Settings directly (and saves on close); pick up a changed
+        // Butterscotch menu visibility right away.
+        ShowButterscotchMenu = Settings.ShowButterscotchDebug;
     }
 
     public void FileExit()
     {
+        Butterscotch.Stop();
+
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.Shutdown();

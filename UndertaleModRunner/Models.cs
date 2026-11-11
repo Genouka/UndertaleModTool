@@ -12,6 +12,17 @@ public enum BsdbgRenderer
     Noop = 3
 }
 
+/// <summary>Kind of native window the engine should render into when embedding.</summary>
+public enum BsdbgEmbedWindowKind
+{
+    /// <summary>The engine creates its own top-level window.</summary>
+    None = 0,
+    /// <summary><see cref="ButterscotchConfig.EmbedWindow"/> is a Win32 HWND.</summary>
+    Win32Hwnd = 1,
+    /// <summary><see cref="ButterscotchConfig.EmbedWindow"/> is an Android <c>android.view.Surface</c> jobject.</summary>
+    AndroidSurface = 2,
+}
+
 public sealed class ButterscotchConfig
 {
     public string DataWinPath { get; set; }
@@ -26,6 +37,15 @@ public sealed class ButterscotchConfig
     public uint Seed { get; set; }
     public IReadOnlyList<string> GameArgs { get; set; } = Array.Empty<string>();
     public bool StopOnEntry { get; set; }
+
+    /// <summary>
+    /// Native window to render into instead of creating a top-level one. Required on
+    /// single-window platforms (Android) and on any host that draws the game inside its
+    /// own view tree (see Avalonia's <c>NativeControlHost</c>).
+    /// </summary>
+    public IntPtr EmbedWindow { get; set; }
+
+    public BsdbgEmbedWindowKind EmbedWindowKind { get; set; }
 }
 
 public readonly struct BreakpointDef

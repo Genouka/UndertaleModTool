@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="UndertaleModToolAvalonia.ButterscotchGameView"
+             x:DataType="l:ButterscotchGameViewModel">
+    <Grid Background="Black">
+        <!-- The native view fills the page; on Android it is a SurfaceView attached to the
+             activity's view group by Avalonia's NativeControlHost implementation. -->
+        <ContentControl Content="{Binding Surface.View}" HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch" />
+        <Border IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                Background="#99000000" Padding="16" CornerRadius="6"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="{Binding StatusText}" Foreground="White" TextWrapping="Wrap" MaxWidth="420" />
+        </Border>
+    </Grid>
+</UserControl>

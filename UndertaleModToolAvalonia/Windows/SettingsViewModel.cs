@@ -87,6 +87,54 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>Whether the MirrorChyan CDK controls are relevant for the selected source.</summary>
     public bool IsMirrorChyanSource => MainVM.Settings.UpdateSource == UpdateSource.MirrorChyan;
 
+    /// <summary>Whether the "Run/Debug with Butterscotch" menu entries are shown.</summary>
+    public bool ShowButterscotchDebug
+    {
+        get => MainVM.Settings.ShowButterscotchDebug;
+        set
+        {
+            if (MainVM.Settings.ShowButterscotchDebug == value)
+                return;
+
+            MainVM.Settings.ShowButterscotchDebug = value;
+            MainVM.ShowButterscotchMenu = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// Runtime used by "Run with Butterscotch" as a combo box index
+    /// (see <see cref="UndertaleModRunner.ButterscotchArchitecture"/>).
+    /// </summary>
+    public int ButterscotchArchitectureIndex
+    {
+        get => (int)MainVM.Settings.ButterscotchArchitecture;
+        set
+        {
+            if (value is < 0 or > 3)
+                return;
+
+            UndertaleModRunner.ButterscotchArchitecture architecture =
+                (UndertaleModRunner.ButterscotchArchitecture)value;
+            if (MainVM.Settings.ButterscotchArchitecture == architecture)
+                return;
+
+            MainVM.Settings.ButterscotchArchitecture = architecture;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Optional standalone Butterscotch executable (empty means auto-probe).</summary>
+    public string ButterscotchExecutablePath
+    {
+        get => MainVM.Settings.ButterscotchExecutablePath;
+        set
+        {
+            MainVM.Settings.ButterscotchExecutablePath = value ?? "";
+            OnPropertyChanged();
+        }
+    }
+
     [ObservableProperty]
     public partial bool IsCustomIndentStyle { get; set; }
 

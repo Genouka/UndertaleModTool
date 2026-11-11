@@ -69,6 +69,10 @@ public class MainActivity : AvaloniaMainActivity
         // Wire the in-app updater: report the installed package's last update time as the local
         // build date, and hand downloaded update APKs to the system package installer.
         ApkUpdateInstaller.Install();
+
+        // Single-window platform: the embedded Butterscotch runner renders into a native view
+        // inside the Avalonia tree instead of opening a window of its own.
+        ButterscotchSurfaceHost.Factory = () => new AndroidButterscotchSurfaceView().AsGameSurface();
     }
 
     bool ShowSoftKeyboard()

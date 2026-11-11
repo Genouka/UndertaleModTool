@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        mc:Ignorable="d" d:DesignWidth="440" d:DesignHeight="190"
+        x:Class="UndertaleModToolAvalonia.DebugEditValueWindow"
+        x:CompileBindings="False"
+        Title="{l:Loc Common_Edit}" Width="440" Height="190" MinWidth="360" MinHeight="190"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <Grid Margin="12" RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <TextBlock Grid.Row="0" Text="{l:Loc Common_Value}" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <TextBox x:Name="ValueBox" Grid.Row="1" Padding="6,4"
+                 FontFamily="Cascadia Code,Consolas,Menlo,Monospace" FontSize="13" />
+        <TextBlock x:Name="ErrorText" Grid.Row="2" Foreground="#C42B1C" TextWrapping="Wrap"
+                   Margin="0,6,0,0" IsVisible="False" />
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="0,12,0,0" Spacing="6">
+            <Button Content="{l:Loc Common_OK}" Click="OkButton_Click" Padding="18,3" IsDefault="True" />
+            <Button Content="{l:Loc Common_Cancel}" Click="CancelButton_Click" Padding="18,3" IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>

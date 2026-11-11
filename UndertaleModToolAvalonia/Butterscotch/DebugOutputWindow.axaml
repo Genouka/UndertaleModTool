@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="420"
+        x:Class="UndertaleModToolAvalonia.DebugOutputWindow"
+        x:CompileBindings="False"
+        Title="{l:Loc Debug_Output_Title}" Width="820" Height="420"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="8" RowDefinitions="*,Auto">
+        <ListBox x:Name="LogList" Grid.Row="0" FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
+                 FontSize="12" SelectionMode="Multiple">
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="{l:Loc Common_Copy}" Click="CopySelected_Click" />
+                    <MenuItem Header="{l:Loc Common_CopyAll}" Click="CopyAll_Click" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
+        </ListBox>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+            <Button Content="{l:Loc Debug_Clear}" Click="ClearButton_Click" Padding="14,3" />
+        </StackPanel>
+    </Grid>
+</Window>
