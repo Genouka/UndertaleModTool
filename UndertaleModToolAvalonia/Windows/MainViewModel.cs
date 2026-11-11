@@ -1011,7 +1011,11 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             return;
         }
 
-        await Tabs.TabOpen(new ButterscotchGameViewModel(surface), inNewTab: true);
+        if (await Tabs.TabOpen(new ButterscotchGameViewModel(surface), inNewTab: true) is null)
+        {
+            await View!.MessageDialog("Could not open the Butterscotch game tab, so the session was not started.");
+            return;
+        }
 
         // The native view reports its surface once the platform created it; wait for it instead
         // of failing on the first frame.

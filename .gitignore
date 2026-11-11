@@ -347,3 +347,7 @@ UndertaleModLib/gitversion.txt
 # ButterscotchDbg native build outputs and third-party SDKs
 /extern/
 /build/*
+
+# Locally built Unix bsdbg runtimes (CI publishes them as artifacts)
+/UndertaleModRunner/native/linux-*/
+/UndertaleModRunner/native/osx-*/
