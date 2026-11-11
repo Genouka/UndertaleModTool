@@ -1,10 +1,12 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using UndertaleModRunner;
 
 namespace UndertaleModToolAvalonia;
 
@@ -229,6 +231,25 @@ public partial class SettingsFile
 
     public bool AlwaysSaveDataInProjectDestination { get; set; } = true;
 
+
+    /// <summary>
+    /// Shows the "Run/Debug with Butterscotch" menu entries. The embedded runner needs a native
+    /// bsdbg library matching the host; off by default on platforms that cannot load one.
+    /// </summary>
+    public bool ShowButterscotchDebug { get; set; } = OperatingSystem.IsWindows();
+
+    /// <summary>
+    /// Runtime used by "Run with Butterscotch". InProcess is the embedded bsdbg session; the
+    /// other values launch a standalone executable of that architecture (Windows only).
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<ButterscotchArchitecture>))]
+    public ButterscotchArchitecture ButterscotchArchitecture { get; set; } = ButterscotchArchitecture.InProcess;
+
+    /// <summary>
+    /// Optional standalone Butterscotch executable. Empty means auto-probe next to the tool and
+    /// in native/win-&lt;arch&gt;.
+    /// </summary>
+    public string ButterscotchExecutablePath { get; set; } = "";
     public bool EnableLocalizationStringPreview { get; set; } = true;
 
     public string InstanceIdPrefix { get; set; } = "inst_";

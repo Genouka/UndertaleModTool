@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        mc:Ignorable="d" d:DesignWidth="620" d:DesignHeight="360"
+        x:Class="UndertaleModToolAvalonia.DebugBreakpointsWindow"
+        x:CompileBindings="False"
+        Title="{l:Loc Debug_Breakpoints_Title}" Width="620" Height="360"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="8" RowDefinitions="*,Auto">
+        <ListBox x:Name="BreakpointList" Grid.Row="0" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0" Spacing="6">
+            <Button Content="{l:Loc Debug_Remove}" Click="RemoveButton_Click" Padding="14,3" />
+            <Button Content="{l:Loc Debug_ClearAll}" Click="ClearButton_Click" Padding="14,3" />
+        </StackPanel>
+    </Grid>
+</Window>

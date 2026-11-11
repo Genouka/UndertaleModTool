@@ -110,10 +110,14 @@ public partial class AppMenuBar : UserControl
     private static Binding ActiveBinding(MainViewModel vm) =>
         new(nameof(MainViewModel.ProjectActive)) { Source = vm, Mode = BindingMode.OneWay };
 
+    /// <summary>Visibility for the Butterscotch menu entries (settings-controlled).</summary>
+    private static Binding ShowButterscotchBinding(MainViewModel vm) =>
+        new(nameof(MainViewModel.ShowButterscotchMenu)) { Source = vm, Mode = BindingMode.OneWay };
+
     /// <summary>Adds a menu item with a localized header.</summary>
     private static NativeMenuItem Item(NativeMenu parent, string locKey,
         ICommand? command = null, KeyGesture? gesture = null, NativeMenu? submenu = null,
-        BindingBase? isEnabled = null)
+        BindingBase? isEnabled = null, BindingBase? isVisible = null)
     {
         NativeMenuItem item = new()
         {
@@ -124,6 +128,8 @@ public partial class AppMenuBar : UserControl
         item.Bind(NativeMenuItem.HeaderProperty, Loc(locKey));
         if (isEnabled is not null)
             item.Bind(NativeMenuItem.IsEnabledProperty, isEnabled);
+        if (isVisible is not null)
+            item.Bind(NativeMenuItem.IsVisibleProperty, isVisible);
         parent.Items.Add(item);
         return item;
     }
@@ -159,6 +165,11 @@ public partial class AppMenuBar : UserControl
         Item(file, "Menu_File_TempRun", command: new RelayCommand(vm.FileTempRun), gesture: new KeyGesture(Key.F5));
         Item(file, "Menu_File_RunWithDataProjectRunner", command: new RelayCommand(vm.FileRun), gesture: new KeyGesture(Key.F5, KeyModifiers.Alt));
         Item(file, "Menu_File_RunOtherRunner", command: new RelayCommand(vm.FileRunWithOther));
+        file.Items.Add(new NativeMenuItemSeparator());
+        Item(file, "Menu_File_RunButterscotch", command: new RelayCommand(() => vm.StartButterscotchSession(false)),
+            gesture: new KeyGesture(Key.F6), isVisible: ShowButterscotchBinding(vm));
+        Item(file, "Menu_File_DebugButterscotch", command: new RelayCommand(() => vm.StartButterscotchSession(true)),
+            gesture: new KeyGesture(Key.F6, KeyModifiers.Shift), isVisible: ShowButterscotchBinding(vm));
         file.Items.Add(new NativeMenuItemSeparator());
         Item(file, "Menu_File_ClearAudioGroupCache", command: new RelayCommand(vm.FileClearAudioGroupCache));
         file.Items.Add(new NativeMenuItemSeparator());

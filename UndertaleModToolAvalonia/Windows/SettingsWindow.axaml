@@ -113,6 +113,35 @@
             </StackPanel>
 
             <StackPanel Classes="Section">
+                <TextBlock Classes="Header" Text="Butterscotch" />
+                <Separator />
+
+                <CheckBox Content="{l:Loc Settings_ShowButterscotchDebug}"
+                          ToolTip.Tip="{l:Loc Settings_ShowButterscotchDebug_Tooltip}"
+                          IsChecked="{Binding ShowButterscotchDebug, Mode=TwoWay}" />
+
+                <Grid ColumnDefinitions="Auto,1*" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center"
+                           Content="{l:Loc Settings_ButterscotchArchitecture}"
+                           ToolTip.Tip="{l:Loc Settings_ButterscotchArchitecture_Tooltip}" />
+                    <ComboBox Grid.Column="1" SelectedIndex="{Binding ButterscotchArchitectureIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="{l:Loc Settings_ButterscotchArch_InProcess}" />
+                        <ComboBoxItem Content="{l:Loc Settings_ButterscotchArch_X64}" />
+                        <ComboBoxItem Content="{l:Loc Settings_ButterscotchArch_X86}" />
+                        <ComboBoxItem Content="{l:Loc Settings_ButterscotchArch_Arm64}" />
+                    </ComboBox>
+                </Grid>
+
+                <Grid ColumnDefinitions="Auto,1*" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center"
+                           Content="{l:Loc Settings_ButterscotchExecutablePath}"
+                           ToolTip.Tip="{l:Loc Settings_ButterscotchExecutablePath_Tooltip}" />
+                    <TextBox Grid.Column="1" Text="{Binding ButterscotchExecutablePath, Mode=TwoWay}"
+                             ToolTip.Tip="{l:Loc Settings_ButterscotchExecutablePath_Tooltip}" />
+                </Grid>
+            </StackPanel>
+
+            <StackPanel Classes="Section">
                 <TextBlock Classes="Header" Text="{l:Loc GML_GML}"/>
                 <Separator />
 

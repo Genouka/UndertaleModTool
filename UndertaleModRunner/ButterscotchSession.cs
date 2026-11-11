@@ -49,7 +49,9 @@ public sealed class ButterscotchSession : IDisposable
             Speed = config.Speed,
             Seed = config.Seed,
             GameArgCount = config.GameArgs?.Count ?? 0,
-            StopOnEntry = config.StopOnEntry ? 1 : 0
+            StopOnEntry = config.StopOnEntry ? 1 : 0,
+            EmbedWindow = config.EmbedWindow,
+            EmbedWindowKind = (int)config.EmbedWindowKind
         };
 
         if (native.GameArgCount > 0)

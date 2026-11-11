@@ -59,6 +59,10 @@ internal static class NativeMethods
         public IntPtr GameArgs;
         public int GameArgCount;
         public int StopOnEntry;
+        // Optional embedded-window override (single-window hosts). IntPtr matches the
+        // native intptr_t, so the field is 4 bytes on x86 and 8 on x64 like the C side.
+        public IntPtr EmbedWindow;
+        public int EmbedWindowKind;
     }
 
     [StructLayout(LayoutKind.Sequential)]

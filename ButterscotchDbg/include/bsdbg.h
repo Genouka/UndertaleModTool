@@ -79,7 +79,17 @@ typedef struct BsdbgConfig {
     const char* const* gameArgs;/* extra args passed to the game (after "-game <path>"); may be null */
     int32_t gameArgCount;
     int32_t stopOnEntry;        /* 1 = break at first executed instruction */
+    intptr_t embedWindow;       /* window to render into; 0 = create a top-level window */
+    int32_t embedWindowKind;    /* enum BsdbgEmbedWindowKind, see below */
 } BsdbgConfig;
+
+/* How embedWindow is interpreted. Single-window hosts (Android) pass the surface
+ * handle they got from their native view; the runner then never creates a window. */
+enum BsdbgEmbedWindowKind {
+    BSDBG_EMBED_NONE            = 0,
+    BSDBG_EMBED_WIN32_HWND      = 1,
+    BSDBG_EMBED_ANDROID_SURFACE = 2, /* embedWindow is an android.view.Surface jobject */
+};
 
 typedef struct BsdbgBreakpoint {
     int32_t codeIndex;   /* index into the CODE chunk (matches UndertaleModTool's Code list index) */

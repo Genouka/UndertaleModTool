@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="290"
+        x:Class="UndertaleModToolAvalonia.DebugPanelWindow"
+        x:CompileBindings="False"
+        Title="{l:Loc Debug_Panel_Title}"
+        Width="560" Height="290" MinWidth="460" MinHeight="252"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner">
+    <Window.Styles>
+        <!-- Tabler Icons (MIT), https://github.com/tabler/tabler-icons -->
+        <Style Selector="Path.PanelIcon">
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Stretch" Value="Uniform" />
+            <Setter Property="Stroke" Value="{Binding $parent[Button].Foreground}" />
+            <Setter Property="StrokeThickness" Value="2" />
+            <Setter Property="StrokeJoin" Value="Round" />
+            <Setter Property="StrokeLineCap" Value="Round" />
+            <Setter Property="Fill" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.IconButton">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="14" RowDefinitions="Auto,Auto,Auto">
+        <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                CornerRadius="4" Padding="10,8" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal">
+                <Ellipse x:Name="StatusDot" Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock x:Name="StatusText" FontSize="14" FontWeight="SemiBold"
+                               Text="{l:Loc Debug_Panel_Status_NoSession}" />
+                    <TextBlock x:Name="DetailText" FontSize="11" Opacity="0.75" IsVisible="False" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <TextBlock Text="{l:Loc Debug_Panel_Execution}" FontSize="11" FontWeight="SemiBold" Opacity="0.7"
+                       Margin="2,0,0,6" />
+            <WrapPanel>
+                <Button x:Name="ContinueButton" Classes="IconButton" Click="ContinueButton_Click"
+                        ToolTip.Tip="{l:Loc Debug_Continue}">
+                    <Path Classes="PanelIcon" Data="M7 4v16l13 -8l-13 -8" />
+                </Button>
+                <Button x:Name="PauseButton" Classes="IconButton" Click="PauseButton_Click"
+                        ToolTip.Tip="{l:Loc Debug_Pause}">
+                    <Path Classes="PanelIcon" Data="M6 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12 M14 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12" />
+                </Button>
+                <Button x:Name="StepIntoButton" Classes="IconButton" Click="StepIntoButton_Click"
+                        ToolTip.Tip="{l:Loc Debug_StepInto}">
+                    <Path Classes="PanelIcon" Data="M12 3l0 12 M16 11l-4 4 M8 11l4 4 M11 20a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                </Button>
+                <Button x:Name="StepOverButton" Classes="IconButton" Click="StepOverButton_Click"
+                        ToolTip.Tip="{l:Loc Debug_StepOver}">
+                    <Path Classes="PanelIcon" Data="M14 12l-10 0 M14 12l-4 4 M14 12l-4 -4 M20 4l0 16" />
+                </Button>
+                <Button x:Name="StepOutButton" Classes="IconButton" Click="StepOutButton_Click"
+                        ToolTip.Tip="{l:Loc Debug_StepOut}">
+                    <Path Classes="PanelIcon" Data="M12 3l0 12 M16 7l-4 -4 M8 7l4 -4 M11 20a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                </Button>
+                <Button x:Name="StepFrameButton" Classes="IconButton" Click="StepFrameButton_Click"
+                        ToolTip.Tip="{l:Loc Debug_StepFrame}">
+                    <Path Classes="PanelIcon" Data="M3 5v14l8 -7l-8 -7 M14 5v14l8 -7l-8 -7" />
+                </Button>
+                <Button x:Name="StopButton" Classes="IconButton" Click="StopButton_Click"
+                        ToolTip.Tip="{l:Loc Debug_Stop}">
+                    <Path Classes="PanelIcon" Data="M5 7a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2l0 -10" />
+                </Button>
+                <Button x:Name="HotReloadButton" Classes="IconButton" Click="HotReloadButton_Click"
+                        ToolTip.Tip="{l:Loc Debug_HotReload}">
+                    <Path Classes="PanelIcon" Data="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4 M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+                </Button>
+            </WrapPanel>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2">
+            <TextBlock Text="{l:Loc Debug_Panel_Tools}" FontSize="11" FontWeight="SemiBold" Opacity="0.7"
+                       Margin="2,0,0,6" />
+            <WrapPanel>
+                <Button x:Name="BreakpointsButton" Classes="IconButton" Margin="0,0,6,0"
+                        Click="BreakpointsButton_Click" ToolTip.Tip="{l:Loc Debug_Breakpoints}">
+                    <Path Classes="PanelIcon" Data="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                </Button>
+                <Button x:Name="VariablesButton" Classes="IconButton" Margin="0,0,6,0"
+                        Click="VariablesButton_Click" ToolTip.Tip="{l:Loc Debug_Variables}">
+                    <Path Classes="PanelIcon" Data="M5 4c-2.5 5 -2.5 10 0 16m14 -16c2.5 5 2.5 10 0 16m-10 -11h1c1 0 1 1 2.016 3.527c.984 2.473 .984 3.473 1.984 3.473h1 M8 16c1.5 0 3 -2 4 -3.5s2.5 -3.5 4 -3.5" />
+                </Button>
+                <Button x:Name="InstancesButton" Classes="IconButton" Margin="0,0,6,0"
+                        Click="InstancesButton_Click" ToolTip.Tip="{l:Loc Debug_Instances}">
+                    <Path Classes="PanelIcon" Data="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5 M12 12l8 -4.5 M12 12l0 9 M12 12l-8 -4.5" />
+                </Button>
+                <Button x:Name="CallStackButton" Classes="IconButton" Margin="0,0,6,0"
+                        Click="CallStackButton_Click" ToolTip.Tip="{l:Loc Debug_CallStack}">
+                    <Path Classes="PanelIcon" Data="M12 4l-8 4l8 4l8 -4l-8 -4 M4 12l8 4l8 -4 M4 16l8 4l8 -4" />
+                </Button>
+                <Button x:Name="OutputButton" Classes="IconButton" Margin="0,0,6,0"
+                        Click="OutputButton_Click" ToolTip.Tip="{l:Loc Debug_Output}">
+                    <Path Classes="PanelIcon" Data="M8 9l3 3l-3 3 M13 15l3 0 M3 6a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -12" />
+                </Button>
+            </WrapPanel>
+        </StackPanel>
+    </Grid>
+</Window>
