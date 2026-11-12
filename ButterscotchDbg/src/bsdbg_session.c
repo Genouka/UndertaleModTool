@@ -11,6 +11,8 @@
 #include "bsdbg_hooks.h"
 
 #include "loop.h"
+#include "runner.h"
+#include "runner_gamepad.h"
 #include "utils.h"
 
 #if defined(_WIN32)
@@ -49,6 +51,14 @@ static void bs_atomic_set(volatile LONG* p, LONG value) {
     InterlockedExchange(p, value);
 #else
     __atomic_store_n(p, value, __ATOMIC_SEQ_CST);
+#endif
+}
+
+static LONG bs_atomic_add(volatile LONG* p, LONG value) {
+#if defined(_WIN32)
+    return InterlockedExchangeAdd(p, value);
+#else
+    return (LONG) __atomic_add_fetch(p, value, __ATOMIC_SEQ_CST);
 #endif
 }
 
@@ -1308,4 +1318,150 @@ void BsdbgHook_Log(int level, const char* message) {
         return;
 
     Bsdbg_Log(c, level, "%s", message);
+}
+
+/* ===[ Input injection ]=== */
+/*
+ * Hosts without their own input pump (the embedded Android runner) push events
+ * here from any thread; they are applied on the game thread at the start of the
+ * next frame, right after the engine cleared its pressed/released state.
+ */
+
+enum {
+    BSDBG_INJ_KEY = 0,
+    BSDBG_INJ_KEY_TEXT,
+    BSDBG_INJ_MOUSE_BUTTON,
+    BSDBG_INJ_MOUSE_POS,
+    BSDBG_INJ_MOUSE_WHEEL,
+    BSDBG_INJ_PAD_BUTTON,
+    BSDBG_INJ_PAD_AXIS,
+};
+
+typedef struct BsdbgInjectedEvent {
+    int32_t type;
+    int32_t a;       /* key / mouse button / gamepad button / gamepad axis */
+    int32_t b;       /* down flag */
+    double x, y;     /* mouse position, wheel offset, axis/button value */
+} BsdbgInjectedEvent;
+
+/* Fixed capacity: input is one-shot, so a host that floods the queue faster
+ * than the game consumes it loses the oldest events instead of growing without
+ * bound. 256 is far above what a touch stream produces per frame. */
+#define BSDBG_INJ_QUEUE_SIZE 256
+
+static BsdbgInjectedEvent bs_injectQueue[BSDBG_INJ_QUEUE_SIZE];
+static volatile LONG bs_injectHead = 0; /* next free slot */
+static volatile LONG bs_injectTail = 0; /* next event to apply */
+
+static void bs_inject_push(int32_t type, int32_t a, int32_t b, double x, double y) {
+    LONG head = bs_atomic_add(&bs_injectHead, 1) - 1;
+    LONG used = head - bs_injectTail;
+    if (used >= BSDBG_INJ_QUEUE_SIZE) {
+        /* Drop the oldest event to make room. */
+        bs_atomic_add(&bs_injectTail, 1);
+    }
+    BsdbgInjectedEvent* event = &bs_injectQueue[head % BSDBG_INJ_QUEUE_SIZE];
+    event->type = type;
+    event->a = a;
+    event->b = b;
+    event->x = x;
+    event->y = y;
+}
+
+void Bsdbg_InjectKey(int32_t gmlKey, int32_t down) {
+    if (gmlKey > 0)
+        bs_inject_push(BSDBG_INJ_KEY, gmlKey, down != 0, 0.0, 0.0);
+}
+
+void Bsdbg_InjectKeyText(uint32_t character) {
+    if (character != 0)
+        bs_inject_push(BSDBG_INJ_KEY_TEXT, (int32_t) character, 0, 0.0, 0.0);
+}
+
+void Bsdbg_InjectMouseButton(int32_t mouseButton, int32_t down) {
+    bs_inject_push(BSDBG_INJ_MOUSE_BUTTON, mouseButton, down != 0, 0.0, 0.0);
+}
+
+void Bsdbg_InjectMousePos(double x, double y) {
+    bs_inject_push(BSDBG_INJ_MOUSE_POS, 0, 0, x, y);
+}
+
+void Bsdbg_InjectMouseWheel(double yoffset) {
+    bs_inject_push(BSDBG_INJ_MOUSE_WHEEL, 0, 0, yoffset, 0.0);
+}
+
+void Bsdbg_InjectGamepadButton(int32_t button, int32_t down, float value) {
+    bs_inject_push(BSDBG_INJ_PAD_BUTTON, button, down != 0, (double) value, 0.0);
+}
+
+void Bsdbg_InjectGamepadAxis(int32_t axis, float value) {
+    bs_inject_push(BSDBG_INJ_PAD_AXIS, axis, 0, (double) value, 0.0);
+}
+
+void BsdbgHook_ApplyInput(struct Runner* runner) {
+    if (runner == nullptr || runner->keyboard == nullptr ||
+        runner->mouse == nullptr || runner->gamepads == nullptr)
+        return;
+
+    while ((LONG) bs_atomic_get(&bs_injectTail) != bs_injectHead) {
+        LONG tail = bs_atomic_get(&bs_injectTail);
+        BsdbgInjectedEvent* event = &bs_injectQueue[tail % BSDBG_INJ_QUEUE_SIZE];
+        BsdbgInjectedEvent copy = *event;
+        bs_atomic_set(&bs_injectTail, tail + 1);
+
+        switch (copy.type) {
+            case BSDBG_INJ_KEY:
+                if (copy.b)
+                    RunnerKeyboard_onKeyDown(runner->keyboard, copy.a);
+                else
+                    RunnerKeyboard_onKeyUp(runner->keyboard, copy.a);
+                break;
+            case BSDBG_INJ_KEY_TEXT:
+                RunnerKeyboard_onCharacter(runner->keyboard, (unsigned int) copy.a);
+                break;
+            case BSDBG_INJ_MOUSE_BUTTON:
+                if (copy.b)
+                    RunnerMouse_onButtonDown(runner->mouse, copy.a);
+                else
+                    RunnerMouse_onButtonUp(runner->mouse, copy.a);
+                break;
+            case BSDBG_INJ_MOUSE_POS:
+                /* The position arrives in surface pixels; map it into the game
+                 * viewport exactly like the window mouse flow does. */
+                if (runner->viewportW > 0 && runner->viewportH > 0) {
+                    double fboX = ((copy.x - (double) runner->viewportX) / (double) runner->viewportW) *
+                                  (double) (runner->renderGameW > 0 ? runner->renderGameW : 0);
+                    double fboY = ((copy.y - (double) runner->viewportY) / (double) runner->viewportH) *
+                                  (double) (runner->renderGameH > 0 ? runner->renderGameH : 0);
+                    runner->mouse->screenX = fboX;
+                    runner->mouse->screenY = fboY;
+                    runner->mouse->normalizedX = runner->renderGameW > 0 ? fboX / runner->renderGameW : 0.0;
+                    runner->mouse->normalizedY = runner->renderGameH > 0 ? fboY / runner->renderGameH : 0.0;
+                }
+                break;
+            case BSDBG_INJ_MOUSE_WHEEL:
+                RunnerMouse_onWheel(runner->mouse, copy.x);
+                break;
+            case BSDBG_INJ_PAD_BUTTON: {
+                GamepadSlot* slot = &runner->gamepads->slots[0];
+                if (copy.a < 0 || copy.a >= GP_BUTTON_COUNT)
+                    break;
+                slot->connected = true;
+                slot->buttonValue[copy.a] = (float) copy.x;
+                if (copy.b)
+                    slot->buttonDown[copy.a] = true;
+                else
+                    slot->buttonDown[copy.a] = false;
+                break;
+            }
+            case BSDBG_INJ_PAD_AXIS: {
+                GamepadSlot* slot = &runner->gamepads->slots[0];
+                if (copy.a < 0 || copy.a >= GP_AXIS_COUNT)
+                    break;
+                slot->connected = true;
+                slot->axisValue[copy.a] = (float) copy.x;
+                break;
+            }
+        }
+    }
 }

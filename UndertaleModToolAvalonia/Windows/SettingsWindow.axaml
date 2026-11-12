@@ -139,6 +139,13 @@
                     <TextBox Grid.Column="1" Text="{Binding ButterscotchExecutablePath, Mode=TwoWay}"
                              ToolTip.Tip="{l:Loc Settings_ButterscotchExecutablePath_Tooltip}" />
                 </Grid>
+
+                <CheckBox Content="虚拟手柄" ToolTip.Tip="在游戏画面上显示虚拟手柄（方向键与 A/B 按钮）"
+                          IsChecked="{Binding ButterscotchVirtualGamepad, Mode=TwoWay}" />
+                <CheckBox Content="虚拟键位" ToolTip.Tip="在游戏画面上显示按键条（Z / X / C / Enter / Esc）"
+                          IsChecked="{Binding ButterscotchVirtualKeypad, Mode=TwoWay}" />
+                <CheckBox Content="触摸作为鼠标左键" ToolTip.Tip="在游戏画面上触摸时，作为鼠标左键与位置输入"
+                          IsChecked="{Binding ButterscotchTouchAsMouse, Mode=TwoWay}" />
             </StackPanel>
 
             <StackPanel Classes="Section">

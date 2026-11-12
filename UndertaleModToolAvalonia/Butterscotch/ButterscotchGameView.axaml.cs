@@ -1,7 +1,10 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using UndertaleModRunner;
 
 namespace UndertaleModToolAvalonia;
 
@@ -59,5 +62,37 @@ public partial class ButterscotchGameView : UserControl
 
         viewModel.IsFullscreen = !viewModel.IsFullscreen;
         ButterscotchSurfaceHost.RequestFullscreen(viewModel.IsFullscreen);
+    }
+
+    /// <summary>The Border's Tag carries the gamepad button index to report.</summary>
+    void OnPadPress(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Border { Tag: int button })
+            ButterscotchInput.GamepadButton(button, down: true);
+        e.Pointer.Capture(sender as IInputElement);
+        e.Handled = true;
+    }
+
+    void OnPadRelease(object? sender, PointerReleasedEventArgs e)
+    {
+        if (sender is Border { Tag: int button })
+            ButterscotchInput.GamepadButton(button, down: false);
+        e.Handled = true;
+    }
+
+    /// <summary>The Border's Tag carries the GML virtual key code to report.</summary>
+    void OnKeyPadPress(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Border { Tag: int key })
+            ButterscotchInput.Key(key, down: true);
+        e.Pointer.Capture(sender as IInputElement);
+        e.Handled = true;
+    }
+
+    void OnKeyPadRelease(object? sender, PointerReleasedEventArgs e)
+    {
+        if (sender is Border { Tag: int key })
+            ButterscotchInput.Key(key, down: false);
+        e.Handled = true;
     }
 }

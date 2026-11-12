@@ -122,6 +122,26 @@ BSDBG_API int32_t Bsdbg_StepInto(BsdbgSession* session);
 BSDBG_API int32_t Bsdbg_StepOver(BsdbgSession* session);
 /* Only valid while paused: run until the current call frame returns. */
 BSDBG_API int32_t Bsdbg_StepOut(BsdbgSession* session);
+
+/* ===[ Input injection ]=== */
+/*
+ * Hosts without their own input pump (the embedded Android runner) queue input
+ * through these functions. They are thread safe and applied on the game thread
+ * at the start of the next frame.
+ *
+ * Keys use GML virtual key codes (ASCII for letters/digits, VK_* for the rest).
+ * mouseButton uses the GML_MB_* constants (1 = left). Mouse positions are in
+ * surface pixels; the runner maps them into the game viewport.
+ * Gamepad button indexes follow the engine's slot layout (0..16, where 6/7 are
+ * the triggers); axis indexes 0..3 are LH, LV, RH, RV in [-1, 1].
+ */
+BSDBG_API void Bsdbg_InjectKey(int32_t gmlKey, int32_t down);
+BSDBG_API void Bsdbg_InjectKeyText(uint32_t character);
+BSDBG_API void Bsdbg_InjectMouseButton(int32_t mouseButton, int32_t down);
+BSDBG_API void Bsdbg_InjectMousePos(double x, double y);
+BSDBG_API void Bsdbg_InjectMouseWheel(double yoffset);
+BSDBG_API void Bsdbg_InjectGamepadButton(int32_t button, int32_t down, float value);
+BSDBG_API void Bsdbg_InjectGamepadAxis(int32_t axis, float value);
 /* Reads the current frame count. */
 BSDBG_API int32_t Bsdbg_GetFrameCount(BsdbgSession* session);
 
