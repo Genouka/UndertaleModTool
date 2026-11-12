@@ -81,6 +81,22 @@
     });
   }
 
+  function closeSearch() {
+    var search = document.querySelector('.sidebar .search');
+    if (!search) return;
+    var input = search.querySelector('input');
+    if (input) input.value = '';
+    var panel = search.querySelector('.results-panel');
+    if (panel) panel.style.display = 'none';
+  }
+
+  document.addEventListener('click', function (event) {
+    var link = event.target && event.target.closest
+      ? event.target.closest('.sidebar .search .results-panel a')
+      : null;
+    if (link) window.setTimeout(closeSearch, 120);
+  }, true);
+
   if (window.$docsify) {
     window.$docsify.plugins = (window.$docsify.plugins || []).concat(function (hook) {
       hook.doneEach(schedule);
