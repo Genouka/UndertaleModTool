@@ -1,0 +1,5 @@
+- [快速开始](docs/getting-started.md)
+- [功能文档](docs/editor/intellisense.md)
+- [MCP](docs/mcp.md)
+- [下载](https://github.com/Genouka/UndertaleModTool/releases)
+- [GitHub](https://github.com/Genouka/UndertaleModTool)
