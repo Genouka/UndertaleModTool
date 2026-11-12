@@ -68,6 +68,10 @@ public partial class ButterscotchGameViewModel : ObservableObject, ITabContent
     [ObservableProperty]
     public partial string DebugStatus { get; set; } = "";
 
+    /// <summary>Whether the session is paused; drives the pause/resume transport icon.</summary>
+    [ObservableProperty]
+    public partial bool IsPaused { get; set; }
+
     /// <summary>Whether the in-tab debug bar is shown (debug sessions).</summary>
     [ObservableProperty]
     public partial bool ShowDebugPanel { get; set; }
@@ -119,10 +123,12 @@ public partial class ButterscotchGameViewModel : ObservableObject, ITabContent
         if (!service.IsActive || state is null)
         {
             DebugStatus = "";
+            IsPaused = false;
             return;
         }
 
         DebugStatus = $"{(state.Paused ? "Paused" : "Running")} · frame {state.FrameCount}";
+        IsPaused = state.Paused;
     }
 
     public void OnDetached()

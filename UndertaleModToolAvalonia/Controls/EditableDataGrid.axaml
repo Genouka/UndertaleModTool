@@ -18,8 +18,12 @@
                 </StackPanel.Styles>
                 <Button x:Name="AddButton" Command="{Binding Add}" IsVisible="False">+</Button>
                 <Button x:Name="RemoveButton" Command="{Binding Remove}" IsVisible="False" IsEnabled="False">-</Button>
-                <RepeatButton x:Name="MoveUpButton" Command="{Binding MoveUp}" IsEnabled="False">↑</RepeatButton>
-                <RepeatButton x:Name="MoveDownButton" Command="{Binding MoveDown}" IsEnabled="False">↓</RepeatButton>
+                <RepeatButton x:Name="MoveUpButton" Command="{Binding MoveUp}" IsEnabled="False">
+                    <l:TablerIcon Data="{x:Static l:TablerIcons.ArrowUp}" />
+                </RepeatButton>
+                <RepeatButton x:Name="MoveDownButton" Command="{Binding MoveDown}" IsEnabled="False">
+                    <l:TablerIcon Data="{x:Static l:TablerIcons.ArrowDown}" />
+                </RepeatButton>
             </StackPanel>
         </Grid>
     </ContentControl>

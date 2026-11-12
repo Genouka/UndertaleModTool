@@ -40,11 +40,11 @@
                 <Grid RowDefinitions="Auto,1*">
                     <ToggleButton Grid.Row="0"
                                   HorizontalAlignment="Left"
-                                  Content="&#x2630;"
-                                  FontSize="16"
                                   Padding="10,2"
                                   IsVisible="{Binding #DrawerPageHost.IsCollapsible}"
-                                  IsChecked="{Binding #DrawerPageHost.IsDrawerOpen, Mode=TwoWay}"/>
+                                  IsChecked="{Binding #DrawerPageHost.IsDrawerOpen, Mode=TwoWay}">
+                        <l:TablerIcon Data="{x:Static l:TablerIcons.Menu}" />
+                    </ToggleButton>
                     <l:TabsView Grid.Row="1" DataContext="{Binding Tabs}" />
                 </Grid>
             </l:DrawerPage.MainContent>
@@ -53,8 +53,12 @@
                 <Grid RowDefinitions="Auto,1*">
                     <StackPanel Grid.Row="0">
                         <StackPanel Orientation="Horizontal">
-                            <Button Command="{Binding Tabs.TabGoBack}" IsEnabled="{Binding Tabs.TabSelected.CanGoBack, FallbackValue=False}">←</Button>
-                            <Button Command="{Binding Tabs.TabGoForward}" IsEnabled="{Binding Tabs.TabSelected.CanGoForward, FallbackValue=False}">→</Button>
+                            <Button Command="{Binding Tabs.TabGoBack}" IsEnabled="{Binding Tabs.TabSelected.CanGoBack, FallbackValue=False}">
+                                <l:TablerIcon Data="{x:Static l:TablerIcons.ArrowLeft}" />
+                            </Button>
+                            <Button Command="{Binding Tabs.TabGoForward}" IsEnabled="{Binding Tabs.TabSelected.CanGoForward, FallbackValue=False}">
+                                <l:TablerIcon Data="{x:Static l:TablerIcons.ArrowRight}" />
+                            </Button>
                         </StackPanel>
                         <Grid ColumnDefinitions="1*,Auto">
                             <TextBox Grid.Column="0" Name="FilterTextBox" PlaceholderText="{l:Loc Ctrl_FilterByName}" Text="{Binding FilterText, Delay=300}"/>

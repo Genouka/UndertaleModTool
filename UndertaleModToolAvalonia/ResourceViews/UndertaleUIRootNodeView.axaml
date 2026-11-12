@@ -83,8 +83,12 @@
                 </TreeView>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
-                    <RepeatButton Click="MoveUp_Click">↑</RepeatButton>
-                    <RepeatButton Click="MoveDown_Click" >↓</RepeatButton>
+                    <RepeatButton Click="MoveUp_Click">
+                        <l:TablerIcon Data="{x:Static l:TablerIcons.ArrowUp}" />
+                    </RepeatButton>
+                    <RepeatButton Click="MoveDown_Click">
+                        <l:TablerIcon Data="{x:Static l:TablerIcons.ArrowDown}" />
+                    </RepeatButton>
                 </StackPanel>
             </Grid>
 
