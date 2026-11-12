@@ -205,7 +205,7 @@ public class MockStackWindow : UserControl
 
         Button backButton = new()
         {
-            Content = "\u2190", // �?            FontSize = 16,
+            Content = new TablerIcon { Data = TablerIcons.ArrowLeft },
             Classes = { "accent" },
         };
         backButton.Click += (_, _) => PopTopModal();
@@ -223,7 +223,7 @@ public class MockStackWindow : UserControl
 
         Button closeButton = new()
         {
-            Content = "\u2715", // �?            FontSize = 14,
+            Content = new TablerIcon { Data = TablerIcons.X },
         };
         closeButton.Click += (_, _) => PopTopModal();
         Grid.SetColumn(closeButton, 2);
@@ -502,7 +502,7 @@ public class MockStackWindow : UserControl
             {
                 Button close = new()
                 {
-                    Content = "\u2715",
+                    Content = new TablerIcon { Data = TablerIcons.X },
                     Margin = new Thickness(-2, 0, 6, 0),
                     HorizontalAlignment = HorizontalAlignment.Left,
                 };

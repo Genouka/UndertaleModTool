@@ -1,5 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:UndertaleModToolAvalonia"
              x:Class="UndertaleModToolAvalonia.App"
              Name="UndertaleModToolAvalonia"
              RequestedThemeVariant="Default">
@@ -91,6 +92,26 @@
                     <SolidColorBrush x:Key="SystemControlHighlightListAccentHighBrush" Color="#4A5A90" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
+            <!-- Default theme for the Tabler icon control: stroke the geometry with the
+                 inherited foreground so icons follow button states (normal/hover/disabled). -->
+            <ControlTheme x:Key="{x:Type l:TablerIcon}" TargetType="l:TablerIcon">
+                <Setter Property="Width" Value="16" />
+                <Setter Property="Height" Value="16" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <ControlTemplate TargetType="l:TablerIcon">
+                        <Viewbox Stretch="Uniform">
+                            <Path Data="{TemplateBinding Data}"
+                                  Width="24" Height="24"
+                                  Stroke="{TemplateBinding Foreground}"
+                                  StrokeThickness="2"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round" />
+                        </Viewbox>
+                    </ControlTemplate>
+                </Setter>
+            </ControlTheme>
         </ResourceDictionary>
     </Application.Resources>
 
