@@ -112,6 +112,29 @@ internal static class NativeMethods
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int Bsdbg_StepOut(IntPtr session);
 
+    // Input injection: hosts without their own input pump queue events that the
+    // runner applies on the game thread at the start of the next frame.
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Bsdbg_InjectKey(int gmlKey, int down);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Bsdbg_InjectKeyText(uint character);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Bsdbg_InjectMouseButton(int mouseButton, int down);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Bsdbg_InjectMousePos(double x, double y);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Bsdbg_InjectMouseWheel(double yoffset);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Bsdbg_InjectGamepadButton(int button, int down, float value);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    internal static extern void Bsdbg_InjectGamepadAxis(int axis, float value);
+
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     internal static extern int Bsdbg_GetFrameCount(IntPtr session);
 

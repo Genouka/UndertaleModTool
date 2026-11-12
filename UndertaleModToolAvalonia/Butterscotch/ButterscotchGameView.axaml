@@ -34,6 +34,95 @@
             </StackPanel>
         </Border>
 
+        <!-- Virtual gamepad: a d-pad on the left and A/B on the right, sized to the thumb. -->
+        <Grid x:Name="VirtualGamepad" IsVisible="{Binding ShowVirtualGamepad}">
+            <Grid ColumnDefinitions="*,Auto,*">
+                <Grid Grid.Column="0" Width="160" Height="160"
+                      HorizontalAlignment="Left" VerticalAlignment="Center"
+                      Margin="12,0,0,24">
+                    <Grid.RowDefinitions>1*,1*,1*</Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>1*,1*,1*</Grid.ColumnDefinitions>
+                    <Border Grid.Row="0" Grid.Column="1" Tag="{x:Static l:ButterscotchInput.PadUp}"
+                            PointerPressed="OnPadPress" PointerReleased="OnPadRelease"
+                            Background="#66000000" CornerRadius="8" Margin="1">
+                        <TextBlock Text="▲" Foreground="White" FontSize="16"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="0" Tag="{x:Static l:ButterscotchInput.PadLeft}"
+                            PointerPressed="OnPadPress" PointerReleased="OnPadRelease"
+                            Background="#66000000" CornerRadius="8" Margin="1">
+                        <TextBlock Text="◀" Foreground="White" FontSize="16"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="2" Tag="{x:Static l:ButterscotchInput.PadRight}"
+                            PointerPressed="OnPadPress" PointerReleased="OnPadRelease"
+                            Background="#66000000" CornerRadius="8" Margin="1">
+                        <TextBlock Text="▶" Foreground="White" FontSize="16"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <Border Grid.Row="2" Grid.Column="1" Tag="{x:Static l:ButterscotchInput.PadDown}"
+                            PointerPressed="OnPadPress" PointerReleased="OnPadRelease"
+                            Background="#66000000" CornerRadius="8" Margin="1">
+                        <TextBlock Text="▼" Foreground="White" FontSize="16"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Column="2" Width="150" Height="120"
+                      HorizontalAlignment="Right" VerticalAlignment="Center"
+                      Margin="0,0,12,24">
+                    <Border Width="64" Height="64" HorizontalAlignment="Left" VerticalAlignment="Top"
+                            Tag="{x:Static l:ButterscotchInput.PadFace2}"
+                            PointerPressed="OnPadPress" PointerReleased="OnPadRelease"
+                            Background="#66AA3333" CornerRadius="32">
+                        <TextBlock Text="B" Foreground="White" FontSize="16"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <Border Width="64" Height="64" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                            Tag="{x:Static l:ButterscotchInput.PadFace1}"
+                            PointerPressed="OnPadPress" PointerReleased="OnPadRelease"
+                            Background="#663333AA" CornerRadius="32">
+                        <TextBlock Text="A" Foreground="White" FontSize="16"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <!-- Virtual keypad: a compact key bar (Z/X/C/Enter/Esc), top-right so it does not
+             cover the bottom-aligned debug strip. -->
+        <Border x:Name="VirtualKeypad" IsVisible="{Binding ShowVirtualKeypad}"
+                HorizontalAlignment="Right" VerticalAlignment="Top"
+                Background="#CC121212" CornerRadius="6" Padding="6" Margin="6">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <Border Tag="90" PointerPressed="OnKeyPadPress" PointerReleased="OnKeyPadRelease"
+                        Background="#33000000" CornerRadius="4" Width="36" Height="36">
+                    <TextBlock Text="Z" Foreground="White" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Border>
+                <Border Tag="88" PointerPressed="OnKeyPadPress" PointerReleased="OnKeyPadRelease"
+                        Background="#33000000" CornerRadius="4" Width="36" Height="36">
+                    <TextBlock Text="X" Foreground="White" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Border>
+                <Border Tag="67" PointerPressed="OnKeyPadPress" PointerReleased="OnKeyPadRelease"
+                        Background="#33000000" CornerRadius="4" Width="36" Height="36">
+                    <TextBlock Text="C" Foreground="White" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Border>
+                <Border Tag="13" PointerPressed="OnKeyPadPress" PointerReleased="OnKeyPadRelease"
+                        Background="#33000000" CornerRadius="4" Width="52" Height="36">
+                    <TextBlock Text="Enter" Foreground="White" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" FontSize="11" />
+                </Border>
+                <Border Tag="27" PointerPressed="OnKeyPadPress" PointerReleased="OnKeyPadRelease"
+                        Background="#33000000" CornerRadius="4" Width="44" Height="36">
+                    <TextBlock Text="Esc" Foreground="White" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" FontSize="11" />
+                </Border>
+            </StackPanel>
+        </Border>
+
         <Border IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                 Background="#99000000" Padding="16" CornerRadius="6"
                 HorizontalAlignment="Center" VerticalAlignment="Center">

@@ -44,6 +44,10 @@ public static class ButterscotchSurfaceHost
 
     public static bool SupportsFullscreen => FullscreenRequested is not null;
 
+
+    /// <summary>Turns touches on the game view into the left mouse button (single-window hosts).</summary>
+    public static bool TouchAsMouse = true;
+
     public static void RequestFullscreen(bool fullscreen) => FullscreenRequested?.Invoke(fullscreen);
 }
 
@@ -71,6 +75,14 @@ public partial class ButterscotchGameViewModel : ObservableObject, ITabContent
     [ObservableProperty]
     public partial bool IsFullscreen { get; set; }
 
+    /// <summary>Shows the on-screen gamepad over the game view.</summary>
+    [ObservableProperty]
+    public partial bool ShowVirtualGamepad { get; set; }
+
+    /// <summary>Shows the on-screen key bar over the game view.</summary>
+    [ObservableProperty]
+    public partial bool ShowVirtualKeypad { get; set; }
+
     /// <summary>Only single-window platforms can go fullscreen.</summary>
     public bool ShowFullscreen => ButterscotchSurfaceHost.SupportsFullscreen;
 
@@ -78,7 +90,16 @@ public partial class ButterscotchGameViewModel : ObservableObject, ITabContent
     {
         Surface = surface;
         ShowDebugPanel = showDebugPanel;
-
+        try
+        {
+            MainViewModel main = App.Services.GetRequiredService<MainViewModel>();
+            ShowVirtualGamepad = main.Settings.ButterscotchVirtualGamepad;
+            ShowVirtualKeypad = main.Settings.ButterscotchVirtualKeypad;
+            ButterscotchSurfaceHost.TouchAsMouse = main.Settings.ButterscotchTouchAsMouse;
+        }
+        catch (InvalidOperationException)
+        {
+        }
         try
         {
             ButterscotchDebugService.Instance.Updated += OnDebugUpdated;

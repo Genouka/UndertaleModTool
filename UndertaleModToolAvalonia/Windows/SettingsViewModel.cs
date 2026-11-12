@@ -135,6 +135,40 @@ public partial class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>Show the on-screen gamepad over the embedded game view.</summary>
+    public bool ButterscotchVirtualGamepad
+    {
+        get => MainVM.Settings.ButterscotchVirtualGamepad;
+        set
+        {
+            MainVM.Settings.ButterscotchVirtualGamepad = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Show the on-screen key bar over the embedded game view.</summary>
+    public bool ButterscotchVirtualKeypad
+    {
+        get => MainVM.Settings.ButterscotchVirtualKeypad;
+        set
+        {
+            MainVM.Settings.ButterscotchVirtualKeypad = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Turn a touch on the game view into the left mouse button.</summary>
+    public bool ButterscotchTouchAsMouse
+    {
+        get => MainVM.Settings.ButterscotchTouchAsMouse;
+        set
+        {
+            MainVM.Settings.ButterscotchTouchAsMouse = value;
+            ButterscotchSurfaceHost.TouchAsMouse = value;
+            OnPropertyChanged();
+        }
+    }
+
     [ObservableProperty]
     public partial bool IsCustomIndentStyle { get; set; }
 

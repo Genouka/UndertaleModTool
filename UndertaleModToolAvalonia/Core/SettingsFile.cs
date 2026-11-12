@@ -250,6 +250,15 @@ public partial class SettingsFile
     /// in native/win-&lt;arch&gt;.
     /// </summary>
     public string ButterscotchExecutablePath { get; set; } = "";
+
+    /// <summary>Shows an on-screen gamepad over the embedded game view.</summary>
+    public bool ButterscotchVirtualGamepad { get; set; } = OperatingSystem.IsAndroid();
+
+    /// <summary>Shows an on-screen key bar (Z/X/C/Enter/Escape) over the game view.</summary>
+    public bool ButterscotchVirtualKeypad { get; set; }
+
+    /// <summary>Turns a touch on the game view into the left mouse button.</summary>
+    public bool ButterscotchTouchAsMouse { get; set; } = true;
     public bool EnableLocalizationStringPreview { get; set; } = true;
 
     public string InstanceIdPrefix { get; set; } = "inst_";

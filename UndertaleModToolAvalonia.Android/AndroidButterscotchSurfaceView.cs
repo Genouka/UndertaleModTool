@@ -5,6 +5,7 @@ using Android.Views;
 using Android.Views.InputMethods;
 using Avalonia.Android;
 using Avalonia.Platform;
+using UndertaleModRunner;
 
 namespace UndertaleModToolAvalonia.Android;
 
@@ -90,11 +91,34 @@ public sealed class AndroidButterscotchSurfaceView : ButterscotchNativeSurfaceVi
         DisposeSurface();
     }
 
+    /// <summary>
+    /// Touch is translated into the runner's mouse input: a finger is the left button and the
+    /// viewport position, which is what most GameMaker games respond to on touch devices.
+    /// </summary>
     void OnSurfaceTouch(object? sender, View.TouchEventArgs e)
     {
-        // Touch handling is forwarded to the runner's input queue. Until input injection is
-        // wired the event is consumed so Avalonia does not scroll/click behind the game view.
+        if (!ButterscotchSurfaceHost.TouchAsMouse)
+            return;
+
+        MotionEvent? motion = e.Event;
+        if (motion is null)
+            return;
+
         e.Handled = true;
+
+        switch (motion.ActionMasked)
+        {
+            case MotionEventActions.Down:
+                ButterscotchInput.Pointer(motion.GetX(), motion.GetY(), down: true);
+                break;
+            case MotionEventActions.Move:
+                ButterscotchInput.Pointer(motion.GetX(), motion.GetY(), down: null);
+                break;
+            case MotionEventActions.Up:
+            case MotionEventActions.Cancel:
+                ButterscotchInput.Pointer(motion.GetX(), motion.GetY(), down: false);
+                break;
+        }
     }
 
     sealed class SurfaceCallback : Java.Lang.Object, ISurfaceHolderCallback
