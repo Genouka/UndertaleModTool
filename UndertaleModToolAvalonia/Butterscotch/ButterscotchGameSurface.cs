@@ -37,7 +37,14 @@ public static class ButterscotchSurfaceHost
     /// <summary>Replaced by single-window platform modules (Android).</summary>
     public static Func<IButterscotchGameSurface?>? Factory;
 
+    /// <summary>Installed by platforms that can hide their system chrome (Android).</summary>
+    public static Action<bool>? FullscreenRequested;
+
     public static bool IsSupported => Factory is not null;
+
+    public static bool SupportsFullscreen => FullscreenRequested is not null;
+
+    public static void RequestFullscreen(bool fullscreen) => FullscreenRequested?.Invoke(fullscreen);
 }
 
 /// <summary>
@@ -46,18 +53,74 @@ public static class ButterscotchSurfaceHost
 /// </summary>
 public partial class ButterscotchGameViewModel : ObservableObject, ITabContent
 {
+    readonly bool subscribed;
+
     public IButterscotchGameSurface Surface { get; }
 
     [ObservableProperty]
     public partial string StatusText { get; set; } = "";
 
-    public ButterscotchGameViewModel(IButterscotchGameSurface surface)
+    /// <summary>Session state shown next to the transport buttons.</summary>
+    [ObservableProperty]
+    public partial string DebugStatus { get; set; } = "";
+
+    /// <summary>Whether the in-tab debug bar is shown (debug sessions).</summary>
+    [ObservableProperty]
+    public partial bool ShowDebugPanel { get; set; }
+
+    [ObservableProperty]
+    public partial bool IsFullscreen { get; set; }
+
+    /// <summary>Only single-window platforms can go fullscreen.</summary>
+    public bool ShowFullscreen => ButterscotchSurfaceHost.SupportsFullscreen;
+
+    public ButterscotchGameViewModel(IButterscotchGameSurface surface, bool showDebugPanel = false)
     {
         Surface = surface;
+        ShowDebugPanel = showDebugPanel;
+
+        try
+        {
+            ButterscotchDebugService.Instance.Updated += OnDebugUpdated;
+            ButterscotchDebugService.Instance.StatusUpdated += OnDebugUpdated;
+            subscribed = true;
+        }
+        catch (InvalidOperationException)
+        {
+            // No service container (design time); the bar simply stays empty.
+        }
+    }
+
+    void OnDebugUpdated()
+    {
+        ButterscotchDebugService service = ButterscotchDebugService.Instance;
+        DebugState? state = service.State;
+        if (!service.IsActive || state is null)
+        {
+            DebugStatus = "";
+            return;
+        }
+
+        DebugStatus = $"{(state.Paused ? "Paused" : "Running")} · frame {state.FrameCount}";
     }
 
     public void OnDetached()
     {
+        if (subscribed)
+        {
+            try
+            {
+                ButterscotchDebugService.Instance.Updated -= OnDebugUpdated;
+                ButterscotchDebugService.Instance.StatusUpdated -= OnDebugUpdated;
+            }
+            catch (InvalidOperationException)
+            {
+            }
+        }
+
+        if (IsFullscreen)
+            ButterscotchSurfaceHost.RequestFullscreen(false);
+
         App.Services.GetRequiredService<MainViewModel>().Butterscotch.Stop();
     }
 }

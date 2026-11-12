@@ -73,7 +73,58 @@ public class MainActivity : AvaloniaMainActivity
         // Single-window platform: the embedded Butterscotch runner renders into a native view
         // inside the Avalonia tree instead of opening a window of its own.
         ButterscotchSurfaceHost.Factory = () => new AndroidButterscotchSurfaceView().AsGameSurface();
+        ButterscotchSurfaceHost.FullscreenRequested = SetGameFullscreen;
     }
+
+    /// <summary>
+    /// Hides or restores the system bars for the embedded game view: WindowInsetsController on
+    /// Android 11+, the legacy SystemUiFlags on older versions. Both paths are needed to cover
+    /// API 28/29 and 30+, so the deprecation diagnostics for them are suppressed locally.
+    /// </summary>
+#pragma warning disable CA1422 // both branches are required to cover API 28/29 and 30+
+#pragma warning disable CS0618 // the legacy SystemUiVisibility property only exists below API 30
+    void SetGameFullscreen(bool fullscreen)
+    {
+        try
+        {
+            Window? window = Window;
+            View? decor = window?.DecorView;
+            if (decor is null)
+                return;
+
+            if (OperatingSystem.IsAndroidVersionAtLeast(30))
+            {
+                window!.SetDecorFitsSystemWindows(!fullscreen);
+                IWindowInsetsController? controller = window.InsetsController;
+                if (controller is not null)
+                {
+                    int systemBars = (int) WindowInsets.Type.SystemBars()!;
+                    if (fullscreen)
+                        controller.Hide(systemBars);
+                    else
+                        controller.Show(systemBars);
+                }
+            }
+            else
+            {
+                decor.SystemUiVisibility = fullscreen
+                    ? (StatusBarVisibility)(
+                        SystemUiFlags.Fullscreen
+                        | SystemUiFlags.HideNavigation
+                        | SystemUiFlags.ImmersiveSticky
+                        | SystemUiFlags.LayoutFullscreen
+                        | SystemUiFlags.LayoutHideNavigation
+                        | SystemUiFlags.LayoutStable)
+                    : (StatusBarVisibility)0;
+            }
+        }
+        catch (Exception)
+        {
+            // Going fullscreen is best-effort; the game view keeps working without it.
+        }
+    }
+#pragma warning restore CS0618
+#pragma warning restore CA1422
 
     bool ShowSoftKeyboard()
     {

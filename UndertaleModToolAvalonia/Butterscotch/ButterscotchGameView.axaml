@@ -11,6 +11,29 @@
              activity's view group by Avalonia's NativeControlHost implementation. -->
         <ContentControl Content="{Binding Surface.View}" HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch" />
+
+        <!-- Debug transport. Portrait: a strip along the bottom edge. Landscape: a column on
+             the left edge. The code-behind switches between the two on size changes. -->
+        <Border x:Name="DebugBar"
+                IsVisible="{Binding ShowDebugPanel}"
+                Background="#CC121212" Padding="6" Margin="6" CornerRadius="6"
+                HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
+            <StackPanel x:Name="DebugActions" Orientation="Horizontal" Spacing="6"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Button Content="⏯" Click="OnPauseResume" ToolTip.Tip="Pause / resume" />
+                <Button Content="⤵" Click="OnStepInto" ToolTip.Tip="Step into" />
+                <Button Content="⤼" Click="OnStepOver" ToolTip.Tip="Step over" />
+                <Button Content="⤴" Click="OnStepOut" ToolTip.Tip="Step out" />
+                <Button Content="⏭" Click="OnStepFrame" ToolTip.Tip="Next frame" />
+                <Button Content="⟳" Click="OnHotReload" ToolTip.Tip="Hot reload" />
+                <Button Content="⏹" Click="OnStop" ToolTip.Tip="Stop" />
+                <Button Content="⛶" Click="OnToggleFullscreen"
+                        IsVisible="{Binding ShowFullscreen}" ToolTip.Tip="Fullscreen" />
+                <TextBlock Text="{Binding DebugStatus}" Foreground="#DDDDDD"
+                           VerticalAlignment="Center" Margin="6,0,0,0" />
+            </StackPanel>
+        </Border>
+
         <Border IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                 Background="#99000000" Padding="16" CornerRadius="6"
                 HorizontalAlignment="Center" VerticalAlignment="Center">
