@@ -1011,7 +1011,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             return;
         }
 
-        if (await Tabs.TabOpen(new ButterscotchGameViewModel(surface), inNewTab: true) is null)
+        if (await Tabs.TabOpen(new ButterscotchGameViewModel(surface, stopOnEntry), inNewTab: true) is null)
         {
             await View!.MessageDialog("Could not open the Butterscotch game tab, so the session was not started.");
             return;
