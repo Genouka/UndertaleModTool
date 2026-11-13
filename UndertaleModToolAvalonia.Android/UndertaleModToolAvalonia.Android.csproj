@@ -55,9 +55,14 @@
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
         <PackageReference Include="Magick.NET.Core" Version="14.16.0" />
-        <!-- Android 版 Magick 原生包：arm64 / x64 都引用，打包时按当前 ABI 只打进对应的 .so -->
-        <PackageReference Include="Magick.NET-Q8-arm64" Version="14.16.0" />
-        <PackageReference Include="Magick.NET-Q8-x64" Version="14.16.0" />
+        <!-- Android 版 Magick 原生包：arm64 / x64 都引用，打包时按当前 ABI 只打进对应的 .so。
+             ExcludeAssets="native" 阻止包内 runtimes/android-*/native/Magick.Native-Q8-<abi>.dll.so
+             直接进 APK（见下方 StageMagickNativeLibraries 的原因），改由该目标以 lib 前缀名字打包。
+             "compile;runtime" 同时丢掉 flavor 的托管程序集：它们与 AnyCPU 程序集定义同一套
+             ImageMagick 类型（一起参与编译会 CS0433），而项目里没有任何地方引用它们，
+             它们只是原生 so 的载体。 -->
+        <PackageReference Include="Magick.NET-Q8-arm64" Version="14.16.0" ExcludeAssets="compile;runtime;native" GeneratePathProperty="true" />
+        <PackageReference Include="Magick.NET-Q8-x64" Version="14.16.0" ExcludeAssets="compile;runtime;native" GeneratePathProperty="true" />
         <!-- 安全网：共享项目会把桌面包 Magick.NET-Q8-AnyCPU 传递进来，这里显式排除其 runtimes，
              确保 linux-* 的 .so 永远不会混进 Android APK -->
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0" ExcludeAssets="runtimes;native" />
@@ -88,6 +93,43 @@
             <Abi>x86_64</Abi>
         </AndroidNativeLibrary>
     </ItemGroup>
+
+    <!--
+        Magick.Native 的 Android 原生库以 "Magick.Native-Q8-<abi>.dll.so" 的名字随 NuGet 包分发，
+        但 Android 安装器只把 lib/<abi>/ 下以 "lib" 开头、".so" 结尾的条目解压进应用的
+        nativeLibraryDir（frameworks/base ApkParsing.ValidLibraryPathLastSlash；对 debuggable
+        应用有豁免，Android 16 起才完全放开）。官方构建是非 debuggable 的，旧名字因此永远不会
+        落盘，P/Invoke 报 DllNotFoundException（Magick.Native-Q8-<abi>.dll）。
+
+        所以这里把包内镜像复制为 "libMagick.Native-Q8-<abi>.so" 再打包，该名字满足 Android 的
+        提取规则。代价是 DllImport 的名字（"Magick.Native-Q8-<abi>.dll"）与文件名不再能对上：
+        dotnet/android 的 DSO 缓存只会为打包名生成别名（去 lib 前缀 / 去 .so 后缀），Mono 自己的
+        探测序列也拼不出这个名字，所以 MainActivity.OnCreate 里注册了一个 DllImportResolver，
+        把 "Magick.Native-Q8-<abi>.dll" 重定向到 "libMagick.Native-Q8-<abi>"。
+
+        名字必须正好是 lib<名>.so（而不是 lib<名>.dll.so）：dotnet/android 给每个打包库生成的
+        DSO 缓存别名数量必须一致（dso_jni_preloads_idx_stride 校验，见 monodroid-glue.cc 的
+        preload_jni_libraries），"lib<名>.so" 形式与其它所有 lib*.so 库一样产生 4 个别名。
+    -->
+    <Target Name="StageMagickNativeLibraries" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+        <PropertyGroup>
+            <_MagickNativeStageDir>$(IntermediateOutputPath)magick-native\</_MagickNativeStageDir>
+        </PropertyGroup>
+        <ItemGroup>
+            <_MagickNativeArm64 Include="$(PkgMagick_NET-Q8-arm64)\runtimes\android-arm64\native\Magick.Native-Q8-arm64.dll.so" Condition="Exists('$(PkgMagick_NET-Q8-arm64)\runtimes\android-arm64\native\Magick.Native-Q8-arm64.dll.so')" />
+            <_MagickNativeX64 Include="$(PkgMagick_NET-Q8-x64)\runtimes\android-x64\native\Magick.Native-Q8-x64.dll.so" Condition="Exists('$(PkgMagick_NET-Q8-x64)\runtimes\android-x64\native\Magick.Native-Q8-x64.dll.so')" />
+        </ItemGroup>
+        <Copy SourceFiles="@(_MagickNativeArm64)" DestinationFiles="$(_MagickNativeStageDir)arm64-v8a\libMagick.Native-Q8-arm64.so" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(_MagickNativeX64)" DestinationFiles="$(_MagickNativeStageDir)x86_64\libMagick.Native-Q8-x64.so" SkipUnchangedFiles="true" />
+        <ItemGroup>
+            <AndroidNativeLibrary Include="$(_MagickNativeStageDir)arm64-v8a\libMagick.Native-Q8-arm64.so" Condition="Exists('$(_MagickNativeStageDir)arm64-v8a\libMagick.Native-Q8-arm64.so')">
+                <Abi>arm64-v8a</Abi>
+            </AndroidNativeLibrary>
+            <AndroidNativeLibrary Include="$(_MagickNativeStageDir)x86_64\libMagick.Native-Q8-x64.so" Condition="Exists('$(_MagickNativeStageDir)x86_64\libMagick.Native-Q8-x64.so')">
+                <Abi>x86_64</Abi>
+            </AndroidNativeLibrary>
+        </ItemGroup>
+    </Target>
 
     <ItemGroup>
         <AndroidResource Include="Resources\values\colors.xml" />
