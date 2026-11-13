@@ -6,11 +6,11 @@
         mc:Ignorable="d"
         x:Class="UndertaleModToolAvalonia.DataFileCompareWindow"
         x:DataType="l:DataFileCompareViewModel"
-        Title="Compare Data Files"
+        Title="{l:Loc Compare_Title}"
         Width="1000"
-        Height="520"
-        MinWidth="700"
-        MinHeight="400"
+        Height="560"
+        MinWidth="760"
+        MinHeight="440"
         WindowStartupLocation="CenterScreen">
     <Grid RowDefinitions="Auto,Auto,1*,Auto">
         <Border Grid.Row="0" Padding="10" BorderThickness="0,0,0,1"
@@ -21,9 +21,11 @@
                     <TextBlock Text="{Binding CompareLabel}" TextWrapping="NoWrap" />
                 </StackPanel>
                 <Button Grid.Row="0" Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Top"
-                        Content="Browse..." Command="{Binding BrowseCommand}" IsEnabled="{Binding !IsBusy}" />
+                        Content="{l:Loc Compare_Browse}" Command="{Binding BrowseCommand}"
+                        IsEnabled="{Binding !IsBusy}" />
                 <Button Grid.Row="0" Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Top"
-                        Content="Cancel" Command="{Binding CancelCommand}" IsEnabled="{Binding IsBusy}" />
+                        Content="{l:Loc Common_Cancel}" Command="{Binding CancelCommand}"
+                        IsEnabled="{Binding IsBusy}" />
                 <ProgressBar Grid.Row="1" Grid.ColumnSpan="3" Margin="0,8,0,0" MinHeight="4"
                              IsVisible="{Binding IsBusy}"
                              IsIndeterminate="{Binding IsProgressIndeterminate}"
@@ -31,7 +33,7 @@
             </Grid>
         </Border>
 
-        <Expander Grid.Row="1" Margin="10,6,10,0" Header="Warnings"
+        <Expander Grid.Row="1" Margin="10,6,10,0" Header="{l:Loc Compare_Warnings}"
                   IsVisible="{Binding HasWarnings}" IsExpanded="False">
             <TextBox Text="{Binding WarningsText}" IsReadOnly="True" AcceptsReturn="True"
                      MaxHeight="120" TextWrapping="Wrap" />
@@ -53,31 +55,62 @@
 
             <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
 
-            <Grid Grid.Column="2" RowDefinitions="Auto,2*,4,1*">
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="8,0,0,6">
-                    <TextBox Width="220" Watermark="Filter by name"
+            <Grid Grid.Column="2" RowDefinitions="Auto,Auto,2*,4,1*">
+                <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="8,0,0,6">
+                    <Button Content="{l:Loc Common_SelectAll}" Command="{Binding SelectAllCommand}" />
+                    <Button Content="{l:Loc Compare_ClearSelection}" Margin="6,0,0,0"
+                            Command="{Binding ClearSelectionCommand}" />
+                    <Button Content="{l:Loc Compare_ExportStructuredDiff}" Margin="12,0,0,0"
+                            Command="{Binding ExportStructuredDiffCommand}"
+                            IsEnabled="{Binding !IsBusy}" />
+                    <Button Content="{l:Loc Compare_MergeSelected}" Margin="6,0,0,0"
+                            Command="{Binding MergeSelectedCommand}"
+                            IsEnabled="{Binding !IsBusy}" />
+                    <CheckBox Content="{l:Loc Compare_DeleteRemoved}" Margin="12,0,0,0"
+                              IsChecked="{Binding DeleteRemoved}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding SelectedCountText}" Margin="12,0,0,0"
+                               VerticalAlignment="Center" Opacity="0.7" />
+                </WrapPanel>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="8,0,0,6">
+                    <TextBox Width="220" Watermark="{l:Loc Compare_FilterByName}"
                              Text="{Binding FilterText, Delay=250}" />
-                    <ComboBox Width="130"
-                              ItemsSource="{Binding StatusFilterOptions}"
-                              SelectedItem="{Binding SelectedStatusFilter}" />
-                    <TextBlock Text="{Binding Entries.Count, StringFormat='{}{0} resources'}"
+                    <ComboBox Width="130" SelectedIndex="{Binding StatusFilterIndex}">
+                        <ComboBoxItem Content="{l:Loc Compare_StatusDifferences}" />
+                        <ComboBoxItem Content="{l:Loc Compare_StatusAll}" />
+                        <ComboBoxItem Content="{l:Loc Compare_StatusAdded}" />
+                        <ComboBoxItem Content="{l:Loc Compare_StatusRemoved}" />
+                        <ComboBoxItem Content="{l:Loc Compare_StatusChanged}" />
+                    </ComboBox>
+                    <TextBlock Text="{Binding EntriesCountText}"
                                VerticalAlignment="Center" Opacity="0.7" />
                 </StackPanel>
 
-                <DataGrid Grid.Row="1" ItemsSource="{Binding Entries}"
+                <DataGrid Grid.Row="2" ItemsSource="{Binding Entries}"
                           SelectedItem="{Binding SelectedEntry}"
-                          IsReadOnly="True" CanUserResizeColumns="True"
+                          IsReadOnly="False" CanUserResizeColumns="True"
                           GridLinesVisibility="Horizontal" Margin="8,0,0,0">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="Auto" />
-                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
-                        <DataGridTextColumn Header="Type" Binding="{Binding TypeTitle}" Width="Auto" />
+                        <DataGridTemplateColumn Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="l:CompareEntryRow">
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="{l:Loc Compare_StatusHeader}" Binding="{Binding StatusText}"
+                                            Width="Auto" IsReadOnly="True" />
+                        <DataGridTextColumn Header="{l:Loc Common_Name}" Binding="{Binding Name}"
+                                            Width="*" IsReadOnly="True" />
+                        <DataGridTextColumn Header="{l:Loc Common_AssetType}" Binding="{Binding TypeTitle}"
+                                            Width="Auto" IsReadOnly="True" />
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <GridSplitter Grid.Row="2" ResizeDirection="Rows" />
+                <GridSplitter Grid.Row="3" ResizeDirection="Rows" />
 
-                <Grid Grid.Row="3" RowDefinitions="Auto,Auto,Auto,1*" Margin="8,0,0,0">
+                <Grid Grid.Row="4" RowDefinitions="Auto,Auto,Auto,1*" Margin="8,0,0,0">
                     <TextBlock Grid.Row="0" Text="{Binding DetailsTitle}" FontWeight="Bold"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock Grid.Row="1" Text="{Binding DetailsNote}" TextWrapping="Wrap"
@@ -87,17 +120,20 @@
 
                     <TabControl Grid.Row="3" Margin="0,6,0,0"
                                 SelectedIndex="{Binding DetailsTabIndex, Mode=TwoWay}">
-                        <TabItem Header="Properties">
+                        <TabItem Header="{l:Loc Compare_PropertiesTab}">
                             <DataGrid ItemsSource="{Binding PropertyDiffs}" IsReadOnly="True"
                                       CanUserResizeColumns="True" GridLinesVisibility="Horizontal">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Property" Binding="{Binding Path}" Width="2*" />
-                                    <DataGridTextColumn Header="Base" Binding="{Binding BaseValue}" Width="*" />
-                                    <DataGridTextColumn Header="Compare" Binding="{Binding CompareValue}" Width="*" />
+                                    <DataGridTextColumn Header="{l:Loc Common_Property}" Binding="{Binding Path}"
+                                                        Width="2*" />
+                                    <DataGridTextColumn Header="{l:Loc Compare_BaseValue}" Binding="{Binding BaseValue}"
+                                                        Width="*" />
+                                    <DataGridTextColumn Header="{l:Loc Compare_CompareValue}" Binding="{Binding CompareValue}"
+                                                        Width="*" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
-                        <TabItem Header="GML diff">
+                        <TabItem Header="{l:Loc Compare_GmlDiffTab}">
                             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                                           VerticalScrollBarVisibility="Auto">
                                 <TextBox Text="{Binding CodeDiffText}" IsReadOnly="True" AcceptsReturn="True"

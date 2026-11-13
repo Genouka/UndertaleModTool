@@ -1083,13 +1083,13 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
     {
         if (Data is null)
         {
-            await View!.MessageDialog("Open a data file before comparing data files.");
+            await View!.MessageDialog(LocalizationSource.GetString("Compare_OpenDataFirst"));
             return;
         }
 
         var files = await View!.OpenFileDialog(new FilePickerOpenOptions
         {
-            Title = "Select a data file to compare",
+            Title = LocalizationSource.GetString("Compare_SelectFile"),
             FileTypeFilter = FilePickerFileTypes.Data,
         });
         if (files.Count != 1)
