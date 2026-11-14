@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
@@ -20,7 +21,11 @@ namespace UndertaleModLib.Diff;
 /// </summary>
 public sealed class DataFilePatchBuilder
 {
-    private static readonly HashSet<string> UnsupportedCategoryIds =
+    /// <summary>
+    /// Categories captured through the generic snapshot codec instead of the project
+    /// serialization (they have no project asset representation).
+    /// </summary>
+    private static readonly HashSet<string> SnapshotCategoryIds =
     [
         "AudioGroups",
         "Timelines",
@@ -219,55 +224,91 @@ public sealed class DataFilePatchBuilder
         if (diffEntry.Change == AssetChangeKind.Removed)
         {
             entry.AssetType = GetAssetTypeName(diffEntry);
+            entry.ResourceTypeName = diffEntry.BaseResource?.GetType().FullName;
+
+            // Removed anonymous sub-code entries need their block excised from the parent blob;
+            // capture the segment info so the applier can find it.
+            if (diffEntry.BaseResource is UndertaleCode { ParentEntry: not null } removedChild)
+            {
+                return CaptureSubCodeEntry(tempDirectory, removedChild, entry);
+            }
             return entry;
         }
 
-        // General info is captured best-effort through the project's options snapshot.
+        // General info is captured verbatim (all fingerprinted fields) so it can be verified too.
         if (diffEntry.TypeId == "GeneralInfo")
         {
             entry.Kind = PatchEntryKind.GeneralInfo;
             entry.AssetPath = "general-info.json";
-            SerializableGeneralInfoOptions options = new()
-            {
-                FileName = _compareData.GeneralInfo?.FileName?.Content,
-                Config = _compareData.GeneralInfo?.Config?.Content,
-                GameID = _compareData.GeneralInfo?.GameID,
-                Name = _compareData.GeneralInfo?.Name?.Content,
-                DefaultWindowWidth = _compareData.GeneralInfo?.DefaultWindowWidth,
-                DefaultWindowHeight = _compareData.GeneralInfo?.DefaultWindowHeight,
-                GeneralInfo = _compareData.GeneralInfo?.Info,
-                DisplayName = _compareData.GeneralInfo?.DisplayName?.Content,
-                SteamAppID = _compareData.GeneralInfo?.SteamAppID,
-                GMS2FPS = _compareData.GeneralInfo?.GMS2FPS,
-                OptionsInfo = _compareData.Options?.Info,
-                VertexSync = _compareData.Options?.VertexSync,
-            };
+            UndertaleGeneralInfo info = _compareData.GeneralInfo;
+            UndertaleOptions options = _compareData.Options;
             PatchGeneralInfoSnapshot snapshot = new()
             {
-                Options = JsonSerializer.Serialize(options, CreateJsonOptions()),
-                GMS2RandomUID = _compareData.GeneralInfo?.GMS2RandomUID is { } uids ? [.. uids] : null,
+                IsDebuggerDisabled = info.IsDebuggerDisabled,
+                BytecodeVersion = info.BytecodeVersion,
+                Padding = info.Padding,
+                FileName = info.FileName?.Content,
+                Config = info.Config?.Content,
+                LastObj = info.LastObj,
+                LastTile = info.LastTile,
+                GameID = info.GameID,
+                DirectPlayGuid = info.DirectPlayGuid.ToString("D"),
+                Name = info.Name?.Content,
+                Major = info.Major,
+                Minor = info.Minor,
+                Release = info.Release,
+                Build = info.Build,
+                Branch = (int)info.Branch,
+                DefaultWindowWidth = info.DefaultWindowWidth,
+                DefaultWindowHeight = info.DefaultWindowHeight,
+                Info = (uint)info.Info,
+                LicenseMD5 = Convert.ToBase64String(info.LicenseMD5 ?? []),
+                LicenseCRC32 = info.LicenseCRC32,
+                Timestamp = info.Timestamp,
+                DisplayName = info.DisplayName?.Content,
+                ActiveTargets = info.ActiveTargets,
+                FunctionClassifications = (int)info.FunctionClassifications,
+                SteamAppID = info.SteamAppID,
+                DebuggerPort = info.DebuggerPort,
+                RoomOrder = [.. info.RoomOrder.Select(room => room?.Resource?.Name?.Content ?? "")],
+                GMS2RandomUID = [.. info.GMS2RandomUID],
+                GMS2FPS = info.GMS2FPS,
+                GMS2AllowStatistics = info.GMS2AllowStatistics,
+                GMS2GameGUID = Convert.ToBase64String(info.GMS2GameGUID ?? []),
+                InfoTimestampOffset = info.InfoTimestampOffset,
+                ShaderExtensionFlag = options?.ShaderExtensionFlag ?? 0,
+                ShaderExtensionVersion = options?.ShaderExtensionVersion ?? 0,
+                OptionsInfo = (uint)(options?.Info ?? default),
+                OptionsScale = options?.Scale ?? 0,
+                WindowColor = options?.WindowColor ?? 0,
+                ColorDepth = options?.ColorDepth ?? 0,
+                Resolution = options?.Resolution ?? 0,
+                Frequency = options?.Frequency ?? 0,
+                VertexSync = options?.VertexSync ?? 0,
+                Priority = options?.Priority ?? 0,
+                LoadAlpha = options?.LoadAlpha ?? 0,
+                NewFormat = options?.NewFormat ?? false,
+                Constants = [.. (options?.Constants ?? []).Select(c => new PatchOptionConstant
+                {
+                    Name = c?.Name?.Content ?? "",
+                    Value = c?.Value?.Content ?? "",
+                })],
             };
+
+            // Option images (back/front/load) are restored through the texture snapshot table.
+            CaptureOptionImages(entry, info);
+
             WriteJson(Path.Join(tempDirectory, entry.AssetPath), snapshot, CreateJsonOptions());
             return entry;
         }
 
-        // Categories the project serialization cannot capture are reported as unsupported.
-        if (UnsupportedCategoryIds.Contains(diffEntry.TypeId))
+        // Categories without a project asset representation are captured verbatim.
+        if (SnapshotCategoryIds.Contains(diffEntry.TypeId))
         {
-            entry.Supported = false;
-            entry.Kind = PatchEntryKind.Unsupported;
-            entry.UnsupportedReason = "The resource category cannot be serialized";
-            return entry;
+            return CaptureSnapshotEntry(tempDirectory, diffEntry, entry);
         }
 
         object resource = diffEntry.CompareResource;
-        if (resource is not IProjectAsset { ProjectExportable: true } projectAsset)
-        {
-            entry.Supported = false;
-            entry.Kind = PatchEntryKind.Unsupported;
-            entry.UnsupportedReason = "The resource does not support project serialization";
-            return entry;
-        }
 
         // Code entries are carried as decompiled GML (disassembly fallback would not compile),
         // except anonymous sub-entries which have no source of their own.
@@ -275,10 +316,7 @@ public sealed class DataFilePatchBuilder
         {
             if (code.ParentEntry is not null)
             {
-                entry.Supported = false;
-                entry.Kind = PatchEntryKind.Unsupported;
-                entry.UnsupportedReason = "The code entry is an anonymous sub-entry";
-                return entry;
+                return CaptureSubCodeEntry(tempDirectory, code, entry);
             }
 
             entry.Kind = PatchEntryKind.Asset;
@@ -287,24 +325,31 @@ public sealed class DataFilePatchBuilder
             return entry;
         }
 
+        // Special sprites (Spine, and unsupported SWF/vector types) are not marked
+        // ProjectExportable, but their metadata still serializes; the extra data is captured
+        // separately and unsupported types are rejected during capture.
+        bool specialSprite = resource is UndertaleSprite { IsSpecialType: true };
+        if (resource is not IProjectAsset { ProjectExportable: true } projectAsset)
+        {
+            if (!specialSprite || resource is not IProjectAsset spriteAsset)
+            {
+                entry.Supported = false;
+                entry.Kind = PatchEntryKind.Unsupported;
+                entry.UnsupportedReason = "The resource does not support project serialization";
+                return entry;
+            }
+            projectAsset = spriteAsset;
+        }
+
         // Sound entries: only builtin-group embedded sounds and streamed sounds are carried;
         // audio-group sounds reference external audio group data files.
         if (resource is UndertaleSound sound)
         {
             bool builtinGroup = sound.AudioGroup is null || sound.GroupID == _compareData.GetBuiltinSoundGroupID();
-            if (!IsStreamed(sound) && sound.AudioFile is null)
+            bool groupEmbedded = !IsStreamed(sound) && sound.AudioFile is null && sound.AudioID != -1;
+            if (groupEmbedded && !builtinGroup)
             {
-                entry.Supported = false;
-                entry.Kind = PatchEntryKind.Unsupported;
-                entry.UnsupportedReason = "The sound is embedded in an external audio group";
-                return entry;
-            }
-            if (!builtinGroup && sound.AudioFile is not null && !IsStreamed(sound))
-            {
-                entry.Supported = false;
-                entry.Kind = PatchEntryKind.Unsupported;
-                entry.UnsupportedReason = "The sound is embedded in an external audio group";
-                return entry;
+                return CaptureGroupSoundEntry(sourceContext, tempDirectory, sound, entry);
             }
         }
 
@@ -316,6 +361,11 @@ public sealed class DataFilePatchBuilder
         entry.AssetPath = assetPath;
         entry.Textures = textures;
         entry.Masks = masks;
+        if (_pendingSpriteExtra.TryGetValue(diffEntry.Name, out string? extraPath))
+        {
+            entry.SpriteExtraPath = extraPath;
+            _pendingSpriteExtra.Remove(diffEntry.Name);
+        }
         return entry;
     }
 
@@ -361,6 +411,174 @@ public sealed class DataFilePatchBuilder
         return assetPath.Replace('\\', '/');
     }
 
+    private readonly Dictionary<int, string> _capturedGroupFiles = [];
+
+    private PatchEntry CaptureGroupSoundEntry(CrossFileImportContext sourceContext, string tempDirectory,
+                                              UndertaleSound sound, PatchEntry entry)
+    {
+        entry.Kind = PatchEntryKind.GroupSound;
+        entry.AssetType = nameof(SerializableAssetType.Sound);
+
+        // Group audio is located through the compared file's directory, so the export runs with
+        // both context directories pointing at the compared file.
+        CrossFileImportContext exportContext = new(_compareData, _mainThreadAction);
+        exportContext.SetDataFilePaths(_compareFilePath, _compareFilePath);
+
+        string friendlyName = MakeFilename(entry.Name);
+        PatchEntryKind previousKind = entry.Kind;
+        entry.Kind = PatchEntryKind.Asset;
+        string exportedPath = SerializeAsset(exportContext, tempDirectory, new AssetDiffEntry
+        {
+            Name = entry.Name,
+            TypeId = entry.TypeId,
+            Change = AssetChangeKind.Changed,
+            CompareResource = sound,
+        }, ((IProjectAsset)sound).GenerateSerializableProjectAsset(exportContext)).AssetPath;
+        entry.Kind = previousKind;
+
+        // Read the compared file's group file once per group, so the base file can be seeded
+        // when it does not have that audio group yet.
+        string? groupFilePath = null;
+        if (_compareFilePath is not null)
+        {
+            int groupIndex = sound.GroupID;
+            if (!_capturedGroupFiles.TryGetValue(groupIndex, out groupFilePath))
+            {
+                string fileName = _compareData.AudioGroups is { Count: > 0 } groups &&
+                                  groupIndex < groups.Count &&
+                                  groups[groupIndex]?.Path?.Content is { Length: > 0 } customPath
+                    ? customPath
+                    : $"audiogroup{groupIndex}.dat";
+                string fullPath = Path.Join(Path.GetDirectoryName(_compareFilePath), fileName);
+                if (File.Exists(fullPath))
+                {
+                    string relative = $"audiogroups/group{groupIndex}.dat";
+                    string destination = Path.Join(tempDirectory, relative);
+                    Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                    File.Copy(fullPath, destination, true);
+                    groupFilePath = relative.Replace('\\', '/');
+                    _capturedGroupFiles[groupIndex] = groupFilePath;
+                }
+            }
+        }
+
+        PatchGroupSoundSnapshot snapshot = new()
+        {
+            SoundJsonPath = exportedPath,
+            AudioPath = exportedPath,
+            AudioId = sound.AudioID,
+            GroupIndex = sound.GroupID,
+            GroupName = sound.AudioGroup?.Name?.Content ?? "",
+            GroupFilePath = groupFilePath,
+        };
+        string snapshotPath = $"sounds/{friendlyName}.group.json";
+        Directory.CreateDirectory(Path.Join(tempDirectory, "sounds"));
+        WriteJson(Path.Join(tempDirectory, snapshotPath), snapshot, CreateJsonOptions());
+        entry.SnapshotPath = snapshotPath;
+        return entry;
+    }
+
+    private PatchEntry CaptureSubCodeEntry(string tempDirectory, UndertaleCode code, PatchEntry entry)
+    {
+        entry.Kind = PatchEntryKind.SubCode;
+        entry.ResourceTypeName = typeof(UndertaleCode).FullName;
+
+        string friendlyName = MakeFilename(code.Name?.Content ?? entry.Name);
+        string relativePath = $"code/{friendlyName}.subcode.json";
+        string destinationFile = Path.Join(tempDirectory, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile));
+
+        (int startIndex, int endIndex) = CodeFingerprint.GetSegmentInstructionRange(code);
+        IReadOnlyList<UndertaleInstruction> sourceInstructions = code.ParentEntry?.Instructions ?? code.Instructions;
+        List<PatchInstructionSnapshot> instructions = new(endIndex - startIndex);
+        for (int i = startIndex; i < endIndex; i++)
+        {
+            UndertaleInstruction instruction = sourceInstructions[i];
+            instructions.Add(new PatchInstructionSnapshot
+            {
+                Kind = (byte)instruction.Kind,
+                FirstWord = instruction.RawFirstWord,
+                Primitive = instruction.RawPrimitive,
+                ValueString = instruction.ValueString?.Resource?.Content,
+                ValueVariable = instruction.ValueVariable?.Name?.Content,
+                ValueFunction = instruction.ValueFunction?.Name?.Content,
+            });
+        }
+
+        PatchSubCodeSnapshot snapshot = new()
+        {
+            ParentEntry = code.ParentEntry?.Name?.Content ?? "",
+            Offset = code.Offset,
+            LocalsCount = (int)code.LocalsCount,
+            ArgumentsCount = code.ArgumentsCount,
+            WeirdLocalFlag = code.WeirdLocalFlag,
+            Instructions = instructions,
+        };
+        WriteJson(Path.Join(tempDirectory, relativePath), snapshot, CreateJsonOptions());
+
+        entry.SnapshotPath = relativePath.Replace('\\', '/');
+        entry.Code = new PatchCodeMeta
+        {
+            LocalsCount = (int)code.LocalsCount,
+            ArgumentsCount = code.ArgumentsCount,
+            WeirdLocalFlag = code.WeirdLocalFlag,
+        };
+        return entry;
+    }
+
+    private void CaptureOptionImages(PatchEntry entry, UndertaleGeneralInfo info)
+    {
+        List<PatchTextureRef> refs = [];
+        UndertaleOptions? options = _compareData.Options;
+        if (options is not null)
+        {
+            AddOptionImage(refs, options.BackImage, 0);
+            AddOptionImage(refs, options.FrontImage, 1);
+            AddOptionImage(refs, options.LoadImage, 2);
+        }
+        entry.Textures = refs;
+    }
+
+    private void AddOptionImage(List<PatchTextureRef> refs, UndertaleSprite.TextureEntry? texture, int frameIndex)
+    {
+        if (texture?.Texture is null)
+        {
+            return;
+        }
+        refs.Add(CaptureTextureRef(texture.Texture, frameIndex));
+    }
+
+    private readonly Dictionary<string, string> _pendingSpriteExtra = [];
+
+    private PatchEntry CaptureSnapshotEntry(string tempDirectory, AssetDiffEntry diffEntry, PatchEntry entry)
+    {
+        entry.Kind = PatchEntryKind.Snapshot;
+        entry.ResourceTypeName = diffEntry.CompareResource?.GetType().FullName;
+
+        string friendlyName = MakeFilename(diffEntry.Name);
+        string relativePath = "snapshots/" + diffEntry.TypeId + "/" + friendlyName + ".json";
+        string destinationFile = Path.Join(tempDirectory, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile));
+
+        try
+        {
+            JsonNode snapshot = PatchSnapshotCodec.Encode(_compareData, diffEntry.CompareResource);
+            using (FileStream fs = new(destinationFile, FileMode.Create, FileAccess.Write))
+            {
+                using System.Text.Json.Utf8JsonWriter writer = new(fs, new System.Text.Json.JsonWriterOptions { Indented = true });
+                snapshot.WriteTo(writer);
+            }
+            entry.SnapshotPath = relativePath.Replace('\\', '/');
+        }
+        catch (PatchSnapshotException e)
+        {
+            entry.Supported = false;
+            entry.Kind = PatchEntryKind.Unsupported;
+            entry.UnsupportedReason = e.Message;
+        }
+        return entry;
+    }
+
     private (string AssetPath, List<PatchTextureRef> Textures, List<string> Masks) SerializeAsset(
         CrossFileImportContext sourceContext, string tempDirectory,
         AssetDiffEntry diffEntry, ISerializableProjectAsset serializable)
@@ -374,10 +592,39 @@ public sealed class DataFilePatchBuilder
         List<string> maskPaths = [];
         if (serializable is SerializableSprite sprite)
         {
-            textureRefs = CaptureSpriteTextures((UndertaleSprite)diffEntry.CompareResource);
-            maskPaths = CaptureMasks(tempDirectory, (UndertaleSprite)diffEntry.CompareResource, folder, friendlyName);
+            UndertaleSprite sourceSprite = (UndertaleSprite)diffEntry.CompareResource;
+            textureRefs = CaptureSpriteTextures(sourceSprite);
+            maskPaths = CaptureMasks(tempDirectory, sourceSprite, folder, friendlyName);
             sprite.TextureCount = 0;
             sprite.MaskCount = 0;
+
+            if (sourceSprite.IsSpecialType && sourceSprite.SSpriteType != UndertaleSprite.SpriteType.Normal)
+            {
+                if (sourceSprite.SSpriteType == UndertaleSprite.SpriteType.Spine)
+                {
+                    PatchSpineSpriteSnapshot spineSnapshot = new()
+                    {
+                        SpineVersion = sourceSprite.SpineVersion,
+                        SpineJSON = sourceSprite.SpineJSON,
+                        SpineAtlas = sourceSprite.SpineAtlas,
+                        SpineTextures = [.. (sourceSprite.SpineTextures ?? []).Select(entry => new PatchSpineTextureEntry
+                        {
+                            PageWidth = entry.PageWidth,
+                            PageHeight = entry.PageHeight,
+                            TexBlob = entry.TexBlob is null ? null! : Convert.ToBase64String(entry.TexBlob),
+                            TextureEntryLength = entry.TextureEntryLength,
+                        })],
+                    };
+                    string extraPath = $"assets/{folder}/{friendlyName}/spine.json";
+                    Directory.CreateDirectory(Path.GetDirectoryName(Path.Join(tempDirectory, extraPath)));
+                    WriteJson(Path.Join(tempDirectory, extraPath), spineSnapshot, CreateJsonOptions());
+                    _pendingSpriteExtra[diffEntry.Name] = extraPath.Replace('\\', '/');
+                }
+                else
+                {
+                    throw new PatchSnapshotException($"Special sprite type \"{sourceSprite.SSpriteType}\" is not supported");
+                }
+            }
         }
         else if (serializable is SerializableBackground background)
         {
@@ -430,7 +677,7 @@ public sealed class DataFilePatchBuilder
         }
         if (texture.TextureExternal)
         {
-            throw new InvalidOperationException("External textures are not supported");
+            return CaptureExternalTextureRef(texture, pageItem, frameIndex);
         }
 
         int textureId = GetTextureSnapshotId(texture);
@@ -443,6 +690,58 @@ public sealed class DataFilePatchBuilder
             FrameIndex = frameIndex,
             PageItemPath = pageItemPath,
             TexturePath = texturePath,
+        };
+    }
+
+    private PatchTextureRef CaptureExternalTextureRef(UndertaleEmbeddedTexture texture,
+                                                      UndertaleTexturePageItem pageItem, int frameIndex)
+    {
+        if (_compareFilePath is null)
+        {
+            throw new PatchSnapshotException("External texture cannot be captured without the compared file path");
+        }
+        UndertaleTextureGroupInfo? group = texture.TextureInfo;
+        if (group?.Directory?.Content is null || group.Name?.Content is null || group.Extension?.Content is null)
+        {
+            throw new PatchSnapshotException("External texture has no texture group directory/name/extension");
+        }
+
+        string relative = Path.Join(group.Directory.Content,
+            group.Name.Content + "_" + texture.IndexInGroup + group.Extension.Content);
+        string fullPath = Path.Join(Path.GetDirectoryName(_compareFilePath), relative);
+        if (!File.Exists(fullPath))
+        {
+            throw new PatchSnapshotException($"External texture file \"{relative}\" was not found");
+        }
+
+        int textureId;
+        PatchTextureSnapshot snapshot = new()
+        {
+            Format = "External",
+            Data = Convert.ToBase64String(File.ReadAllBytes(fullPath)),
+            Scaled = texture.Scaled,
+            GeneratedMips = texture.GeneratedMips,
+            TextureWidth = texture.TextureWidth,
+            TextureHeight = texture.TextureHeight,
+            IndexInGroup = texture.IndexInGroup,
+            TextureGroupName = group.Name.Content,
+            TextureGroupDirectory = group.Directory.Content,
+            TextureGroupExtension = group.Extension.Content,
+            ExternalPath = relative.Replace('\\', '/'),
+        };
+        lock (_textureSnapshots)
+        {
+            textureId = _textureSnapshots.Count;
+            _textureSnapshots.Add(snapshot);
+        }
+        _textureSnapshotIds[texture] = textureId;
+
+        int pageItemId = GetPageItemSnapshotId(pageItem, textureId);
+        return new PatchTextureRef
+        {
+            FrameIndex = frameIndex,
+            PageItemPath = $"pageitems/{pageItemId}.json",
+            TexturePath = $"textures/{textureId}.json",
         };
     }
 

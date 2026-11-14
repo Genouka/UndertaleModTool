@@ -130,6 +130,20 @@ public sealed class AssetFingerprint
                 string? name = named.Name?.Content;
                 if (!string.IsNullOrEmpty(name))
                 {
+                    // UI nodes form a tree whose nested nodes are real content (not references
+                    // to independently tracked resources), so their members are hashed in place.
+                    if (named is Models.UndertaleUINode || named is Models.IUndertaleUINodeData)
+                    {
+                        AppendString(hash, "uinode");
+                        AppendString(hash, named.GetType().FullName ?? named.GetType().Name);
+                        foreach (AssetMemberWalker.MemberValue member in AssetMemberWalker.ReadMembers(named))
+                        {
+                            AppendString(hash, member.Name);
+                            AppendValue(hash, member.Value, depth + 1);
+                        }
+                        return;
+                    }
+
                     // Positional internal resources (texture pages, embedded textures, embedded
                     // audio) are matched by index, not by name, and their content participates in
                     // the fingerprint of every resource that references them. Hash their members

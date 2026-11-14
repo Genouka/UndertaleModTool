@@ -75,6 +75,15 @@ public sealed class PatchEntry
     /// <summary>Path (inside the patch) of the serialized asset JSON, relative to the archive root.</summary>
     public string AssetPath { get; set; }
 
+    /// <summary>Path (inside the patch) of the snapshot JSON for snapshot entries.</summary>
+    public string SnapshotPath { get; set; }
+
+    /// <summary>Full CLR type name of the resource, for snapshot entries and removals.</summary>
+    public string ResourceTypeName { get; set; }
+
+    /// <summary>Path (inside the patch) of the special sprite data snapshot (Spine), if any.</summary>
+    public string SpriteExtraPath { get; set; }
+
     /// <summary>Exact texture snapshots backing this asset; empty for assets without textures.</summary>
     public List<PatchTextureRef> Textures { get; set; } = [];
 
@@ -100,6 +109,15 @@ public enum PatchEntryKind
     /// <summary>The general info/options object, imported best-effort.</summary>
     GeneralInfo,
 
+    /// <summary>A resource captured by the generic snapshot codec (verbatim state).</summary>
+    Snapshot,
+
+    /// <summary>An anonymous sub-code entry captured as raw instructions.</summary>
+    SubCode,
+
+    /// <summary>A sound whose audio lives in an external audio group file.</summary>
+    GroupSound,
+
     /// <summary>A resource that only exists in the base file, deleted on request.</summary>
     Removed,
 
@@ -121,17 +139,66 @@ public sealed class PatchTextureRef
 }
 
 /// <summary>
-/// Verbatim general info/options snapshot. The project's options asset covers the
-/// user-editable fields; the extra members below are required so a patched file can
-/// compare equal to the compared file.
+/// Verbatim general info/options snapshot: every fingerprinted field of the general info and
+/// options objects, so a patched file compares equal to the compared file.
 /// </summary>
 public sealed class PatchGeneralInfoSnapshot
 {
-    /// <summary>The project options snapshot (JSON) carrying the user-editable fields.</summary>
-    public string Options { get; set; }
+    // General info
+    public bool IsDebuggerDisabled { get; set; }
+    public byte BytecodeVersion { get; set; }
+    public ushort Padding { get; set; }
+    public string FileName { get; set; }
+    public string Config { get; set; }
+    public uint LastObj { get; set; }
+    public uint LastTile { get; set; }
+    public uint GameID { get; set; }
+    public string DirectPlayGuid { get; set; }
+    public string Name { get; set; }
+    public uint Major { get; set; }
+    public uint Minor { get; set; }
+    public uint Release { get; set; }
+    public uint Build { get; set; }
+    public int Branch { get; set; }
+    public uint DefaultWindowWidth { get; set; }
+    public uint DefaultWindowHeight { get; set; }
+    public uint Info { get; set; }
+    public string LicenseMD5 { get; set; }
+    public uint LicenseCRC32 { get; set; }
+    public ulong Timestamp { get; set; }
+    public string DisplayName { get; set; }
+    public ulong ActiveTargets { get; set; }
+    public int FunctionClassifications { get; set; }
+    public int SteamAppID { get; set; }
+    public uint DebuggerPort { get; set; }
+    public List<string> RoomOrder { get; set; } = [];
+    public List<long> GMS2RandomUID { get; set; } = [];
+    public float GMS2FPS { get; set; }
+    public bool GMS2AllowStatistics { get; set; }
+    public string GMS2GameGUID { get; set; }
+    public bool InfoTimestampOffset { get; set; }
 
-    /// <inheritdoc cref="Models.UndertaleGeneralInfo.GMS2RandomUID"/>
-    public List<long> GMS2RandomUID { get; set; }
+    // Options
+    public int ShaderExtensionFlag { get; set; }
+    public int ShaderExtensionVersion { get; set; }
+    public uint OptionsInfo { get; set; }
+    public int OptionsScale { get; set; }
+    public uint WindowColor { get; set; }
+    public uint ColorDepth { get; set; }
+    public uint Resolution { get; set; }
+    public uint Frequency { get; set; }
+    public uint VertexSync { get; set; }
+    public uint Priority { get; set; }
+    public uint LoadAlpha { get; set; }
+    public bool NewFormat { get; set; }
+    public List<PatchOptionConstant> Constants { get; set; } = [];
+}
+
+/// <summary>One options constant (name/value pair).</summary>
+public sealed class PatchOptionConstant
+{
+    public string Name { get; set; } = "";
+    public string Value { get; set; } = "";
 }
 
 /// <summary>Bytecode metadata of a code entry, restored after GML recompilation.</summary>

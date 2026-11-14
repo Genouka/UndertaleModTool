@@ -23,9 +23,19 @@ public class DataFilePatchTests
             // Added: obj_added plus its Create code and the extra Destroy code of obj_test.
             // Removed: obj_removed plus its Create code. Changed: sprite, sound, path, object,
             // and the changed GML code entry.
-            Assert.Equal(3, diff.AddedCount);
-            Assert.Equal(2, diff.RemovedCount);
-            Assert.Equal(5, diff.ChangedCount);
+            System.Text.StringBuilder diffText = new();
+            foreach (AssetCategoryDiff category in diff.Categories)
+            {
+                foreach (AssetDiffEntry entry in category.Entries)
+                {
+                    if (entry.Change != AssetChangeKind.Unchanged)
+                    {
+                        diffText.AppendLine($"{category.Id}/{entry.Name}: {entry.Change}");
+                    }
+                }
+            }
+            Assert.True(diff.AddedCount == 5 && diff.RemovedCount == 2 && diff.ChangedCount == 11,
+                $"expected +5 -2 ~11, got +{diff.AddedCount} -{diff.RemovedCount} ~{diff.ChangedCount}\n{diffText}");
 
             new DataFilePatchBuilder(baseData, compareData).Build(diff, patchPath, "base", "compare");
             Assert.True(File.Exists(patchPath));
@@ -35,14 +45,13 @@ public class DataFilePatchTests
             DataFilePatchApplyResult applyResult = new DataFilePatchApplier(patched)
                 .Apply(patchPath, new DataFilePatchApplyOptions { DeleteRemoved = true });
 
-            Assert.Empty(applyResult.Errors);
+            Assert.True(applyResult.Errors.Count == 0, string.Join(Environment.NewLine, applyResult.Errors));
 
             // Write the patched data and reload it, so the verification covers what ends up on disk.
             byte[] bytes = WriteData(patched);
             UndertaleData reloaded = ReadData(bytes);
 
             DataFileDiffResult recheck = new DataFileDiffer(reloaded, compareData).Compare();
-            Assert.True(recheck.AddedCount == 0, DescribeDiff(recheck));
             Assert.True(recheck.AddedCount == 0 && recheck.RemovedCount == 0 && recheck.ChangedCount == 0,
                 DescribeDiff(recheck));
             Assert.Equal(0, recheck.AddedCount);
@@ -73,13 +82,13 @@ public class DataFilePatchTests
                 .Apply(patchPath, new DataFilePatchApplyOptions { DeleteRemoved = false });
 
             // obj_removed stays, everything else resolves; no errors expected.
-            Assert.Empty(applyResult.Errors);
+            Assert.True(applyResult.Errors.Count == 0, string.Join(Environment.NewLine, applyResult.Errors));
             Assert.NotNull(patched.GameObjects.ByName("obj_removed"));
 
             DataFileDiffResult recheck = new DataFileDiffer(patched, compareData).Compare();
             Assert.Equal(0, recheck.AddedCount);
             Assert.Equal(2, recheck.RemovedCount); // obj_removed and its code entry are still present
-            Assert.Equal(0, recheck.ChangedCount);
+            Assert.True(recheck.ChangedCount == 0, DescribeDiff(recheck));
         }
         finally
         {
@@ -117,37 +126,58 @@ public class DataFilePatchTests
         UndertaleData baseData = UndertaleData.CreateNew();
         UndertaleData compareData = UndertaleData.CreateNew();
 
-        // GMS2 data (the builtin sound group resolves to 0 consistently on write and read) with
-        // one audio group, so embedded sound references round-trip through the data file.
+        // GameMaker 2024.8 data: the builtin sound group resolves to 0 consistently on write
+        // and read, the particle system / filter / UI chunks are serializable, and the FUNC
+        // chunk no longer contains code locals (avoiding a version-detection heuristic).
         foreach (UndertaleData data in new[] { baseData, compareData })
         {
-            data.GeneralInfo.Major = 2;
+            data.GeneralInfo.Major = 2024;
+            data.GeneralInfo.Minor = 8;
             data.AudioGroups.Add(new UndertaleAudioGroup { Name = data.Strings.MakeString("audio_group0") });
         }
 
         // Align the bookkeeping fields of the general info, which are random per CreateNew call
         // and would otherwise show up as spurious differences (and cannot be meaningfully patched).
-        compareData.GeneralInfo.GameID = baseData.GeneralInfo.GameID;
-        compareData.GeneralInfo.Timestamp = baseData.GeneralInfo.Timestamp;
-        compareData.GeneralInfo.LicenseCRC32 = baseData.GeneralInfo.LicenseCRC32;
-        compareData.GeneralInfo.LicenseMD5 = [.. baseData.GeneralInfo.LicenseMD5];
-        compareData.GeneralInfo.DirectPlayGuid = baseData.GeneralInfo.DirectPlayGuid;
-        compareData.GeneralInfo.GMS2GameGUID = [.. baseData.GeneralInfo.GMS2GameGUID];
-        compareData.GeneralInfo.GMS2RandomUID.Clear();
-        compareData.GeneralInfo.GMS2RandomUID.AddRange(baseData.GeneralInfo.GMS2RandomUID);
-        compareData.Options.Constants.Clear();
-        foreach (UndertaleOptions.Constant constant in baseData.Options.Constants)
+        AlignBookkeeping(baseData, compareData);
+
+        // The remaining categories live in chunks CreateNew does not create.
+        foreach (UndertaleData data in new[] { baseData, compareData })
         {
-            compareData.Options.Constants.Add(new UndertaleOptions.Constant
-            {
-                Name = compareData.Strings.MakeString(constant.Name?.Content ?? ""),
-                Value = compareData.Strings.MakeString(constant.Value?.Content ?? ""),
-            });
+            data.FORM.Chunks["FEDS"] = new UndertaleChunkFEDS();
+            data.FORM.Chunks["PSYS"] = new UndertaleChunkPSYS();
+            data.FORM.Chunks["PSEM"] = new UndertaleChunkPSEM();
+            data.FORM.Chunks["UILR"] = new UndertaleChunkUILR();
+            data.FORM.ChunksTypeDict[typeof(UndertaleChunkFEDS)] = data.FORM.Chunks["FEDS"];
+            data.FORM.ChunksTypeDict[typeof(UndertaleChunkPSYS)] = data.FORM.Chunks["PSYS"];
+            data.FORM.ChunksTypeDict[typeof(UndertaleChunkPSEM)] = data.FORM.Chunks["PSEM"];
+            data.FORM.ChunksTypeDict[typeof(UndertaleChunkUILR)] = data.FORM.Chunks["UILR"];
+
+            MoveStringsChunkLast(data);
         }
+
+        // Sprite-backed resources are added after the sprite exists (see below); snapshot
+        // categories that do not reference sprites come first.
+        AddAudioGroups(baseData, compareData);
+        AddTimeline(baseData, "tl_test", moments: 1);
+        AddTimeline(compareData, "tl_test", moments: 2);
+        AddExtension(baseData, "ext_test", functionId: 7, optionValue: "a");
+        AddExtension(compareData, "ext_test", functionId: 8, optionValue: "b");
+        AddFilterEffect(baseData, "fe_test", "1");
+        AddFilterEffect(compareData, "fe_test", "2");
+
+        // Anonymous sub-code entry whose body changes without touching the parent's segment.
+        AddSubCode(baseData, "gml_Object_obj_sub_Create_0", childConstant: 2, extraChild: false);
+        AddSubCode(compareData, "gml_Object_obj_sub_Create_0", childConstant: 3, extraChild: true);
 
         // Sprite with texture + collision mask; the compared copy has different pixels and mask.
         AddSprite(baseData, "spr_test", changed: false);
         AddSprite(compareData, "spr_test", changed: true);
+
+        // Sprite-referencing snapshot categories (emitters, UI sprite instances).
+        AddParticleSystem(baseData, "ps_test", emitterSpeed: 1f);
+        AddParticleSystem(compareData, "ps_test", emitterSpeed: 2f);
+        AddUIRoot(baseData, "ui_root", padding: 1f);
+        AddUIRoot(compareData, "ui_root", padding: 2f);
 
         // Code entry, decompiled and recompiled through the patch; constant differs.
         AddCompiledCode(baseData, "gml_Object_obj_test_Draw_0", "a = 1 + 2;");
@@ -339,6 +369,650 @@ public class DataFilePatchTests
         data.Paths.Add(path);
     }
 
+    [Fact]
+    public void Apply_HandlesExternalTextureAndAudioGroupSound()
+    {
+        // This scenario needs real files on disk: external texture and audio group content is
+        // resolved relative to the data file's directory.
+        string root = Path.Combine(Path.GetTempPath(), $"utmt-patch-ext-{Guid.NewGuid():N}");
+        string baseDir = Path.Join(root, "base");
+        string compareDir = Path.Join(root, "compare");
+        string outDir = Path.Join(root, "out");
+        Directory.CreateDirectory(baseDir);
+        Directory.CreateDirectory(compareDir);
+        Directory.CreateDirectory(outDir);
+        string patchPath = Path.Join(root, "ext.utmt-patch");
+
+        try
+        {
+            (UndertaleData a, UndertaleData b) = BuildExternalPair();
+
+            // External content lives next to the data files; auxiliary files are the only ones
+            // written here. The data files themselves stay in memory, because synthetic data
+            // files do not survive the library's version-detection heuristics.
+            Directory.CreateDirectory(Path.Join(baseDir, "tex"));
+            Directory.CreateDirectory(Path.Join(compareDir, "tex"));
+            WriteExternalTextureFile(a, Path.Join(baseDir, "tex", "texgroup_0.png"), 0x11);
+            WriteExternalTextureFile(b, Path.Join(compareDir, "tex", "texgroup_0.png"), 0x22);
+            WriteGroupFile(baseDir, audioByte: 0x33);
+            WriteGroupFile(compareDir, audioByte: 0x44);
+            LinkExternalTextureGroup(a);
+            LinkExternalTextureGroup(b);
+
+            DataFileDiffResult diff = new DataFileDiffer(a, b).Compare();
+            Assert.Contains(diff.Categories.Single(c => c.Id == "Sprites").Entries,
+                e => e.Change == AssetChangeKind.Changed);
+            Assert.Contains(diff.Categories.Single(c => c.Id == "Sounds").Entries,
+                e => e.Name == "snd_group" && e.Change == AssetChangeKind.Changed);
+
+            new DataFilePatchBuilder(a, b, Path.Join(compareDir, "main.win"))
+                .Build(diff, patchPath, "base", "compare");
+
+            UndertaleData patched = a;
+            DataFilePatchApplyResult applyResult = new DataFilePatchApplier(patched).Apply(patchPath,
+                new DataFilePatchApplyOptions
+                {
+                    DeleteRemoved = true,
+                    BaseDataDirectory = baseDir,
+                    OutputDirectory = outDir,
+                });
+            Assert.True(applyResult.Errors.Count == 0, string.Join(Environment.NewLine, applyResult.Errors));
+            Assert.Equal(0, applyResult.MismatchedCount);
+            Assert.Contains(applyResult.ExtraOutputFiles, f => f.EndsWith("texgroup_0.png", StringComparison.Ordinal));
+            Assert.Contains(applyResult.ExtraOutputFiles, f => f.EndsWith("audiogroup1.dat", StringComparison.Ordinal));
+
+            // The reconstructed auxiliary files must carry the compared content.
+            Assert.Equal(0x22, ReadExternalTextureByte(Path.Join(outDir, "tex", "texgroup_0.png")));
+            Assert.Contains((byte)0x44, File.ReadAllBytes(Path.Join(outDir, "audiogroup1.dat")));
+
+            DataFileDiffResult recheck = new DataFileDiffer(patched, b).Compare();
+            Assert.True(recheck.AddedCount == 0 && recheck.RemovedCount == 0 && recheck.ChangedCount == 0,
+                DescribeDiff(recheck));
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(root, recursive: true);
+            }
+            catch
+            {
+                // Best effort cleanup.
+            }
+        }
+    }
+
+    private static (UndertaleData, UndertaleData) BuildExternalPair()
+    {
+        UndertaleData baseData = UndertaleData.CreateNew();
+        UndertaleData compareData = UndertaleData.CreateNew();
+        foreach (UndertaleData data in new[] { baseData, compareData })
+        {
+            data.GeneralInfo.Major = 2024;
+            data.GeneralInfo.Minor = 8;
+            // An empty ROOM chunk keeps version-detection heuristics from misreading synthetic rooms.
+            data.Rooms.Clear();
+            data.AudioGroups.Add(new UndertaleAudioGroup { Name = data.Strings.MakeString("audio_group0") });
+            data.AudioGroups.Add(new UndertaleAudioGroup { Name = data.Strings.MakeString("audio_group1") });
+        }
+        AlignBookkeeping(baseData, compareData);
+
+        foreach (UndertaleData data in new[] { baseData, compareData })
+        {
+            UndertaleEmbeddedTexture texture = new()
+            {
+                Name = data.Strings.MakeString("Texture 0"),
+                TextureExternal = true,
+                TextureWidth = data == compareData ? 4 : 2,
+                TextureHeight = 1,
+                IndexInGroup = 0,
+                TextureData = null,
+            };
+            data.EmbeddedTextures.Add(texture);
+
+            UndertaleTexturePageItem pageItem = new()
+            {
+                Name = data.Strings.MakeString("PageItem 0"),
+                SourceWidth = 2,
+                SourceHeight = 1,
+                TargetWidth = 2,
+                TargetHeight = 1,
+                BoundingWidth = 2,
+                BoundingHeight = 1,
+                TexturePage = texture,
+            };
+            data.TexturePageItems.Add(pageItem);
+
+            UndertaleSprite sprite = new()
+            {
+                Name = data.Strings.MakeString("spr_ext"),
+                Width = data == compareData ? 3u : 2u,
+                Height = 1,
+            };
+            sprite.Textures.Add(new UndertaleSprite.TextureEntry { Texture = pageItem });
+            sprite.CollisionMasks.Add(sprite.NewMaskEntry(data));
+            data.Sprites.Add(sprite);
+        }
+
+        // Group sound: audio lives in audiogroup0.dat. The compared copy also changes the volume,
+        // because external audio bytes are outside the data file and not part of the comparison.
+        foreach (UndertaleData data in new[] { baseData, compareData })
+        {
+            data.Sounds.Add(new UndertaleSound
+            {
+                Name = data.Strings.MakeString("snd_group"),
+                Flags = UndertaleSound.AudioEntryFlags.IsEmbedded | UndertaleSound.AudioEntryFlags.Regular,
+                File = data.Strings.MakeString("snd_group.wav"),
+                Type = data.Strings.MakeString("wav"),
+                Volume = data == compareData ? 0.5f : 1f,
+                GroupID = 1,
+                AudioID = 0,
+                Preload = true,
+            });
+            data.Sounds[^1].AudioGroup = data.AudioGroups[1];
+        }
+
+        return (baseData, compareData);
+    }
+
+    private static void LinkExternalTextureGroup(UndertaleData data)
+    {
+        UndertaleEmbeddedTexture texture = data.EmbeddedTextures[0];
+        UndertaleTextureGroupInfo group = new()
+        {
+            Name = data.Strings.MakeString("texgroup"),
+            Directory = data.Strings.MakeString("tex"),
+            Extension = data.Strings.MakeString(".png"),
+        };
+        group.TexturePages.Add(new UndertaleResourceById<UndertaleEmbeddedTexture, UndertaleChunkTXTR>
+        {
+            Resource = texture,
+        });
+        texture.TextureInfo = group;
+    }
+
+    private static void WriteExternalTextureFile(UndertaleData data, string path, byte marker)
+    {
+        UndertaleEmbeddedTexture texture = data.EmbeddedTextures[0];
+        GMImage image = new(2, 1);
+        image.GetRawImageData()[0] = marker;
+        image = image.ConvertToQoi();
+        using FileStream fs = new(path, FileMode.Create, FileAccess.Write);
+        using FileBinaryWriter writer = new(fs);
+        new UndertaleEmbeddedTexture.TexData { Image = image }.Serialize(writer, true);
+    }
+
+    private static byte ReadExternalTextureByte(string path)
+    {
+        using FileStream fs = new(path, FileMode.Open, FileAccess.Read);
+        using FileBinaryReader reader = new(fs);
+        UndertaleEmbeddedTexture.TexData texData = new();
+        texData.Unserialize(reader, fs.Length, true);
+        return texData.Image!.ConvertToRawBgra().GetRawImageData()[0];
+    }
+
+    private static void WriteGroupFile(string directory, byte audioByte)
+    {
+        UndertaleData group = UndertaleData.CreateNew();
+        group.GeneralInfo.Major = 2024;
+        group.GeneralInfo.Minor = 8;
+        group.EmbeddedAudio.Add(new UndertaleEmbeddedAudio
+        {
+            Name = group.Strings.MakeString("EmbeddedSound 0"),
+            Data = [audioByte, audioByte, audioByte, audioByte],
+        });
+        WriteDataFile(group, Path.Join(directory, "audiogroup1.dat"));
+    }
+
+    private static void WriteDataFile(UndertaleData data, string path)
+    {
+        using FileStream fs = new(path, FileMode.Create, FileAccess.Write);
+        UndertaleIO.Write(fs, data);
+    }
+
+    private static UndertaleData ReadDataFile(string path, List<string>? warnings = null)
+    {
+        using FileStream fs = new(path, FileMode.Open, FileAccess.Read);
+        return UndertaleIO.Read(fs, (warning, _) =>
+        {
+            lock (warnings ?? new List<string>())
+            {
+                warnings?.Add(warning);
+            }
+        }, _ => { });
+    }
+
+    /// <summary>
+    /// The strings chunk must be written after every string-referencing chunk; string references
+    /// are only patched up when the strings themselves are written. The dictionary is rebuilt
+    /// because Dictionary reuses freed slots, so remove+add would keep the original order.
+    /// </summary>
+    [Fact]
+    public void Apply_RestoresGeneralInfoFields()
+    {
+        UndertaleData baseData = UndertaleData.CreateNew();
+        UndertaleData compareData = UndertaleData.CreateNew();
+        foreach (UndertaleData data in new[] { baseData, compareData })
+        {
+            data.GeneralInfo.Major = 2024;
+            data.GeneralInfo.Minor = 8;
+        }
+        AlignBookkeeping(baseData, compareData);
+
+        // Change fingerprinted general info and options fields in the compared file.
+        compareData.GeneralInfo.DisplayName = compareData.Strings.MakeString("Patched Game");
+        compareData.GeneralInfo.SteamAppID = 480;
+        compareData.GeneralInfo.GMS2FPS = 60f;
+        compareData.GeneralInfo.Info |= UndertaleGeneralInfo.InfoFlags.ShowCursor;
+        compareData.Options.Constants.Add(new UndertaleOptions.Constant
+        {
+            Name = compareData.Strings.MakeString("@@NewConstant"),
+            Value = compareData.Strings.MakeString("42"),
+        });
+
+        string patchPath = Path.Combine(Path.GetTempPath(), $"utmt-patch-test-{Guid.NewGuid():N}.utmt-patch");
+        try
+        {
+            baseData = Reload(baseData);
+            compareData = Reload(compareData);
+
+            DataFileDiffResult diff = new DataFileDiffer(baseData, compareData).Compare();
+            AssetCategoryDiff generalInfo = diff.Categories.Single(c => c.Id == "GeneralInfo");
+            Assert.Contains(generalInfo.Entries, e => e.Change == AssetChangeKind.Changed);
+
+            new DataFilePatchBuilder(baseData, compareData).Build(diff, patchPath, "base", "compare");
+
+            UndertaleData patched = Reload(baseData);
+            DataFilePatchApplyResult applyResult = new DataFilePatchApplier(patched)
+                .Apply(patchPath, new DataFilePatchApplyOptions { DeleteRemoved = true });
+            Assert.True(applyResult.Errors.Count == 0, string.Join(Environment.NewLine, applyResult.Errors));
+            Assert.Equal(0, applyResult.MismatchedCount);
+            Assert.True(applyResult.VerifiedCount > 0);
+
+            Assert.Equal("Patched Game", patched.GeneralInfo.DisplayName?.Content);
+            Assert.Equal(480, patched.GeneralInfo.SteamAppID);
+            Assert.Equal(60f, patched.GeneralInfo.GMS2FPS);
+            Assert.Contains(patched.Options.Constants, c => c.Name?.Content == "@@NewConstant" && c.Value?.Content == "42");
+
+            DataFileDiffResult recheck = new DataFileDiffer(patched, compareData).Compare();
+            Assert.True(recheck.AddedCount == 0 && recheck.RemovedCount == 0 && recheck.ChangedCount == 0,
+                DescribeDiff(recheck));
+        }
+        finally
+        {
+            File.Delete(patchPath);
+        }
+    }
+
+    [Fact]
+    public void Apply_RestoresSpineSpriteData()
+    {
+        UndertaleData baseData = UndertaleData.CreateNew();
+        UndertaleData compareData = UndertaleData.CreateNew();
+        foreach (UndertaleData data in new[] { baseData, compareData })
+        {
+            data.GeneralInfo.Major = 2024;
+            data.GeneralInfo.Minor = 8;
+            data.Rooms.Clear();
+        }
+        AlignBookkeeping(baseData, compareData);
+
+        AddSpineSprite(baseData, spineJson: "{\"bones\":[]}");
+        AddSpineSprite(compareData, spineJson: "{\"bones\":[{\"name\":\"root\"}]}");
+
+        string patchPath = Path.Combine(Path.GetTempPath(), $"utmt-patch-test-{Guid.NewGuid():N}.utmt-patch");
+        try
+        {
+            // Special sprites are exercised in memory: the write path for synthetic Spine data
+            // is outside the scope of the patch engine.
+            Assert.Equal(UndertaleSprite.SpriteType.Spine, baseData.Sprites.ByName("spr_spine").SSpriteType);
+
+            DataFileDiffResult diff = new DataFileDiffer(baseData, compareData).Compare();
+            Assert.Contains(diff.Categories.Single(c => c.Id == "Sprites").Entries,
+                e => e.Name == "spr_spine" && e.Change == AssetChangeKind.Changed);
+
+            new DataFilePatchBuilder(baseData, compareData).Build(diff, patchPath, "base", "compare");
+
+            UndertaleData patched = baseData;
+            DataFilePatchApplyResult applyResult = new DataFilePatchApplier(patched)
+                .Apply(patchPath, new DataFilePatchApplyOptions { DeleteRemoved = true });
+            Assert.True(applyResult.Errors.Count == 0, string.Join(Environment.NewLine, applyResult.Errors));
+            Assert.Equal(0, applyResult.MismatchedCount);
+            Assert.Equal("{\"bones\":[{\"name\":\"root\"}]}", patched.Sprites.ByName("spr_spine").SpineJSON);
+
+            DataFileDiffResult recheck = new DataFileDiffer(patched, compareData).Compare();
+            Assert.True(recheck.AddedCount == 0 && recheck.RemovedCount == 0 && recheck.ChangedCount == 0,
+                DescribeDiff(recheck));
+        }
+        finally
+        {
+            File.Delete(patchPath);
+        }
+    }
+
+    private static void AddSpineSprite(UndertaleData data, string spineJson)
+    {
+        GMImage image = new(2, 1);
+        image = image.ConvertToQoi();
+        UndertaleEmbeddedTexture texture = new()
+        {
+            Name = data.Strings.MakeString("Texture 0"),
+            TextureData = new UndertaleEmbeddedTexture.TexData { Image = image },
+        };
+        data.EmbeddedTextures.Add(texture);
+        UndertaleTexturePageItem pageItem = new()
+        {
+            Name = data.Strings.MakeString("PageItem 0"),
+            SourceWidth = 2,
+            SourceHeight = 1,
+            TargetWidth = 2,
+            TargetHeight = 1,
+            BoundingWidth = 2,
+            BoundingHeight = 1,
+            TexturePage = texture,
+        };
+        data.TexturePageItems.Add(pageItem);
+
+        UndertaleSprite sprite = new()
+        {
+            Name = data.Strings.MakeString("spr_spine"),
+            Width = 2,
+            Height = 1,
+            IsSpecialType = true,
+            SSpriteType = UndertaleSprite.SpriteType.Spine,
+            SpineVersion = 4,
+            SpineJSON = spineJson,
+            SpineAtlas = "atlas",
+            SpineTextures = [],
+        };
+        sprite.SpineTextures.Add(new UndertaleSpineTextureEntry
+        {
+            PageWidth = 2,
+            PageHeight = 1,
+            TextureEntryLength = 1,
+        });
+        sprite.Textures.Add(new UndertaleSprite.TextureEntry { Texture = pageItem });
+        data.Sprites.Add(sprite);
+    }
+
+    private static void MoveStringsChunkLast(UndertaleData data)
+    {
+        if (!data.FORM.Chunks.ContainsKey("STRG"))
+        {
+            return;
+        }
+        List<KeyValuePair<string, UndertaleChunk>> chunks = [.. data.FORM.Chunks.Where(c => c.Key != "STRG")];
+        chunks.Add(new("STRG", data.FORM.Chunks["STRG"]));
+        data.FORM.Chunks.Clear();
+        foreach (KeyValuePair<string, UndertaleChunk> chunk in chunks)
+        {
+            data.FORM.Chunks.Add(chunk.Key, chunk.Value);
+        }
+    }
+
+    private static void AlignBookkeeping(UndertaleData baseData, UndertaleData compareData)
+    {
+        compareData.GeneralInfo.GameID = baseData.GeneralInfo.GameID;
+        compareData.GeneralInfo.Timestamp = baseData.GeneralInfo.Timestamp;
+        compareData.GeneralInfo.LicenseCRC32 = baseData.GeneralInfo.LicenseCRC32;
+        compareData.GeneralInfo.LicenseMD5 = [.. baseData.GeneralInfo.LicenseMD5];
+        compareData.GeneralInfo.DirectPlayGuid = baseData.GeneralInfo.DirectPlayGuid;
+        compareData.GeneralInfo.GMS2GameGUID = [.. baseData.GeneralInfo.GMS2GameGUID];
+        compareData.GeneralInfo.GMS2RandomUID.Clear();
+        compareData.GeneralInfo.GMS2RandomUID.AddRange(baseData.GeneralInfo.GMS2RandomUID);
+        compareData.Options.Constants.Clear();
+        foreach (UndertaleOptions.Constant constant in baseData.Options.Constants)
+        {
+            compareData.Options.Constants.Add(new UndertaleOptions.Constant
+            {
+                Name = compareData.Strings.MakeString(constant.Name?.Content ?? ""),
+                Value = compareData.Strings.MakeString(constant.Value?.Content ?? ""),
+            });
+        }
+    }
+
+    [Fact]
+    public void Apply_RemovesSubCodeEntry_WhenDeletionEnabled()
+    {
+        UndertaleData baseData = UndertaleData.CreateNew();
+        UndertaleData compareData = UndertaleData.CreateNew();
+        foreach (UndertaleData data in new[] { baseData, compareData })
+        {
+            data.GeneralInfo.Major = 2024;
+            data.GeneralInfo.Minor = 8;
+        }
+        AlignBookkeeping(baseData, compareData);
+
+        AddSubCode(baseData, "gml_Object_obj_sub_Create_0", childConstant: 2, extraChild: true);
+        AddSubCode(compareData, "gml_Object_obj_sub_Create_0", childConstant: 2, extraChild: false);
+
+        string patchPath = Path.Combine(Path.GetTempPath(), $"utmt-patch-test-{Guid.NewGuid():N}.utmt-patch");
+        try
+        {
+            baseData = Reload(baseData);
+            compareData = Reload(compareData);
+
+            DataFileDiffResult diff = new DataFileDiffer(baseData, compareData).Compare();
+            AssetCategoryDiff code = diff.Categories.Single(c => c.Id == "Code");
+            Assert.Contains(code.Entries, e => e.Name == "gml_Object_obj_sub_Create_0_child2" && e.Change == AssetChangeKind.Removed);
+
+            new DataFilePatchBuilder(baseData, compareData).Build(diff, patchPath, "base", "compare");
+
+            UndertaleData patched = Reload(baseData);
+            DataFilePatchApplyResult applyResult = new DataFilePatchApplier(patched)
+                .Apply(patchPath, new DataFilePatchApplyOptions { DeleteRemoved = true });
+            Assert.True(applyResult.Errors.Count == 0, string.Join(Environment.NewLine, applyResult.Errors));
+            Assert.Null(patched.Code.ByName("gml_Object_obj_sub_Create_0_child2"));
+
+            byte[] bytes = WriteData(patched);
+            UndertaleData reloaded = ReadData(bytes);
+            DataFileDiffResult recheck = new DataFileDiffer(reloaded, compareData).Compare();
+            Assert.True(recheck.AddedCount == 0 && recheck.RemovedCount == 0 && recheck.ChangedCount == 0,
+                DescribeDiff(recheck));
+        }
+        finally
+        {
+            File.Delete(patchPath);
+        }
+    }
+
+    private static void AddSubCode(UndertaleData data, string parentName, int childConstant, bool extraChild)
+    {
+        UndertaleCode parent = new() { Name = data.Strings.MakeString(parentName) };
+        UndertaleInstruction MakeConstant(int value) => new()
+        {
+            Kind = UndertaleInstruction.Opcode.Push,
+            Type1 = UndertaleInstruction.DataType.Int32,
+            IntArgument = value,
+        };
+        UndertaleInstruction MakePopz() => new() { Kind = UndertaleInstruction.Opcode.Popz };
+
+        // Root segment: push 1; popz
+        parent.Instructions.Add(MakeConstant(1));
+        parent.Instructions.Add(MakePopz());
+
+        UndertaleCode child = new() { Name = data.Strings.MakeString($"{parentName}_child") };
+        child.ParentEntry = parent;
+        child.Offset = 0;
+        foreach (UndertaleInstruction instruction in parent.Instructions)
+        {
+            child.Offset += CodeFingerprint.GetInstructionSize(instruction) * 4;
+        }
+        parent.ChildEntries.Add(child);
+
+        // Child segment: push <const>; popz
+        parent.Instructions.Add(MakeConstant(childConstant));
+        parent.Instructions.Add(MakePopz());
+
+        data.Code.Add(parent);
+        data.Code.Add(child);
+
+        if (extraChild)
+        {
+            UndertaleCode extra = new() { Name = data.Strings.MakeString($"{parentName}_child2") };
+            extra.ParentEntry = parent;
+            extra.Offset = child.Offset + (CodeFingerprint.GetInstructionSize(MakeConstant(childConstant))
+                                          + CodeFingerprint.GetInstructionSize(MakePopz())) * 4;
+            parent.ChildEntries.Add(extra);
+            parent.Instructions.Add(MakeConstant(7));
+            parent.Instructions.Add(MakePopz());
+            data.Code.Add(extra);
+        }
+    }
+
+    private static void AddAudioGroups(UndertaleData baseData, UndertaleData compareData)
+    {
+        // Both already get "audio_group0" (needed for embedded sound round-tripping); the
+        // compared file gains a second group.
+        compareData.AudioGroups.Add(new UndertaleAudioGroup
+        {
+            Name = compareData.Strings.MakeString("audio_group1"),
+        });
+    }
+
+    private static void AddTimeline(UndertaleData data, string name, int moments)
+    {
+        UndertaleCode code = new()
+        {
+            Name = data.Strings.MakeString($"gml_Timeline_{name}"),
+        };
+        data.Code.Add(code);
+        UndertaleModLib.Compiler.CodeImportGroup group = new(data);
+        group.QueueReplace(code, "t = 1;");
+        group.Import(true);
+
+        UndertaleTimeline timeline = new()
+        {
+            Name = data.Strings.MakeString(name),
+        };
+        for (int i = 0; i < moments; i++)
+        {
+            UndertaleTimeline.UndertaleTimelineMoment moment = new()
+            {
+                Step = (uint)(10 * (i + 1)),
+                Event = new(),
+            };
+            moment.Event.Add(new UndertaleGameObject.EventAction
+            {
+                LibID = 1,
+                ID = 603,
+                Kind = 7,
+                UseApplyTo = true,
+                ExeType = 2,
+                ActionName = data.Strings.MakeString(""),
+                CodeId = code,
+                ArgumentCount = 1,
+                Who = -1,
+            });
+            timeline.Moments.Add(moment);
+        }
+        data.Timelines.Add(timeline);
+    }
+
+    private static void AddExtension(UndertaleData data, string name, uint functionId, string optionValue)
+    {
+        UndertaleExtension extension = new()
+        {
+            Name = data.Strings.MakeString(name),
+            FolderName = data.Strings.MakeString(name),
+            ClassName = data.Strings.MakeString(""),
+            Version = data.Strings.MakeString("1.0"),
+        };
+
+        UndertaleExtensionFile file = new()
+        {
+            Filename = data.Strings.MakeString("ext.dll"),
+            CleanupScript = data.Strings.MakeString(""),
+            InitScript = data.Strings.MakeString(""),
+            Kind = UndertaleExtensionKind.Dll,
+        };
+        UndertaleExtensionFunction function = new()
+        {
+            Name = data.Strings.MakeString("ext_function"),
+            ID = functionId,
+            Kind = 11,
+            RetType = UndertaleExtensionVarType.Double,
+            ExtName = data.Strings.MakeString("ext_function"),
+        };
+        function.Arguments.Add(new UndertaleExtensionFunctionArg(UndertaleExtensionVarType.Double));
+        function.Arguments.Add(new UndertaleExtensionFunctionArg(UndertaleExtensionVarType.String));
+        file.Functions.Add(function);
+        extension.Files.Add(file);
+
+        extension.Options.Add(new UndertaleExtensionOption
+        {
+            Name = data.Strings.MakeString("ext_option"),
+            Value = data.Strings.MakeString(optionValue),
+            Kind = UndertaleExtensionOption.OptionKind.String,
+        });
+        data.Extensions.Add(extension);
+    }
+
+    private static void AddParticleSystem(UndertaleData data, string name, float emitterSpeed)
+    {
+        UndertaleSprite sprite = data.Sprites.ByName("spr_test") ?? throw new InvalidOperationException("sprite required");
+        UndertaleParticleSystemEmitter emitter = new()
+        {
+            Name = data.Strings.MakeString("pse_test"),
+            Enabled = true,
+            Mode = UndertaleParticleSystemEmitter.EmitMode.Stream,
+            SpeedMin = emitterSpeed,
+            SpeedMax = emitterSpeed + 1,
+            Sprite = sprite,
+        };
+        emitter.SpawnOnUpdate = emitter;
+        data.ParticleSystemEmitters.Add(emitter);
+
+        UndertaleParticleSystem system = new()
+        {
+            Name = data.Strings.MakeString(name),
+            OriginX = 5,
+            OriginY = 6,
+            DrawOrder = UndertaleParticleSystem.DrawOrderEnum.OldOnTop,
+        };
+        system.Emitters.Add(new UndertaleResourceById<UndertaleParticleSystemEmitter, UndertaleChunkPSEM>
+        {
+            Resource = emitter,
+        });
+        data.ParticleSystems.Add(system);
+    }
+
+    private static void AddFilterEffect(UndertaleData data, string name, string value)
+    {
+        data.FilterEffects.Add(new UndertaleFilterEffect
+        {
+            Name = data.Strings.MakeString(name),
+            Value = data.Strings.MakeString(value),
+        });
+    }
+
+    private static void AddUIRoot(UndertaleData data, string name, float padding)
+    {
+        UndertaleSprite sprite = data.Sprites.ByName("spr_test") ?? throw new InvalidOperationException("sprite required");
+        UndertaleUISpriteInstance spriteInstance = new()
+        {
+            Name = data.Strings.MakeString("ui_spr"),
+            Sprite = sprite,
+            X = 3,
+            Y = 4,
+        };
+        UndertaleUIFlexPanel panel = new()
+        {
+            Name = data.Strings.MakeString("ui_panel"),
+            PaddingLeft = new UndertaleFlexValue(padding, UndertaleFlexValue.UnitKind.Point),
+            Width = new UndertaleFlexValue(100, UndertaleFlexValue.UnitKind.Point),
+        };
+        panel.Children.Add(new UndertaleUINode { Node = spriteInstance });
+
+        UndertaleUILayer layer = new()
+        {
+            Name = data.Strings.MakeString(name),
+            Visible = true,
+        };
+        layer.Children.Add(new UndertaleUINode { Node = panel });
+        data.UINodes.Add(new UndertaleUIRootNode { Node = layer });
+    }
+
     private static string DescribeDiff(DataFileDiffResult diff)
     {
         System.Text.StringBuilder builder = new();
@@ -370,6 +1044,8 @@ public class DataFilePatchTests
     private static UndertaleData ReadData(byte[] bytes)
     {
         using MemoryStream ms = new(bytes);
-        return UndertaleIO.Read(ms, null, _ => { });
+        // Warnings are expected for minimal synthetic data (for example the room chunk's
+        // version-dependent alignment); they do not affect the patched content.
+        return UndertaleIO.Read(ms, (_, _) => { }, _ => { });
     }
 }

@@ -101,6 +101,15 @@ public partial class ProjectContext
     /// (sounds, code sources) can locate them. Used by the data file patch applier, which
     /// extracts patch contents to a temporary directory instead of going through SaveProject.
     /// </summary>
+    /// <summary>
+    /// Initializes the audio group cache, for contexts that load audio groups without a full
+    /// project session (cross-file import and the data file patch engine).
+    /// </summary>
+    internal void InitializeAudioGroupCache()
+    {
+        _audioGroups ??= new(Data.AudioGroups?.Count ?? 4);
+    }
+
     internal void RegisterAssetDataPath(string dataName, SerializableAssetType assetType, string path)
     {
         _assetDataNamesToPaths[new AssetNameTypePair(dataName, assetType)] = path;
