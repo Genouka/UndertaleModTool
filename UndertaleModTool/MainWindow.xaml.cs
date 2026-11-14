@@ -5215,12 +5215,42 @@ namespace UndertaleModTool
         {
             OpenFileDialog patchDialog = new()
             {
-                Title = LocalizationSource.GetString("Patch_SelectFile"),
+                Title = LocalizationSource.GetString("Patch_SelectFiles"),
+                Multiselect = true,
                 Filter = LocalizationSource.GetString("Filter_PatchFiles") + "|*." + UndertaleModLib.Diff.DataFilePatch.FileExtension + "|" +
                          LocalizationSource.GetString("Filter_AllFiles") + "|*"
             };
-            if (patchDialog.ShowDialog(this) != true)
+            if (patchDialog.ShowDialog(this) != true || patchDialog.FileNames.Length == 0)
             {
+                return;
+            }
+
+            // Default order: MD5 chain (result of one diff feeding the base of the next),
+            // then alphabetical for diffs that cannot be chained. The user can adjust it.
+            List<string> orderedPatchPaths;
+            try
+            {
+                List<UndertaleModLib.Diff.PatchChainEntry> entries =
+                    UndertaleModLib.Diff.DataFilePatchChain.ReadManifests(patchDialog.FileNames);
+                entries = UndertaleModLib.Diff.DataFilePatchChain.SortByChain(entries);
+                if (entries.Count > 1)
+                {
+                    PatchOrderWindow orderWindow = new(entries) { Owner = this };
+                    if (orderWindow.ShowDialog() != true || orderWindow.OrderedPaths is null)
+                    {
+                        return;
+                    }
+                    orderedPatchPaths = [.. orderWindow.OrderedPaths];
+                }
+                else
+                {
+                    orderedPatchPaths = [entries[0].Path];
+                }
+            }
+            catch (Exception ex)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Patch_ApplyFailed"), ex.Message),
+                    LocalizationSource.GetString("Patch_Title"));
                 return;
             }
 
@@ -5249,7 +5279,6 @@ namespace UndertaleModTool
             bool deleteRemoved = this.ShowQuestion(LocalizationSource.GetString("Patch_DeleteRemovedQuestion"),
                 MessageBoxImage.Question, LocalizationSource.GetString("Patch_Title")) == MessageBoxResult.Yes;
 
-            string patchPath = patchDialog.FileName;
             string basePath = baseDialog.FileName;
             string outputPath = outputDialog.FileName;
 
@@ -5282,14 +5311,15 @@ namespace UndertaleModTool
                     try
                     {
                         progress.Report(LocalizationSource.GetString("Patch_Applying"));
-                        UndertaleModLib.Diff.DataFilePatchApplier applier = new(baseData, MainThreadAction);
-                        applyResult = applier.Apply(patchPath,
+                        applyResult = UndertaleModLib.Diff.DataFilePatchChain.ApplyMany(baseData,
+                            orderedPatchPaths,
                             new UndertaleModLib.Diff.DataFilePatchApplyOptions
                             {
                                 DeleteRemoved = deleteRemoved,
                                 BaseDataDirectory = Path.GetDirectoryName(basePath),
                                 BaseFilePath = basePath,
                                 OutputDirectory = Path.GetDirectoryName(outputPath),
+                                MainThreadAction = MainThreadAction,
                             },
                             progress);
 
@@ -5323,6 +5353,7 @@ namespace UndertaleModTool
                 applyResult.VerifiedCount, applyResult.MismatchedCount, applyResult.UnsupportedCount);
 
             List<string> details = [];
+            details.AddRange(applyResult.StepSummaries);
             details.AddRange(applyResult.Unsupported);
             details.AddRange(applyResult.BaseDriftWarnings);
             details.AddRange(applyResult.Warnings);
