@@ -5284,7 +5284,12 @@ namespace UndertaleModTool
                         progress.Report(LocalizationSource.GetString("Patch_Applying"));
                         UndertaleModLib.Diff.DataFilePatchApplier applier = new(baseData, MainThreadAction);
                         applyResult = applier.Apply(patchPath,
-                            new UndertaleModLib.Diff.DataFilePatchApplyOptions { DeleteRemoved = deleteRemoved },
+                            new UndertaleModLib.Diff.DataFilePatchApplyOptions
+                            {
+                                DeleteRemoved = deleteRemoved,
+                                BaseDataDirectory = Path.GetDirectoryName(basePath),
+                                OutputDirectory = Path.GetDirectoryName(outputPath),
+                            },
                             progress);
 
                         progress.Report(LocalizationSource.GetString("Patch_SavingOutput"));
@@ -5323,6 +5328,10 @@ namespace UndertaleModTool
             details.AddRange(applyResult.Errors);
             lock (warnings)
                 details.AddRange(warnings);
+            foreach (string file in applyResult.ExtraOutputFiles)
+            {
+                details.Add(file);
+            }
             if (details.Count > 0)
             {
                 const int maxDetails = 20;
