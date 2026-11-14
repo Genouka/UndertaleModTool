@@ -443,7 +443,7 @@ public partial class DataFileCompareViewModel : ObservableObject, IDisposable
         IStorageFile? file = await _view.SaveFileDialog(new FilePickerSaveOptions
         {
             Title = Loc("Compare_SavePatchDialogTitle"),
-            SuggestedFileName = Path.GetFileNameWithoutExtension(_compareFile.Name) + ".utmt-patch",
+            SuggestedFileName = Path.GetFileNameWithoutExtension(_compareFile.Name) + "." + DataFilePatch.FileExtension,
             FileTypeChoices = [FilePickerFileTypes.Patch],
             DefaultExtension = DataFilePatch.FileExtension,
         });
@@ -468,7 +468,7 @@ public partial class DataFileCompareViewModel : ObservableObject, IDisposable
             DataFileDiffResult result = _result;
             await Task.Run(() =>
             {
-                DataFilePatchBuilder builder = new(_baseData, _compareData, comparePath,
+                DataFilePatchBuilder builder = new(_baseData, _compareData, comparePath, null,
                     action => Dispatcher.UIThread.Invoke(action));
                 builder.Build(result, patchPath, baseLabel, compareLabel);
             });

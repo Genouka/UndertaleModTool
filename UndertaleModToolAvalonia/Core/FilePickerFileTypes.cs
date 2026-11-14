@@ -48,7 +48,7 @@ public static class FilePickerFileTypes
 
     public static readonly FilePickerFileType Patch = new(LocalizationSource.GetString("RefType_PatchFiles"))
     {
-        Patterns = ["*.utmt-patch"],
+        Patterns = ["*.qiuumtdiff"],
     };
 
     static readonly FilePickerFileType JSONSingle = new(LocalizationSource.GetString("RefType_JsonFiles"))

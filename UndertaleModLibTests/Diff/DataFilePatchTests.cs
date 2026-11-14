@@ -16,7 +16,7 @@ public class DataFilePatchTests
     {
         (UndertaleData baseData, UndertaleData compareData) = BuildDataPair();
 
-        string patchPath = Path.Combine(Path.GetTempPath(), $"utmt-patch-test-{Guid.NewGuid():N}.utmt-patch");
+        string patchPath = Path.Combine(Path.GetTempPath(), $"qiuumtdiff-test-{Guid.NewGuid():N}.qiuumtdiff");
         try
         {
             DataFileDiffResult diff = new DataFileDiffer(baseData, compareData).Compare();
@@ -71,7 +71,7 @@ public class DataFilePatchTests
     public void Apply_KeepsRemovedResources_WhenDeletionDisabled()
     {
         (UndertaleData baseData, UndertaleData compareData) = BuildDataPair();
-        string patchPath = Path.Combine(Path.GetTempPath(), $"utmt-patch-test-{Guid.NewGuid():N}.utmt-patch");
+        string patchPath = Path.Combine(Path.GetTempPath(), $"qiuumtdiff-test-{Guid.NewGuid():N}.qiuumtdiff");
         try
         {
             DataFileDiffResult diff = new DataFileDiffer(baseData, compareData).Compare();
@@ -100,7 +100,7 @@ public class DataFilePatchTests
     public void Apply_DetectsBaseDrift()
     {
         (UndertaleData baseData, UndertaleData compareData) = BuildDataPair();
-        string patchPath = Path.Combine(Path.GetTempPath(), $"utmt-patch-test-{Guid.NewGuid():N}.utmt-patch");
+        string patchPath = Path.Combine(Path.GetTempPath(), $"qiuumtdiff-test-{Guid.NewGuid():N}.qiuumtdiff");
         try
         {
             DataFileDiffResult diff = new DataFileDiffer(baseData, compareData).Compare();
@@ -374,14 +374,14 @@ public class DataFilePatchTests
     {
         // This scenario needs real files on disk: external texture and audio group content is
         // resolved relative to the data file's directory.
-        string root = Path.Combine(Path.GetTempPath(), $"utmt-patch-ext-{Guid.NewGuid():N}");
+        string root = Path.Combine(Path.GetTempPath(), $"qiuumtdiff-ext-{Guid.NewGuid():N}");
         string baseDir = Path.Join(root, "base");
         string compareDir = Path.Join(root, "compare");
         string outDir = Path.Join(root, "out");
         Directory.CreateDirectory(baseDir);
         Directory.CreateDirectory(compareDir);
         Directory.CreateDirectory(outDir);
-        string patchPath = Path.Join(root, "ext.utmt-patch");
+        string patchPath = Path.Join(root, "ext.qiuumtdiff");
 
         try
         {
@@ -399,14 +399,31 @@ public class DataFilePatchTests
             LinkExternalTextureGroup(a);
             LinkExternalTextureGroup(b);
 
+            // The data files themselves are only written so the recorded MD5s can be verified;
+            // they are never read back here (synthetic data file version detection is out of scope).
+            WriteDataFile(a, Path.Join(baseDir, "main.win"));
+            WriteDataFile(b, Path.Join(compareDir, "main.win"));
+
             DataFileDiffResult diff = new DataFileDiffer(a, b).Compare();
             Assert.Contains(diff.Categories.Single(c => c.Id == "Sprites").Entries,
                 e => e.Change == AssetChangeKind.Changed);
             Assert.Contains(diff.Categories.Single(c => c.Id == "Sounds").Entries,
                 e => e.Name == "snd_group" && e.Change == AssetChangeKind.Changed);
 
-            new DataFilePatchBuilder(a, b, Path.Join(compareDir, "main.win"))
+            new DataFilePatchBuilder(a, b, Path.Join(compareDir, "main.win"), Path.Join(baseDir, "main.win"))
                 .Build(diff, patchPath, "base", "compare");
+
+            // The manifest identifies the format and records both file MD5s for compatibility checks.
+            using (System.IO.Compression.ZipArchive archive = System.IO.Compression.ZipFile.OpenRead(patchPath))
+            using (Stream manifestStream = archive.GetEntry("patch.json")!.Open())
+            {
+                DataFilePatchManifest manifest =
+                    System.Text.Json.JsonSerializer.Deserialize<DataFilePatchManifest>(manifestStream)!;
+                Assert.Equal(DataFilePatch.FormatName, manifest.FormatName);
+                Assert.Equal(DataFilePatch.FormatVersion, manifest.FormatVersion);
+                Assert.Equal(FileMd5(Path.Join(baseDir, "main.win")), manifest.BaseFileMd5);
+                Assert.Equal(FileMd5(Path.Join(compareDir, "main.win")), manifest.ResultFileMd5);
+            }
 
             UndertaleData patched = a;
             DataFilePatchApplyResult applyResult = new DataFilePatchApplier(patched).Apply(patchPath,
@@ -414,10 +431,13 @@ public class DataFilePatchTests
                 {
                     DeleteRemoved = true,
                     BaseDataDirectory = baseDir,
+                    BaseFilePath = Path.Join(baseDir, "main.win"),
                     OutputDirectory = outDir,
                 });
             Assert.True(applyResult.Errors.Count == 0, string.Join(Environment.NewLine, applyResult.Errors));
             Assert.Equal(0, applyResult.MismatchedCount);
+            Assert.Empty(applyResult.BaseDriftWarnings);
+            Assert.Equal(FileMd5(Path.Join(compareDir, "main.win")), applyResult.ExpectedResultMd5);
             Assert.Contains(applyResult.ExtraOutputFiles, f => f.EndsWith("texgroup_0.png", StringComparison.Ordinal));
             Assert.Contains(applyResult.ExtraOutputFiles, f => f.EndsWith("audiogroup1.dat", StringComparison.Ordinal));
 
@@ -564,6 +584,11 @@ public class DataFilePatchTests
         WriteDataFile(group, Path.Join(directory, "audiogroup1.dat"));
     }
 
+    private static string FileMd5(string path)
+    {
+        return Convert.ToHexString(System.Security.Cryptography.MD5.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+    }
+
     private static void WriteDataFile(UndertaleData data, string path)
     {
         using FileStream fs = new(path, FileMode.Create, FileAccess.Write);
@@ -610,7 +635,7 @@ public class DataFilePatchTests
             Value = compareData.Strings.MakeString("42"),
         });
 
-        string patchPath = Path.Combine(Path.GetTempPath(), $"utmt-patch-test-{Guid.NewGuid():N}.utmt-patch");
+        string patchPath = Path.Combine(Path.GetTempPath(), $"qiuumtdiff-test-{Guid.NewGuid():N}.qiuumtdiff");
         try
         {
             baseData = Reload(baseData);
@@ -660,7 +685,7 @@ public class DataFilePatchTests
         AddSpineSprite(baseData, spineJson: "{\"bones\":[]}");
         AddSpineSprite(compareData, spineJson: "{\"bones\":[{\"name\":\"root\"}]}");
 
-        string patchPath = Path.Combine(Path.GetTempPath(), $"utmt-patch-test-{Guid.NewGuid():N}.utmt-patch");
+        string patchPath = Path.Combine(Path.GetTempPath(), $"qiuumtdiff-test-{Guid.NewGuid():N}.qiuumtdiff");
         try
         {
             // Special sprites are exercised in memory: the write path for synthetic Spine data
@@ -786,7 +811,7 @@ public class DataFilePatchTests
         AddSubCode(baseData, "gml_Object_obj_sub_Create_0", childConstant: 2, extraChild: true);
         AddSubCode(compareData, "gml_Object_obj_sub_Create_0", childConstant: 2, extraChild: false);
 
-        string patchPath = Path.Combine(Path.GetTempPath(), $"utmt-patch-test-{Guid.NewGuid():N}.utmt-patch");
+        string patchPath = Path.Combine(Path.GetTempPath(), $"qiuumtdiff-test-{Guid.NewGuid():N}.qiuumtdiff");
         try
         {
             baseData = Reload(baseData);

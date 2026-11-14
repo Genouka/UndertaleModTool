@@ -1169,6 +1169,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                         {
                             DeleteRemoved = deleteRemoved,
                             BaseDataDirectory = Path.GetDirectoryName(basePath),
+                            BaseFilePath = basePath,
                             OutputDirectory = Path.GetDirectoryName(outputPath),
                         },
                         new Progress<string>(message => Dispatcher.UIThread.Post(() =>
@@ -1197,6 +1198,14 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             lock (warnings)
                 details.AddRange(warnings);
             details.AddRange(applyResult.ExtraOutputFiles);
+            if (File.Exists(outputPath))
+            {
+                using FileStream outputStream = new(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                string outputMd5 = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(outputStream)).ToLowerInvariant();
+                details.Add(applyResult.ExpectedResultMd5 is null
+                    ? string.Format(LocalizationSource.GetString("Patch_OutputMd5"), outputMd5)
+                    : string.Format(LocalizationSource.GetString("Patch_OutputMd5Expected"), outputMd5, applyResult.ExpectedResultMd5));
+            }
             if (details.Count > 0)
             {
                 const int maxDetails = 20;

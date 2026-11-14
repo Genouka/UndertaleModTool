@@ -16,6 +16,12 @@ public sealed class DataFilePatchManifest
     /// <summary>The patch format version. Always <see cref="DataFilePatch.FormatVersion"/>.</summary>
     public int FormatVersion { get; set; } = DataFilePatch.FormatVersion;
 
+    /// <summary>MD5 of the original data file the patch applies to, when known at patch time.</summary>
+    public string BaseFileMd5 { get; set; }
+
+    /// <summary>MD5 of the compared (patched result) data file the patch reproduces, when known at patch time.</summary>
+    public string ResultFileMd5 { get; set; }
+
     /// <summary>Human-readable description of the base (target) data file.</summary>
     public string BaseLabel { get; set; } = "";
 
@@ -212,12 +218,12 @@ public sealed class PatchCodeMeta
 /// <summary>Static helpers of the data file patch format.</summary>
 public static class DataFilePatch
 {
-    /// <summary>The patch format identifier.</summary>
-    public const string FormatName = "utmt-data-patch";
+    /// <summary>The diff format identifier.</summary>
+    public const string FormatName = "qiuumtdiff";
 
-    /// <summary>The patch format version.</summary>
+    /// <summary>The diff format version code, for compatibility checks.</summary>
     public const int FormatVersion = 1;
 
-    /// <summary>The canonical patch file extension (without dot).</summary>
-    public const string FileExtension = "utmt-patch";
+    /// <summary>The canonical diff file extension (without dot).</summary>
+    public const string FileExtension = "qiuumtdiff";
 }

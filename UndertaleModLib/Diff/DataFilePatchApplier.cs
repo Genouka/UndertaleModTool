@@ -26,6 +26,9 @@ public sealed class DataFilePatchApplyOptions
     /// <summary>Directory of the base data file, used to load auxiliary files (audio groups).</summary>
     public string? BaseDataDirectory { get; set; }
 
+    /// <summary>Path of the base data file, used to verify the patch's recorded MD5. Optional.</summary>
+    public string? BaseFilePath { get; set; }
+
     /// <summary>Directory of the output data file, where auxiliary files (audio groups, external
     /// textures) are written. When <see langword="null"/>, auxiliary files are not written.</summary>
     public string? OutputDirectory { get; set; }
@@ -58,6 +61,9 @@ public sealed class DataFilePatchApplyResult
 
     /// <summary>Auxiliary files written next to the output data file (audio groups, external textures).</summary>
     public List<string> ExtraOutputFiles { get; } = [];
+
+    /// <summary>MD5 of the compared file recorded by the patch (the intended result), if known.</summary>
+    public string? ExpectedResultMd5 { get; set; }
 
     /// <summary>Short single-line summary, suitable for a status bar.</summary>
     public string GetSummary()
@@ -131,6 +137,29 @@ public sealed class DataFilePatchApplier
             {
                 manifest = JsonSerializer.Deserialize<DataFilePatchManifest>(fs, jsonOptions)
                     ?? throw new InvalidDataException("Patch manifest is empty");
+            }
+
+            if (!string.Equals(manifest.FormatName, DataFilePatch.FormatName, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"Unsupported diff format \"{manifest.FormatName}\" (expected \"{DataFilePatch.FormatName}\")");
+            }
+            if (manifest.FormatVersion > DataFilePatch.FormatVersion)
+            {
+                throw new InvalidDataException(
+                    $"Diff format version {manifest.FormatVersion} is newer than the supported version {DataFilePatch.FormatVersion}");
+            }
+
+            result.ExpectedResultMd5 = manifest.ResultFileMd5;
+            if (manifest.BaseFileMd5 is not null && options.BaseFilePath is not null && File.Exists(options.BaseFilePath))
+            {
+                using FileStream baseStream = new(options.BaseFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                string actual = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(baseStream)).ToLowerInvariant();
+                if (!string.Equals(actual, manifest.BaseFileMd5, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.BaseDriftWarnings.Add(
+                        $"base file MD5 mismatch: the patch was created for {manifest.BaseFileMd5}, the selected file is {actual}");
+                }
             }
 
             Apply(workDirectory, streamedDirectory, manifest, options, result, progress, cancellationToken, jsonOptions);

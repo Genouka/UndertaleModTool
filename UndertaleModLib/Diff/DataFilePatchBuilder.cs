@@ -40,6 +40,7 @@ public sealed class DataFilePatchBuilder
     private readonly UndertaleData _baseData;
     private readonly UndertaleData _compareData;
     private readonly string? _compareFilePath;
+    private readonly string? _baseFilePath;
     private readonly Action<Action> _mainThreadAction;
 
     /// <summary>Fingerprints of the compared data, cached across all entries of one build.</summary>
@@ -64,11 +65,13 @@ public sealed class DataFilePatchBuilder
     /// <param name="mainThreadAction">Marshals actions onto the data file's main thread; pass
     /// <see langword="null"/> for non-UI usage.</param>
     public DataFilePatchBuilder(UndertaleData baseData, UndertaleData compareData,
-                                string? compareFilePath = null, Action<Action>? mainThreadAction = null)
+                                string? compareFilePath = null, string? baseFilePath = null,
+                                Action<Action>? mainThreadAction = null)
     {
         _baseData = baseData ?? throw new ArgumentNullException(nameof(baseData));
         _compareData = compareData ?? throw new ArgumentNullException(nameof(compareData));
         _compareFilePath = compareFilePath;
+        _baseFilePath = baseFilePath;
         _mainThreadAction = mainThreadAction ?? new Action<Action>(action => action());
     }
 
@@ -88,7 +91,7 @@ public sealed class DataFilePatchBuilder
         ArgumentNullException.ThrowIfNull(result);
         ArgumentException.ThrowIfNullOrEmpty(patchFilePath);
 
-        string tempDirectory = Path.Combine(Path.GetTempPath(), "utmt-patch-" + Guid.NewGuid().ToString("N"));
+        string tempDirectory = Path.Combine(Path.GetTempPath(), "qiuumtdiff-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);
         try
         {
@@ -106,6 +109,8 @@ public sealed class DataFilePatchBuilder
 
             DataFilePatchManifest manifest = new()
             {
+                BaseFileMd5 = ComputeFileMd5(_baseFilePath),
+                ResultFileMd5 = ComputeFileMd5(_compareFilePath),
                 BaseLabel = baseLabel ?? "",
                 CompareLabel = compareLabel ?? "",
                 GeneratedAt = DateTimeOffset.UtcNow.ToString("o", CultureInfo.InvariantCulture),
@@ -144,6 +149,16 @@ public sealed class DataFilePatchBuilder
                 // Best effort cleanup; the patch itself is already complete.
             }
         }
+    }
+
+    private static string? ComputeFileMd5(string? path)
+    {
+        if (path is null || !File.Exists(path))
+        {
+            return null;
+        }
+        using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return Convert.ToHexString(System.Security.Cryptography.MD5.HashData(stream)).ToLowerInvariant();
     }
 
     private static JsonSerializerOptions CreateJsonOptions()

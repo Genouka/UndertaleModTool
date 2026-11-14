@@ -402,7 +402,7 @@ namespace UndertaleModTool
             SaveFileDialog dialog = new()
             {
                 Title = Loc("Compare_SavePatchDialogTitle"),
-                FileName = Path.GetFileNameWithoutExtension(_compareFilePath) + ".utmt-patch",
+                FileName = Path.GetFileNameWithoutExtension(_compareFilePath) + "." + DataFilePatch.FileExtension,
                 DefaultExt = DataFilePatch.FileExtension,
                 Filter = LocalizationSource.GetString("Filter_PatchFiles") + "|*." + DataFilePatch.FileExtension + "|" +
                          LocalizationSource.GetString("Filter_AllFiles") + "|*"
@@ -416,7 +416,8 @@ namespace UndertaleModTool
             try
             {
                 string patchPath = dialog.FileName;
-                DataFilePatchBuilder builder = new(_baseData, _compareData, _compareFilePath, Main.MainThreadAction);
+                DataFilePatchBuilder builder = new(_baseData, _compareData, _compareFilePath,
+                    Main.FilePath, Main.MainThreadAction);
                 await Task.Run(() => builder.Build(_result, patchPath, BaseLabel, CompareLabel));
 
                 StatusText = string.Format(Loc("Compare_PatchSaved"),
