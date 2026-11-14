@@ -25,10 +25,19 @@ public static class CodeFingerprint
         AppendInt32(hash, (int)code.LocalsCount);
         AppendInt32(hash, code.WeirdLocalFlag ? 1 : 0);
 
-        Dictionary<uint, int> addressToIndex = BuildAddressMap(code);
-        uint instructionAddress = 0;
-        foreach (UndertaleInstruction instruction in code.Instructions)
+        (int startIndex, int endIndex) = GetSegmentInstructionRange(code);
+        // Anonymous sub-entries share their parent's flat instruction list.
+        IReadOnlyList<UndertaleInstruction> instructions = code.ParentEntry?.Instructions ?? code.Instructions;
+        Dictionary<uint, int> addressToIndex = BuildAddressMap(instructions, startIndex, endIndex);
+        uint segmentWords = 0;
+        for (int i = startIndex; i < endIndex; i++)
         {
+            segmentWords += GetInstructionSize(instructions[i]);
+        }
+        uint instructionAddress = 0;
+        for (int index = startIndex; index < endIndex; index++)
+        {
+            UndertaleInstruction instruction = instructions[index];
             AppendString(hash, instruction.Kind.ToString());
             AppendInt32(hash, (int)instruction.Type1);
             AppendInt32(hash, (int)instruction.Type2);
@@ -42,7 +51,7 @@ public static class CodeFingerprint
                 switch (UndertaleInstruction.GetInstructionType(instruction.Kind))
                 {
                     case UndertaleInstruction.InstructionType.GotoInstruction:
-                        AppendString(hash, GotoTarget(instruction, code, instructionAddress, addressToIndex));
+                        AppendString(hash, GotoTarget(instruction, segmentWords, instructionAddress, addressToIndex));
                         break;
 
                     case UndertaleInstruction.InstructionType.PushInstruction:
@@ -138,14 +147,14 @@ public static class CodeFingerprint
         }
     }
 
-    private static string GotoTarget(UndertaleInstruction instruction, UndertaleCode code,
+    private static string GotoTarget(UndertaleInstruction instruction, uint segmentWords,
                                      uint instructionAddress, Dictionary<uint, int> addressToIndex)
     {
         if (instruction.JumpOffsetPopenvExitMagic)
             return "magic";
 
         long targetAddress = instructionAddress + instruction.JumpOffset;
-        if (targetAddress == code.Length / 4)
+        if (targetAddress == segmentWords)
             return "end";
         return targetAddress >= 0 && targetAddress <= uint.MaxValue &&
                addressToIndex.TryGetValue((uint)targetAddress, out int index)
@@ -153,16 +162,98 @@ public static class CodeFingerprint
             : "raw:" + instruction.JumpOffset.ToString(CultureInfo.InvariantCulture);
     }
 
-    private static Dictionary<uint, int> BuildAddressMap(UndertaleCode code)
+    private static Dictionary<uint, int> BuildAddressMap(IReadOnlyList<UndertaleInstruction> instructions,
+                                                         int startIndex, int endIndex)
     {
         Dictionary<uint, int> map = [];
         uint address = 0;
-        for (int i = 0; i < code.Instructions.Count; i++)
+        for (int i = startIndex; i < endIndex; i++)
         {
-            map[address] = i;
-            address += GetInstructionSize(code.Instructions[i]);
+            map[address] = i - startIndex;
+            address += GetInstructionSize(instructions[i]);
         }
         return map;
+    }
+
+    /// <summary>
+    /// Returns the instruction range belonging to a code entry. Root entries own the blob up to
+    /// the first nested (anonymous) function; nested entries own the slice starting at their
+    /// <see cref="UndertaleCode.Offset"/> up to the next nested entry.
+    /// </summary>
+    internal static (int Start, int End) GetSegmentInstructionRange(UndertaleCode code)
+    {
+        if (code.ParentEntry is null)
+        {
+            if (code.ChildEntries.Count == 0)
+            {
+                return (0, code.Instructions.Count);
+            }
+            uint first = uint.MaxValue;
+            foreach (UndertaleCode child in code.ChildEntries)
+            {
+                if (child.Offset < first)
+                {
+                    first = child.Offset;
+                }
+            }
+            int firstIndex = IndexAtOffset(code.Instructions, first, out _);
+            return firstIndex < 0 ? (0, code.Instructions.Count) : (0, firstIndex);
+        }
+
+        UndertaleCode parent = code.ParentEntry;
+        uint nextOffset = uint.MaxValue;
+        foreach (UndertaleCode sibling in parent.ChildEntries)
+        {
+            if (sibling.Offset > code.Offset && sibling.Offset < nextOffset)
+            {
+                nextOffset = sibling.Offset;
+            }
+        }
+
+        int start = IndexAtOffset(parent.Instructions, code.Offset, out _);
+        if (start < 0)
+        {
+            return (0, parent.Instructions.Count);
+        }
+        int end = nextOffset == uint.MaxValue
+            ? parent.Instructions.Count
+            : IndexAtOffset(parent.Instructions, nextOffset, out _);
+        if (end < 0)
+        {
+            end = parent.Instructions.Count;
+        }
+        return (start, end);
+    }
+
+    /// <summary>
+    /// Finds the instruction index that starts at the given byte offset inside a blob.
+    /// Returns -1 when the offset does not land on an instruction boundary.
+    /// </summary>
+    internal static int IndexAtOffset(IReadOnlyList<UndertaleInstruction> instructions, uint byteOffset, out uint exactOffset)
+    {
+        // Instruction sizes are counted in 4-byte words; code offsets are byte offsets.
+        if ((byteOffset & 3) != 0)
+        {
+            exactOffset = 0;
+            return -1;
+        }
+        uint offset = byteOffset / 4;
+        uint address = 0;
+        for (int i = 0; i < instructions.Count; i++)
+        {
+            if (address == offset)
+            {
+                exactOffset = address * 4;
+                return i;
+            }
+            if (address > offset)
+            {
+                break;
+            }
+            address += GetInstructionSize(instructions[i]);
+        }
+        exactOffset = address * 4;
+        return address == offset ? instructions.Count : -1;
     }
 
     internal static uint GetInstructionSize(UndertaleInstruction instruction)
@@ -388,6 +479,71 @@ public sealed class CodeDiffService
     {
         if (!string.Equals(baseValue, compareValue, StringComparison.Ordinal))
             differences.Add(new PropertyDiff(name, baseValue, compareValue));
+    }
+
+    /// <summary>
+    /// Compares the bytecode segments of two anonymous sub-code entries (or, when given root
+    /// entries, of their own segments) using disassembly, since sub-entries have no GML source.
+    /// </summary>
+    public CodeDiffResult CompareSegments(UndertaleCode baseCode, UndertaleCode compareCode)
+    {
+        lock (_lock)
+        {
+            List<PropertyDiff> metadata = [];
+            AddMetadataDifference(metadata, "ArgumentsCount",
+                baseCode.ArgumentsCount.ToString(CultureInfo.InvariantCulture),
+                compareCode.ArgumentsCount.ToString(CultureInfo.InvariantCulture));
+            AddMetadataDifference(metadata, "LocalsCount",
+                baseCode.LocalsCount.ToString(CultureInfo.InvariantCulture),
+                compareCode.LocalsCount.ToString(CultureInfo.InvariantCulture));
+            AddMetadataDifference(metadata, "WeirdLocalFlag",
+                baseCode.WeirdLocalFlag.ToString(),
+                compareCode.WeirdLocalFlag.ToString());
+
+            string baseText = DisassembleSegment(baseCode, _baseData);
+            string compareText = DisassembleSegment(compareCode, _compareData);
+            IReadOnlyList<TextDiffLine> diffLines = TextLineDiff.Diff(baseText, compareText);
+            string diffText = TextLineDiff.FormatUnified(diffLines);
+
+            return new CodeDiffResult
+            {
+                MetadataDifferences = metadata,
+                DiffText = diffText,
+                BaseDecompileFailed = baseText.Length == 0,
+                CompareDecompileFailed = compareText.Length == 0
+            };
+        }
+    }
+
+    private static string DisassembleSegment(UndertaleCode code, UndertaleData data)
+    {
+        (int start, int end) = CodeFingerprint.GetSegmentInstructionRange(code);
+        IReadOnlyList<UndertaleInstruction> source = code.ParentEntry?.Instructions ?? code.Instructions;
+        if (end <= start || start >= source.Count)
+        {
+            return "";
+        }
+
+        UndertaleCode segment = new() { Name = code.Name };
+        for (int i = start; i < end && i < source.Count; i++)
+        {
+            segment.Instructions.Add(source[i]);
+        }
+
+        UndertaleCodeLocals? locals = null;
+        if (data.CodeLocals is not null && code.Name?.Content is string name)
+        {
+            locals = data.CodeLocals.ByName(name);
+        }
+
+        try
+        {
+            return segment.Disassemble(data.Variables, locals, ignoreMissingCodeLocals: true) ?? "";
+        }
+        catch (Exception)
+        {
+            return "";
+        }
     }
 
     private static string Decompile(UndertaleCode code, UndertaleData data,

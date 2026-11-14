@@ -1,0 +1,44 @@
+<Window x:Class="UndertaleModTool.Windows.PatchOrderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UndertaleModTool"
+        xmlns:loc="clr-namespace:UndertaleModTool.Localization"
+        mc:Ignorable="d"
+        Title="{loc:Loc Patch_OrderTitle}" Height="380" Width="560" MinHeight="260" MinWidth="420"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        IsVisibleChanged="Window_IsVisibleChanged">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="{loc:Loc Patch_OrderHint}" TextWrapping="Wrap"/>
+
+        <ListBox Grid.Row="1" Margin="0,8" x:Name="OrderList"
+                 ItemsSource="{Binding Items, Mode=OneWay}"
+                 DisplayMemberPath="FileName"
+                 SelectionMode="Single"
+                 Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <local:ButtonDark Content="{loc:Loc Patch_OrderUp}" Click="MoveUp_Click"/>
+                <local:ButtonDark Content="{loc:Loc Patch_OrderDown}" Margin="6,0,0,0" Click="MoveDown_Click"/>
+                <local:ButtonDark Content="{loc:Loc Patch_OrderAuto}" Margin="12,0,0,0" Click="AutoSort_Click"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <local:ButtonDark Content="{loc:Loc Common_OK}" IsDefault="True" Click="Ok_Click"/>
+                <local:ButtonDark Content="{loc:Loc Common_Cancel}" Margin="6,0,0,0" IsCancel="True" Click="Cancel_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

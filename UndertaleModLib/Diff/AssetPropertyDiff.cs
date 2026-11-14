@@ -109,7 +109,12 @@ public static class AssetPropertyDiff
                     return;
             }
 
-            if (depth > 0 &&
+            bool contentHashed = baseValue is UndertaleNamedResource baseNamed &&
+                                 compareValue is UndertaleNamedResource compareNamed &&
+                                 AssetFingerprint.IsContentHashedNamedResource(baseNamed) &&
+                                 AssetFingerprint.IsContentHashedNamedResource(compareNamed);
+
+            if (!contentHashed && depth > 0 &&
                 IsNamedReference(baseValue, out string? baseReference) &&
                 IsNamedReference(compareValue, out string? compareReference))
             {
@@ -137,6 +142,8 @@ public static class AssetPropertyDiff
 
             foreach ((string name, object? memberBaseValue) in baseMembers)
             {
+                if (contentHashed && name == nameof(UndertaleNamedResource.Name))
+                    continue;
                 if (Truncated)
                     return;
 

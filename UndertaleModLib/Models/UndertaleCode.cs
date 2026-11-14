@@ -351,6 +351,26 @@ public class UndertaleInstruction : UndertaleObject, IGMInstruction
     private object _objectValue;
 
     /// <summary>
+    /// Raw packed opcode/type/argument word. Used by the data file patch engine to capture
+    /// and restore instructions exactly.
+    /// </summary>
+    internal uint RawFirstWord
+    {
+        get => _firstWord;
+        set => _firstWord = value;
+    }
+
+    /// <summary>
+    /// Raw packed primitive value. Used by the data file patch engine to capture and restore
+    /// instructions exactly; derived reference offsets are overwritten on write.
+    /// </summary>
+    internal int RawPrimitive
+    {
+        get => _primitiveValue.AsInt;
+        set => _primitiveValue = new(value);
+    }
+
+    /// <summary>
     /// Objects (functions and variables) that can be referenced as part of a reference chain, in instructions.
     /// </summary>
     public interface IReferencedObject

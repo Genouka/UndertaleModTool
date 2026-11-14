@@ -96,6 +96,25 @@ public partial class ProjectContext
     /// Lookup of asset paths that existed when loading on disk, by data name and asset type.
     /// </summary>
     internal IReadOnlyDictionary<AssetNameTypePair, string> AssetDataNamesToPaths => _assetDataNamesToPaths;
+    /// <summary>
+    /// Registers the on-disk path of a serialized asset, so imports that read auxiliary files
+    /// (sounds, code sources) can locate them. Used by the data file patch applier, which
+    /// extracts patch contents to a temporary directory instead of going through SaveProject.
+    /// </summary>
+    /// <summary>
+    /// Initializes the audio group cache, for contexts that load audio groups without a full
+    /// project session (cross-file import and the data file patch engine).
+    /// </summary>
+    internal void InitializeAudioGroupCache()
+    {
+        _audioGroups ??= new(Data.AudioGroups?.Count ?? 4);
+    }
+
+    internal void RegisterAssetDataPath(string dataName, SerializableAssetType assetType, string path)
+    {
+        _assetDataNamesToPaths[new AssetNameTypePair(dataName, assetType)] = path;
+    }
+
 
     /// <summary>
     /// Texture worker used during exporting.
@@ -105,7 +124,7 @@ public partial class ProjectContext
     /// <summary>
     /// Game file backup instance.
     /// </summary>
-    internal IGameFileBackup FileBackup { get; private set; }
+    internal IGameFileBackup FileBackup { get; set; }
 
     /// <summary>
     /// Generic options to use for writing JSON.
