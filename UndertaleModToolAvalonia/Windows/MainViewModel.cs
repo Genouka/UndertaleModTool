@@ -1104,14 +1104,53 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
     {
         var patchFiles = await View!.OpenFileDialog(new FilePickerOpenOptions
         {
-            Title = LocalizationSource.GetString("Patch_SelectFile"),
+            Title = LocalizationSource.GetString("Patch_SelectFiles"),
+            AllowMultiple = true,
             FileTypeFilter = [FilePickerFileTypes.Patch],
         });
-        if (patchFiles.Count != 1)
+        if (patchFiles.Count == 0)
             return;
-        string? patchPath = patchFiles[0].TryGetLocalPath();
-        if (patchPath is null)
+
+        List<string> orderedPatchPaths;
+        try
+        {
+            List<string> selectedPaths = [.. patchFiles
+                .Select(file => file.TryGetLocalPath())
+                .Where(path => path is not null)
+                .Select(path => path!)];
+            if (selectedPaths.Count == 0)
+                return;
+
+            List<PatchChainEntry> entries = DataFilePatchChain.SortByChain(
+                DataFilePatchChain.ReadManifests(selectedPaths));
+            if (entries.Count > 1)
+            {
+                Window? owner = View is Control control ? WindowHost.ResolveOwner(control) : null;
+                if (owner is null)
+                {
+                    // No interactive window (headless host): keep the default order.
+                    orderedPatchPaths = [.. entries.Select(entry => entry.Path)];
+                }
+                else
+                {
+                    List<string>? ordered = await WindowHost.ShowDialog<List<string>?>(
+                        owner, new PatchOrderWindow(entries));
+                    if (ordered is null || ordered.Count == 0)
+                        return;
+                    orderedPatchPaths = ordered;
+                }
+            }
+            else
+            {
+                orderedPatchPaths = [entries[0].Path];
+            }
+        }
+        catch (Exception e)
+        {
+            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Patch_ApplyFailed"), e.Message),
+                title: LocalizationSource.GetString("Patch_Title"));
             return;
+        }
 
         var baseFiles = await View!.OpenFileDialog(new FilePickerOpenOptions
         {
@@ -1163,14 +1202,14 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 try
                 {
                     Dispatcher.UIThread.Post(() => loader.SetText(LocalizationSource.GetString("Patch_Applying")));
-                    DataFilePatchApplier applier = new(baseData, action => Dispatcher.UIThread.Invoke(action));
-                    DataFilePatchApplyResult result = applier.Apply(patchPath,
+                    DataFilePatchApplyResult result = DataFilePatchChain.ApplyMany(baseData, orderedPatchPaths,
                         new DataFilePatchApplyOptions
                         {
                             DeleteRemoved = deleteRemoved,
                             BaseDataDirectory = Path.GetDirectoryName(basePath),
                             BaseFilePath = basePath,
                             OutputDirectory = Path.GetDirectoryName(outputPath),
+                            MainThreadAction = action => Dispatcher.UIThread.Invoke(action),
                         },
                         new Progress<string>(message => Dispatcher.UIThread.Post(() =>
                             loader.SetText(LocalizationSource.GetString("Patch_Applying") + " " + message))));
@@ -1191,6 +1230,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 applyResult.VerifiedCount, applyResult.MismatchedCount, applyResult.UnsupportedCount);
 
             List<string> details = [];
+            details.AddRange(applyResult.StepSummaries);
             details.AddRange(applyResult.Unsupported);
             details.AddRange(applyResult.BaseDriftWarnings);
             details.AddRange(applyResult.Warnings);
