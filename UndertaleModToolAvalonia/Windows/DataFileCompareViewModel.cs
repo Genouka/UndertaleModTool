@@ -435,6 +435,60 @@ public partial class DataFileCompareViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private async Task SavePatchAsync()
+    {
+        if (_result is null || _baseData is null || _compareData is null)
+            return;
+
+        IStorageFile? file = await _view.SaveFileDialog(new FilePickerSaveOptions
+        {
+            Title = Loc("Compare_SavePatchDialogTitle"),
+            SuggestedFileName = Path.GetFileNameWithoutExtension(_compareFile.Name) + ".utmt-patch",
+            FileTypeChoices = [FilePickerFileTypes.Patch],
+            DefaultExtension = DataFilePatch.FileExtension,
+        });
+        if (file is null)
+            return;
+
+        string? patchPath = file.TryGetLocalPath();
+        if (patchPath is null)
+        {
+            await _view.MessageDialog(string.Format(Loc("Compare_PatchSaveFailed"), file.Name));
+            return;
+        }
+
+        IsBusy = true;
+        IsProgressIndeterminate = true;
+        StatusText = Loc("Compare_SavingPatch");
+        try
+        {
+            string? comparePath = _compareFile.TryGetLocalPath();
+            string baseLabel = BaseLabel;
+            string compareLabel = CompareLabel;
+            DataFileDiffResult result = _result;
+            await Task.Run(() =>
+            {
+                DataFilePatchBuilder builder = new(_baseData, _compareData, comparePath,
+                    action => Dispatcher.UIThread.Invoke(action));
+                builder.Build(result, patchPath, baseLabel, compareLabel);
+            });
+
+            StatusText = string.Format(Loc("Compare_PatchSaved"),
+                result.AddedCount, result.RemovedCount, result.ChangedCount);
+        }
+        catch (Exception e)
+        {
+            StatusText = string.Format(Loc("Compare_PatchSaveFailed"), e.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+            IsProgressIndeterminate = false;
+            DisposeIfIdle();
+        }
+    }
+
+    [RelayCommand]
     private async Task MergeSelectedAsync()
     {
         if (_result is null || _baseData is null || _compareData is null)

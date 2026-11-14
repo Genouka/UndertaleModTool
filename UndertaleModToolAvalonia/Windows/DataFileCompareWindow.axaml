@@ -63,6 +63,9 @@
                     <Button Content="{l:Loc Compare_ExportStructuredDiff}" Margin="12,0,0,0"
                             Command="{Binding ExportStructuredDiffCommand}"
                             IsEnabled="{Binding !IsBusy}" />
+                    <Button Content="{l:Loc Compare_SavePatch}" Margin="6,0,0,0"
+                            Command="{Binding SavePatchCommand}"
+                            IsEnabled="{Binding !IsBusy}" />
                     <Button Content="{l:Loc Compare_MergeSelected}" Margin="6,0,0,0"
                             Command="{Binding MergeSelectedCommand}"
                             IsEnabled="{Binding !IsBusy}" />

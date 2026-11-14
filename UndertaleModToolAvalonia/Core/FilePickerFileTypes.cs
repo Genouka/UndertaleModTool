@@ -46,6 +46,11 @@ public static class FilePickerFileTypes
         Patterns = ["*.csx"],
     };
 
+    public static readonly FilePickerFileType Patch = new(LocalizationSource.GetString("RefType_PatchFiles"))
+    {
+        Patterns = ["*.utmt-patch"],
+    };
+
     static readonly FilePickerFileType JSONSingle = new(LocalizationSource.GetString("RefType_JsonFiles"))
     {
         Patterns = ["*.json"],

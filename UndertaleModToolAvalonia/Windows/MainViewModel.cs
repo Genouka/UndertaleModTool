@@ -17,6 +17,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UndertaleModLib;
+using UndertaleModLib.Diff;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
 using UndertaleModLib.Util;
@@ -1097,6 +1098,116 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
         if (View is MainView mainView)
             mainView.OpenDataFileCompare(ServiceProvider, files[0]);
+    }
+
+    public async void ToolsApplyDataFilePatch()
+    {
+        var patchFiles = await View!.OpenFileDialog(new FilePickerOpenOptions
+        {
+            Title = LocalizationSource.GetString("Patch_SelectFile"),
+            FileTypeFilter = [FilePickerFileTypes.Patch],
+        });
+        if (patchFiles.Count != 1)
+            return;
+        string? patchPath = patchFiles[0].TryGetLocalPath();
+        if (patchPath is null)
+            return;
+
+        var baseFiles = await View!.OpenFileDialog(new FilePickerOpenOptions
+        {
+            Title = LocalizationSource.GetString("Patch_SelectBaseFile"),
+            FileTypeFilter = FilePickerFileTypes.Data,
+        });
+        if (baseFiles.Count != 1)
+            return;
+        string? basePath = baseFiles[0].TryGetLocalPath();
+        if (basePath is null)
+            return;
+
+        IStorageFile? output = await View!.SaveFileDialog(new FilePickerSaveOptions
+        {
+            Title = LocalizationSource.GetString("Patch_SelectOutputFile"),
+            SuggestedFileName = baseFiles[0].Name,
+            FileTypeChoices = FilePickerFileTypes.Data,
+            DefaultExtension = "win",
+        });
+        if (output is null)
+            return;
+        string? outputPath = output.TryGetLocalPath();
+        if (outputPath is null)
+            return;
+
+        MessageWindow.Result deleteRemovedResult = await View!.MessageDialog(
+            LocalizationSource.GetString("Patch_DeleteRemovedQuestion"),
+            title: LocalizationSource.GetString("Patch_Title"),
+            buttons: MessageWindow.Buttons.YesNo);
+        bool deleteRemoved = deleteRemovedResult == MessageWindow.Result.Yes;
+
+        ILoaderWindow loader = View!.LoaderOpen();
+        loader.SetText(LocalizationSource.GetString("Patch_Loading"));
+        try
+        {
+            List<string> warnings = [];
+            DataFilePatchApplyResult applyResult = await Task.Run(() =>
+            {
+                UndertaleData baseData;
+                using (FileStream stream = new(basePath, FileMode.Open, FileAccess.Read))
+                {
+                    baseData = UndertaleIO.Read(stream, (string warning, bool _) =>
+                    {
+                        lock (warnings)
+                            warnings.Add(warning);
+                    }, _ => { });
+                }
+
+                try
+                {
+                    Dispatcher.UIThread.Post(() => loader.SetText(LocalizationSource.GetString("Patch_Applying")));
+                    DataFilePatchApplier applier = new(baseData, action => Dispatcher.UIThread.Invoke(action));
+                    DataFilePatchApplyResult result = applier.Apply(patchPath,
+                        new DataFilePatchApplyOptions { DeleteRemoved = deleteRemoved },
+                        new Progress<string>(message => Dispatcher.UIThread.Post(() =>
+                            loader.SetText(LocalizationSource.GetString("Patch_Applying") + " " + message))));
+
+                    Dispatcher.UIThread.Post(() => loader.SetText(LocalizationSource.GetString("Patch_SavingOutput")));
+                    using FileStream outputStream = new(outputPath, FileMode.Create, FileAccess.Write);
+                    UndertaleIO.Write(outputStream, baseData);
+                    return result;
+                }
+                finally
+                {
+                    baseData.Dispose();
+                }
+            });
+
+            string summary = string.Format(LocalizationSource.GetString("Patch_ApplyDone"),
+                applyResult.ImportedCount, applyResult.OverwrittenCount, applyResult.DeletedCount,
+                applyResult.VerifiedCount, applyResult.MismatchedCount, applyResult.UnsupportedCount);
+
+            List<string> details = [];
+            details.AddRange(applyResult.Unsupported);
+            details.AddRange(applyResult.BaseDriftWarnings);
+            details.AddRange(applyResult.Warnings);
+            details.AddRange(applyResult.Errors);
+            lock (warnings)
+                details.AddRange(warnings);
+            if (details.Count > 0)
+            {
+                const int maxDetails = 20;
+                summary += "\n\n" + string.Join("\n", details.Take(maxDetails));
+                if (details.Count > maxDetails)
+                    summary += "\n...";
+            }
+
+            loader.Close();
+            await View!.MessageDialog(summary, title: LocalizationSource.GetString("Patch_Title"));
+        }
+        catch (Exception e)
+        {
+            loader.Close();
+            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Patch_ApplyFailed"), e.Message),
+                title: LocalizationSource.GetString("Patch_Title"));
+        }
     }
 
     public async void ScriptsRunOtherScript()
