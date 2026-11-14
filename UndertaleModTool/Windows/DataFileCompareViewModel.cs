@@ -776,6 +776,15 @@ namespace UndertaleModTool
             _ => LocalizationSource.GetString("Compare_StatusUnchanged"),
         };
 
+        /// <summary>Row foreground color: green for added, red for removed, yellow for changed.</summary>
+        public System.Windows.Media.Brush StatusBrush => Entry.Change switch
+        {
+            AssetChangeKind.Added => System.Windows.Media.Brushes.LightGreen,
+            AssetChangeKind.Removed => System.Windows.Media.Brushes.IndianRed,
+            AssetChangeKind.Changed => System.Windows.Media.Brushes.Khaki,
+            _ => System.Windows.Media.Brushes.Transparent,
+        };
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public CompareEntryRow(AssetDiffEntry entry, string typeTitle, bool isSelected,

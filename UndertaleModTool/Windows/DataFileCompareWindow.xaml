@@ -148,7 +148,14 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="{loc:Loc Compare_StatusHeader}" Binding="{Binding StatusText, Mode=OneWay}"
-                                            Width="Auto" IsReadOnly="True"/>
+                                            Width="Auto" IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{Binding StatusBrush, Mode=OneWay}"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
                         <DataGridTextColumn Header="{loc:Loc Common_Name}" Binding="{Binding Name, Mode=OneWay}"
                                             Width="1*" IsReadOnly="True"/>
                         <DataGridTextColumn Header="{loc:Loc Common_AssetType}" Binding="{Binding TypeTitle, Mode=OneWay}"

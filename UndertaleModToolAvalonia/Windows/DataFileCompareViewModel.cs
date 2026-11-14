@@ -817,6 +817,15 @@ public sealed partial class CompareEntryRow : ObservableObject
         _ => LocalizationSource.GetString("Compare_StatusUnchanged"),
     };
 
+    /// <summary>Row foreground color: green for added, red for removed, yellow for changed.</summary>
+    public Avalonia.Media.IImmutableSolidColorBrush StatusBrush => Entry.Change switch
+    {
+        AssetChangeKind.Added => Avalonia.Media.Brushes.LightGreen,
+        AssetChangeKind.Removed => Avalonia.Media.Brushes.IndianRed,
+        AssetChangeKind.Changed => Avalonia.Media.Brushes.Khaki,
+        _ => Avalonia.Media.Brushes.Transparent,
+    };
+
     public CompareEntryRow(AssetDiffEntry entry, string typeTitle, bool isSelected,
                            Action<CompareEntryRow>? selectionChanged)
     {
