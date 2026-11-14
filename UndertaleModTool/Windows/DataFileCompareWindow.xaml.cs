@@ -72,6 +72,11 @@ namespace UndertaleModTool.Windows
             await _viewModel.ExportStructuredDiffAsync(this);
         }
 
+        private async void SavePatchButton_Click(object sender, RoutedEventArgs e)
+        {
+            await _viewModel.SavePatchAsync(this);
+        }
+
         private async void MergeButton_Click(object sender, RoutedEventArgs e)
         {
             await _viewModel.MergeSelectedAsync(this);

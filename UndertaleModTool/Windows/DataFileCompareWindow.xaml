@@ -101,6 +101,8 @@
                                       Click="ClearSelectionButton_Click"/>
                     <local:ButtonDark Content="{loc:Loc Compare_ExportStructuredDiff}" Margin="12,0,0,0"
                                       Click="ExportButton_Click" IsEnabled="{Binding IsNotBusy}"/>
+                    <local:ButtonDark Content="{loc:Loc Compare_SavePatch}" Margin="6,0,0,0"
+                                      Click="SavePatchButton_Click" IsEnabled="{Binding IsNotBusy}"/>
                     <local:ButtonDark Content="{loc:Loc Compare_MergeSelected}" Margin="6,0,0,0"
                                       Click="MergeButton_Click" IsEnabled="{Binding IsNotBusy}"/>
                     <CheckBox Content="{loc:Loc Compare_DeleteRemoved}" Margin="12,0,0,0"

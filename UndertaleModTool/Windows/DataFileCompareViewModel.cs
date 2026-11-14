@@ -389,6 +389,50 @@ namespace UndertaleModTool
             }
         }
 
+        /// <summary>
+        /// Writes the complete diff as a data file patch archive. Unlike the JSON report, a
+        /// patch is applicable: the base file plus this patch reproduces the compared file.
+        /// </summary>
+        public async Task SavePatchAsync(Window owner)
+        {
+            if (_result is null || _baseData is null || _compareData is null)
+                return;
+
+            SaveFileDialog dialog = new()
+            {
+                Title = Loc("Compare_SavePatchDialogTitle"),
+                FileName = Path.GetFileNameWithoutExtension(_compareFilePath) + ".utmt-patch",
+                DefaultExt = DataFilePatch.FileExtension,
+                Filter = LocalizationSource.GetString("Filter_PatchFiles") + "|*." + DataFilePatch.FileExtension + "|" +
+                         LocalizationSource.GetString("Filter_AllFiles") + "|*"
+            };
+            if (dialog.ShowDialog(owner) != true)
+                return;
+
+            IsBusy = true;
+            IsProgressIndeterminate = true;
+            StatusText = Loc("Compare_SavingPatch");
+            try
+            {
+                string patchPath = dialog.FileName;
+                DataFilePatchBuilder builder = new(_baseData, _compareData, _compareFilePath, Main.MainThreadAction);
+                await Task.Run(() => builder.Build(_result, patchPath, BaseLabel, CompareLabel));
+
+                StatusText = string.Format(Loc("Compare_PatchSaved"),
+                    _result.AddedCount, _result.RemovedCount, _result.ChangedCount);
+            }
+            catch (Exception e)
+            {
+                StatusText = string.Format(Loc("Compare_PatchSaveFailed"), e.Message);
+            }
+            finally
+            {
+                IsBusy = false;
+                IsProgressIndeterminate = false;
+                DisposeIfIdle();
+            }
+        }
+
         public async Task MergeSelectedAsync(Window owner)
         {
             if (_result is null || _baseData is null || _compareData is null)

@@ -85,6 +85,7 @@ namespace UndertaleModTool
         public static readonly RoutedUICommand RunButterscotchCommand = new RoutedUICommand("Run with Butterscotch", "RunButterscotch", typeof(MainWindow), new InputGestureCollection { new KeyGesture(Key.F6) });
         public static readonly RoutedUICommand DebugButterscotchCommand = new RoutedUICommand("Debug with Butterscotch", "DebugButterscotch", typeof(MainWindow), new InputGestureCollection { new KeyGesture(Key.F6, ModifierKeys.Shift) });
         public static readonly RoutedUICommand CompareDataFilesCommand = new(LocalizationSource.GetString("Menu_Tools_CompareDataFiles"), "CompareDataFiles", typeof(MainWindow));
+        public static readonly RoutedUICommand ApplyDataFilePatchCommand = new(LocalizationSource.GetString("Menu_Tools_ApplyDataFilePatch"), "ApplyDataFilePatch", typeof(MainWindow));
 
         public ObservableCollection<Tab> Tabs { get; set; } = new();
         public Tab CurrentTab
@@ -5208,6 +5209,132 @@ namespace UndertaleModTool
                 Owner = this
             };
             compareWindow.Show();
+        }
+
+        private async void Command_ApplyDataFilePatch(object sender, ExecutedRoutedEventArgs e)
+        {
+            OpenFileDialog patchDialog = new()
+            {
+                Title = LocalizationSource.GetString("Patch_SelectFile"),
+                Filter = LocalizationSource.GetString("Filter_PatchFiles") + "|*." + UndertaleModLib.Diff.DataFilePatch.FileExtension + "|" +
+                         LocalizationSource.GetString("Filter_AllFiles") + "|*"
+            };
+            if (patchDialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            OpenFileDialog baseDialog = new()
+            {
+                Title = LocalizationSource.GetString("Patch_SelectBaseFile"),
+                Filter = DataFileFilter
+            };
+            if (baseDialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            SaveFileDialog outputDialog = new()
+            {
+                Title = LocalizationSource.GetString("Patch_SelectOutputFile"),
+                DefaultExt = "win",
+                Filter = DataFileFilter,
+                FileName = Path.GetFileName(baseDialog.FileName)
+            };
+            if (outputDialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            bool deleteRemoved = this.ShowQuestion(LocalizationSource.GetString("Patch_DeleteRemovedQuestion"),
+                MessageBoxImage.Question, LocalizationSource.GetString("Patch_Title")) == MessageBoxResult.Yes;
+
+            string patchPath = patchDialog.FileName;
+            string basePath = baseDialog.FileName;
+            string outputPath = outputDialog.FileName;
+
+            LoaderDialog loader = new(LocalizationSource.GetString("Patch_Title"),
+                LocalizationSource.GetString("Patch_Loading"))
+            {
+                Owner = this,
+                PreventClose = true
+            };
+            IProgress<string> progress = new Progress<string>(loader.ReportProgress);
+
+            UndertaleModLib.Diff.DataFilePatchApplyResult applyResult = null;
+            List<string> warnings = [];
+            Exception error = null;
+
+            Task task = Task.Run(() =>
+            {
+                UndertaleData baseData = null;
+                try
+                {
+                    using (FileStream stream = new(basePath, FileMode.Open, FileAccess.Read))
+                    {
+                        baseData = UndertaleIO.Read(stream, (warning, isImportant) =>
+                        {
+                            lock (warnings)
+                                warnings.Add(warning);
+                        }, _ => { });
+                    }
+
+                    try
+                    {
+                        progress.Report(LocalizationSource.GetString("Patch_Applying"));
+                        UndertaleModLib.Diff.DataFilePatchApplier applier = new(baseData, MainThreadAction);
+                        applyResult = applier.Apply(patchPath,
+                            new UndertaleModLib.Diff.DataFilePatchApplyOptions { DeleteRemoved = deleteRemoved },
+                            progress);
+
+                        progress.Report(LocalizationSource.GetString("Patch_SavingOutput"));
+                        using FileStream outputStream = new(outputPath, FileMode.Create, FileAccess.Write);
+                        UndertaleIO.Write(outputStream, baseData);
+                    }
+                    finally
+                    {
+                        baseData.Dispose();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+            });
+
+            loader.ShowDialog();
+            await task;
+
+            if (error is not null)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Patch_ApplyFailed"), error.Message),
+                    LocalizationSource.GetString("Patch_Title"));
+                return;
+            }
+
+            string summary = string.Format(LocalizationSource.GetString("Patch_ApplyDone"),
+                applyResult.ImportedCount, applyResult.OverwrittenCount, applyResult.DeletedCount,
+                applyResult.VerifiedCount, applyResult.MismatchedCount, applyResult.UnsupportedCount);
+
+            List<string> details = [];
+            details.AddRange(applyResult.Unsupported);
+            details.AddRange(applyResult.BaseDriftWarnings);
+            details.AddRange(applyResult.Warnings);
+            details.AddRange(applyResult.Errors);
+            lock (warnings)
+                details.AddRange(warnings);
+            if (details.Count > 0)
+            {
+                const int maxDetails = 20;
+                summary += Environment.NewLine + Environment.NewLine +
+                           string.Join(Environment.NewLine, details.Take(maxDetails));
+                if (details.Count > maxDetails)
+                {
+                    summary += Environment.NewLine + "...";
+                }
+            }
+
+            this.ShowMessage(summary, LocalizationSource.GetString("Patch_Title"));
         }
 
         private void Command_CloseProject(object sender, ExecutedRoutedEventArgs e)
