@@ -30,8 +30,11 @@ public class MainActivity : AvaloniaMainActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+        // Magick.Native 的打包名与 DllImport 名不一致（见 StageMagickNativeLibraries /
+        // MagickNativeLibraryResolver），必须在任何纹理解码触发 Magick 初始化之前挂好解析器，
+        // 所以它要先于 base.OnCreate（Avalonia 启动）执行。
+        MagickNativeLibraryResolver.Register();
         base.OnCreate(savedInstanceState);
-        
         // SDL3 on Android resolves its Android context (asset manager, file IO, etc.) through
         // SDLActivity.getContext(), which just returns SDL.getContext(). Apps that host SDL inside
         // a non-SDL activity (like Avalonia's) must register the real activity context here so SDL
