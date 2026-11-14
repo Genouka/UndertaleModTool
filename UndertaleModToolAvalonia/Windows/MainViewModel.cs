@@ -1165,7 +1165,12 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                     Dispatcher.UIThread.Post(() => loader.SetText(LocalizationSource.GetString("Patch_Applying")));
                     DataFilePatchApplier applier = new(baseData, action => Dispatcher.UIThread.Invoke(action));
                     DataFilePatchApplyResult result = applier.Apply(patchPath,
-                        new DataFilePatchApplyOptions { DeleteRemoved = deleteRemoved },
+                        new DataFilePatchApplyOptions
+                        {
+                            DeleteRemoved = deleteRemoved,
+                            BaseDataDirectory = Path.GetDirectoryName(basePath),
+                            OutputDirectory = Path.GetDirectoryName(outputPath),
+                        },
                         new Progress<string>(message => Dispatcher.UIThread.Post(() =>
                             loader.SetText(LocalizationSource.GetString("Patch_Applying") + " " + message))));
 
@@ -1191,6 +1196,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             details.AddRange(applyResult.Errors);
             lock (warnings)
                 details.AddRange(warnings);
+            details.AddRange(applyResult.ExtraOutputFiles);
             if (details.Count > 0)
             {
                 const int maxDetails = 20;
