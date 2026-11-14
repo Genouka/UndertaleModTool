@@ -536,9 +536,14 @@ namespace UndertaleModTool
             return source.Where(e => e.Change != AssetChangeKind.Unchanged).ToList();
         }
 
-        public void OnSelectedEntryChanged()
+        /// <summary>
+        /// Selects an entry and starts loading its details. Called by the view when the user
+        /// clicks a row, and by <see cref="RebuildEntries"/> through the SelectedEntry setter.
+        /// </summary>
+        public void SelectEntry(CompareEntryRow? row)
         {
-            _ = UpdateDetailsAsync(SelectedEntry);
+            SelectedEntry = row;
+            _ = UpdateDetailsAsync(row);
         }
 
         private async Task UpdateDetailsAsync(CompareEntryRow row)

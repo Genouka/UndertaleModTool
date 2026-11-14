@@ -131,6 +131,7 @@
 
                 <local:DataGridDark Grid.Row="2" Margin="8,0,0,0" x:Name="EntriesGrid"
                                     ItemsSource="{Binding Entries, Mode=OneWay}"
+                                    SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
                                     AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                     CanUserResizeColumns="True" CanUserSortColumns="False"
                                     HeadersVisibility="Column" SelectionMode="Single" SelectionUnit="FullRow"

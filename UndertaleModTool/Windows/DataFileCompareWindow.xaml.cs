@@ -101,7 +101,7 @@ namespace UndertaleModTool.Windows
 
         private void EntriesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            _viewModel?.OnSelectedEntryChanged();
+            _viewModel?.SelectEntry(EntriesGrid.SelectedItem as CompareEntryRow);
         }
 
         private void DetailsTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
