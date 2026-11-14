@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -27,11 +28,11 @@ namespace UndertaleModTool
         private readonly HashSet<AssetDiffEntry> _selectedEntries = new(ReferenceEqualityComparer.Instance);
         private string _compareFilePath;
 
-        private CancellationTokenSource _cts;
-        private UndertaleData _baseData;
-        private UndertaleData _compareData;
-        private DataFileDiffResult _result;
-        private CodeDiffService _codeDiffService;
+        private CancellationTokenSource? _cts;
+        private UndertaleData? _baseData;
+        private UndertaleData? _compareData;
+        private DataFileDiffResult? _result;
+        private CodeDiffService? _codeDiffService;
         private Dictionary<string, string> _categoryTitles = new(StringComparer.Ordinal);
         private int _detailsVersion;
         private bool _disposed;
@@ -49,9 +50,9 @@ namespace UndertaleModTool
         public bool HasWarnings { get; set; }
 
         public ObservableCollection<CompareCategoryRow> Categories { get; set; } = new();
-        public CompareCategoryRow SelectedCategory { get; set; }
+        public CompareCategoryRow? SelectedCategory { get; set; }
         public ObservableCollection<CompareEntryRow> Entries { get; set; } = new();
-        public CompareEntryRow SelectedEntry { get; set; }
+        public CompareEntryRow? SelectedEntry { get; set; }
         public string FilterText { get; set; } = "";
 
         /// <summary>0 = differences, 1 = all, 2 = added, 3 = removed, 4 = changed.</summary>
@@ -277,7 +278,7 @@ namespace UndertaleModTool
 
         private void RebuildEntries()
         {
-            AssetDiffEntry previous = SelectedEntry?.Entry;
+            AssetDiffEntry? previous = SelectedEntry?.Entry;
 
             IEnumerable<AssetDiffEntry> source = SelectedCategory?.Entries ?? Enumerable.Empty<AssetDiffEntry>();
             source = StatusFilterIndex switch
@@ -546,7 +547,7 @@ namespace UndertaleModTool
             _ = UpdateDetailsAsync(row);
         }
 
-        private async Task UpdateDetailsAsync(CompareEntryRow row)
+        private async Task UpdateDetailsAsync(CompareEntryRow? row)
         {
             int version = ++_detailsVersion;
             ClearDetails();
@@ -602,7 +603,7 @@ namespace UndertaleModTool
             IsDetailsBusy = true;
             try
             {
-                CodeDiffService service = _codeDiffService;
+                CodeDiffService? service = _codeDiffService;
                 if (service is null)
                     return;
 
@@ -785,7 +786,7 @@ namespace UndertaleModTool
             _ => System.Windows.Media.Brushes.Transparent,
         };
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public CompareEntryRow(AssetDiffEntry entry, string typeTitle, bool isSelected,
                                Action<CompareEntryRow> selectionChanged)

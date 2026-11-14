@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,14 +21,14 @@ public sealed class DataFilePatchApplyOptions
     public bool DeleteRemoved { get; set; }
 
     /// <summary>Marshals actions onto the data file's main thread; pass <see langword="null"/> for non-UI usage.</summary>
-    public Action<Action> MainThreadAction { get; set; }
+    public Action<Action>? MainThreadAction { get; set; }
 
     /// <summary>Directory of the base data file, used to load auxiliary files (audio groups).</summary>
-    public string BaseDataDirectory { get; set; }
+    public string? BaseDataDirectory { get; set; }
 
     /// <summary>Directory of the output data file, where auxiliary files (audio groups, external
     /// textures) are written. When <see langword="null"/>, auxiliary files are not written.</summary>
-    public string OutputDirectory { get; set; }
+    public string? OutputDirectory { get; set; }
 }
 
 /// <summary>The outcome of applying a data file patch.</summary>
@@ -85,7 +86,7 @@ public sealed class DataFilePatchApplier
     private readonly UndertaleData _baseData;
     private readonly Action<Action> _mainThreadAction;
 
-    public DataFilePatchApplier(UndertaleData baseData, Action<Action> mainThreadAction = null)
+    public DataFilePatchApplier(UndertaleData baseData, Action<Action>? mainThreadAction = null)
     {
         _baseData = baseData ?? throw new ArgumentNullException(nameof(baseData));
         _mainThreadAction = mainThreadAction ?? new Action<Action>(action => action());
@@ -98,8 +99,8 @@ public sealed class DataFilePatchApplier
     /// <param name="options">Apply options; may be <see langword="null"/>.</param>
     /// <param name="progress">Optional progress reporter.</param>
     /// <param name="cancellationToken">Optional cancellation token.</param>
-    public DataFilePatchApplyResult Apply(string patchFilePath, DataFilePatchApplyOptions options = null,
-                                          IProgress<string> progress = null, CancellationToken cancellationToken = default)
+    public DataFilePatchApplyResult Apply(string patchFilePath, DataFilePatchApplyOptions? options = null,
+                                          IProgress<string>? progress = null, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(patchFilePath);
         if (!File.Exists(patchFilePath))
@@ -151,7 +152,7 @@ public sealed class DataFilePatchApplier
 
     private void Apply(string workDirectory, string streamedDirectory, DataFilePatchManifest manifest,
                        DataFilePatchApplyOptions options, DataFilePatchApplyResult result,
-                       IProgress<string> progress, CancellationToken cancellationToken, JsonSerializerOptions jsonOptions)
+                       IProgress<string>? progress, CancellationToken cancellationToken, JsonSerializerOptions jsonOptions)
     {
         // The context reads auxiliary files (GML, audio) from the extraction directory and copies
         // streamed sounds into a scratch directory, which is moved next to the output file later.
@@ -171,7 +172,7 @@ public sealed class DataFilePatchApplier
             }
             try
             {
-                UndertaleNamedResource existing = FindByName(entry);
+                UndertaleNamedResource? existing = FindByName(entry);
                 if (existing is null)
                 {
                     if (entry.Kind != PatchEntryKind.GeneralInfo)
@@ -201,7 +202,7 @@ public sealed class DataFilePatchApplier
             {
                 using FileStream fs = new(Path.Join(workDirectory, generalInfo.AssetPath), FileMode.Open, FileAccess.Read);
                 generalInfoSnapshot = JsonSerializer.Deserialize<PatchGeneralInfoSnapshot>(fs, jsonOptions);
-                ApplyGeneralInfo(generalInfoSnapshot);
+                ApplyGeneralInfo(generalInfoSnapshot!);
             }
             catch (Exception e)
             {
@@ -245,7 +246,7 @@ public sealed class DataFilePatchApplier
             try
             {
                 using FileStream fs = new(assetPath, FileMode.Open, FileAccess.Read);
-                asset = JsonSerializer.Deserialize<ISerializableProjectAsset>(fs, jsonOptions);
+                asset = JsonSerializer.Deserialize<ISerializableProjectAsset>(fs, jsonOptions)!;
             }
             catch (Exception e)
             {
@@ -355,7 +356,7 @@ public sealed class DataFilePatchApplier
                 SerializableCode codeAsset;
                 using (FileStream fs = new(Path.Join(workDirectory, entry.AssetPath), FileMode.Open, FileAccess.Read))
                 {
-                    codeAsset = (SerializableCode)JsonSerializer.Deserialize<ISerializableProjectAsset>(fs, ProjectContext.JsonOptions);
+                    codeAsset = (SerializableCode)JsonSerializer.Deserialize<ISerializableProjectAsset>(fs, ProjectContext.JsonOptions)!;
                 }
 
                 string name = codeAsset.DataName ?? entry.Name;
@@ -386,7 +387,7 @@ public sealed class DataFilePatchApplier
             {
                 continue;
             }
-            UndertaleCode target = _baseData.Code?.ByName(entry.Name);
+            UndertaleCode? target = _baseData.Code?.ByName(entry.Name);
             if (target is null)
             {
                 continue;
@@ -460,7 +461,7 @@ public sealed class DataFilePatchApplier
             {
                 try
                 {
-                    UndertaleEmbeddedTexture texture = restoredTextures.TryGetValue($"{snapshot.TextureIndex}", out UndertaleEmbeddedTexture value)
+                    UndertaleEmbeddedTexture? texture = restoredTextures.TryGetValue($"{snapshot.TextureIndex}", out var value)
                         ? value : null;
                     if (texture is null)
                     {
@@ -505,7 +506,7 @@ public sealed class DataFilePatchApplier
                     {
                         continue;
                     }
-                    UndertaleTextureGroupInfo group = _baseData.TextureGroupInfo.FirstOrDefault(g => g.Name?.Content == groupName);
+                    UndertaleTextureGroupInfo? group = _baseData.TextureGroupInfo.FirstOrDefault(g => g.Name?.Content == groupName);
                     if (group is null)
                     {
                         group = new UndertaleTextureGroupInfo()
@@ -555,7 +556,7 @@ public sealed class DataFilePatchApplier
         result.ExtraOutputFiles.Add(destination);
     }
 
-    private static T[] DeserializeArray<T>(string path, JsonSerializerOptions options)
+    private static T[]? DeserializeArray<T>(string path, JsonSerializerOptions options)
     {
         if (!File.Exists(path))
         {
@@ -602,7 +603,7 @@ public sealed class DataFilePatchApplier
         UndertaleTexturePageItem[] items = new UndertaleTexturePageItem[entry.Textures.Count];
         foreach (PatchTextureRef textureRef in entry.Textures)
         {
-            if (!restoredPageItems.TryGetValue(Path.GetFileNameWithoutExtension(textureRef.PageItemPath), out UndertaleTexturePageItem pageItem))
+            if (!restoredPageItems.TryGetValue(Path.GetFileNameWithoutExtension(textureRef.PageItemPath), out UndertaleTexturePageItem? pageItem))
             {
                 throw new InvalidOperationException($"Missing restored page item for \"{textureRef.PageItemPath}\"");
             }
@@ -784,7 +785,7 @@ public sealed class DataFilePatchApplier
 
         foreach (PatchTextureRef textureRef in entry.Textures)
         {
-            if (!restoredPageItems.TryGetValue(Path.GetFileNameWithoutExtension(textureRef.PageItemPath), out UndertaleTexturePageItem pageItem))
+            if (!restoredPageItems.TryGetValue(Path.GetFileNameWithoutExtension(textureRef.PageItemPath), out UndertaleTexturePageItem? pageItem))
             {
                 continue;
             }
@@ -877,12 +878,12 @@ public sealed class DataFilePatchApplier
                 SerializableSound soundAsset;
                 using (FileStream fs = new(Path.Join(workDirectory, snapshot.SoundJsonPath), FileMode.Open, FileAccess.Read))
                 {
-                    soundAsset = (SerializableSound)JsonSerializer.Deserialize<ISerializableProjectAsset>(fs, ProjectContext.JsonOptions);
+                    soundAsset = (SerializableSound)JsonSerializer.Deserialize<ISerializableProjectAsset>(fs, ProjectContext.JsonOptions)!;
                 }
 
                 _mainThreadAction(() =>
                 {
-                    ApplyGroupSound(workDirectory, snapshot, soundAsset, entry, options, result);
+                    ApplyGroupSound(workDirectory, snapshot, soundAsset!, entry, options, result);
                 });
             }
             catch (Exception e)
@@ -1089,7 +1090,7 @@ public sealed class DataFilePatchApplier
 
                 UndertaleCode parent = _baseData.Code?.ByName(snapshot.ParentEntry)
                     ?? throw new PatchSnapshotException($"Parent code entry \"{snapshot.ParentEntry}\" was not found");
-                UndertaleCode child = _baseData.Code?.ByName(entry.Name);
+                UndertaleCode? child = _baseData.Code?.ByName(entry.Name);
 
                 if (entry.Change == nameof(AssetChangeKind.Removed))
                 {
@@ -1104,39 +1105,40 @@ public sealed class DataFilePatchApplier
                     }
                     _mainThreadAction(() =>
                     {
-                        RemoveSubCodeBlock(parent, child);
-                        parent.ChildEntries.Remove(child);
-                        _baseData.Code.Remove(child);
+                        RemoveSubCodeBlock(parent, child!);
+                        parent.ChildEntries.Remove(child!);
+                        _baseData.Code!.Remove(child!);
                     });
                     continue;
                 }
 
                 _mainThreadAction(() =>
                 {
+                    UndertaleCode currentChild = child ?? new UndertaleCode { Name = _baseData.Strings.MakeString(entry.Name) };
                     if (child is null)
                     {
-                        child = new UndertaleCode { Name = _baseData.Strings.MakeString(entry.Name) };
-                        _baseData.Code.Add(child);
+                        child = currentChild;
+                        _baseData.Code!.Add(currentChild);
                     }
-                    if (child.ParentEntry is not null && child.ParentEntry != parent)
+                    if (currentChild.ParentEntry is not null && currentChild.ParentEntry != parent)
                     {
                         throw new PatchSnapshotException("Sub-code entry is attached to a different parent");
                     }
 
                     // Attach new children only after the block has been inserted, so the
                     // splice takes the insertion path instead of replacing bytes at offset 0.
-                    bool attached = child.ParentEntry == parent;
-                    SpliceSubCodeBlock(_baseData, parent, child, snapshot);
+                    bool attached = currentChild.ParentEntry == parent;
+                    SpliceSubCodeBlock(_baseData, parent, currentChild, snapshot);
                     if (!attached)
                     {
-                        child.ParentEntry = parent;
-                        parent.ChildEntries.Add(child);
+                        currentChild.ParentEntry = parent;
+                        parent.ChildEntries.Add(currentChild);
 
                         // The code chunk writes blobs in list order and sub-entries bind to the
                         // blob written right before them, so the new child has to sit directly
                         // after its parent's blob group.
-                        UndertalePointerList<UndertaleCode> codeList = _baseData.Code;
-                        int groupEnd = codeList.IndexOf(parent);
+                        UndertalePointerList<UndertaleCode> codeList = _baseData.Code!;
+                        int groupEnd = codeList.IndexOf(parent!);
                         foreach (UndertaleCode sibling in parent.ChildEntries)
                         {
                             if (sibling == child)
@@ -1153,9 +1155,9 @@ public sealed class DataFilePatchApplier
                         codeList.Insert(Math.Min(groupEnd + 1, codeList.Count), child);
                     }
 
-                    child.LocalsCount = (uint)snapshot.LocalsCount;
-                    child.ArgumentsCount = (ushort)snapshot.ArgumentsCount;
-                    child.WeirdLocalFlag = snapshot.WeirdLocalFlag;
+                    currentChild.LocalsCount = (uint)snapshot.LocalsCount;
+                    currentChild.ArgumentsCount = (ushort)snapshot.ArgumentsCount;
+                    currentChild.WeirdLocalFlag = snapshot.WeirdLocalFlag;
                 });
             }
             catch (Exception e)
@@ -1267,7 +1269,7 @@ public sealed class DataFilePatchApplier
 
         for (int i = 0; i < blocks.Count; i++)
         {
-            UndertaleCode target = i < ordered.Count ? ordered[i] : null;
+            UndertaleCode? target = i < ordered.Count ? ordered[i] : null;
             if (target is null)
             {
                 throw new PatchSnapshotException("Sub-code block ordering is inconsistent");
@@ -1372,7 +1374,7 @@ public sealed class DataFilePatchApplier
     }
 
     private void ApplySnapshots(string workDirectory, DataFilePatchManifest manifest,
-                                DataFilePatchApplyResult result, IProgress<string> progress,
+                                DataFilePatchApplyResult result, IProgress<string>? progress,
                                 CancellationToken cancellationToken, JsonSerializerOptions jsonOptions)
     {
         List<PatchEntry> entries = [.. manifest.Entries.Where(e =>
@@ -1397,7 +1399,7 @@ public sealed class DataFilePatchApplier
                 }
                 Type resourceType = ResolveResourceType(entry.AssetType, entry.ResourceTypeName, entry.TypeId)
                     ?? throw new PatchSnapshotException($"Unknown resource type for \"{entry.TypeId}/{entry.Name}\"");
-                UndertaleNamedResource target = FindByName(entry);
+                UndertaleNamedResource? target = FindByName(entry);
                 if (target is null)
                 {
                     target = (UndertaleNamedResource)(Activator.CreateInstance(resourceType)
@@ -1419,7 +1421,7 @@ public sealed class DataFilePatchApplier
         foreach (PatchEntry entry in entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!targets.TryGetValue(entry, out UndertaleNamedResource target))
+            if (!targets.TryGetValue(entry, out UndertaleNamedResource? target))
             {
                 continue;
             }
@@ -1484,7 +1486,7 @@ public sealed class DataFilePatchApplier
 
             try
             {
-                Type resourceType = ResolveResourceType(entry.AssetType, entry.ResourceTypeName, entry.TypeId);
+                Type? resourceType = ResolveResourceType(entry.AssetType, entry.ResourceTypeName, entry.TypeId);
                 if (resourceType is null)
                 {
                     result.Errors.Add($"Failed to delete \"{entry.TypeId}/{entry.Name}\": unknown resource type");
@@ -1492,7 +1494,7 @@ public sealed class DataFilePatchApplier
                 }
 
                 System.Collections.IList list = _baseData[resourceType];
-                object found = null;
+                object? found = null;
                 foreach (object item in list)
                 {
                     if (item is UndertaleNamedResource named && string.Equals(named.Name?.Content, entry.Name, StringComparison.Ordinal))
@@ -1547,7 +1549,7 @@ public sealed class DataFilePatchApplier
             }
             try
             {
-                object target = entry.Kind == PatchEntryKind.GeneralInfo ? _baseData.GeneralInfo : FindByName(entry);
+                object? target = entry.Kind == PatchEntryKind.GeneralInfo ? _baseData.GeneralInfo : FindByName(entry);
                 if (target is null)
                 {
                     result.MismatchedCount++;
@@ -1583,9 +1585,9 @@ public sealed class DataFilePatchApplier
         return resource is UndertaleResource typed ? fingerprint.Compute(typed) : fingerprint.ComputeObject(resource);
     }
 
-    private UndertaleNamedResource FindByName(PatchEntry entry)
+    private UndertaleNamedResource? FindByName(PatchEntry entry)
     {
-        Type resourceType = ResolveResourceType(entry.AssetType, entry.ResourceTypeName, entry.TypeId);
+        Type? resourceType = ResolveResourceType(entry.AssetType, entry.ResourceTypeName, entry.TypeId);
         if (resourceType is null)
         {
             // Singletons (general info) have no resource list to search.
@@ -1606,7 +1608,7 @@ public sealed class DataFilePatchApplier
         return null;
     }
 
-    private static Type ResolveResourceType(string assetTypeName, string resourceTypeName, string typeId)
+    private static Type? ResolveResourceType(string assetTypeName, string? resourceTypeName, string typeId)
     {
         if (!string.IsNullOrEmpty(resourceTypeName))
         {

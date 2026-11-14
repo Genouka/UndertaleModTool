@@ -196,7 +196,7 @@ internal static class PatchSnapshotCodec
         Type type = value.GetType();
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(UndertaleResourceById<,>))
         {
-            PropertyInfo resource = type.GetProperty("Resource");
+            PropertyInfo? resource = type.GetProperty("Resource");
             return resource?.GetValue(value);
         }
         return value;
@@ -393,7 +393,7 @@ internal static class PatchSnapshotCodec
         Type? elementType = GetResourceElementType(targetType);
         if (elementType is null)
         {
-            return resolved;
+            return resolved!;
         }
 
         object wrapper = Activator.CreateInstance(targetType)

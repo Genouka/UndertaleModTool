@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -38,7 +39,7 @@ public sealed class DataFilePatchBuilder
 
     private readonly UndertaleData _baseData;
     private readonly UndertaleData _compareData;
-    private readonly string _compareFilePath;
+    private readonly string? _compareFilePath;
     private readonly Action<Action> _mainThreadAction;
 
     /// <summary>Fingerprints of the compared data, cached across all entries of one build.</summary>
@@ -63,7 +64,7 @@ public sealed class DataFilePatchBuilder
     /// <param name="mainThreadAction">Marshals actions onto the data file's main thread; pass
     /// <see langword="null"/> for non-UI usage.</param>
     public DataFilePatchBuilder(UndertaleData baseData, UndertaleData compareData,
-                                string compareFilePath = null, Action<Action> mainThreadAction = null)
+                                string? compareFilePath = null, Action<Action>? mainThreadAction = null)
     {
         _baseData = baseData ?? throw new ArgumentNullException(nameof(baseData));
         _compareData = compareData ?? throw new ArgumentNullException(nameof(compareData));
@@ -82,7 +83,7 @@ public sealed class DataFilePatchBuilder
     /// <param name="cancellationToken">Optional cancellation token.</param>
     public void Build(DataFileDiffResult result, string patchFilePath,
                       string baseLabel, string compareLabel,
-                      IProgress<string> progress = null, CancellationToken cancellationToken = default)
+                      IProgress<string>? progress = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(result);
         ArgumentException.ThrowIfNullOrEmpty(patchFilePath);
@@ -161,7 +162,7 @@ public sealed class DataFilePatchBuilder
     }
 
     private List<PatchEntry> BuildEntries(DataFileDiffResult result, string tempDirectory,
-                                          IProgress<string> progress, CancellationToken cancellationToken)
+                                          IProgress<string>? progress, CancellationToken cancellationToken)
     {
         CrossFileImportContext sourceContext = new(_compareData, _mainThreadAction);
         if (_compareFilePath is not null)
@@ -308,7 +309,7 @@ public sealed class DataFilePatchBuilder
             return CaptureSnapshotEntry(tempDirectory, diffEntry, entry);
         }
 
-        object resource = diffEntry.CompareResource;
+        object? resource = diffEntry.CompareResource;
 
         // Code entries are carried as decompiled GML (disassembly fallback would not compile),
         // except anonymous sub-entries which have no source of their own.
@@ -380,7 +381,7 @@ public sealed class DataFilePatchBuilder
         string friendlyName = MakeFilename(code.Name?.Content ?? entry.Name);
         string assetPath = Path.Join("assets", "code", $"{friendlyName}.json");
         string destinationFile = Path.Join(tempDirectory, assetPath);
-        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile));
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile) ?? tempDirectory);
 
         SerializableCode serializable = new();
         serializable.PopulateFromData(sourceContext, code);
@@ -454,7 +455,7 @@ public sealed class DataFilePatchBuilder
                 {
                     string relative = $"audiogroups/group{groupIndex}.dat";
                     string destination = Path.Join(tempDirectory, relative);
-                    Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                    Directory.CreateDirectory(Path.GetDirectoryName(destination) ?? tempDirectory);
                     File.Copy(fullPath, destination, true);
                     groupFilePath = relative.Replace('\\', '/');
                     _capturedGroupFiles[groupIndex] = groupFilePath;
@@ -486,7 +487,7 @@ public sealed class DataFilePatchBuilder
         string friendlyName = MakeFilename(code.Name?.Content ?? entry.Name);
         string relativePath = $"code/{friendlyName}.subcode.json";
         string destinationFile = Path.Join(tempDirectory, relativePath);
-        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile));
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile) ?? tempDirectory);
 
         (int startIndex, int endIndex) = CodeFingerprint.GetSegmentInstructionRange(code);
         IReadOnlyList<UndertaleInstruction> sourceInstructions = code.ParentEntry?.Instructions ?? code.Instructions;
@@ -558,11 +559,11 @@ public sealed class DataFilePatchBuilder
         string friendlyName = MakeFilename(diffEntry.Name);
         string relativePath = "snapshots/" + diffEntry.TypeId + "/" + friendlyName + ".json";
         string destinationFile = Path.Join(tempDirectory, relativePath);
-        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile));
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile) ?? tempDirectory);
 
         try
         {
-            JsonNode snapshot = PatchSnapshotCodec.Encode(_compareData, diffEntry.CompareResource);
+            JsonNode snapshot = PatchSnapshotCodec.Encode(_compareData, diffEntry.CompareResource!);
             using (FileStream fs = new(destinationFile, FileMode.Create, FileAccess.Write))
             {
                 using System.Text.Json.Utf8JsonWriter writer = new(fs, new System.Text.Json.JsonWriterOptions { Indented = true });
@@ -592,7 +593,7 @@ public sealed class DataFilePatchBuilder
         List<string> maskPaths = [];
         if (serializable is SerializableSprite sprite)
         {
-            UndertaleSprite sourceSprite = (UndertaleSprite)diffEntry.CompareResource;
+            UndertaleSprite sourceSprite = (UndertaleSprite)diffEntry.CompareResource!;
             textureRefs = CaptureSpriteTextures(sourceSprite);
             maskPaths = CaptureMasks(tempDirectory, sourceSprite, folder, friendlyName);
             sprite.TextureCount = 0;
@@ -616,7 +617,7 @@ public sealed class DataFilePatchBuilder
                         })],
                     };
                     string extraPath = $"assets/{folder}/{friendlyName}/spine.json";
-                    Directory.CreateDirectory(Path.GetDirectoryName(Path.Join(tempDirectory, extraPath)));
+                    Directory.CreateDirectory(Path.GetDirectoryName(Path.Join(tempDirectory, extraPath)) ?? tempDirectory);
                     WriteJson(Path.Join(tempDirectory, extraPath), spineSnapshot, CreateJsonOptions());
                     _pendingSpriteExtra[diffEntry.Name] = extraPath.Replace('\\', '/');
                 }
@@ -628,12 +629,12 @@ public sealed class DataFilePatchBuilder
         }
         else if (serializable is SerializableBackground background)
         {
-            textureRefs = CaptureSingleTexture(((UndertaleBackground)diffEntry.CompareResource).Texture);
+            textureRefs = CaptureSingleTexture(((UndertaleBackground)diffEntry.CompareResource!).Texture);
             background.SkipTextureExport = true;
         }
         else if (serializable is SerializableFont font)
         {
-            textureRefs = CaptureSingleTexture(((UndertaleFont)diffEntry.CompareResource).Texture);
+            textureRefs = CaptureSingleTexture(((UndertaleFont)diffEntry.CompareResource!).Texture);
             font.SkipTextureExport = true;
         }
 
@@ -641,7 +642,7 @@ public sealed class DataFilePatchBuilder
             ? Path.Join("assets", folder, friendlyName, $"{friendlyName}.json")
             : Path.Join("assets", folder, $"{friendlyName}.json");
         string destinationFile = Path.Join(tempDirectory, relativePath);
-        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile));
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationFile) ?? tempDirectory);
 
         serializable.Serialize(sourceContext, destinationFile);
         return (relativePath.Replace('\\', '/'), textureRefs, maskPaths);
@@ -658,7 +659,7 @@ public sealed class DataFilePatchBuilder
         List<PatchTextureRef> refs = [];
         for (int i = 0; i < sprite.Textures.Count; i++)
         {
-            UndertaleTexturePageItem pageItem = sprite.Textures[i]?.Texture;
+            UndertaleTexturePageItem? pageItem = sprite.Textures[i]?.Texture;
             if (pageItem is null)
             {
                 continue;
@@ -820,7 +821,7 @@ public sealed class DataFilePatchBuilder
         Directory.CreateDirectory(dir);
         for (int i = 0; i < sprite.CollisionMasks.Count; i++)
         {
-            byte[] data = sprite.CollisionMasks[i]?.Data;
+            byte[]? data = sprite.CollisionMasks[i]?.Data;
             if (data is null)
             {
                 continue;
@@ -832,7 +833,7 @@ public sealed class DataFilePatchBuilder
         return paths;
     }
 
-    private byte[] FingerprintObject(AssetFingerprint fingerprint, object resource, AssetDiffEntry entry)
+    private byte[] FingerprintObject(AssetFingerprint fingerprint, object? resource, AssetDiffEntry entry)
     {
         if (resource is UndertaleCode code && entry.TypeId == "Code")
         {
@@ -843,7 +844,7 @@ public sealed class DataFilePatchBuilder
         return resource switch
         {
             UndertaleResource typed => fingerprint.Compute(typed),
-            _ => fingerprint.ComputeObject(resource),
+            _ => fingerprint.ComputeObject(resource!),
         };
     }
 
@@ -852,7 +853,7 @@ public sealed class DataFilePatchBuilder
         return Convert.ToBase64String(fingerprint);
     }
 
-    private static string GetAssetTypeName(AssetDiffEntry entry)
+    private static string? GetAssetTypeName(AssetDiffEntry entry)
     {
         return entry.BaseResource switch
         {
