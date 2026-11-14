@@ -32,6 +32,17 @@ public sealed class AssetFingerprint
         typeof(UndertaleEmbeddedAudio),
     ];
 
+    /// <summary>
+    /// Whether a named resource is hashed by content instead of being referenced by name:
+    /// positional internal resources (texture pages, embedded textures/audio) and UI nodes.
+    /// </summary>
+    internal static bool IsContentHashedNamedResource(UndertaleNamedResource resource)
+    {
+        return PositionalResourceTypes.Contains(resource.GetType()) ||
+               resource is Models.UndertaleUINode ||
+               resource is Models.IUndertaleUINodeData;
+    }
+
     private readonly Dictionary<object, byte[]> _cache = new(ReferenceEqualityComparer.Instance);
     private readonly HashSet<object> _path = new(ReferenceEqualityComparer.Instance);
 

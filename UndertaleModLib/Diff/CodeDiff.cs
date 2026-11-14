@@ -481,6 +481,71 @@ public sealed class CodeDiffService
             differences.Add(new PropertyDiff(name, baseValue, compareValue));
     }
 
+    /// <summary>
+    /// Compares the bytecode segments of two anonymous sub-code entries (or, when given root
+    /// entries, of their own segments) using disassembly, since sub-entries have no GML source.
+    /// </summary>
+    public CodeDiffResult CompareSegments(UndertaleCode baseCode, UndertaleCode compareCode)
+    {
+        lock (_lock)
+        {
+            List<PropertyDiff> metadata = [];
+            AddMetadataDifference(metadata, "ArgumentsCount",
+                baseCode.ArgumentsCount.ToString(CultureInfo.InvariantCulture),
+                compareCode.ArgumentsCount.ToString(CultureInfo.InvariantCulture));
+            AddMetadataDifference(metadata, "LocalsCount",
+                baseCode.LocalsCount.ToString(CultureInfo.InvariantCulture),
+                compareCode.LocalsCount.ToString(CultureInfo.InvariantCulture));
+            AddMetadataDifference(metadata, "WeirdLocalFlag",
+                baseCode.WeirdLocalFlag.ToString(),
+                compareCode.WeirdLocalFlag.ToString());
+
+            string baseText = DisassembleSegment(baseCode, _baseData);
+            string compareText = DisassembleSegment(compareCode, _compareData);
+            IReadOnlyList<TextDiffLine> diffLines = TextLineDiff.Diff(baseText, compareText);
+            string diffText = TextLineDiff.FormatUnified(diffLines);
+
+            return new CodeDiffResult
+            {
+                MetadataDifferences = metadata,
+                DiffText = diffText,
+                BaseDecompileFailed = baseText.Length == 0,
+                CompareDecompileFailed = compareText.Length == 0
+            };
+        }
+    }
+
+    private static string DisassembleSegment(UndertaleCode code, UndertaleData data)
+    {
+        (int start, int end) = CodeFingerprint.GetSegmentInstructionRange(code);
+        IReadOnlyList<UndertaleInstruction> source = code.ParentEntry?.Instructions ?? code.Instructions;
+        if (end <= start || start >= source.Count)
+        {
+            return "";
+        }
+
+        UndertaleCode segment = new() { Name = code.Name };
+        for (int i = start; i < end && i < source.Count; i++)
+        {
+            segment.Instructions.Add(source[i]);
+        }
+
+        UndertaleCodeLocals? locals = null;
+        if (data.CodeLocals is not null && code.Name?.Content is string name)
+        {
+            locals = data.CodeLocals.ByName(name);
+        }
+
+        try
+        {
+            return segment.Disassemble(data.Variables, locals, ignoreMissingCodeLocals: true) ?? "";
+        }
+        catch (Exception)
+        {
+            return "";
+        }
+    }
+
     private static string Decompile(UndertaleCode code, UndertaleData data,
                                     ref GlobalDecompileContext? context, ref bool contextInitialized,
                                     out bool failed)

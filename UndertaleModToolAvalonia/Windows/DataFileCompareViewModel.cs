@@ -659,7 +659,12 @@ public partial class DataFileCompareViewModel : ObservableObject, IDisposable
             if (service is null)
                 return;
 
-            CodeDiffResult diff = await Task.Run(() => service.Compare(baseCode, compareCode));
+            // Anonymous sub-entries have no GML source of their own; compare their
+            // bytecode segments via disassembly instead.
+            bool subEntry = baseCode.ParentEntry is not null || compareCode.ParentEntry is not null;
+            CodeDiffResult diff = await Task.Run(() => subEntry
+                ? service.CompareSegments(baseCode, compareCode)
+                : service.Compare(baseCode, compareCode));
             if (version != _detailsVersion)
                 return;
 
@@ -668,6 +673,8 @@ public partial class DataFileCompareViewModel : ObservableObject, IDisposable
             CodeDiffText = diff.DiffText;
 
             List<string> notes = [];
+            if (subEntry)
+                notes.Add(Loc("Compare_SubCodeDisassembly"));
             if (diff.BaseDecompileFailed || diff.CompareDecompileFailed)
                 notes.Add(Loc("Compare_DecompileFailed"));
             if (!diff.HasTextDifferences)
