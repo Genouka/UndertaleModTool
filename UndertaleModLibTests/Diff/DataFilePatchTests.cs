@@ -760,6 +760,124 @@ public class DataFilePatchTests
         data.Sprites.Add(sprite);
     }
 
+    [Fact]
+    public void SortByChain_ChainsByMd5_AndKeepsAlphabeticalForUnmatched()
+    {
+        List<PatchChainEntry> entries =
+        [
+            MakeChainEntry("zzz-unrelated.qiuumtdiff", baseMd5: "1111", resultMd5: "2222"),
+            MakeChainEntry("second.qiuumtdiff", baseMd5: "BBBB", resultMd5: "CCCC"),
+            MakeChainEntry("first.qiuumtdiff", baseMd5: "AAAA", resultMd5: "BBBB"),
+            MakeChainEntry("aaa-no-md5.qiuumtdiff", baseMd5: null, resultMd5: null),
+        ];
+
+        List<string> ordered = [.. DataFilePatchChain.SortByChain(entries).Select(e => e.FileName)];
+        Assert.Equal(
+            ["first.qiuumtdiff", "second.qiuumtdiff", "aaa-no-md5.qiuumtdiff", "zzz-unrelated.qiuumtdiff"],
+            ordered);
+
+        // Cycles and ambiguous links fall back to alphabetical order.
+        List<PatchChainEntry> cyclic =
+        [
+            MakeChainEntry("b.qiuumtdiff", baseMd5: "BBBB", resultMd5: "AAAA"),
+            MakeChainEntry("a.qiuumtdiff", baseMd5: "AAAA", resultMd5: "BBBB"),
+        ];
+        Assert.Equal(["a.qiuumtdiff", "b.qiuumtdiff"],
+            DataFilePatchChain.SortByChain(cyclic).Select(e => e.FileName).ToArray());
+
+        List<PatchChainEntry> ambiguous =
+        [
+            MakeChainEntry("c.qiuumtdiff", baseMd5: "BBBB", resultMd5: "CCCC"),
+            MakeChainEntry("b.qiuumtdiff", baseMd5: "BBBB", resultMd5: "DDDD"),
+            MakeChainEntry("a.qiuumtdiff", baseMd5: "AAAA", resultMd5: "BBBB"),
+        ];
+        List<string> ambiguousOrder = [.. DataFilePatchChain.SortByChain(ambiguous).Select(e => e.FileName)];
+        Assert.Equal("a.qiuumtdiff", ambiguousOrder[0]);
+        Assert.Equal(["b.qiuumtdiff", "c.qiuumtdiff"], ambiguousOrder.Skip(1).OrderBy(n => n).ToArray());
+    }
+
+    [Fact]
+    public void ApplyMany_AppliesChainedPatchesInOrder()
+    {
+        (UndertaleData a, UndertaleData b, UndertaleData c) = BuildTriple();
+        string root = Path.Combine(Path.GetTempPath(), $"qiuumtdiff-chain-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        string aPath = Path.Join(root, "a.win");
+        string bPath = Path.Join(root, "b.win");
+        string cPath = Path.Join(root, "c.win");
+        string p1 = Path.Join(root, "1-a-to-b.qiuumtdiff");
+        string p2 = Path.Join(root, "2-b-to-c.qiuumtdiff");
+        try
+        {
+            WriteDataFile(a, aPath);
+            WriteDataFile(b, bPath);
+            WriteDataFile(c, cPath);
+            new DataFilePatchBuilder(a, b, bPath, aPath)
+                .Build(new DataFileDiffer(a, b).Compare(), p1, aPath, bPath);
+            new DataFilePatchBuilder(b, c, cPath, bPath)
+                .Build(new DataFileDiffer(b, c).Compare(), p2, bPath, cPath);
+
+            List<PatchChainEntry> ordered = DataFilePatchChain.SortByChain(
+                DataFilePatchChain.ReadManifests([p2, p1]));
+            Assert.Equal([p1, p2], ordered.Select(e => e.Path));
+
+            DataFilePatchApplyResult result = DataFilePatchChain.ApplyMany(a, [p1, p2],
+                new DataFilePatchApplyOptions { DeleteRemoved = true, BaseFilePath = aPath });
+            Assert.Empty(result.Errors);
+            Assert.Empty(result.Warnings);
+            Assert.Equal(0, result.MismatchedCount);
+            Assert.True(result.VerifiedCount > 0);
+
+            DataFileDiffResult recheck = new DataFileDiffer(a, c).Compare();
+            Assert.True(recheck.AddedCount == 0 && recheck.RemovedCount == 0 && recheck.ChangedCount == 0,
+                DescribeDiff(recheck));
+
+            // Swapped order: the chain link check reports the mismatch instead of applying silently.
+            (UndertaleData a2, _, _) = BuildTriple();
+            DataFilePatchApplyResult swapped = DataFilePatchChain.ApplyMany(a2, [p2, p1],
+                new DataFilePatchApplyOptions { DeleteRemoved = true });
+            Assert.Contains(swapped.Warnings, w => w.Contains("expects a base file with MD5", StringComparison.Ordinal));
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(root, recursive: true);
+            }
+            catch
+            {
+                // Best effort cleanup.
+            }
+        }
+    }
+
+    private static PatchChainEntry MakeChainEntry(string fileName, string? baseMd5, string? resultMd5)
+    {
+        return new PatchChainEntry(fileName, new DataFilePatchManifest
+        {
+            BaseFileMd5 = baseMd5,
+            ResultFileMd5 = resultMd5,
+        });
+    }
+
+    private static (UndertaleData A, UndertaleData B, UndertaleData C) BuildTriple()
+    {
+        UndertaleData a = BuildCodedData(1);
+        UndertaleData b = BuildCodedData(2);
+        UndertaleData c = BuildCodedData(3);
+        return (a, b, c);
+    }
+
+    private static UndertaleData BuildCodedData(int constant)
+    {
+        UndertaleData data = UndertaleData.CreateNew();
+        data.GeneralInfo.Major = 2024;
+        data.GeneralInfo.Minor = 8;
+        data.Rooms.Clear();
+        AddCompiledCode(data, "gml_Object_obj_chain_Draw_0", $"v = {constant};");
+        return data;
+    }
+
     private static void MoveStringsChunkLast(UndertaleData data)
     {
         if (!data.FORM.Chunks.ContainsKey("STRG"))

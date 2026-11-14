@@ -65,6 +65,9 @@ public sealed class DataFilePatchApplyResult
     /// <summary>MD5 of the compared file recorded by the patch (the intended result), if known.</summary>
     public string? ExpectedResultMd5 { get; set; }
 
+    /// <summary>Per-diff summaries when several diffs are applied in order.</summary>
+    public List<string> StepSummaries { get; } = [];
+
     /// <summary>Short single-line summary, suitable for a status bar.</summary>
     public string GetSummary()
     {
