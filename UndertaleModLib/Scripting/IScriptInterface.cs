@@ -6,8 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Underanalyzer.Decompiler;
 using UndertaleModLib.Decompiler;
+using UndertaleModLib.Compiler;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
+using UndertaleModLib.Util;
 
 namespace UndertaleModLib.Scripting;
 
@@ -489,4 +491,298 @@ public interface IScriptInterface
     /// <param name="filter">The filters used to specify the file types in the dialog.</param>
     /// <returns>The file path specified by the user for saving.</returns>
     string PromptSaveFile(string defaultExt, string filter);
+
+    #region Legacy scripting compatibility
+
+    // These members were removed between 0.6 and 0.9. They are kept as default interface
+    // implementations so old scripts keep compiling; each warns once when used.
+
+    /// <summary>
+    /// Deprecated. Returns whether the decompiled code cache is enabled.
+    /// </summary>
+    /// <remarks>The decompiled code cache is no longer available, so this always returns <see langword="false"/>.</remarks>
+    [Obsolete("GMLCacheEnabled is deprecated; the decompiled code cache is no longer available.")]
+    bool GMLCacheEnabled
+    {
+        get
+        {
+            ScriptingUtil.WarnDeprecatedScriptAPI(nameof(GMLCacheEnabled),
+                                                  "The decompiled code cache is no longer available.");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Deprecated. Previously generated a decompiled code cache.
+    /// </summary>
+    /// <returns>Always <see langword="false"/>.</returns>
+    [Obsolete("GenerateGMLCache is deprecated; the decompiled code cache is no longer available.")]
+    sealed Task<bool> GenerateGMLCache(ThreadLocal<GlobalDecompileContext> decompileContext = null, object dialog = null,
+                                       bool clearGMLEditedBefore = false)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(GenerateGMLCache),
+                                              "The decompiled code cache is no longer available.");
+        return Task.FromResult(false);
+    }
+
+    /// <summary>
+    /// Deprecated. Use <see cref="MakeNewDataFile"/>.
+    /// </summary>
+    [Obsolete("Use MakeNewDataFile instead.")]
+    sealed Task<bool> Make_New_File()
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(Make_New_File), "Use MakeNewDataFile() instead.");
+        return Task.FromResult(MakeNewDataFile());
+    }
+
+    /// <summary>
+    /// Deprecated. Use <see cref="IncrementProgress"/>.
+    /// </summary>
+    [Obsolete("Use IncrementProgress instead.")]
+    sealed void IncProgress()
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(IncProgress), "Use IncrementProgress() instead.");
+        IncrementProgress();
+    }
+
+    /// <summary>
+    /// Deprecated. Use <see cref="AddProgressParallel"/>.
+    /// </summary>
+    [Obsolete("Use AddProgressParallel instead.")]
+    sealed void AddProgressP(int amount)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(AddProgressP), "Use AddProgressParallel() instead.");
+        AddProgressParallel(amount);
+    }
+
+    /// <summary>
+    /// Deprecated. Use <see cref="IncrementProgressParallel"/>.
+    /// </summary>
+    [Obsolete("Use IncrementProgressParallel instead.")]
+    sealed void IncProgressP()
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(IncProgressP), "Use IncrementProgressParallel() instead.");
+        IncrementProgressParallel();
+    }
+
+    /// <summary>
+    /// Deprecated. Use <see cref="StartProgressBarUpdater"/>.
+    /// </summary>
+    [Obsolete("Use StartProgressBarUpdater instead.")]
+    sealed void StartUpdater()
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(StartUpdater), "Use StartProgressBarUpdater() instead.");
+        StartProgressBarUpdater();
+    }
+
+    /// <summary>
+    /// Deprecated. Use <see cref="StopProgressBarUpdater"/>.
+    /// </summary>
+    [Obsolete("Use StopProgressBarUpdater instead.")]
+    sealed Task StopUpdater()
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(StopUpdater), "Use StopProgressBarUpdater() instead.");
+        return StopProgressBarUpdater();
+    }
+
+    /// <summary>
+    /// Deprecated. Use <see cref="SyncBinding(string, bool)"/> or <see cref="DisableAllSyncBindings"/>.
+    /// </summary>
+    [Obsolete("Use DisableAllSyncBindings() instead.")]
+    sealed void SyncBinding(bool enable = false)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(SyncBinding), "Use DisableAllSyncBindings() instead.");
+        DisableAllSyncBindings();
+    }
+
+    /// <summary>
+    /// Deprecated. Use <see cref="PromptChooseDirectory"/>.
+    /// </summary>
+    [Obsolete("Use PromptChooseDirectory() instead.")]
+    sealed string PromptChooseDirectory(string prompt)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(PromptChooseDirectory), "Use PromptChooseDirectory() instead.");
+        return PromptChooseDirectory();
+    }
+
+    /// <summary>Deprecated placeholder. Always returns <see langword="true"/>.</summary>
+    [Obsolete("DummyBool is deprecated.")]
+    sealed bool DummyBool()
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(DummyBool), "This placeholder is no longer needed.");
+        return true;
+    }
+
+    /// <summary>Deprecated placeholder. Does nothing.</summary>
+    [Obsolete("DummyVoid is deprecated.")]
+    sealed void DummyVoid()
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(DummyVoid), "This placeholder is no longer needed.");
+    }
+
+    /// <summary>Deprecated placeholder. Always returns an empty string.</summary>
+    [Obsolete("DummyString is deprecated.")]
+    sealed string DummyString()
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(DummyString), "This placeholder is no longer needed.");
+        return "";
+    }
+
+    /// <summary>
+    /// Deprecated. Previously deleted the profile-mode GML copy of a code entry.
+    /// </summary>
+    /// <remarks>Profile mode was removed, so this does nothing.</remarks>
+    [Obsolete("NukeProfileGML is deprecated; profile mode was removed.")]
+    sealed void NukeProfileGML(string codeName)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(NukeProfileGML), "Profile mode was removed.");
+    }
+
+    /// <summary>
+    /// Deprecated. Previously reimported profile-mode GML copies.
+    /// </summary>
+    /// <remarks>Profile mode was removed, so this does nothing.</remarks>
+    [Obsolete("ReapplyProfileCode is deprecated; profile mode was removed.")]
+    sealed void ReapplyProfileCode()
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(ReapplyProfileCode), "Profile mode was removed.");
+    }
+
+    /// <summary>
+    /// Deprecated. Replaces the GML of a code entry, creating it if necessary.
+    /// </summary>
+    /// <param name="codeName">Name of the code entry to replace.</param>
+    /// <param name="gmlCode">New GML source.</param>
+    /// <param name="doParse">Whether missing assets may be created for the code entry name.</param>
+    /// <param name="checkDecompiler">Ignored; retained for compatibility.</param>
+    [Obsolete("Use CodeImportGroup.QueueReplace() and Import() instead.")]
+    sealed void ImportGMLString(string codeName, string gmlCode, bool doParse = true, bool checkDecompiler = false)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(ImportGMLString), "Use CodeImportGroup.QueueReplace() instead.");
+        EnsureDataLoaded();
+        CodeImportGroup group = new(Data, null, Data.ToolInfo?.DecompilerSettings)
+        {
+            AutoCreateAssets = doParse,
+            MainThreadAction = MainThreadAction
+        };
+        group.QueueReplace(codeName, gmlCode);
+        group.Import();
+    }
+
+    /// <summary>
+    /// Deprecated. Replaces the GML of the code entry named after <paramref name="fileName"/>.
+    /// </summary>
+    /// <param name="fileName">GML file to read; its name is used as the code entry name.</param>
+    /// <param name="doParse">Whether missing assets may be created for the code entry name.</param>
+    /// <param name="checkDecompiler">Ignored; retained for compatibility.</param>
+    /// <param name="throwOnError">Whether errors are thrown instead of shown as script errors.</param>
+    [Obsolete("Use CodeImportGroup.QueueReplace() and Import() instead.")]
+    sealed void ImportGMLFile(string fileName, bool doParse = true, bool checkDecompiler = false, bool throwOnError = false)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(ImportGMLFile), "Use CodeImportGroup.QueueReplace() instead.");
+        try
+        {
+            ImportGMLString(Path.GetFileNameWithoutExtension(fileName), File.ReadAllText(fileName), doParse, checkDecompiler);
+        }
+        catch (Exception ex) when (!throwOnError)
+        {
+            ScriptError("Error importing GML file \"" + fileName + "\":\n" + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Deprecated. Assembles GM bytecode and replaces the code entry, creating it if necessary.
+    /// </summary>
+    /// <param name="codeName">Name of the code entry to replace.</param>
+    /// <param name="gmlCode">Assembly source to assemble.</param>
+    /// <param name="doParse">Ignored; retained for compatibility.</param>
+    /// <param name="nukeProfile">Ignored; retained for compatibility.</param>
+    /// <param name="checkDecompiler">Ignored; retained for compatibility.</param>
+    [Obsolete("Use Assembler.Assemble() and UndertaleCode.Replace() instead.")]
+    sealed void ImportASMString(string codeName, string gmlCode, bool doParse = true, bool nukeProfile = true, bool checkDecompiler = false)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(ImportASMString), "Use Assembler.Assemble() instead.");
+        EnsureDataLoaded();
+
+        UndertaleCode code = Data.Code.ByName(codeName);
+        if (code is null)
+        {
+            MainThreadAction(() => code = UndertaleCode.CreateEmptyEntry(Data, codeName));
+        }
+
+        List<UndertaleInstruction> instructions = Assembler.Assemble(gmlCode, Data, MainThreadAction);
+        MainThreadAction(() => code.Replace(instructions));
+    }
+
+    /// <summary>
+    /// Deprecated. Assembles a GM bytecode file and replaces the code entry named after it.
+    /// </summary>
+    /// <param name="fileName">Assembly file to read; its name is used as the code entry name.</param>
+    /// <param name="doParse">Ignored; retained for compatibility.</param>
+    /// <param name="nukeProfile">Ignored; retained for compatibility.</param>
+    /// <param name="checkDecompiler">Ignored; retained for compatibility.</param>
+    /// <param name="throwOnError">Whether errors are thrown instead of shown as script errors.</param>
+    [Obsolete("Use Assembler.Assemble() and UndertaleCode.Replace() instead.")]
+    sealed void ImportASMFile(string fileName, bool doParse = true, bool nukeProfile = true, bool checkDecompiler = false, bool throwOnError = false)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(ImportASMFile), "Use Assembler.Assemble() instead.");
+        try
+        {
+            ImportASMString(Path.GetFileNameWithoutExtension(fileName), File.ReadAllText(fileName), doParse, nukeProfile, checkDecompiler);
+        }
+        catch (Exception ex) when (!throwOnError)
+        {
+            ScriptError("Error importing assembly file \"" + fileName + "\":\n" + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Deprecated. Finds and replaces text in a decompiled code entry.
+    /// </summary>
+    /// <param name="codeName">Name of the code entry to modify.</param>
+    /// <param name="keyword">Search text.</param>
+    /// <param name="replacement">Replacement text.</param>
+    /// <param name="caseSensitive">Whether the search is case-sensitive.</param>
+    /// <param name="isRegex">Whether <paramref name="keyword"/> is a regular expression.</param>
+    /// <param name="context">Decompile context to use, or <see langword="null"/> to create one.</param>
+    [Obsolete("Use CodeImportGroup.QueueFindReplace() or QueueRegexFindReplace() instead.")]
+    sealed void ReplaceTextInGML(string codeName, string keyword, string replacement, bool caseSensitive = false,
+                                 bool isRegex = false, GlobalDecompileContext context = null)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(ReplaceTextInGML), "Use CodeImportGroup.QueueFindReplace() instead.");
+        UndertaleCode code = Data.Code.ByName(codeName)
+            ?? throw new ScriptException($"No code named \"{codeName}\" was found!");
+        ReplaceTextInGML(code, keyword, replacement, caseSensitive, isRegex, context);
+    }
+
+    /// <summary>
+    /// Deprecated. Finds and replaces text in a decompiled code entry.
+    /// </summary>
+    /// <param name="code">Code entry to modify.</param>
+    /// <param name="keyword">Search text.</param>
+    /// <param name="replacement">Replacement text.</param>
+    /// <param name="caseSensitive">Whether the search is case-sensitive.</param>
+    /// <param name="isRegex">Whether <paramref name="keyword"/> is a regular expression.</param>
+    /// <param name="context">Decompile context to use, or <see langword="null"/> to create one.</param>
+    [Obsolete("Use CodeImportGroup.QueueFindReplace() or QueueRegexFindReplace() instead.")]
+    sealed void ReplaceTextInGML(UndertaleCode code, string keyword, string replacement, bool caseSensitive = false,
+                                 bool isRegex = false, GlobalDecompileContext context = null)
+    {
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(ReplaceTextInGML), "Use CodeImportGroup.QueueFindReplace() instead.");
+        if (code.ParentEntry is not null)
+            return;
+
+        EnsureDataLoaded();
+        CodeImportGroup group = new(Data, context, Data.ToolInfo?.DecompilerSettings)
+        {
+            MainThreadAction = MainThreadAction
+        };
+        if (isRegex)
+            group.QueueRegexFindReplace(code, keyword, replacement, caseSensitive);
+        else
+            group.QueueFindReplace(code, keyword, replacement, caseSensitive);
+        group.Import();
+    }
+
+    #endregion
 }

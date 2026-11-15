@@ -117,6 +117,16 @@ public class GlobalDecompileContext : IGameContext, IFunctionArgTypeProvider
     }
 
     /// <summary>
+    /// Deprecated constructor retaining the old second parameter.
+    /// </summary>
+    /// <param name="data">Data to create the context for.</param>
+    /// <param name="useCache">Ignored; retained for compatibility.</param>
+    [Obsolete("The cache parameter is no longer used.")]
+    public GlobalDecompileContext(UndertaleData data, bool useCache) : this(data)
+    {
+    }
+
+    /// <summary>
     /// Builds the GlobalFunctions cache, required for Underanalyzer's decompiler to recognize function names in global scope.
     /// </summary>
     public static void BuildGlobalFunctionCache(UndertaleData data)
