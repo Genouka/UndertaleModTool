@@ -72,6 +72,11 @@ namespace UndertaleModTool.Windows
             await _viewModel.ExportStructuredDiffAsync(this);
         }
 
+        private async void SavePatchButton_Click(object sender, RoutedEventArgs e)
+        {
+            await _viewModel.SavePatchAsync(this);
+        }
+
         private async void MergeButton_Click(object sender, RoutedEventArgs e)
         {
             await _viewModel.MergeSelectedAsync(this);
@@ -96,7 +101,7 @@ namespace UndertaleModTool.Windows
 
         private void EntriesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            _viewModel?.OnSelectedEntryChanged();
+            _viewModel?.SelectEntry(EntriesGrid.SelectedItem as CompareEntryRow);
         }
 
         private void DetailsTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)

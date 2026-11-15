@@ -49,6 +49,23 @@ internal static class AssetMemberWalker
         }
     }
 
+    /// <summary>
+    /// Writes one member of the given object by name, using the same member set that
+    /// <see cref="ReadMembers"/> exposes. Used by the patch snapshot decoder.
+    /// </summary>
+    internal static void WriteMember(object target, string name, object? value)
+    {
+        foreach (MemberAccessor accessor in GetMembers(target.GetType()))
+        {
+            if (accessor.Name == name)
+            {
+                accessor.Set(target, value);
+                return;
+            }
+        }
+        throw new MissingMemberException(target.GetType().FullName, name);
+    }
+
     private static MemberAccessor[] GetMembers(Type type)
     {
         return Cache.GetOrAdd(type, static t =>
@@ -71,7 +88,7 @@ internal static class AssetMemberWalker
                 if (SkipMembers.Contains((property.DeclaringType ?? t, property.Name)))
                     continue;
 
-                members.Add(new MemberAccessor(property.Name, property.GetValue));
+                members.Add(new MemberAccessor(property.Name, property.GetValue, property.SetValue));
             }
 
             foreach (FieldInfo field in t.GetFields(BindingFlags.Public | BindingFlags.Instance))
@@ -86,7 +103,7 @@ internal static class AssetMemberWalker
                     continue;
 
                 FieldInfo captured = field;
-                members.Add(new MemberAccessor(field.Name, captured.GetValue));
+                members.Add(new MemberAccessor(field.Name, captured.GetValue, captured.SetValue));
             }
 
             return members
@@ -95,7 +112,7 @@ internal static class AssetMemberWalker
         });
     }
 
-    private sealed record MemberAccessor(string Name, Func<object, object?> Get);
+    private sealed record MemberAccessor(string Name, Func<object, object?> Get, Action<object, object?> Set);
 
     /// <summary>
     /// Marker used when a property getter throws; its message is included in fingerprints

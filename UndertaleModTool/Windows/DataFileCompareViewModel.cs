@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -27,11 +28,11 @@ namespace UndertaleModTool
         private readonly HashSet<AssetDiffEntry> _selectedEntries = new(ReferenceEqualityComparer.Instance);
         private string _compareFilePath;
 
-        private CancellationTokenSource _cts;
-        private UndertaleData _baseData;
-        private UndertaleData _compareData;
-        private DataFileDiffResult _result;
-        private CodeDiffService _codeDiffService;
+        private CancellationTokenSource? _cts;
+        private UndertaleData? _baseData;
+        private UndertaleData? _compareData;
+        private DataFileDiffResult? _result;
+        private CodeDiffService? _codeDiffService;
         private Dictionary<string, string> _categoryTitles = new(StringComparer.Ordinal);
         private int _detailsVersion;
         private bool _disposed;
@@ -49,9 +50,9 @@ namespace UndertaleModTool
         public bool HasWarnings { get; set; }
 
         public ObservableCollection<CompareCategoryRow> Categories { get; set; } = new();
-        public CompareCategoryRow SelectedCategory { get; set; }
+        public CompareCategoryRow? SelectedCategory { get; set; }
         public ObservableCollection<CompareEntryRow> Entries { get; set; } = new();
-        public CompareEntryRow SelectedEntry { get; set; }
+        public CompareEntryRow? SelectedEntry { get; set; }
         public string FilterText { get; set; } = "";
 
         /// <summary>0 = differences, 1 = all, 2 = added, 3 = removed, 4 = changed.</summary>
@@ -277,7 +278,7 @@ namespace UndertaleModTool
 
         private void RebuildEntries()
         {
-            AssetDiffEntry previous = SelectedEntry?.Entry;
+            AssetDiffEntry? previous = SelectedEntry?.Entry;
 
             IEnumerable<AssetDiffEntry> source = SelectedCategory?.Entries ?? Enumerable.Empty<AssetDiffEntry>();
             source = StatusFilterIndex switch
@@ -380,6 +381,51 @@ namespace UndertaleModTool
             catch (Exception e)
             {
                 StatusText = string.Format(Loc("Compare_ExportFailed"), e.Message);
+            }
+            finally
+            {
+                IsBusy = false;
+                IsProgressIndeterminate = false;
+                DisposeIfIdle();
+            }
+        }
+
+        /// <summary>
+        /// Writes the complete diff as a data file patch archive. Unlike the JSON report, a
+        /// patch is applicable: the base file plus this patch reproduces the compared file.
+        /// </summary>
+        public async Task SavePatchAsync(Window owner)
+        {
+            if (_result is null || _baseData is null || _compareData is null)
+                return;
+
+            SaveFileDialog dialog = new()
+            {
+                Title = Loc("Compare_SavePatchDialogTitle"),
+                FileName = Path.GetFileNameWithoutExtension(_compareFilePath) + "." + DataFilePatch.FileExtension,
+                DefaultExt = DataFilePatch.FileExtension,
+                Filter = LocalizationSource.GetString("Filter_PatchFiles") + "|*." + DataFilePatch.FileExtension + "|" +
+                         LocalizationSource.GetString("Filter_AllFiles") + "|*"
+            };
+            if (dialog.ShowDialog(owner) != true)
+                return;
+
+            IsBusy = true;
+            IsProgressIndeterminate = true;
+            StatusText = Loc("Compare_SavingPatch");
+            try
+            {
+                string patchPath = dialog.FileName;
+                DataFilePatchBuilder builder = new(_baseData, _compareData, _compareFilePath,
+                    Main.FilePath, Main.MainThreadAction);
+                await Task.Run(() => builder.Build(_result, patchPath, BaseLabel, CompareLabel));
+
+                StatusText = string.Format(Loc("Compare_PatchSaved"),
+                    _result.AddedCount, _result.RemovedCount, _result.ChangedCount);
+            }
+            catch (Exception e)
+            {
+                StatusText = string.Format(Loc("Compare_PatchSaveFailed"), e.Message);
             }
             finally
             {
@@ -492,12 +538,17 @@ namespace UndertaleModTool
             return source.Where(e => e.Change != AssetChangeKind.Unchanged).ToList();
         }
 
-        public void OnSelectedEntryChanged()
+        /// <summary>
+        /// Selects an entry and starts loading its details. Called by the view when the user
+        /// clicks a row, and by <see cref="RebuildEntries"/> through the SelectedEntry setter.
+        /// </summary>
+        public void SelectEntry(CompareEntryRow? row)
         {
-            _ = UpdateDetailsAsync(SelectedEntry);
+            SelectedEntry = row;
+            _ = UpdateDetailsAsync(row);
         }
 
-        private async Task UpdateDetailsAsync(CompareEntryRow row)
+        private async Task UpdateDetailsAsync(CompareEntryRow? row)
         {
             int version = ++_detailsVersion;
             ClearDetails();
@@ -553,11 +604,16 @@ namespace UndertaleModTool
             IsDetailsBusy = true;
             try
             {
-                CodeDiffService service = _codeDiffService;
+                CodeDiffService? service = _codeDiffService;
                 if (service is null)
                     return;
 
-                CodeDiffResult diff = await Task.Run(() => service.Compare(baseCode, compareCode));
+                // Anonymous sub-entries have no GML source of their own; compare their
+                // bytecode segments via disassembly instead.
+                bool subEntry = baseCode.ParentEntry is not null || compareCode.ParentEntry is not null;
+                CodeDiffResult diff = await Task.Run(() => subEntry
+                    ? service.CompareSegments(baseCode, compareCode)
+                    : service.Compare(baseCode, compareCode));
                 if (version != _detailsVersion)
                     return;
 
@@ -566,6 +622,8 @@ namespace UndertaleModTool
                 CodeDiffText = diff.DiffText;
 
                 List<string> notes = [];
+                if (subEntry)
+                    notes.Add(Loc("Compare_SubCodeDisassembly"));
                 if (diff.BaseDecompileFailed || diff.CompareDecompileFailed)
                     notes.Add(Loc("Compare_DecompileFailed"));
                 if (!diff.HasTextDifferences)
@@ -727,7 +785,16 @@ namespace UndertaleModTool
             _ => LocalizationSource.GetString("Compare_StatusUnchanged"),
         };
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        /// <summary>Row foreground color: green for added, red for removed, yellow for changed.</summary>
+        public System.Windows.Media.Brush StatusBrush => Entry.Change switch
+        {
+            AssetChangeKind.Added => System.Windows.Media.Brushes.LightGreen,
+            AssetChangeKind.Removed => System.Windows.Media.Brushes.IndianRed,
+            AssetChangeKind.Changed => System.Windows.Media.Brushes.Khaki,
+            _ => System.Windows.Media.Brushes.Transparent,
+        };
+
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public CompareEntryRow(AssetDiffEntry entry, string typeTitle, bool isSelected,
                                Action<CompareEntryRow> selectionChanged)

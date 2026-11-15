@@ -677,5 +677,6 @@ internal sealed class CrossFileImportContext : ProjectContext
     internal CrossFileImportContext(UndertaleData data, Action<Action> mainThreadAction)
         : base(data, data, mainThreadAction)
     {
+        InitializeAudioGroupCache();
     }
 }

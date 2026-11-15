@@ -182,6 +182,7 @@ public partial class AppMenuBar : UserControl
         Item(tools, "Menu_Edit_FindReferences", command: new RelayCommand(vm.ToolsFindReferences));
         tools.Items.Add(new NativeMenuItemSeparator());
         Item(tools, "Menu_Tools_CompareDataFiles", command: new RelayCommand(vm.ToolsCompareDataFiles));
+        Item(tools, "Menu_Tools_ApplyDataFilePatch", command: new RelayCommand(vm.ToolsApplyDataFilePatch));
 
         NativeMenu project = new();
         Item(project, "Menu_Project_New", command: new RelayCommand(vm.ProjectNew));

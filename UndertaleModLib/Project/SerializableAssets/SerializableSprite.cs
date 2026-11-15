@@ -173,11 +173,12 @@ internal sealed class SerializableSprite : ISerializableTextureProjectAsset
     // Data asset that was located during pre-import.
     private UndertaleSprite _dataAsset = null;
 
-    // Texture images created for the asset during texture import.
-    private List<UndertaleTexturePageItem> _textureImages = null;
+    // Texture images created for the asset during texture import, or assigned directly
+    // (e.g. by the data file patch applier) before Import is invoked.
+    internal List<UndertaleTexturePageItem> _textureImages = null;
 
-    // Mask blobs created for the asset during texture import.
-    private List<byte[]> _maskData = null;
+    // Mask blobs created for the asset during texture import, or assigned directly.
+    internal List<byte[]> _maskData = null;
 
     /// <inheritdoc cref="UndertaleSprite.SepMaskType"/>
     public enum CollisionKinds : uint

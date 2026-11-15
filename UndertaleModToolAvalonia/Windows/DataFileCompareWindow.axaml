@@ -63,6 +63,9 @@
                     <Button Content="{l:Loc Compare_ExportStructuredDiff}" Margin="12,0,0,0"
                             Command="{Binding ExportStructuredDiffCommand}"
                             IsEnabled="{Binding !IsBusy}" />
+                    <Button Content="{l:Loc Compare_SavePatch}" Margin="6,0,0,0"
+                            Command="{Binding SavePatchCommand}"
+                            IsEnabled="{Binding !IsBusy}" />
                     <Button Content="{l:Loc Compare_MergeSelected}" Margin="6,0,0,0"
                             Command="{Binding MergeSelectedCommand}"
                             IsEnabled="{Binding !IsBusy}" />
@@ -99,8 +102,14 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="{l:Loc Compare_StatusHeader}" Binding="{Binding StatusText}"
-                                            Width="Auto" IsReadOnly="True" />
+                        <DataGridTemplateColumn Header="{l:Loc Compare_StatusHeader}" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusBrush}"
+                                               FontWeight="Bold" VerticalAlignment="Center" Margin="4,0"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn Header="{l:Loc Common_Name}" Binding="{Binding Name}"
                                             Width="*" IsReadOnly="True" />
                         <DataGridTextColumn Header="{l:Loc Common_AssetType}" Binding="{Binding TypeTitle}"

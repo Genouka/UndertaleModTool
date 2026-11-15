@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -144,6 +145,57 @@ internal sealed class SerializableGameObject : ISerializableProjectAsset
         public string CodeEntry { get; set; }
     }
 
+    /// <summary>
+    /// Complete representation of <see cref="UndertaleGameObject.Events"/> with every action
+    /// preserved verbatim. When present, it supersedes the simplified <see cref="Events"/> list
+    /// on import; when absent, the legacy simplified import is used (backwards compatibility).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<GameObjectRawEvent> RawEvents { get; set; }
+
+    /// <summary>
+    /// Complete representation of <see cref="UndertaleGameObject.Event"/>.
+    /// </summary>
+    public sealed class GameObjectRawEvent
+    {
+        /// <summary>
+        /// Event category.
+        /// </summary>
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public EventType Category { get; set; }
+
+        /// <summary>
+        /// Event subtype, differing depending on <see cref="Category"/>.
+        /// </summary>
+        public string Subtype { get; set; }
+
+        /// <summary>
+        /// All actions of this event, in order.
+        /// </summary>
+        public List<GameObjectRawAction> Actions { get; set; }
+    }
+
+    /// <summary>
+    /// Complete representation of <see cref="UndertaleGameObject.EventAction"/>.
+    /// </summary>
+    public sealed class GameObjectRawAction
+    {
+        public uint LibID { get; set; }
+        public uint ID { get; set; }
+        public uint Kind { get; set; }
+        public bool UseRelative { get; set; }
+        public bool IsQuestion { get; set; }
+        public bool UseApplyTo { get; set; }
+        public uint ExeType { get; set; }
+        public string ActionName { get; set; }
+        public string CodeEntry { get; set; }
+        public uint ArgumentCount { get; set; }
+        public int Who { get; set; }
+        public bool Relative { get; set; }
+        public bool IsNot { get; set; }
+        public uint UnknownAlwaysZero { get; set; }
+    }
+
     // Data asset that was located during pre-import.
     private UndertaleGameObject _dataAsset = null;
 
@@ -182,7 +234,41 @@ internal sealed class SerializableGameObject : ISerializableProjectAsset
             });
         }
 
-        // Convert events
+        // Convert events, preserving every action verbatim
+        RawEvents = [];
+        int rawCategoryIndex = 0;
+        foreach (var category in obj.Events)
+        {
+            EventType rawCategoryType = (EventType)rawCategoryIndex;
+            foreach (var ev in category)
+            {
+                RawEvents.Add(new GameObjectRawEvent()
+                {
+                    Category = rawCategoryType,
+                    Subtype = EventSubtypeToString(projectContext, rawCategoryType, ev.EventSubtype),
+                    Actions = new(ev.Actions.Select((UndertaleGameObject.EventAction action) => new GameObjectRawAction()
+                    {
+                        LibID = action.LibID,
+                        ID = action.ID,
+                        Kind = action.Kind,
+                        UseRelative = action.UseRelative,
+                        IsQuestion = action.IsQuestion,
+                        UseApplyTo = action.UseApplyTo,
+                        ExeType = action.ExeType,
+                        ActionName = action.ActionName?.Content,
+                        CodeEntry = action.CodeId?.Name?.Content,
+                        ArgumentCount = action.ArgumentCount,
+                        Who = action.Who,
+                        Relative = action.Relative,
+                        IsNot = action.IsNot,
+                        UnknownAlwaysZero = action.UnknownAlwaysZero
+                    }))
+                });
+            }
+            rawCategoryIndex++;
+        }
+
+        // Convert simplified single-action events (kept in sync for backwards compatibility)
         Events = new(8);
         int categoryIndex = 0;
         foreach (var category in obj.Events)
@@ -315,6 +401,43 @@ internal sealed class SerializableGameObject : ISerializableProjectAsset
             });
         }
 
+        // Import full-fidelity events, replacing the simplified ones
+        if (RawEvents is not null)
+        {
+            foreach (var category in obj.Events)
+            {
+                category.Clear();
+            }
+            foreach (GameObjectRawEvent ev in RawEvents)
+            {
+                UndertaleGameObject.Event newEvent = new()
+                {
+                    EventSubtype = StringToEventSubtype(projectContext, ev.Category, ev.Subtype),
+                    Actions = new()
+                };
+                foreach (GameObjectRawAction action in ev.Actions)
+                {
+                    newEvent.Actions.Add(new UndertaleGameObject.EventAction()
+                    {
+                        LibID = action.LibID,
+                        ID = action.ID,
+                        Kind = action.Kind,
+                        UseRelative = action.UseRelative,
+                        IsQuestion = action.IsQuestion,
+                        UseApplyTo = action.UseApplyTo,
+                        ExeType = action.ExeType,
+                        ActionName = projectContext.MakeString(action.ActionName ?? ""),
+                        CodeId = projectContext.FindCode(action.CodeEntry, this),
+                        ArgumentCount = action.ArgumentCount,
+                        Who = action.Who,
+                        Relative = action.Relative,
+                        IsNot = action.IsNot,
+                        UnknownAlwaysZero = action.UnknownAlwaysZero
+                    });
+                }
+                obj.Events[(int)ev.Category].Add(newEvent);
+            }
+        }
         return obj;
     }
 

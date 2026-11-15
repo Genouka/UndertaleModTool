@@ -129,8 +129,16 @@ internal sealed class SerializableFont : ISerializableTextureProjectAsset
     // Data asset that was located during pre-import.
     private UndertaleFont _dataAsset = null;
 
-    // Texture image created for the asset during texture import.
-    private UndertaleTexturePageItem _textureImage = null;
+    // Texture image created for the asset during texture import, or assigned directly
+    // (e.g. by the data file patch applier) before Import is invoked.
+    internal UndertaleTexturePageItem _textureImage = null;
+
+    /// <summary>
+    /// When set, Serialize writes the JSON only and skips exporting the texture PNG
+    /// (used by the data file patch builder, which stores exact texture bytes separately).
+    /// </summary>
+    [JsonIgnore]
+    internal bool SkipTextureExport { get; set; }
 
     /// <summary>
     /// Populates this serializable font with data from an actual font.
@@ -192,9 +200,12 @@ internal sealed class SerializableFont : ISerializableTextureProjectAsset
         JsonSerializer.Serialize<ISerializableProjectAsset>(fs, this, ProjectContext.JsonOptions);
 
         // Write image as a PNG
-        string filename = $"{Path.GetFileNameWithoutExtension(destinationFile)}.png";
-        string directory = Path.GetDirectoryName(destinationFile);
-        projectContext.TextureWorker.ExportAsPNG(_dataAsset.Texture, Path.Join(directory, filename), DataName, true);
+        if (!SkipTextureExport)
+        {
+            string filename = $"{Path.GetFileNameWithoutExtension(destinationFile)}.png";
+            string directory = Path.GetDirectoryName(destinationFile);
+            projectContext.TextureWorker.ExportAsPNG(_dataAsset.Texture, Path.Join(directory, filename), DataName, true);
+        }
     }
 
     /// <inheritdoc/>

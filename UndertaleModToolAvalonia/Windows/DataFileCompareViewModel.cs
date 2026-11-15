@@ -435,6 +435,60 @@ public partial class DataFileCompareViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private async Task SavePatchAsync()
+    {
+        if (_result is null || _baseData is null || _compareData is null)
+            return;
+
+        IStorageFile? file = await _view.SaveFileDialog(new FilePickerSaveOptions
+        {
+            Title = Loc("Compare_SavePatchDialogTitle"),
+            SuggestedFileName = Path.GetFileNameWithoutExtension(_compareFile.Name) + "." + DataFilePatch.FileExtension,
+            FileTypeChoices = [FilePickerFileTypes.Patch],
+            DefaultExtension = DataFilePatch.FileExtension,
+        });
+        if (file is null)
+            return;
+
+        string? patchPath = file.TryGetLocalPath();
+        if (patchPath is null)
+        {
+            await _view.MessageDialog(string.Format(Loc("Compare_PatchSaveFailed"), file.Name));
+            return;
+        }
+
+        IsBusy = true;
+        IsProgressIndeterminate = true;
+        StatusText = Loc("Compare_SavingPatch");
+        try
+        {
+            string? comparePath = _compareFile.TryGetLocalPath();
+            string baseLabel = BaseLabel;
+            string compareLabel = CompareLabel;
+            DataFileDiffResult result = _result;
+            await Task.Run(() =>
+            {
+                DataFilePatchBuilder builder = new(_baseData, _compareData, comparePath, null,
+                    action => Dispatcher.UIThread.Invoke(action));
+                builder.Build(result, patchPath, baseLabel, compareLabel);
+            });
+
+            StatusText = string.Format(Loc("Compare_PatchSaved"),
+                result.AddedCount, result.RemovedCount, result.ChangedCount);
+        }
+        catch (Exception e)
+        {
+            StatusText = string.Format(Loc("Compare_PatchSaveFailed"), e.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+            IsProgressIndeterminate = false;
+            DisposeIfIdle();
+        }
+    }
+
+    [RelayCommand]
     private async Task MergeSelectedAsync()
     {
         if (_result is null || _baseData is null || _compareData is null)
@@ -605,7 +659,12 @@ public partial class DataFileCompareViewModel : ObservableObject, IDisposable
             if (service is null)
                 return;
 
-            CodeDiffResult diff = await Task.Run(() => service.Compare(baseCode, compareCode));
+            // Anonymous sub-entries have no GML source of their own; compare their
+            // bytecode segments via disassembly instead.
+            bool subEntry = baseCode.ParentEntry is not null || compareCode.ParentEntry is not null;
+            CodeDiffResult diff = await Task.Run(() => subEntry
+                ? service.CompareSegments(baseCode, compareCode)
+                : service.Compare(baseCode, compareCode));
             if (version != _detailsVersion)
                 return;
 
@@ -614,6 +673,8 @@ public partial class DataFileCompareViewModel : ObservableObject, IDisposable
             CodeDiffText = diff.DiffText;
 
             List<string> notes = [];
+            if (subEntry)
+                notes.Add(Loc("Compare_SubCodeDisassembly"));
             if (diff.BaseDecompileFailed || diff.CompareDecompileFailed)
                 notes.Add(Loc("Compare_DecompileFailed"));
             if (!diff.HasTextDifferences)
@@ -761,6 +822,15 @@ public sealed partial class CompareEntryRow : ObservableObject
         AssetChangeKind.Removed => LocalizationSource.GetString("Compare_StatusRemoved"),
         AssetChangeKind.Changed => LocalizationSource.GetString("Compare_StatusChanged"),
         _ => LocalizationSource.GetString("Compare_StatusUnchanged"),
+    };
+
+    /// <summary>Row foreground color: green for added, red for removed, yellow for changed.</summary>
+    public Avalonia.Media.IImmutableSolidColorBrush StatusBrush => Entry.Change switch
+    {
+        AssetChangeKind.Added => Avalonia.Media.Brushes.LightGreen,
+        AssetChangeKind.Removed => Avalonia.Media.Brushes.IndianRed,
+        AssetChangeKind.Changed => Avalonia.Media.Brushes.Khaki,
+        _ => Avalonia.Media.Brushes.Transparent,
     };
 
     public CompareEntryRow(AssetDiffEntry entry, string typeTitle, bool isSelected,

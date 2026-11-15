@@ -996,6 +996,12 @@ public class GMImage
     }
 
     /// <summary>
+    /// Returns the known uncompressed size of the BZip2 stream, for images of BZ2 + QOI format.
+    /// </summary>
+    /// <remarks>Returns <see langword="null"/> for every other format, or when the size is unknown.</remarks>
+    internal int? Bz2UncompressedLength => _bz2UncompressedSize == -1 ? null : _bz2UncompressedSize;
+
+    /// <summary>
     /// Writes this image, in its current format (as seen on disk), to the current position of the specified <see cref="BinaryWriter"/>.
     /// </summary>
     /// <remarks>The gm2022_5 parameter is only relevant for images of BZ2 + QOI format.</remarks>

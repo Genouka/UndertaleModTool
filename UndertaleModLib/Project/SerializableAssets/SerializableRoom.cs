@@ -190,6 +190,18 @@ internal sealed class SerializableRoom : ISerializableProjectAsset
         /// <inheritdoc cref="UndertaleRoom.GameObject.ObjectDefinition"/>
         public string ObjectName { get; set; }
 
+        /// <inheritdoc cref="UndertaleRoom.GameObject.InstanceID"/>
+        /// <remarks>When absent, a new instance ID is generated on import.</remarks>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public uint? InstanceId { get; set; }
+
+        /// <summary>
+        /// Whether this instance is a placeholder for a reference to a missing instance
+        /// (internal flag which is not serialized into the data file).
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? Nonexistent { get; set; }
+
         /// <inheritdoc cref="UndertaleRoom.GameObject.X"/>
         public int X { get; set; }
 
@@ -227,6 +239,11 @@ internal sealed class SerializableRoom : ISerializableProjectAsset
         /// <inheritdoc cref="UndertaleRoom.Tile.BackgroundDefinition"/>
         /// <seealso cref="UndertaleRoom.Tile.SpriteDefinition"/>
         public string Asset { get; set; }
+
+        /// <inheritdoc cref="UndertaleRoom.Tile.InstanceID"/>
+        /// <remarks>Only used by tile layers' legacy tiles and pre-GameMaker-2 rooms; when absent, behavior is unchanged.</remarks>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public uint? InstanceId { get; set; }
 
         /// <inheritdoc cref="UndertaleRoom.Tile.X"/>
         public int X { get; set; }
@@ -670,6 +687,8 @@ internal sealed class SerializableRoom : ISerializableProjectAsset
             GameObjects.Add(new()
             {
                 ObjectName = obj.ObjectDefinition?.Name?.Content,
+                InstanceId = obj.InstanceID,
+                Nonexistent = obj.Nonexistent ? true : null,
                 X = obj.X,
                 Y = obj.Y,
                 CreationCodeEntry = obj.CreationCode?.Name?.Content,
@@ -690,6 +709,7 @@ internal sealed class SerializableRoom : ISerializableProjectAsset
             Tiles.Add(new()
             {
                 Asset = tile.ObjectDefinition?.Name?.Content,
+                InstanceId = tile.InstanceID,
                 X = tile.X,
                 Y = tile.Y,
                 SourceX = tile.SourceX,
@@ -754,6 +774,7 @@ internal sealed class SerializableRoom : ISerializableProjectAsset
                             new Tile()
                             {
                                 Asset = tile.ObjectDefinition?.Name?.Content,
+                                InstanceId = tile.InstanceID,
                                 X = tile.X,
                                 Y = tile.Y,
                                 SourceX = tile.SourceX,
@@ -1008,6 +1029,8 @@ internal sealed class SerializableRoom : ISerializableProjectAsset
             room.GameObjects.Add(new()
             {
                 ObjectDefinition = projectContext.FindGameObject(obj.ObjectName, this),
+                InstanceID = obj.InstanceId ?? ++projectContext.Data.GeneralInfo.LastObj,
+                Nonexistent = obj.Nonexistent ?? false,
                 X = obj.X,
                 Y = obj.Y,
                 CreationCode = projectContext.FindCode(obj.CreationCodeEntry, this),
@@ -1017,8 +1040,7 @@ internal sealed class SerializableRoom : ISerializableProjectAsset
                 Rotation = obj.Rotation,
                 PreCreateCode = projectContext.FindCode(obj.PreCreateCodeEntry, this),
                 ImageSpeed = obj.ImageSpeed,
-                ImageIndex = obj.ImageIndex,
-                InstanceID = ++projectContext.Data.GeneralInfo.LastObj
+                ImageIndex = obj.ImageIndex
             });
         }
 
@@ -1030,6 +1052,7 @@ internal sealed class SerializableRoom : ISerializableProjectAsset
         {
             UndertaleRoom.Tile newTile = new()
             {
+                InstanceID = tile.InstanceId ?? 0,
                 X = tile.X,
                 Y = tile.Y,
                 SourceX = tile.SourceX,
@@ -1135,7 +1158,7 @@ internal sealed class SerializableRoom : ISerializableProjectAsset
                                     ScaleX = tile.ScaleX,
                                     ScaleY = tile.ScaleY,
                                     Color = tile.Color,
-                                    InstanceID = ++projectContext.Data.GeneralInfo.LastTile
+                                    InstanceID = tile.InstanceId ?? ++projectContext.Data.GeneralInfo.LastTile
                                 };
                                 if (projectContext.Data.IsGameMaker2())
                                 {

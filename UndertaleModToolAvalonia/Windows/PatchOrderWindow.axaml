@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        xmlns:diff="clr-namespace:UndertaleModLib.Diff;assembly=UndertaleModLib"
+        mc:Ignorable="d"
+        x:Class="UndertaleModToolAvalonia.PatchOrderWindow"
+        x:DataType="l:PatchOrderWindow"
+        DataContext="{Binding $self}"
+        Title="{l:Loc Patch_OrderTitle}"
+        Width="560" Height="380" MinWidth="420" MinHeight="260"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="10" RowDefinitions="Auto,1*,Auto">
+        <TextBlock Grid.Row="0" Text="{l:Loc Patch_OrderHint}" TextWrapping="Wrap"/>
+        <ListBox Grid.Row="1" Name="OrderList" Margin="0,8" ItemsSource="{Binding Items}" SelectionMode="Single">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="diff:PatchChainEntry">
+                    <TextBlock Text="{Binding FileName}"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,1*,Auto">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                <Button Content="{l:Loc Patch_OrderUp}" Click="MoveUp_Click"/>
+                <Button Content="{l:Loc Patch_OrderDown}" Click="MoveDown_Click"/>
+                <Button Content="{l:Loc Patch_OrderAuto}" Click="AutoSort_Click"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                <Button Content="{l:Loc Common_OK}" IsDefault="True" Click="Ok_Click"/>
+                <Button Content="{l:Loc Common_Cancel}" IsCancel="True" Click="Cancel_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

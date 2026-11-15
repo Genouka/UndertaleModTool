@@ -85,6 +85,7 @@ namespace UndertaleModTool
         public static readonly RoutedUICommand RunButterscotchCommand = new RoutedUICommand("Run with Butterscotch", "RunButterscotch", typeof(MainWindow), new InputGestureCollection { new KeyGesture(Key.F6) });
         public static readonly RoutedUICommand DebugButterscotchCommand = new RoutedUICommand("Debug with Butterscotch", "DebugButterscotch", typeof(MainWindow), new InputGestureCollection { new KeyGesture(Key.F6, ModifierKeys.Shift) });
         public static readonly RoutedUICommand CompareDataFilesCommand = new(LocalizationSource.GetString("Menu_Tools_CompareDataFiles"), "CompareDataFiles", typeof(MainWindow));
+        public static readonly RoutedUICommand ApplyDataFilePatchCommand = new(LocalizationSource.GetString("Menu_Tools_ApplyDataFilePatch"), "ApplyDataFilePatch", typeof(MainWindow));
 
         public ObservableCollection<Tab> Tabs { get; set; } = new();
         public Tab CurrentTab
@@ -5208,6 +5209,182 @@ namespace UndertaleModTool
                 Owner = this
             };
             compareWindow.Show();
+        }
+
+        private async void Command_ApplyDataFilePatch(object sender, ExecutedRoutedEventArgs e)
+        {
+            OpenFileDialog patchDialog = new()
+            {
+                Title = LocalizationSource.GetString("Patch_SelectFiles"),
+                Multiselect = true,
+                Filter = LocalizationSource.GetString("Filter_PatchFiles") + "|*." + UndertaleModLib.Diff.DataFilePatch.FileExtension + "|" +
+                         LocalizationSource.GetString("Filter_AllFiles") + "|*"
+            };
+            if (patchDialog.ShowDialog(this) != true || patchDialog.FileNames.Length == 0)
+            {
+                return;
+            }
+
+            // Default order: MD5 chain (result of one diff feeding the base of the next),
+            // then alphabetical for diffs that cannot be chained. The user can adjust it.
+            List<string> orderedPatchPaths;
+            try
+            {
+                List<UndertaleModLib.Diff.PatchChainEntry> entries =
+                    UndertaleModLib.Diff.DataFilePatchChain.ReadManifests(patchDialog.FileNames);
+                entries = UndertaleModLib.Diff.DataFilePatchChain.SortByChain(entries);
+                if (entries.Count > 1)
+                {
+                    PatchOrderWindow orderWindow = new(entries) { Owner = this };
+                    if (orderWindow.ShowDialog() != true || orderWindow.OrderedPaths is null)
+                    {
+                        return;
+                    }
+                    orderedPatchPaths = [.. orderWindow.OrderedPaths];
+                }
+                else
+                {
+                    orderedPatchPaths = [entries[0].Path];
+                }
+            }
+            catch (Exception ex)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Patch_ApplyFailed"), ex.Message),
+                    LocalizationSource.GetString("Patch_Title"));
+                return;
+            }
+
+            OpenFileDialog baseDialog = new()
+            {
+                Title = LocalizationSource.GetString("Patch_SelectBaseFile"),
+                Filter = DataFileFilter
+            };
+            if (baseDialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            SaveFileDialog outputDialog = new()
+            {
+                Title = LocalizationSource.GetString("Patch_SelectOutputFile"),
+                DefaultExt = "win",
+                Filter = DataFileFilter,
+                FileName = Path.GetFileName(baseDialog.FileName)
+            };
+            if (outputDialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            bool deleteRemoved = this.ShowQuestion(LocalizationSource.GetString("Patch_DeleteRemovedQuestion"),
+                MessageBoxImage.Question, LocalizationSource.GetString("Patch_Title")) == MessageBoxResult.Yes;
+
+            string basePath = baseDialog.FileName;
+            string outputPath = outputDialog.FileName;
+
+            LoaderDialog loader = new(LocalizationSource.GetString("Patch_Title"),
+                LocalizationSource.GetString("Patch_Loading"))
+            {
+                Owner = this,
+                PreventClose = true
+            };
+            IProgress<string> progress = new Progress<string>(loader.ReportProgress);
+
+            UndertaleModLib.Diff.DataFilePatchApplyResult applyResult = null;
+            List<string> warnings = [];
+            Exception error = null;
+
+            Task task = Task.Run(() =>
+            {
+                UndertaleData baseData = null;
+                try
+                {
+                    using (FileStream stream = new(basePath, FileMode.Open, FileAccess.Read))
+                    {
+                        baseData = UndertaleIO.Read(stream, (warning, isImportant) =>
+                        {
+                            lock (warnings)
+                                warnings.Add(warning);
+                        }, _ => { });
+                    }
+
+                    try
+                    {
+                        progress.Report(LocalizationSource.GetString("Patch_Applying"));
+                        applyResult = UndertaleModLib.Diff.DataFilePatchChain.ApplyMany(baseData,
+                            orderedPatchPaths,
+                            new UndertaleModLib.Diff.DataFilePatchApplyOptions
+                            {
+                                DeleteRemoved = deleteRemoved,
+                                BaseDataDirectory = Path.GetDirectoryName(basePath),
+                                BaseFilePath = basePath,
+                                OutputDirectory = Path.GetDirectoryName(outputPath),
+                                MainThreadAction = MainThreadAction,
+                            },
+                            progress);
+
+                        progress.Report(LocalizationSource.GetString("Patch_SavingOutput"));
+                        using FileStream outputStream = new(outputPath, FileMode.Create, FileAccess.Write);
+                        UndertaleIO.Write(outputStream, baseData);
+                    }
+                    finally
+                    {
+                        baseData.Dispose();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+            });
+
+            loader.ShowDialog();
+            await task;
+
+            if (error is not null)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Patch_ApplyFailed"), error.Message),
+                    LocalizationSource.GetString("Patch_Title"));
+                return;
+            }
+
+            string summary = string.Format(LocalizationSource.GetString("Patch_ApplyDone"),
+                applyResult.ImportedCount, applyResult.OverwrittenCount, applyResult.DeletedCount,
+                applyResult.VerifiedCount, applyResult.MismatchedCount, applyResult.UnsupportedCount);
+
+            List<string> details = [];
+            details.AddRange(applyResult.StepSummaries);
+            details.AddRange(applyResult.Unsupported);
+            details.AddRange(applyResult.BaseDriftWarnings);
+            details.AddRange(applyResult.Warnings);
+            details.AddRange(applyResult.Errors);
+            lock (warnings)
+                details.AddRange(warnings);
+            foreach (string file in applyResult.ExtraOutputFiles)
+            {
+                details.Add(file);
+            }
+
+            if (File.Exists(outputPath))
+            {
+                using FileStream outputStream = new(outputPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                string outputMd5 = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(outputStream)).ToLowerInvariant();
+                details.Add(applyResult.ExpectedResultMd5 is null
+                    ? string.Format(LocalizationSource.GetString("Patch_OutputMd5"), outputMd5)
+                    : string.Format(LocalizationSource.GetString("Patch_OutputMd5Expected"), outputMd5, applyResult.ExpectedResultMd5));
+            }
+            if (details.Count > 0)
+            {
+                const int maxDetails = 20;
+                summary += Environment.NewLine + Environment.NewLine +
+                           string.Join(Environment.NewLine, details.Take(maxDetails));
+                if (details.Count > maxDetails)
+                {
+                    summary += Environment.NewLine + "...";
+                }
+            }
+
+            this.ShowMessage(summary, LocalizationSource.GetString("Patch_Title"));
         }
 
         private void Command_CloseProject(object sender, ExecutedRoutedEventArgs e)
