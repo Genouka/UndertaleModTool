@@ -111,7 +111,7 @@ public class UndertaleCodeLocals : UndertaleNamedResource, IDisposable
     /// <summary>
     /// A collection of local variables.
     /// </summary>
-    public ObservableCollection<LocalVar> Locals { get; private set; } = new ObservableCollection<LocalVar>();
+    public ObservableCollection<LocalVar> Locals { get; private set; } = new UndertaleObservableList<LocalVar>();
 
     /// <summary>
     /// Creates an empty code locals entry with the given name.
@@ -153,7 +153,7 @@ public class UndertaleCodeLocals : UndertaleNamedResource, IDisposable
         List<LocalVar> newLocals = new((int)count);
         for (uint i = 0; i < count; i++)
             newLocals.Add(reader.ReadUndertaleObject<LocalVar>());
-        Locals = new(newLocals);
+        Locals = new UndertaleObservableList<LocalVar>(newLocals);
         Util.DebugUtil.Assert(Locals.Count == count);
     }
 

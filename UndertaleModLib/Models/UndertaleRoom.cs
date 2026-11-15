@@ -1626,7 +1626,7 @@ public class UndertaleRoom : UndertaleNamedResource, IProjectAsset, INotifyPrope
         public class LayerInstancesData : LayerData
         {
             internal uint[] InstanceIds { get; set; } // 100000, 100001, 100002, 100003 - instance ids from GameObjects list in the room
-            public ObservableCollection<GameObject> Instances { get; set; } = new();
+            public ObservableCollection<GameObject> Instances { get; set; } = new UndertaleObservableList<GameObject>();
 
             /// <inheritdoc />
 #pragma warning disable CS0067 // TODO: remove this suppression once Fody is no longer in use
@@ -1674,7 +1674,7 @@ public class UndertaleRoom : UndertaleNamedResource, IProjectAsset, INotifyPrope
                 foreach (GameObject obj in Instances)
                     obj?.Dispose();
                 InstanceIds = null;
-                Instances = new();
+                Instances = new UndertaleObservableList<GameObject>();
             }
         }
 

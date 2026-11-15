@@ -5,7 +5,9 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using UndertaleModLib;
 
 namespace UndertaleModToolAvalonia;
 
@@ -19,6 +21,20 @@ public partial class App : Application
 
     public override void Initialize()
     {
+        // Avalonia controls listen to collection notifications directly (they bypass the binding
+        // engine, which already posts property changes to the UI thread), so lists mutated from a
+        // non-UI thread - scripts run on a dedicated thread - would otherwise crash the data
+        // grid/items controls with "The calling thread cannot access this object". Route every
+        // notification through the dispatcher, synchronously, so the mutating thread waits until
+        // the UI has processed each change and the collection state is consistent while it does.
+        UndertaleListNotifications.Dispatcher = static action =>
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+                action();
+            else
+                Dispatcher.UIThread.Invoke(action);
+        };
+
         AvaloniaXamlLoader.Load(this);
     }
 

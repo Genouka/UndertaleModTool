@@ -137,7 +137,7 @@ public class UndertaleSprite : UndertaleNamedResource, IProjectAsset, PrePaddedO
     /// <summary>
     /// The collision masks of the sprite.
     /// </summary>
-    public ObservableCollection<MaskEntry> CollisionMasks { get; set; } = new ObservableCollection<MaskEntry>();
+    public ObservableCollection<MaskEntry> CollisionMasks { get; set; } = new UndertaleObservableList<MaskEntry>();
 
     // Special sprite types (always used in GMS2)
     public uint SVersion { get; set; } = 1;
@@ -976,7 +976,7 @@ public class UndertaleSprite : UndertaleNamedResource, IProjectAsset, PrePaddedO
         }
 
         // Assign masks to sprite
-        CollisionMasks = new(newMasks);
+        CollisionMasks = new UndertaleObservableList<MaskEntry>(newMasks);
     }
 
     private static void SkipMaskData(UndertaleReader reader, int width, int height, int marginRight, int marginLeft, int marginBottom, int marginTop)

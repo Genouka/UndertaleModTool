@@ -77,7 +77,7 @@ public class UndertaleTimeline : UndertaleNamedResource, IDisposable
     /// <summary>
     /// The moments this timeline has. Comparable to keyframes.
     /// </summary>
-    public ObservableCollection<UndertaleTimelineMoment> Moments { get; set; } = new ObservableCollection<UndertaleTimelineMoment>();
+    public ObservableCollection<UndertaleTimelineMoment> Moments { get; set; } = new UndertaleObservableList<UndertaleTimelineMoment>();
 
     /// <inheritdoc />
     public override string ToString()
@@ -93,7 +93,7 @@ public class UndertaleTimeline : UndertaleNamedResource, IDisposable
         foreach (var moment in Moments)
             moment?.Dispose();
         Name = null;
-        Moments = new();
+        Moments = new UndertaleObservableList<UndertaleTimelineMoment>();
     }
 
     /// <inheritdoc />
@@ -143,7 +143,7 @@ public class UndertaleTimeline : UndertaleNamedResource, IDisposable
             moments.Add(new UndertaleTimelineMoment(timePoints[i], timeEvent));
         }
 
-        Moments = new ObservableCollection<UndertaleTimelineMoment>(moments);
+        Moments = new UndertaleObservableList<UndertaleTimelineMoment>(moments);
     }
 
     /// <inheritdoc cref="UndertaleObject.UnserializeChildObjectCount(UndertaleReader)"/>

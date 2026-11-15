@@ -1,16 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using PropertyChanged;
 using UndertaleModLib.Models;
 
 namespace UndertaleModLib
 {
     /// <summary>
+    /// Process-wide dispatcher for observable list notifications.
+    /// </summary>
+    /// <remarks>
+    /// UI frameworks require observable collection notifications on their UI thread; controls
+    /// subscribing to <see cref="INotifyCollectionChanged"/> directly (items controls, data
+    /// grids) do not marshal them the way data bindings marshal property changes. An application
+    /// that mutates data off its UI thread (the Avalonia port runs scripts on a dedicated thread)
+    /// installs a dispatcher here so every notification is raised on that thread. Calls must run
+    /// the action synchronously and inline when already on the UI thread, so notification order
+    /// and collection state stay consistent. Left null by UI-less consumers and by UIs that only
+    /// mutate data on their own thread, where notifications stay synchronous on the caller.
+    /// </remarks>
+    public static class UndertaleListNotifications
+    {
+        public static Action<Action> Dispatcher { get; set; } = null;
+    }
+
+    /// <summary>
     /// Basic observable list type, usable for data models to be presented in graphical interfaces.
     /// </summary>
+    // Fody treats any On<Property>Changed method as a property-changed hook; these are
+    // ObservableCollection overrides, whose signature it does not recognize.
+    [SuppressPropertyChangedWarnings]
     public class UndertaleObservableList<T> : ObservableCollection<T>
     {
         // Reference to the private internal list inside Collection<T>
@@ -44,6 +68,24 @@ namespace UndertaleModLib
         {
             // Add range of elements directly to internal list
             internalList.AddRange(enumerable);
+        }
+
+        /// <inheritdoc />
+        protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+        {
+            if (UndertaleListNotifications.Dispatcher is { } dispatcher)
+                dispatcher(() => base.OnCollectionChanged(e));
+            else
+                base.OnCollectionChanged(e);
+        }
+
+        /// <inheritdoc />
+        protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+        {
+            if (UndertaleListNotifications.Dispatcher is { } dispatcher)
+                dispatcher(() => base.OnPropertyChanged(e));
+            else
+                base.OnPropertyChanged(e);
         }
 
         /// <summary>

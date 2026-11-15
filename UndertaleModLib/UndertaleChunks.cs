@@ -249,7 +249,7 @@ namespace UndertaleModLib
     public class UndertaleChunkEXTN : UndertaleListChunk<UndertaleExtension>
     {
         public override string Name => "EXTN";
-        public ObservableCollection<ByteArrayWrapper> productIdData { get; set; } = new ObservableCollection<ByteArrayWrapper>(); // TODO: Capitalize property
+        public ObservableCollection<ByteArrayWrapper> productIdData { get; set; } = new UndertaleObservableList<ByteArrayWrapper>(); // TODO: Capitalize property
 
         private bool checkedFor2022_6 = false;
         private bool checkedFor2023_4 = false;
