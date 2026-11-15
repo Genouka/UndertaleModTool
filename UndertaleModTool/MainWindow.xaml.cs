@@ -84,6 +84,7 @@ namespace UndertaleModTool
         public static readonly RoutedUICommand CloseProjectCommand = new(LocalizationSource.GetString("Cmd_CloseProject"), "CloseProject", typeof(MainWindow));
         public static readonly RoutedUICommand RunButterscotchCommand = new RoutedUICommand("Run with Butterscotch", "RunButterscotch", typeof(MainWindow), new InputGestureCollection { new KeyGesture(Key.F6) });
         public static readonly RoutedUICommand DebugButterscotchCommand = new RoutedUICommand("Debug with Butterscotch", "DebugButterscotch", typeof(MainWindow), new InputGestureCollection { new KeyGesture(Key.F6, ModifierKeys.Shift) });
+        public static readonly RoutedUICommand CompareDataFilesCommand = new(LocalizationSource.GetString("Menu_Tools_CompareDataFiles"), "CompareDataFiles", typeof(MainWindow));
 
         public ObservableCollection<Tab> Tabs { get; set; } = new();
         public Tab CurrentTab
@@ -1461,6 +1462,11 @@ namespace UndertaleModTool
 
             if (Data is not null)
             {
+                // The comparison window holds references to this data file; close it first.
+                foreach (Window window in Application.Current.Windows.OfType<Windows.DataFileCompareWindow>().ToList())
+                {
+                    window.Close();
+                }
                 // This also clears all their game object references
                 CurrentTab = null;
                 Tabs.Clear();
@@ -5177,6 +5183,31 @@ namespace UndertaleModTool
                 _projectAssetsWindow = null;
             };
             _projectAssetsWindow.Show();
+        }
+
+        private void Command_CompareDataFiles(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (Data is null)
+            {
+                this.ShowError(LocalizationSource.GetString("Compare_OpenDataFirst"));
+                return;
+            }
+
+            OpenFileDialog dialog = new()
+            {
+                Title = LocalizationSource.GetString("Compare_SelectFile"),
+                Filter = DataFileFilter
+            };
+            if (dialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            DataFileCompareWindow compareWindow = new(this, dialog.FileName)
+            {
+                Owner = this
+            };
+            compareWindow.Show();
         }
 
         private void Command_CloseProject(object sender, ExecutedRoutedEventArgs e)

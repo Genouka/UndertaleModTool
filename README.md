@@ -85,6 +85,7 @@
   ![Preview](images/preview/image-17.png)
 
   ![Preview](images/preview/image-18.png)
+- Compare two data files: added, removed and changed resources, with property-level and decompiled GML diffs. 对比两个数据文件：资源增删改、属性差异和反编译 GML 差异。
 - Improved performance, reduced memory usage, optimized UI thread lag. 提高了性能，减少内存占用，优化了UI线程卡顿。
 - Support to use as a MCP Server for AI calling. See [this](MCP.md) for detail. 支持作为MCP服务器使用，点[这里](MCP.md)查看文档。
 - Auto-complete code 自动补全代码

@@ -147,6 +147,15 @@ public partial class MainView : UserControl, IView
         });
     }
 
+    public void OpenDataFileCompare(IServiceProvider serviceProvider, Avalonia.Platform.Storage.IStorageFile compareFile)
+    {
+        Window? window = WindowHost.ResolveOwner(this);
+        WindowHost.Show(window, new DataFileCompareWindow
+        {
+            DataContext = new DataFileCompareViewModel(serviceProvider, this, compareFile),
+        });
+    }
+
     public void OpenProjectAssets(IServiceProvider serviceProvider)
     {
         Window? window = WindowHost.ResolveOwner(this);

@@ -36,6 +36,7 @@ public sealed class CrossFileImporter : IResourceImportSource
 
     private readonly Action<Action> _mainThreadAction;
     private bool _disposed;
+    private bool _ownsSourceData = true;
 
     public CrossFileImporter(UndertaleData targetData, Action<Action> mainThreadAction = null)
     {
@@ -51,14 +52,34 @@ public sealed class CrossFileImporter : IResourceImportSource
             throw new FileNotFoundException($"Source data file not found: {filePath}");
 
         SourceFilePath = filePath;
-        SourceData?.Dispose();
+        if (_ownsSourceData)
+            SourceData?.Dispose();
 
         using FileStream fs = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         SourceData = UndertaleIO.Read(fs, (string warning, bool isImportant) => { }, (_) => { });
+        _ownsSourceData = true;
     }
 
     /// <inheritdoc/>
     public void LoadFile(string filePath) => LoadSourceFile(filePath);
+
+    /// <summary>
+    /// Uses an already loaded data file as the import source, for example when the file is
+    /// held in memory by another tool window. The caller keeps ownership unless
+    /// <paramref name="takeOwnership"/> is true.
+    /// </summary>
+    public void LoadSourceData(UndertaleData sourceData, string sourceFilePath = null, bool takeOwnership = false)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(sourceData);
+
+        if (_ownsSourceData)
+            SourceData?.Dispose();
+
+        SourceData = sourceData;
+        SourceFilePath = sourceFilePath;
+        _ownsSourceData = takeOwnership;
+    }
 
     public IReadOnlyList<string> SourceNotices => Array.Empty<string>();
 
@@ -634,7 +655,8 @@ public sealed class CrossFileImporter : IResourceImportSource
     {
         if (!_disposed)
         {
-            SourceData?.Dispose();
+            if (_ownsSourceData)
+                SourceData?.Dispose();
             SourceData = null;
             _disposed = true;
         }

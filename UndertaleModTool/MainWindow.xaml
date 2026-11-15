@@ -44,6 +44,7 @@
         <CommandBinding Command="CancelPrint" Executed="Command_RunSpecial" />
         <CommandBinding Command="PrintPreview" Executed="Command_RunDebug" />
         <CommandBinding Command="{x:Static local:MainWindow.RunButterscotchCommand}" Executed="Command_RunButterscotch" />
+        <CommandBinding Command="{x:Static local:MainWindow.CompareDataFilesCommand}" Executed="Command_CompareDataFiles" />
         <CommandBinding Command="{x:Static local:MainWindow.DebugButterscotchCommand}" Executed="Command_DebugButterscotch" />
         <CommandBinding Command="Properties" Executed="Command_Settings" />
         <CommandBinding Command="{x:Static local:UndertaleCodeEditor.GoToDefinition}" Executed="Command_GoToDefinition" CanExecute="Command_CodeEditorNavigation_CanExecute" />
@@ -208,6 +209,18 @@
                     </MenuItem.Resources>
                     <MenuItem Header="{loc:Loc Menu_Find_SearchInCode}" Command="{x:Static local:MainWindow.SearchInCodeCommand}" InputGestureText="Ctrl+Shift+F"></MenuItem>
                     <MenuItem Header="{loc:Loc Menu_Find_UnreferencedAssets}" Name="FindUnreferencedAssetsItem" Click="MenuItem_FindUnreferencedAssets_Click"/>
+                </local:MenuItemDark>
+                <local:MenuItemDark Header="{loc:Loc Menu_Tools}">
+                    <MenuItem.Resources>
+                        <Style TargetType="MenuItem">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Data, Mode=OneWay}" Value="{x:Null}">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Resources>
+                    <MenuItem Header="{loc:Loc Menu_Tools_CompareDataFiles}" Command="{x:Static local:MainWindow.CompareDataFilesCommand}"/>
                 </local:MenuItemDark>
                 <local:MenuItemDark Header="{loc:Loc Menu_Project}">
                     <MenuItem Header="{loc:Loc Menu_Project_New}" Command="{x:Static local:MainWindow.NewProjectCommand}"></MenuItem>

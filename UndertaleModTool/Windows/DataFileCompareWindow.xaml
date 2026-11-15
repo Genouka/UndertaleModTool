@@ -1,0 +1,211 @@
+<Window x:Class="UndertaleModTool.Windows.DataFileCompareWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UndertaleModTool"
+        xmlns:loc="clr-namespace:UndertaleModTool.Localization"
+        mc:Ignorable="d"
+        Title="{loc:Loc Compare_Title}" Height="560" Width="1000" MinHeight="440" MinWidth="760"
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing" IsVisibleChanged="Window_IsVisibleChanged" Loaded="Window_Loaded"
+        DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Padding="10" BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Row="0" Grid.Column="0">
+                    <TextBlock Text="{Binding BaseLabel}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding CompareLabel}" TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <local:ButtonDark Grid.Row="0" Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Top"
+                                  Content="{loc:Loc Compare_Browse}" Click="BrowseButton_Click"
+                                  IsEnabled="{Binding IsNotBusy}"/>
+                <local:ButtonDark Grid.Row="0" Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Top"
+                                  Content="{loc:Loc Common_Cancel}" Click="CancelButton_Click"
+                                  IsEnabled="{Binding IsBusy}"/>
+                <ProgressBar Grid.Row="1" Grid.ColumnSpan="3" Margin="0,8,0,0" MinHeight="4"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisConverter}}"
+                             IsIndeterminate="{Binding IsProgressIndeterminate}"
+                             Value="{Binding ProgressPercent, Mode=OneWay}"/>
+            </Grid>
+        </Border>
+
+        <Expander Grid.Row="1" Margin="10,6,10,0" Header="{loc:Loc Compare_Warnings}"
+                  Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVisConverter}}"
+                  IsExpanded="False">
+            <TextBox Text="{Binding WarningsText, Mode=OneWay}" IsReadOnly="True" AcceptsReturn="True"
+                     MaxHeight="120" TextWrapping="Wrap"
+                     Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+        </Expander>
+
+        <Grid Grid.Row="2" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <ListBox Grid.Column="0" ItemsSource="{Binding Categories}"
+                     SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                     SelectionChanged="CategoriesListBox_SelectionChanged"
+                     Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="1" Text="{Binding CountsText}" Margin="8,0,0,0"
+                                       Opacity="0.7"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"/>
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="2*"/>
+                    <RowDefinition Height="4"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+
+                <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="8,0,0,6">
+                    <local:ButtonDark Content="{loc:Loc Common_SelectAll}" Click="SelectAllButton_Click"/>
+                    <local:ButtonDark Content="{loc:Loc Compare_ClearSelection}" Margin="6,0,0,0"
+                                      Click="ClearSelectionButton_Click"/>
+                    <local:ButtonDark Content="{loc:Loc Compare_ExportStructuredDiff}" Margin="12,0,0,0"
+                                      Click="ExportButton_Click" IsEnabled="{Binding IsNotBusy}"/>
+                    <local:ButtonDark Content="{loc:Loc Compare_MergeSelected}" Margin="6,0,0,0"
+                                      Click="MergeButton_Click" IsEnabled="{Binding IsNotBusy}"/>
+                    <CheckBox Content="{loc:Loc Compare_DeleteRemoved}" Margin="12,0,0,0"
+                              IsChecked="{Binding DeleteRemoved, Mode=TwoWay}"
+                              Checked="DeleteRemovedCheckBox_Changed" Unchecked="DeleteRemovedCheckBox_Changed"
+                              VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding SelectedCountText, Mode=OneWay}" Margin="12,0,0,0"
+                               VerticalAlignment="Center" Opacity="0.7"/>
+                </WrapPanel>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8,0,0,6">
+                    <local:TextBoxDark Width="220" Margin="0,0,8,0"
+                                       ToolTip="{loc:Loc Compare_FilterByName}"
+                                       TextChanged="FilterTextBox_TextChanged"/>
+                    <local:ComboBoxDark Width="130" Margin="0,0,8,0" x:Name="StatusFilterComboBox"
+                                        SelectedIndex="0" SelectionChanged="StatusFilterComboBox_SelectionChanged">
+                        <ComboBoxItem Content="{loc:Loc Compare_StatusDifferences}"/>
+                        <ComboBoxItem Content="{loc:Loc Compare_StatusAll}"/>
+                        <ComboBoxItem Content="{loc:Loc Compare_StatusAdded}"/>
+                        <ComboBoxItem Content="{loc:Loc Compare_StatusRemoved}"/>
+                        <ComboBoxItem Content="{loc:Loc Compare_StatusChanged}"/>
+                    </local:ComboBoxDark>
+                    <TextBlock Text="{Binding EntriesCountText, Mode=OneWay}"
+                               VerticalAlignment="Center" Opacity="0.7"/>
+                </StackPanel>
+
+                <local:DataGridDark Grid.Row="2" Margin="8,0,0,0" x:Name="EntriesGrid"
+                                    ItemsSource="{Binding Entries, Mode=OneWay}"
+                                    AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                    CanUserResizeColumns="True" CanUserSortColumns="False"
+                                    HeadersVisibility="Column" SelectionMode="Single" SelectionUnit="FullRow"
+                                    HorizontalGridLinesBrush="LightGray" VerticalGridLinesBrush="LightGray"
+                                    Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"
+                                    SelectionChanged="EntriesGrid_SelectionChanged">
+                    <local:DataGridDark.Columns>
+                        <DataGridTemplateColumn Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="{loc:Loc Compare_StatusHeader}" Binding="{Binding StatusText, Mode=OneWay}"
+                                            Width="Auto" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="{loc:Loc Common_Name}" Binding="{Binding Name, Mode=OneWay}"
+                                            Width="1*" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="{loc:Loc Common_AssetType}" Binding="{Binding TypeTitle, Mode=OneWay}"
+                                            Width="Auto" IsReadOnly="True"/>
+                    </local:DataGridDark.Columns>
+                </local:DataGridDark>
+
+                <GridSplitter Grid.Row="3" Height="4" HorizontalAlignment="Stretch"/>
+
+                <Grid Grid.Row="4" Margin="8,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="{Binding DetailsTitle, Mode=OneWay}" FontWeight="Bold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Grid.Row="1" Text="{Binding DetailsNote, Mode=OneWay}" TextWrapping="Wrap"
+                               Opacity="0.8" Margin="0,2,0,0"/>
+                    <ProgressBar Grid.Row="2" MinHeight="3" IsIndeterminate="True" Margin="0,4,0,0"
+                                 Visibility="{Binding IsDetailsBusy, Converter={StaticResource BoolToVisConverter}}"/>
+
+                    <TabControl Grid.Row="3" Margin="0,6,0,0" x:Name="DetailsTabControl"
+                                SelectedIndex="{Binding DetailsTabIndex, Mode=TwoWay}"
+                                SelectionChanged="DetailsTabControl_SelectionChanged">
+                        <TabItem Header="{loc:Loc Compare_PropertiesTab}">
+                            <local:DataGridDark ItemsSource="{Binding PropertyDiffs, Mode=OneWay}"
+                                                AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                                CanUserResizeColumns="True" CanUserSortColumns="True"
+                                                HeadersVisibility="Column" HorizontalGridLinesBrush="LightGray"
+                                                VerticalGridLinesBrush="LightGray" IsReadOnly="True"
+                                                Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}">
+                                <local:DataGridDark.Columns>
+                                    <DataGridTextColumn Header="{loc:Loc Common_Property}" Binding="{Binding Path, Mode=OneWay}"
+                                                        Width="2*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="{loc:Loc Compare_BaseValue}" Binding="{Binding BaseValue, Mode=OneWay}"
+                                                        Width="1*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="{loc:Loc Compare_CompareValue}" Binding="{Binding CompareValue, Mode=OneWay}"
+                                                        Width="1*" IsReadOnly="True"/>
+                                </local:DataGridDark.Columns>
+                            </local:DataGridDark>
+                        </TabItem>
+                        <TabItem Header="{loc:Loc Compare_GmlDiffTab}">
+                            <local:TextBoxDark Text="{Binding CodeDiffText, Mode=OneWay}" IsReadOnly="True"
+                                               AcceptsReturn="True" TextWrapping="NoWrap"
+                                               HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                               FontFamily="Cascadia Code,Consolas,Menlo,monospace"
+                                               Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                        </TabItem>
+                    </TabControl>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <StatusBar Grid.Row="3" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText, Mode=OneWay}"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>

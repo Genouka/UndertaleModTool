@@ -180,6 +180,8 @@ public partial class AppMenuBar : UserControl
         Item(tools, "Menu_Find_SearchInCode", command: new RelayCommand(vm.ToolsSearchInCode),
             gesture: new KeyGesture(Key.F, modifier | KeyModifiers.Shift));
         Item(tools, "Menu_Edit_FindReferences", command: new RelayCommand(vm.ToolsFindReferences));
+        tools.Items.Add(new NativeMenuItemSeparator());
+        Item(tools, "Menu_Tools_CompareDataFiles", command: new RelayCommand(vm.ToolsCompareDataFiles));
 
         NativeMenu project = new();
         Item(project, "Menu_Project_New", command: new RelayCommand(vm.ProjectNew));

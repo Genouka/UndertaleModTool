@@ -563,7 +563,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         {
             foreach (var window in desktop.Windows.ToList())
             {
-                if (window is SearchInCodeWindow or FindReferencesWindow or ProjectAssetsWindow)
+                if (window is SearchInCodeWindow or FindReferencesWindow or ProjectAssetsWindow or DataFileCompareWindow)
                 {
                     window.Close();
                 }
@@ -1077,6 +1077,26 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
     public void ToolsFindReferences()
     {
         OpenFindReferences();
+    }
+
+    public async void ToolsCompareDataFiles()
+    {
+        if (Data is null)
+        {
+            await View!.MessageDialog(LocalizationSource.GetString("Compare_OpenDataFirst"));
+            return;
+        }
+
+        var files = await View!.OpenFileDialog(new FilePickerOpenOptions
+        {
+            Title = LocalizationSource.GetString("Compare_SelectFile"),
+            FileTypeFilter = FilePickerFileTypes.Data,
+        });
+        if (files.Count != 1)
+            return;
+
+        if (View is MainView mainView)
+            mainView.OpenDataFileCompare(ServiceProvider, files[0]);
     }
 
     public async void ScriptsRunOtherScript()
