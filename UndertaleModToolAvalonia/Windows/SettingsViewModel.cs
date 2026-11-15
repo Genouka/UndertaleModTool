@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
+using UndertaleModTool.Localization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace UndertaleModToolAvalonia;
@@ -86,6 +87,24 @@ public partial class SettingsViewModel : ObservableObject
 
     /// <summary>Whether the MirrorChyan CDK controls are relevant for the selected source.</summary>
     public bool IsMirrorChyanSource => MainVM.Settings.UpdateSource == UpdateSource.MirrorChyan;
+
+    /// <summary>Whether the selected UI language is Chinese.</summary>
+    public bool IsChineseUi
+    {
+        get
+        {
+            string language = MainVM.Settings.Language;
+            if (!string.IsNullOrWhiteSpace(language))
+                return language.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+            return LocalizationSource.Instance.CurrentCulture.Name
+                .StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>Re-evaluates language-dependent visibility after the language combo changes.</summary>
+    public void RefreshLanguageDependentState()
+        => OnPropertyChanged(nameof(IsChineseUi));
 
     /// <summary>Whether the "Run/Debug with Butterscotch" menu entries are shown.</summary>
     public bool ShowButterscotchDebug

@@ -44,6 +44,10 @@ namespace UndertaleModTool.Update
         public static string GetResourceId(bool isSingleFile)
             => isSingleFile ? SingleFileResourceId : MultiFileResourceId;
 
+        /// <summary>Chinese project page used by the in-app promotion card.</summary>
+        public static string GetProjectPageUrl(bool isSingleFile)
+            => $"https://mirrorchyan.com/zh/projects?rid={Uri.EscapeDataString(GetResourceId(isSingleFile))}";
+
         /// <summary>User agent reported to the API (the application version, without build metadata).</summary>
         public static string GetUserAgent()
             => "UndertaleModTool/" + UpdateVersion.GetVersionCore(MainWindow.Version);

@@ -171,6 +171,36 @@
                     </Grid>
                 </Grid>
 
+                <!-- Shown only for the Chinese UI: promotes the MirrorChyan CDN download source. -->
+                <Border x:Name="MirrorChyanPromoCard" Visibility="Collapsed" Margin="0,10,0,0"
+                        Padding="12" CornerRadius="8" BorderThickness="1"
+                        BorderBrush="#553B82F6" Background="#143B82F6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Width="36" Height="36" CornerRadius="18" Background="#FF3B82F6"
+                                VerticalAlignment="Top">
+                            <TextBlock Text="M" Foreground="White" FontSize="18" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                            <TextBlock Text="{loc:Loc Settings_MirrorChyanPromoTitle}" FontWeight="Bold"/>
+                            <TextBlock Text="{loc:Loc Settings_MirrorChyanPromoDescription}"
+                                       TextWrapping="Wrap" FontSize="11.5"
+                                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                        </StackPanel>
+
+                        <local:ButtonDark Grid.Column="2" Content="{loc:Loc Settings_MirrorChyanPromoButton}"
+                                          Padding="10,3" VerticalAlignment="Center"
+                                          Click="MirrorChyanPromoButton_Click"/>
+                    </Grid>
+                </Border>
+
                 <Separator/>
 
                 <Grid>
@@ -309,7 +339,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <local:ButtonDark Grid.Column="0" Click="UpdateAppButton_Click" Padding="8,2,8,2" HorizontalAlignment="Left" x:Name="UpdateAppButton" Visibility="{Binding UpdaterButtonVisibility}" Content="{loc:Loc Settings_UpdateApp}"/>
+                    <local:ButtonDark Grid.Column="0" Click="UpdateAppButton_Click" Padding="8,2,8,2" HorizontalAlignment="Left" x:Name="UpdateAppButton" Content="{loc:Loc Settings_UpdateApp}"/>
                 </Grid>
             </StackPanel>
         </Grid>

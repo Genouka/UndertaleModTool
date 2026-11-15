@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -17,6 +18,9 @@ namespace UndertaleModTool.Update
     /// </summary>
     public static class UpdateChecker
     {
+        /// <summary>Whether the app is running from the single-file build.</summary>
+        public static bool IsSingleFile => string.IsNullOrEmpty(Assembly.GetEntryAssembly()?.Location);
+
         public const string Owner = "genouka";
         public const string Repo = "UndertaleModTool";
         public const string WorkflowName = "Publish continuous release of UndertaleModTool";
@@ -109,6 +113,7 @@ namespace UndertaleModTool.Update
 
             long? runId = null;
             DateTime updatedAt = default;
+            string runChangelog = "";
 
             using (JsonDocument doc = JsonDocument.Parse(await result.Content.ReadAsStringAsync()))
             {
@@ -139,7 +144,23 @@ namespace UndertaleModTool.Update
                         updatedAt = runDate.UtcDateTime;
                     }
 
+                    string changelog = "";
+                    if (run.TryGetProperty("head_commit", out JsonElement headCommit)
+                        && headCommit.ValueKind == JsonValueKind.Object
+                        && headCommit.TryGetProperty("message", out JsonElement commitMessage)
+                        && commitMessage.ValueKind == JsonValueKind.String)
+                    {
+                        changelog = commitMessage.GetString() ?? "";
+                    }
+                    if (string.IsNullOrWhiteSpace(changelog)
+                        && run.TryGetProperty("display_title", out JsonElement displayTitle)
+                        && displayTitle.ValueKind == JsonValueKind.String)
+                    {
+                        changelog = displayTitle.GetString() ?? "";
+                    }
+
                     runId = id;
+                    runChangelog = changelog;
                     break;
                 }
             }
@@ -156,7 +177,8 @@ namespace UndertaleModTool.Update
                 VersionLabel: version,
                 AssetName: artifactName,
                 DownloadUrls: downloadUrl is null ? Array.Empty<string>() : new[] { downloadUrl },
-                UpdatedAt: updatedAt);
+                UpdatedAt: updatedAt,
+                Changelog: runChangelog);
         }
 
         /// <summary>Whether the nightly build is at least <see cref="NewerThanMinutes"/> minutes newer than the local install.</summary>
@@ -216,7 +238,8 @@ namespace UndertaleModTool.Update
                 Source: UpdateSource.GitHub,
                 VersionLabel: release.TagName.Trim(),
                 AssetName: asset.Name,
-                DownloadUrls: new[] { asset.BrowserDownloadUrl });
+                DownloadUrls: new[] { asset.BrowserDownloadUrl },
+                Changelog: release.Body);
         }
 
         static async Task<UpdateCheckResult> CheckStableMirrorChyanAsync(
@@ -285,6 +308,7 @@ namespace UndertaleModTool.Update
 
             List<string> downloadUrls = new() { release.Url };
             string assetName = GitHubReleaseClient.GetStableAssetSuffix(isSingleFile).TrimStart('-');
+            string changelog = release.ReleaseNote ?? "";
 
             // Best effort: the GitHub asset can be used as a fallback when MirrorChyan's CDN fails.
             try
@@ -293,6 +317,8 @@ namespace UndertaleModTool.Update
                 GitHubReleaseAsset asset = githubRelease is null
                     ? null
                     : GitHubReleaseClient.SelectStableAsset(githubRelease, isSingleFile);
+                if (githubRelease is not null && string.IsNullOrWhiteSpace(changelog))
+                    changelog = githubRelease.Body;
                 if (asset is not null)
                 {
                     assetName = asset.Name;
@@ -313,7 +339,8 @@ namespace UndertaleModTool.Update
                 Source: UpdateSource.MirrorChyan,
                 VersionLabel: version,
                 AssetName: assetName,
-                DownloadUrls: downloadUrls);
+                DownloadUrls: downloadUrls,
+                Changelog: changelog);
 
             bool isNewer = UpdateVersion.CompareForUpdate(GetLocalVersion(), version) < 0;
             if (!isNewer && !forcePackage)

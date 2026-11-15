@@ -21,7 +21,8 @@
                     <Label Grid.Column="0" VerticalAlignment="Center" Content="{l:Loc Settings_Language}"/>
                     <ComboBox Grid.Column="1"
                               ItemsSource="{Binding Languages}"
-                              SelectedItem="{Binding MainVM.Settings.Language, Mode=TwoWay}" />
+                              SelectedItem="{Binding MainVM.Settings.Language, Mode=TwoWay}"
+                              SelectionChanged="LanguageSelectionChanged" />
                 </Grid>
 
                 <Grid ColumnDefinitions="Auto,Auto" Classes="SpacedGrid">
@@ -105,6 +106,30 @@
                             Content="{l:Loc Settings_MirrorChyanGetCdk}"
                             Click="MirrorChyanGetCdkClick"/>
                 </Grid>
+
+                <!-- Shown only for the Chinese UI: promotes the MirrorChyan CDN download source. -->
+                <Border IsVisible="{Binding IsChineseUi}" Margin="0,8,0,0" Padding="12"
+                        CornerRadius="8" BorderThickness="1"
+                        BorderBrush="#553B82F6" Background="#143B82F6">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
+                                Background="#3B82F6" VerticalAlignment="Top">
+                            <TextBlock Text="M" Foreground="White" FontSize="18" FontWeight="Bold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="{l:Loc Settings_MirrorChyanPromoTitle}" FontWeight="Bold" />
+                            <TextBlock Text="{l:Loc Settings_MirrorChyanPromoDescription}"
+                                       TextWrapping="Wrap" FontSize="11.5"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                        </StackPanel>
+
+                        <Button Grid.Column="2" Content="{l:Loc Settings_MirrorChyanPromoButton}"
+                                Padding="10,3" VerticalAlignment="Center"
+                                Click="MirrorChyanPromoClick" />
+                    </Grid>
+                </Border>
 
                 <Button Content="{l:Loc Settings_UpdateApp}"
                         Command="{Binding MainVM.HelpUpdateApp}"

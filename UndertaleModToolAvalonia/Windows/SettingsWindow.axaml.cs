@@ -32,4 +32,14 @@ public partial class SettingsWindow : Window
         if (DataContext is SettingsViewModel vm && vm.MainVM.View is { } view)
             await view.LaunchUriAsync(new Uri(url));
     }
+
+    async void MirrorChyanPromoClick(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is SettingsViewModel vm && vm.MainVM.View is { } view)
+            await view.LaunchUriAsync(new Uri(MirrorChyanClient.GetProjectPageUrl()));
+    }
+
+    void LanguageSelectionChanged(object? sender, SelectionChangedEventArgs e)
+        => Avalonia.Threading.Dispatcher.UIThread.Post(
+            () => (DataContext as SettingsViewModel)?.RefreshLanguageDependentState());
 }

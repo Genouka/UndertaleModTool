@@ -1,0 +1,125 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:l="clr-namespace:UndertaleModToolAvalonia"
+        mc:Ignorable="d" d:DesignWidth="640" d:DesignHeight="600"
+        x:Class="UndertaleModToolAvalonia.UpdateWindow"
+        x:DataType="l:UpdateWindow"
+        DataContext="{Binding $self}"
+        Title="{Binding WindowTitle}"
+        Width="640" Height="600" MinWidth="480" MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Escape" Command="{Binding Close}" />
+    </Window.KeyBindings>
+
+    <Window.Styles>
+        <Style Selector="Button.Primary">
+            <Setter Property="Background" Value="#2563EB" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="18,7" />
+            <Setter Property="MinWidth" Value="108" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.Primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1D4ED8" />
+            <Setter Property="BorderBrush" Value="#1D4ED8" />
+        </Style>
+        <Style Selector="Button.Primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#1E40AF" />
+            <Setter Property="BorderBrush" Value="#1E40AF" />
+        </Style>
+        <Style Selector="Button.Secondary">
+            <Setter Property="Padding" Value="18,7" />
+            <Setter Property="MinWidth" Value="90" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <!-- Header -->
+        <Border Grid.Row="0" Padding="24,20">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Color="#2563EB" Offset="0" />
+                    <GradientStop Color="#7C3AED" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Border Grid.Column="0" Width="46" Height="46" CornerRadius="23"
+                        Background="#33FFFFFF" VerticalAlignment="Center">
+                    <Viewbox Width="22" Height="22">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M12,3 L12,16 M6,10 L12,4 L18,10 M4,20 L20,20"
+                                  Stroke="White" StrokeThickness="2.2"
+                                  StrokeLineCap="Round" StrokeJoin="Round" />
+                        </Canvas>
+                    </Viewbox>
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="14,0,12,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding HeaderTitle}" FontSize="21" FontWeight="SemiBold"
+                               Foreground="White" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding HeaderSubtitle}" FontSize="12.5" Foreground="#E6FFFFFF"
+                               TextWrapping="Wrap" Margin="0,3,0,0" />
+                </StackPanel>
+
+                <Border Grid.Column="2" Background="#33FFFFFF" CornerRadius="10" Padding="10,3"
+                        VerticalAlignment="Top">
+                    <TextBlock Text="{Binding BadgeText}" FontSize="11.5" Foreground="White" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Version before/after -->
+        <Grid Grid.Row="1" Margin="24,18,24,0" ColumnDefinitions="*,Auto,*">
+            <Border Grid.Column="0" CornerRadius="8" Padding="14,10"
+                    Background="{DynamicResource SystemControlBackgroundListLowBrush}">
+                <StackPanel>
+                    <TextBlock Text="{l:Loc Msg_UpdateDialogCurrentVersion}" FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    <TextBlock Text="{Binding CurrentVersion}" FontSize="18" FontWeight="SemiBold"
+                               Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock Grid.Column="1" Text="→" FontSize="22" Margin="12,0"
+                       VerticalAlignment="Center" Foreground="#3B82F6" />
+
+            <Border Grid.Column="2" CornerRadius="8" Padding="14,10"
+                    Background="#1A3B82F6" BorderBrush="#803B82F6" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="{l:Loc Msg_UpdateDialogLatestVersion}" FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    <TextBlock Text="{Binding LatestVersion}" FontSize="18" FontWeight="SemiBold"
+                               Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Changelog heading -->
+        <TextBlock Grid.Row="2" Text="{l:Loc Msg_UpdateDialogChangelog}"
+                   FontSize="14" FontWeight="SemiBold" Margin="24,18,24,8" />
+
+        <!-- Changelog -->
+        <Border Grid.Row="3" Margin="24,0,24,0" CornerRadius="8" Padding="12,8"
+                Background="{DynamicResource SystemControlBackgroundListLowBrush}">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                <SelectableTextBlock Text="{Binding Changelog}" TextWrapping="Wrap"
+                                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+            </ScrollViewer>
+        </Border>
+
+        <!-- Actions -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="24,18,24,20" Spacing="8">
+            <Button Classes="Secondary" Content="{l:Loc Msg_UpdateDialogLater}"
+                    Command="{Binding LaterClick}" />
+            <Button Classes="Primary" Content="{Binding PrimaryButtonText}"
+                    IsDefault="True" Command="{Binding UpdateClick}" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -400,12 +400,6 @@ namespace UndertaleModTool
             set => UpdateAppButton.IsEnabled = value;
         }
 
-#if DEBUG
-        public static Visibility UpdaterButtonVisibility => Visibility.Visible;
-#else
-        public static Visibility UpdaterButtonVisibility => Visibility.Hidden;
-#endif
-
         public SettingsWindow()
         {
             InitializeComponent();
@@ -450,6 +444,8 @@ namespace UndertaleModTool
                 }
             }
 
+            UpdateMirrorChyanPromoVisibility();
+
             CodeEditorThemeComboBox.SelectedIndex = (int)Settings.Instance.CodeEditorTheme;
         }
 
@@ -474,8 +470,30 @@ namespace UndertaleModTool
 
                     var culture = new CultureInfo(lang);
                     LocalizationSource.Instance.CurrentCulture = culture;
+                    UpdateMirrorChyanPromoVisibility();
                 }
             }
+        }
+
+        /// <summary>Whether the current UI language is Chinese.</summary>
+        private static bool IsChineseUi()
+        {
+            string language = Settings.Instance?.Language;
+            if (!string.IsNullOrWhiteSpace(language))
+                return language.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+            return LocalizationSource.Instance.CurrentCulture.Name
+                .StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void UpdateMirrorChyanPromoVisibility()
+        {
+            MirrorChyanPromoCard.Visibility = IsChineseUi() ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void MirrorChyanPromoButton_Click(object sender, RoutedEventArgs e)
+        {
+            MainWindow.OpenBrowser(MirrorChyanClient.GetProjectPageUrl(UpdateChecker.IsSingleFile));
         }
 
         private void CodeEditorThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
