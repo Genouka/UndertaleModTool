@@ -40,6 +40,18 @@ namespace UndertaleModTests
 
         public Action<Action> MainThreadAction => static (f) => f();
 
+        [Obsolete("SyncBinding() is deprecated. Use MainThreadAction to mutate data on the main thread instead.")]
+        public void SyncBinding(string resourceType, bool enable)
+        {
+            // Tests have no UI data binding, so there is nothing to synchronize.
+        }
+
+        [Obsolete("DisableAllSyncBindings() is deprecated. Use MainThreadAction to mutate data on the main thread instead.")]
+        public void DisableAllSyncBindings()
+        {
+            // Tests have no UI data binding, so there is nothing to synchronize.
+        }
+
         public void ChangeSelection(object newSelection)
         {
         }

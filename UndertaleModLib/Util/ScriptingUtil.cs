@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis.Scripting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -15,6 +16,9 @@ namespace UndertaleModLib.Util;
 /// </summary>
 public static class ScriptingUtil
 {
+    private static readonly object deprecationWarningLock = new();
+    private static readonly HashSet<string> emittedDeprecationWarnings = new();
+
     /// <summary>
     /// Creates default scripting options for CSX scripts, with all standard imports/references.
     /// </summary>
@@ -174,5 +178,28 @@ public static class ScriptingUtil
         }
 
         return excText;
+    }
+
+    /// <summary>
+    /// Emits a deprecation warning for a legacy scripting API member.
+    /// </summary>
+    /// <remarks>
+    /// Deprecated <see cref="IScriptInterface"/> members use this instead of a dialog, so that old
+    /// scripts keep running unattended. Each <paramref name="apiName"/> is reported only once per
+    /// process. The warning is written to the console and the trace output.
+    /// </remarks>
+    /// <param name="apiName">Name of the deprecated API member, used to deduplicate warnings.</param>
+    /// <param name="replacement">Suggested replacement for the deprecated API member.</param>
+    public static void WarnDeprecatedScriptAPI(string apiName, string replacement)
+    {
+        lock (deprecationWarningLock)
+        {
+            if (!emittedDeprecationWarnings.Add(apiName))
+                return;
+        }
+
+        string message = $"[Deprecated] {apiName}() is obsolete and is only kept for compatibility with existing scripts. {replacement}";
+        Console.WriteLine(message);
+        Trace.WriteLine(message);
     }
 }

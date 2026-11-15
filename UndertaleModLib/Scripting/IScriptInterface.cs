@@ -427,6 +427,30 @@ public interface IScriptInterface
     void EnableUI();
 
     /// <summary>
+    /// Deprecated. Allows legacy scripts to modify asset lists from a non-UI thread.
+    /// </summary>
+    /// <remarks>
+    /// This member is kept only for compatibility with existing scripts, and emits a one-time
+    /// warning when used. It does not make data mutations thread-safe: mutate data on the main
+    /// thread through <see cref="MainThreadAction"/> instead. The WPF host still enables collection
+    /// synchronization for the listed asset lists, which is the behavior this member used to have.
+    /// </remarks>
+    /// <param name="resourceType">A comma separated list of asset list names. This is case sensitive.</param>
+    /// <param name="enable">Whether to enable or disable the synchronization.</param>
+    [Obsolete("SyncBinding() is deprecated and does not make data mutations thread-safe. Use MainThreadAction to mutate data on the main thread instead.")]
+    void SyncBinding(string resourceType, bool enable);
+
+    /// <summary>
+    /// Deprecated. Stops the synchronization of all assets previously enabled by <see cref="SyncBinding"/>.
+    /// </summary>
+    /// <remarks>
+    /// This member is kept only for compatibility with existing scripts, and emits a one-time
+    /// warning when used. See <see cref="SyncBinding"/> for details.
+    /// </remarks>
+    [Obsolete("DisableAllSyncBindings() is deprecated. Use MainThreadAction to mutate data on the main thread instead.")]
+    void DisableAllSyncBindings();
+
+    /// <summary>
     /// Starts the task that updates a progress bar in parallel.
     /// </summary>
     void StartProgressBarUpdater();

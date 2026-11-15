@@ -2598,6 +2598,86 @@ namespace UndertaleModTool
                 this.IsEnabled = true;
         }
 
+        [Obsolete("SyncBinding() is deprecated and does not make data mutations thread-safe. Use MainThreadAction to mutate data on the main thread instead.")]
+        public void SyncBinding(string resourceType, bool enable)
+        {
+            ScriptingUtil.WarnDeprecatedScriptAPI(nameof(SyncBinding),
+                                                  "Use MainThreadAction to mutate data on the main thread instead.");
+
+            if (resourceType.Contains(',')) // if several types are listed
+            {
+                string[] resTypes = resourceType.Replace(" ", "").Split(',');
+
+                if (enable)
+                {
+                    foreach (string resType in resTypes)
+                    {
+                        if (Data[resType] is IEnumerable resListCollection)
+                        {
+                            BindingOperations.EnableCollectionSynchronization(resListCollection, bindingLock);
+
+                            syncBindings.Add(resType);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (string resType in resTypes)
+                    {
+                        if (syncBindings.Contains(resType))
+                        {
+                            if (Data[resType] is IEnumerable resListCollection)
+                            {
+                                BindingOperations.DisableCollectionSynchronization(resListCollection);
+                            }
+
+                            syncBindings.Remove(resType);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (enable)
+                {
+                    if (Data[resourceType] is IEnumerable resListCollection)
+                    {
+                        BindingOperations.EnableCollectionSynchronization(resListCollection, bindingLock);
+
+                        syncBindings.Add(resourceType);
+                    }
+                }
+                else if (syncBindings.Contains(resourceType))
+                {
+                    if (Data[resourceType] is IEnumerable resListCollection)
+                    {
+                        BindingOperations.DisableCollectionSynchronization(resListCollection);
+                    }
+
+                    syncBindings.Remove(resourceType);
+                }
+            }
+        }
+
+        [Obsolete("DisableAllSyncBindings() is deprecated. Use MainThreadAction to mutate data on the main thread instead.")]
+        public void DisableAllSyncBindings() // disable all sync. bindings
+        {
+            ScriptingUtil.WarnDeprecatedScriptAPI(nameof(DisableAllSyncBindings),
+                                                  "Use MainThreadAction to mutate data on the main thread instead.");
+
+            if (syncBindings.Count <= 0) return;
+
+            foreach (string resType in syncBindings)
+            {
+                if (Data[resType] is IEnumerable resListCollection)
+                {
+                    BindingOperations.DisableCollectionSynchronization(resListCollection);
+                }
+            }
+
+            syncBindings.Clear();
+        }
+
         private void ProgressUpdater()
         {
             Stopwatch sw = new();
