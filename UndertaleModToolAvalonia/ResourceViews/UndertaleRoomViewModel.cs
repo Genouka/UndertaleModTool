@@ -176,12 +176,12 @@ public partial class UndertaleRoomViewModel : ObservableObject, IUndertaleResour
 
     public void RemoveLayer(Layer layer)
     {
-        if (layer.LayerType == LayerType.Instances)
+        if (layer.InstancesData is not null)
         {
-            foreach (UndertaleRoom.GameObject? instance in layer.InstancesData.Instances)
+            foreach (UndertaleRoom.GameObject instance in layer.InstancesData.Instances)
             {
                 Room.GameObjects.Remove(instance);
-                Room.InstanceCreationOrderIDs.InstanceIDs.Remove(instance.InstanceID);
+                Room.InstanceCreationOrderIDs?.InstanceIDs.Remove(instance.InstanceID);
             }
         }
 
@@ -204,9 +204,19 @@ public partial class UndertaleRoomViewModel : ObservableObject, IUndertaleResour
 
     public void RemoveGameObjectInstance(GameObject instance, Layer? layer = null)
     {
-        layer?.InstancesData.Instances.Remove(instance);
+        if (layer is not null)
+        {
+            layer.InstancesData?.Instances.Remove(instance);
+        }
+        else
+        {
+            // Removing from the room-wide "Game objects" list; instance must leave every layer too.
+            foreach (Layer roomLayer in Room.Layers)
+                roomLayer.InstancesData?.Instances.Remove(instance);
+        }
+
         Room.GameObjects.Remove(instance);
-        Room.InstanceCreationOrderIDs.InstanceIDs.Remove(instance.InstanceID);
+        Room.InstanceCreationOrderIDs?.InstanceIDs.Remove(instance.InstanceID);
     }
 
     public Tile AddTile()

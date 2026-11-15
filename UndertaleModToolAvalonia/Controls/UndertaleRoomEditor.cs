@@ -1512,13 +1512,7 @@ public class UndertaleRoomEditor : Control
                 break;
 
             case GameObject gameObj:
-                if (gms2)
-                {
-                    foreach (UndertaleRoom.Layer layer in room.Layers)
-                        if (layer.InstancesData is not null)
-                            layer.InstancesData.Instances.Remove(gameObj);
-                }
-                room.GameObjects.Remove(gameObj);
+                vm.RemoveGameObjectInstance(gameObj);
                 break;
 
             case SpriteInstance sprInst:
