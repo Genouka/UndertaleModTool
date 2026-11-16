@@ -120,8 +120,8 @@ using (TextureWorker worker = new())
         {
             //myTile.X = (int)((double)(myTile.X) * ((double)scale));
             //myTile.Y = (int)((double)(myTile.Y) * ((double)scale));
-            myTile.SourceX = (uint)((double)(myTile.SourceX) * ((double)scale));
-            myTile.SourceY = (uint)((double)(myTile.SourceY) * ((double)scale));
+            myTile.SourceX = (int)((double)(myTile.SourceX) * ((double)scale));
+            myTile.SourceY = (int)((double)(myTile.SourceY) * ((double)scale));
             myTile.Width = (uint)((double)(myTile.Width) * ((double)scale));
             myTile.Height = (uint)((double)(myTile.Height) * ((double)scale));
             myTile.ScaleX = (float)((double)(myTile.ScaleX) / ((double)scale)); ;
