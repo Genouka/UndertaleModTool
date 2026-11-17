@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
 using Underanalyzer.Decompiler;
+using UndertaleModLib.Scripting;
 using UndertaleModTool.Localization;
 using UndertaleModRunner;
 using UndertaleModTool.Update;
@@ -141,6 +142,12 @@ namespace UndertaleModTool
         public List<CodeSnippet> CodeSnippets { get; set; } = new();
 
         public string Language { get; set; } = "en";
+
+        /// <summary>
+        /// How script names are shown in the Scripts menu.
+        /// </summary>
+        [JsonConverter(typeof(JsonStringEnumConverter<ScriptNameDisplayMode>))]
+        public ScriptNameDisplayMode ScriptNameDisplay { get; set; } = ScriptNameDisplayMode.FileName;
 
         public static Settings Instance { get; private set; }
 

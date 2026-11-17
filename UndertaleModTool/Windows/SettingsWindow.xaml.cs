@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using UndertaleModTool.Localization;
+using UndertaleModLib.Scripting;
 using UndertaleModRunner;
 using UndertaleModTool.Update;
 
@@ -303,6 +304,25 @@ namespace UndertaleModTool
                 Visibility visibility = value ? Visibility.Visible : Visibility.Collapsed;
                 mainWindow.RunButterscotchItem.Visibility = visibility;
                 mainWindow.DebugButterscotchItem.Visibility = visibility;
+            }
+        }
+
+        /// <summary>
+        /// How script names are shown in the Scripts menu, as a ComboBox index matching
+        /// <see cref="ScriptNameDisplayMode"/>.
+        /// </summary>
+        public int ScriptNameDisplayIndex
+        {
+            get => (int)Settings.Instance.ScriptNameDisplay;
+            set
+            {
+                if (value is < 0 or > 2)
+                    return;
+                ScriptNameDisplayMode mode = (ScriptNameDisplayMode)value;
+                if (Settings.Instance.ScriptNameDisplay == mode)
+                    return;
+                Settings.Instance.ScriptNameDisplay = mode;
+                Settings.Save();
             }
         }
 

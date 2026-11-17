@@ -1,3 +1,12 @@
+// ==UndertaleModTool==
+// @name        Import GML
+// @name:zh-Hans 导入 GML
+// @name:zh-CN  导入 GML
+// @description Imports all .gml files from a folder into code entries, optionally linking them.
+// @description:zh-Hans 将文件夹中的所有 .gml 文件批量导入为代码条目，可选择自动链接。
+// @description:zh-CN  将文件夹中的所有 .gml 文件批量导入为代码条目，可选择自动链接。
+// @author      Jockeholm, Samuel Roy
+// ==/UndertaleModTool==
 // Script by Jockeholm based off of a script by Kneesnap.
 // Major help and edited by Samuel Roy
 

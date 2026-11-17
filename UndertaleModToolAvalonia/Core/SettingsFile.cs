@@ -7,6 +7,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using UndertaleModRunner;
+using UndertaleModLib.Scripting;
 
 namespace UndertaleModToolAvalonia;
 
@@ -264,6 +265,12 @@ public partial class SettingsFile
     public string InstanceIdPrefix { get; set; } = "inst_";
 
     public string Language { get; set; } = "";
+
+    /// <summary>
+    /// How script names are shown in the Scripts menu.
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<ScriptNameDisplayMode>))]
+    public ScriptNameDisplayMode ScriptNameDisplay { get; set; } = ScriptNameDisplayMode.FileName;
 
     public Underanalyzer.Decompiler.DecompileSettings DecompileSettings { get; set; } = new();
 }

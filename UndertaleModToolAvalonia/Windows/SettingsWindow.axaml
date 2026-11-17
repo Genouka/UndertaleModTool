@@ -25,6 +25,18 @@
                               SelectionChanged="LanguageSelectionChanged" />
                 </Grid>
 
+                <Grid ColumnDefinitions="Auto,1*" Classes="SpacedGrid">
+                    <Label Grid.Column="0" VerticalAlignment="Center"
+                           Content="{l:Loc Settings_ScriptNameDisplay}"
+                           ToolTip.Tip="{l:Loc Settings_ScriptNameDisplayToolTip}"/>
+                    <ComboBox Grid.Column="1" SelectedIndex="{Binding ScriptNameDisplayIndex, Mode=TwoWay}"
+                              ToolTip.Tip="{l:Loc Settings_ScriptNameDisplayToolTip}">
+                        <ComboBoxItem Content="{l:Loc Settings_ScriptNameDisplayFileName}"/>
+                        <ComboBoxItem Content="{l:Loc Settings_ScriptNameDisplayEnglish}"/>
+                        <ComboBoxItem Content="{l:Loc Settings_ScriptNameDisplayLocalized}"/>
+                    </ComboBox>
+                </Grid>
+
                 <Grid ColumnDefinitions="Auto,Auto" Classes="SpacedGrid">
                     <Label Grid.Column="0" VerticalAlignment="Center" Content="{l:Loc Settings_Theme}"/>
                     <ComboBox Grid.Column="1" SelectedIndex="{Binding MainVM.Settings.Theme}">

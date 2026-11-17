@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Data;
 using CommunityToolkit.Mvvm.Input;
 using UndertaleModTool.Localization;
+using UndertaleModLib.Scripting;
 
 namespace UndertaleModToolAvalonia;
 
@@ -128,9 +129,11 @@ public static class BuiltInScripts
     {
         foreach (string file in Directory.EnumerateFiles(directory, "*.csx").OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
         {
+            ScriptMetadata metadata = ScriptMetadata.FromFile(file);
             menu.Items.Add(new NativeMenuItem
             {
-                Header = EscapeHeader(Path.GetFileName(file)),
+                Header = EscapeHeader(metadata.GetDisplayName(file, vm.Settings.ScriptNameDisplay,
+                                                           LocalizationSource.Instance.CurrentCulture)),
                 Command = new RelayCommand(() => vm.ScriptsRunBuiltinScript(file)),
             });
         }

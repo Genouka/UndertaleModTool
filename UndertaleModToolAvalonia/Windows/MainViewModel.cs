@@ -191,6 +191,10 @@ public partial class MainViewModel : ObservableObject
             if (!string.IsNullOrEmpty(Settings.Language))
                 LocalizationSource.Instance.CurrentCulture = new System.Globalization.CultureInfo(Settings.Language);
 
+            // Localized script names depend on the culture, so rebuild the Scripts menu
+            // (a no-op when the menu bar has not attached yet; it catches up via ScriptsVersion).
+            BuiltInScripts.NotifyScriptsChanged();
+
             await TabOpen(new DescriptionViewModel(
                 LocalizationSource.GetString("Main_WelcomeHeading"),
                 LocalizationSource.GetString("Main_WelcomeDescription")));

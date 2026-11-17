@@ -66,6 +66,20 @@
                     <Label Grid.Column="1" Content="{loc:Loc Settings_Language_Note1}" />
                 </Grid>
 
+                <Grid ToolTip="{loc:Loc Settings_ScriptNameDisplayToolTip}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition SharedSizeGroup="g1" Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{loc:Loc Settings_ScriptNameDisplay}"/>
+                    <local:ComboBoxDark Grid.Column="1" MinWidth="200" HorizontalAlignment="Left"
+                                        SelectedIndex="{Binding ScriptNameDisplayIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="{loc:Loc Settings_ScriptNameDisplayFileName}"/>
+                        <ComboBoxItem Content="{loc:Loc Settings_ScriptNameDisplayEnglish}"/>
+                        <ComboBoxItem Content="{loc:Loc Settings_ScriptNameDisplayLocalized}"/>
+                    </local:ComboBoxDark>
+                </Grid>
+
                 <Grid ToolTip="{loc:Loc Settings_GMS1PathToolTip}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition SharedSizeGroup="g1" Width="Auto" />

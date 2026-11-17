@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using UndertaleModTool.Localization;
+using UndertaleModLib.Scripting;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace UndertaleModToolAvalonia;
@@ -82,6 +83,25 @@ public partial class SettingsViewModel : ObservableObject
             OnPropertyChanged();
             OnPropertyChanged(nameof(UpdateChannelIndex));
             OnPropertyChanged(nameof(IsMirrorChyanSource));
+        }
+    }
+
+    /// <summary>Selected script name display mode as a combo box index.</summary>
+    public int ScriptNameDisplayIndex
+    {
+        get => (int)MainVM.Settings.ScriptNameDisplay;
+        set
+        {
+            if (value is < 0 or > 2)
+                return;
+
+            ScriptNameDisplayMode mode = (ScriptNameDisplayMode)value;
+            if (MainVM.Settings.ScriptNameDisplay == mode)
+                return;
+
+            MainVM.Settings.ScriptNameDisplay = mode;
+            OnPropertyChanged();
+            BuiltInScripts.NotifyScriptsChanged();
         }
     }
 

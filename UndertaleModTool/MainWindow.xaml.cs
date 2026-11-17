@@ -2449,9 +2449,14 @@ namespace UndertaleModTool
                 // Go over each csx file
                 foreach (var file in directory.EnumerateFiles("*.csx"))
                 {
-                    var filename = file.Name;
+                    ScriptMetadata metadata = ScriptMetadata.FromFile(file.FullName);
+                    string displayName = metadata.GetDisplayName(file.FullName, Settings.Instance.ScriptNameDisplay,
+                                                                  LocalizationSource.Instance.CurrentCulture);
                     // Replace _ with __ because WPF uses _ for keyboard navigation
-                    MenuItem subitem = new MenuItem {Header = filename.Replace("_", "__")};
+                    MenuItem subitem = new MenuItem {Header = displayName.Replace("_", "__")};
+                    string description = metadata.GetLocalizedDescription(LocalizationSource.Instance.CurrentCulture);
+                    if (!string.IsNullOrWhiteSpace(description))
+                        subitem.ToolTip = description;
                     subitem.Click += MenuItem_RunBuiltinScript_Item_Click;
                     subitem.CommandParameter = file.FullName;
                     item.Items.Add(subitem);
