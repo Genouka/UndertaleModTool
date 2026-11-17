@@ -20,6 +20,7 @@ using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
 using UndertaleModLib.Scripting;
+using UndertaleModLib.Util;
 using UndertaleModTool.Localization;
 
 namespace UndertaleModToolAvalonia;
@@ -539,6 +540,26 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     public virtual void EnableUI()
     {
         Dispatcher.UIThread.Invoke(() => mainVM.IsEnabled = true);
+    }
+
+    /// <inheritdoc/>
+    [Obsolete("SyncBinding() is deprecated and does not make data mutations thread-safe. Use MainThreadAction to mutate data on the main thread instead.")]
+    public virtual void SyncBinding(string resourceType, bool enable)
+    {
+        // Avalonia has no collection synchronization equivalent; list notifications are already
+        // marshaled to the UI thread by UndertaleListNotifications.
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(SyncBinding),
+                                              "Use MainThreadAction to mutate data on the main thread instead.");
+    }
+
+    /// <inheritdoc/>
+    [Obsolete("DisableAllSyncBindings() is deprecated. Use MainThreadAction to mutate data on the main thread instead.")]
+    public virtual void DisableAllSyncBindings()
+    {
+        // Avalonia has no collection synchronization equivalent; list notifications are already
+        // marshaled to the UI thread by UndertaleListNotifications.
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(DisableAllSyncBindings),
+                                              "Use MainThreadAction to mutate data on the main thread instead.");
     }
 
     public string GetDecompiledText(string codeName, GlobalDecompileContext? context = null, IDecompileSettings? settings = null)

@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using UndertaleModTool.Localization;
+using UndertaleModLib.Scripting;
 using UndertaleModRunner;
 using UndertaleModTool.Update;
 
@@ -307,6 +308,25 @@ namespace UndertaleModTool
         }
 
         /// <summary>
+        /// How script names are shown in the Scripts menu, as a ComboBox index matching
+        /// <see cref="ScriptNameDisplayMode"/>.
+        /// </summary>
+        public int ScriptNameDisplayIndex
+        {
+            get => (int)Settings.Instance.ScriptNameDisplay;
+            set
+            {
+                if (value is < 0 or > 2)
+                    return;
+                ScriptNameDisplayMode mode = (ScriptNameDisplayMode)value;
+                if (Settings.Instance.ScriptNameDisplay == mode)
+                    return;
+                Settings.Instance.ScriptNameDisplay = mode;
+                Settings.Save();
+            }
+        }
+
+        /// <summary>
         /// Runtime used by "Run with Butterscotch". InProcess keeps the embedded debugger;
         /// the other values launch an external executable of that architecture.
         /// </summary>
@@ -400,12 +420,6 @@ namespace UndertaleModTool
             set => UpdateAppButton.IsEnabled = value;
         }
 
-#if DEBUG
-        public static Visibility UpdaterButtonVisibility => Visibility.Visible;
-#else
-        public static Visibility UpdaterButtonVisibility => Visibility.Hidden;
-#endif
-
         public SettingsWindow()
         {
             InitializeComponent();
@@ -450,6 +464,8 @@ namespace UndertaleModTool
                 }
             }
 
+            UpdateMirrorChyanPromoVisibility();
+
             CodeEditorThemeComboBox.SelectedIndex = (int)Settings.Instance.CodeEditorTheme;
         }
 
@@ -474,8 +490,30 @@ namespace UndertaleModTool
 
                     var culture = new CultureInfo(lang);
                     LocalizationSource.Instance.CurrentCulture = culture;
+                    UpdateMirrorChyanPromoVisibility();
                 }
             }
+        }
+
+        /// <summary>Whether the current UI language is Chinese.</summary>
+        private static bool IsChineseUi()
+        {
+            string language = Settings.Instance?.Language;
+            if (!string.IsNullOrWhiteSpace(language))
+                return language.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+
+            return LocalizationSource.Instance.CurrentCulture.Name
+                .StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void UpdateMirrorChyanPromoVisibility()
+        {
+            MirrorChyanPromoCard.Visibility = IsChineseUi() ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void MirrorChyanPromoButton_Click(object sender, RoutedEventArgs e)
+        {
+            MainWindow.OpenBrowser(MirrorChyanClient.GetProjectPageUrl(UpdateChecker.IsSingleFile));
         }
 
         private void CodeEditorThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -35,6 +35,7 @@ public enum UpdateSource
 /// <param name="IsApk">Whether the downloaded file already is an installable APK (Android stable).</param>
 /// <param name="RunId">Nightly workflow run id, if this is a nightly package.</param>
 /// <param name="UpdatedAt">Nightly workflow update timestamp, if this is a nightly package.</param>
+/// <param name="Changelog">Release notes (stable) or commit message (nightly) shown in the update dialog, if available.</param>
 public sealed record UpdateInfo(
     UpdateChannel Channel,
     UpdateSource Source,
@@ -45,7 +46,8 @@ public sealed record UpdateInfo(
     string CacheKey,
     bool IsApk = false,
     long? RunId = null,
-    DateTime UpdatedAt = default)
+    DateTime UpdatedAt = default,
+    string? Changelog = null)
 {
     /// <summary>Builds the cache key that identifies a downloaded package.</summary>
     public static string BuildCacheKey(UpdateChannel channel, string version, string assetName)

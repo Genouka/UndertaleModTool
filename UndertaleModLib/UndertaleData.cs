@@ -358,6 +358,15 @@ namespace UndertaleModLib
         public GlobalFunctions GlobalFunctions;
 
         /// <summary>
+        /// Deprecated cache of sub-functions defined in global scripts.
+        /// </summary>
+        /// <remarks>
+        /// Kept only for compatibility with existing scripts. Use <see cref="GlobalFunctions"/> instead.
+        /// </remarks>
+        [Obsolete("Use GlobalFunctions instead.")]
+        public Dictionary<string, UndertaleFunction> KnownSubFunctions;
+
+        /// <summary>
         /// Registry for macro types, their resolvers, and other data specific to this game.
         /// </summary>
         public GameSpecificRegistry GameSpecificRegistry;

@@ -351,3 +351,9 @@ UndertaleModLib/gitversion.txt
 # Locally built Unix bsdbg runtimes (CI publishes them as artifacts)
 /UndertaleModRunner/native/linux-*/
 /UndertaleModRunner/native/osx-*/
+
+# Editor user settings (machine-specific)
+.vscode/
+
+# Android CI manifest artifact generated at the repository root
+/ci-manifest.bin

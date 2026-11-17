@@ -17,6 +17,7 @@ using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
 using UndertaleModLib.Scripting;
+using UndertaleModLib.Util;
 
 namespace UndertaleModCli;
 
@@ -323,6 +324,24 @@ public partial class Program : IScriptInterface
     public void EnableUI()
     {
         // nothing to enable...
+    }
+
+    /// <inheritdoc/>
+    [Obsolete("SyncBinding() is deprecated and does not make data mutations thread-safe. Use MainThreadAction to mutate data on the main thread instead.")]
+    public void SyncBinding(string resourceType, bool enable)
+    {
+        // The CLI has no UI data binding, so there is nothing to synchronize.
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(SyncBinding),
+                                              "Use MainThreadAction to mutate data on the main thread instead.");
+    }
+
+    /// <inheritdoc/>
+    [Obsolete("DisableAllSyncBindings() is deprecated. Use MainThreadAction to mutate data on the main thread instead.")]
+    public void DisableAllSyncBindings()
+    {
+        // The CLI has no UI data binding, so there is nothing to synchronize.
+        ScriptingUtil.WarnDeprecatedScriptAPI(nameof(DisableAllSyncBindings),
+                                              "Use MainThreadAction to mutate data on the main thread instead.");
     }
 
     #endregion

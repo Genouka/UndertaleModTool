@@ -41,7 +41,7 @@ If they do, you may file an issue on GitHub, but no warranty is given."); // War
         for (int j = 0; j < code.Instructions.Count; j++)
         {
             var curr = code.Instructions[j];
-            if (curr.Destination != null)// && curr.Destination.Type == UndertaleInstruction.VariableType.Array)
+            if (curr.Kind == UndertaleInstruction.Opcode.Pop && curr.ValueVariable != null)
             {
                 List<UndertaleInstruction> before = code.Instructions.Take(j).ToList();
                 before.Reverse();
@@ -84,7 +84,7 @@ If they do, you may file an issue on GitHub, but no warranty is given."); // War
                 variable = curr.ValueVariable;
                 if(variable != null && true)
                 {
-                    if (curr.ValueVariable.Type == UndertaleInstruction.VariableType.StackTop && curr.ValueVariable.InstanceType == UndertaleInstruction.InstanceType.Undefined)
+                    if (curr.ReferenceType == UndertaleInstruction.VariableType.StackTop && curr.ValueVariable.InstanceType == UndertaleInstruction.InstanceType.Undefined)
                     {
                         curr.ValueVariable.InstanceType = UndertaleInstruction.InstanceType.Self;
                     }

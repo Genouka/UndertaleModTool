@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -33,9 +33,9 @@ public enum CollisionShapeFlags : uint
 /// </summary>
 public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotifyPropertyChanged, IDisposable
 {
-    private UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT> _sprite = new();
+    private UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT> _spriteBackingField = new();
     private UndertaleResourceById<UndertaleGameObject, UndertaleChunkOBJT> _parentId = new();
-    private UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT> _textureMaskId = new();
+    private UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT> _textureMaskIdBackingField = new();
 
     public static readonly int EventTypeCount = Enum.GetValues(typeof(EventType)).Length;
 
@@ -47,7 +47,20 @@ public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotif
     /// <summary>
     /// The sprite this game object uses.
     /// </summary>
-    public UndertaleSprite Sprite { get => _sprite.Resource; set { _sprite.Resource = value; OnPropertyChanged(); } }
+    public UndertaleSprite Sprite { get => _spriteBackingField.Resource; set { _spriteBackingField.Resource = value; OnPropertyChanged(); } }
+
+    /// <summary>
+    /// Deprecated. The cached sprite reference, previously the public <c>_sprite</c> field.
+    /// </summary>
+    [Obsolete("Use Sprite instead, or serialize the object to read its cached ID.")]
+    public UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT> _sprite => _spriteBackingField;
+
+    /// <summary>
+    /// Deprecated. The cached texture mask reference, previously the public <c>_textureMaskId</c> field.
+    /// </summary>
+    [Obsolete("Use TextureMaskId instead, or serialize the object to read its cached ID.")]
+    public UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT> _textureMaskId => _textureMaskIdBackingField;
+
 
     /// <summary>
     /// Whether the game object is visible.
@@ -82,7 +95,7 @@ public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotif
     /// <summary>
     /// The texture mask this game object is using.
     /// </summary>
-    public UndertaleSprite TextureMaskId { get => _textureMaskId.Resource; set { _textureMaskId.Resource = value; OnPropertyChanged(); } }
+    public UndertaleSprite TextureMaskId { get => _textureMaskIdBackingField.Resource; set { _textureMaskIdBackingField.Resource = value; OnPropertyChanged(); } }
 
     #region Physics related properties
     /// <summary>
@@ -177,7 +190,7 @@ public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotif
     public void Serialize(UndertaleWriter writer)
     {
         writer.WriteUndertaleString(Name);
-        writer.WriteUndertaleObject(_sprite);
+        writer.WriteUndertaleObject(_spriteBackingField);
         writer.Write(Visible);
         if (writer.undertaleData.IsVersionAtLeast(2022, 5) && !writer.undertaleData.IsVersionAtLeast(2026, 1))
             writer.Write(Managed);
@@ -193,7 +206,7 @@ public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotif
         {
             writer.WriteUndertaleObject(_parentId);
         }
-        writer.WriteUndertaleObject(_textureMaskId);
+        writer.WriteUndertaleObject(_textureMaskIdBackingField);
         writer.Write(UsesPhysics);
         writer.Write(IsSensor);
         writer.Write((uint)CollisionShape);
@@ -219,7 +232,7 @@ public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotif
     public void Unserialize(UndertaleReader reader)
     {
         Name = reader.ReadUndertaleString();
-        _sprite = reader.ReadUndertaleObject<UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT>>();
+        _spriteBackingField = reader.ReadUndertaleObject<UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT>>();
         Visible = reader.ReadBoolean();
         if (reader.undertaleData.IsVersionAtLeast(2022, 5) && !reader.undertaleData.IsVersionAtLeast(2026, 1))
             Managed = reader.ReadBoolean();
@@ -238,7 +251,7 @@ public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotif
                 throw new Exception("Invalid value for parent - should be -100 or object id, got " + parent);
             _parentId.UnserializeById(reader, parent);
         }
-        _textureMaskId = reader.ReadUndertaleObject<UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT>>();
+        _textureMaskIdBackingField = reader.ReadUndertaleObject<UndertaleResourceById<UndertaleSprite, UndertaleChunkSPRT>>();
         UsesPhysics = reader.ReadBoolean();
         IsSensor = reader.ReadBoolean();
         CollisionShape = (CollisionShapeFlags)reader.ReadUInt32();
@@ -430,6 +443,120 @@ public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotif
     #endregion
 
     /// <summary>
+    /// Deprecated. Finds or creates a code entry for the given event type and subtype, using explicit data lists.
+    /// </summary>
+    /// <param name="type">Main event type for the event.</param>
+    /// <param name="subtype">Subtype for the event.</param>
+    /// <param name="strg">String list to create names in.</param>
+    /// <param name="codelist">Code list to add a new entry to.</param>
+    /// <param name="localslist">Code locals list to add a new entry to.</param>
+    /// <returns>New or existing code entry corresponding to the event.</returns>
+    [Obsolete("Use the overload taking UndertaleData instead.")]
+    public UndertaleCode EventHandlerFor(EventType type, uint subtype, IList<UndertaleString> strg,
+                                         IList<UndertaleCode> codelist, IList<UndertaleCodeLocals> localslist)
+    {
+        UndertalePointerList<Event> subEvents = Events[(int)type];
+        Event targetEvent = subEvents.FirstOrDefault(x => x.EventSubtype == subtype);
+        if (targetEvent is null)
+            subEvents.Add(targetEvent = new() { EventSubtype = subtype });
+
+        EventAction targetAction = targetEvent.Actions.FirstOrDefault();
+        if (targetAction is null)
+        {
+            targetEvent.Actions.Add(targetAction = new());
+            targetAction.ActionName = strg.MakeString("");
+        }
+
+        UndertaleCode code = targetAction.CodeId;
+        if (code is null)
+        {
+            UndertaleString name = strg.MakeString("gml_Object_" + Name.Content + "_" + type + "_" + subtype);
+            code = new UndertaleCode
+            {
+                Name = name,
+                LocalsCount = 1
+            };
+            targetAction.CodeId = code;
+            codelist.Add(code);
+
+            if (localslist is not null)
+            {
+                UndertaleCodeLocals locals = new() { Name = name };
+                locals.Locals.Add(new UndertaleCodeLocals.LocalVar
+                {
+                    Name = strg.MakeString("arguments"),
+                    Index = 0
+                });
+                localslist.Add(locals);
+            }
+            else
+            {
+                // Modern data files can lack a code locals list entirely.
+                code.WeirdLocalFlag = true;
+            }
+        }
+        return code;
+    }
+
+    /// <summary>Deprecated. Use the overload taking <see cref="UndertaleData"/>.</summary>
+    [Obsolete("Use the overload taking UndertaleData instead.")]
+    public UndertaleCode EventHandlerFor(EventType type, IList<UndertaleString> strg,
+                                         IList<UndertaleCode> codelist, IList<UndertaleCodeLocals> localslist)
+    {
+        return EventHandlerFor(type, 0u, strg, codelist, localslist);
+    }
+
+    /// <summary>Deprecated. Use the overload taking <see cref="UndertaleData"/>.</summary>
+    [Obsolete("Use the overload taking UndertaleData instead.")]
+    public UndertaleCode EventHandlerFor(EventType type, EventSubtypeKey subtype, IList<UndertaleString> strg,
+                                         IList<UndertaleCode> codelist, IList<UndertaleCodeLocals> localslist)
+    {
+        if (type != EventType.Keyboard && type != EventType.KeyPress && type != EventType.KeyRelease)
+            throw new InvalidOperationException();
+        return EventHandlerFor(type, (uint)subtype, strg, codelist, localslist);
+    }
+
+    /// <summary>Deprecated. Use the overload taking <see cref="UndertaleData"/>.</summary>
+    [Obsolete("Use the overload taking UndertaleData instead.")]
+    public UndertaleCode EventHandlerFor(EventType type, EventSubtypeStep subtype, IList<UndertaleString> strg,
+                                         IList<UndertaleCode> codelist, IList<UndertaleCodeLocals> localslist)
+    {
+        if (type != EventType.Step)
+            throw new InvalidOperationException();
+        return EventHandlerFor(type, (uint)subtype, strg, codelist, localslist);
+    }
+
+    /// <summary>Deprecated. Use the overload taking <see cref="UndertaleData"/>.</summary>
+    [Obsolete("Use the overload taking UndertaleData instead.")]
+    public UndertaleCode EventHandlerFor(EventType type, EventSubtypeMouse subtype, IList<UndertaleString> strg,
+                                         IList<UndertaleCode> codelist, IList<UndertaleCodeLocals> localslist)
+    {
+        if (type != EventType.Mouse)
+            throw new InvalidOperationException();
+        return EventHandlerFor(type, (uint)subtype, strg, codelist, localslist);
+    }
+
+    /// <summary>Deprecated. Use the overload taking <see cref="UndertaleData"/>.</summary>
+    [Obsolete("Use the overload taking UndertaleData instead.")]
+    public UndertaleCode EventHandlerFor(EventType type, EventSubtypeOther subtype, IList<UndertaleString> strg,
+                                         IList<UndertaleCode> codelist, IList<UndertaleCodeLocals> localslist)
+    {
+        if (type != EventType.Other)
+            throw new InvalidOperationException();
+        return EventHandlerFor(type, (uint)subtype, strg, codelist, localslist);
+    }
+
+    /// <summary>Deprecated. Use the overload taking <see cref="UndertaleData"/>.</summary>
+    [Obsolete("Use the overload taking UndertaleData instead.")]
+    public UndertaleCode EventHandlerFor(EventType type, EventSubtypeDraw subtype, IList<UndertaleString> strg,
+                                         IList<UndertaleCode> codelist, IList<UndertaleCodeLocals> localslist)
+    {
+        if (type != EventType.Draw)
+            throw new InvalidOperationException();
+        return EventHandlerFor(type, (uint)subtype, strg, codelist, localslist);
+    }
+
+    /// <summary>
     /// Returns children game objects of this game object.
     /// </summary>
     /// <param name="data">The game data instance, used for searching.</param>
@@ -470,9 +597,9 @@ public class UndertaleGameObject : UndertaleNamedResource, IProjectAsset, INotif
     {
         GC.SuppressFinalize(this);
 
-        _sprite.Dispose();
+        _spriteBackingField.Dispose();
         _parentId.Dispose();
-        _textureMaskId.Dispose();
+        _textureMaskIdBackingField.Dispose();
         PhysicsVertices = new();
         foreach (var ev in Events)
         {

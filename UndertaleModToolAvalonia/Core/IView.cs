@@ -53,6 +53,12 @@ public interface IView
         return await WindowHost.ShowDialog<MessageWindow.Result>(window, new MessageWindow(message, title, buttons));
     }
 
+    public async Task<bool> UpdateDialog(UpdateInfo info, string currentVersion, bool isNewer)
+    {
+        Window? window = WindowHost.ResolveOwner(View);
+        return await WindowHost.ShowDialog<bool>(window, new UpdateWindow(info, currentVersion, isNewer));
+    }
+
     public async Task<string?> TextBoxDialog(string message, string text = "", string? title = null, bool isMultiline = false, bool isReadOnly = false)
     {
         Window? window = WindowHost.ResolveOwner(View);

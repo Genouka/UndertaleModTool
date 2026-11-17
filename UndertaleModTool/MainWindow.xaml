@@ -281,6 +281,8 @@
                     </MenuItem>
                 </local:MenuItemDark>
                 <local:MenuItemDark Header="{loc:Loc Menu_Help}">
+                    <MenuItem Header="{loc:Loc Menu_Help_CheckForUpdates}" Click="MenuItem_CheckForUpdates_Click"/>
+                    <Separator/>
                     <MenuItem Header="{loc:Loc Contributors_Title}" Click="MenuItem_Contributors_Click"/>
                     <MenuItem Header="{loc:Loc Menu_Help_GitHub}" Click="MenuItem_GitHub_Click"/>
                     <MenuItem Header="{loc:Loc Menu_Help_About}" Click="MenuItem_About_Click"/>

@@ -44,13 +44,17 @@ namespace UndertaleModTool.Update
     /// Nightly workflow update timestamp (UTC), used to decide whether the build is newer than the
     /// installed one. Unused for stable packages, which are compared by version.
     /// </param>
+    /// <param name="Changelog">
+    /// Release notes (stable) or commit message (nightly) shown in the update dialog, if available.
+    /// </param>
     public sealed record UpdatePackage(
         UpdateChannel Channel,
         UpdateSource Source,
         string VersionLabel,
         string AssetName,
         IReadOnlyList<string> DownloadUrls,
-        DateTime UpdatedAt = default);
+        DateTime UpdatedAt = default,
+        string Changelog = null);
 
     /// <summary>
     /// Outcome of an update check.

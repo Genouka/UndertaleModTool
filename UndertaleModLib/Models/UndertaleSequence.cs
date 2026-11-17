@@ -509,6 +509,14 @@ public class UndertaleSequence : UndertaleNamedResource, IProjectAsset, INotifyP
         /// </summary>
         private UndertaleString _gmAnimCurveString;
 
+        /// <summary>
+        /// String used for owned animation curve resources.
+        /// </summary>
+        /// <remarks>
+        /// Always <c>"GMAnimCurve"</c> after the track has been read or written; <see langword="null"/> before that.
+        /// </remarks>
+        public UndertaleString GMAnimCurveString { get => _gmAnimCurveString; set => _gmAnimCurveString = value; }
+
         /// <inheritdoc />
         public void Serialize(UndertaleWriter writer)
         {

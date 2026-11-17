@@ -1,5 +1,6 @@
 // Made by Grossley
 using System.Text;
+using System.Linq;
 using System;
 using System.IO;
 using System.Threading;
@@ -439,13 +440,13 @@ uint[] GetStringUsageCount()
             {
                 stringsUsageCountArray[Data.Strings.IndexOf((obj as UndertaleSequence).Name)] += 1;
             }
-            for (var i = 0; i < obj.Moments.Count; i++)
+            foreach (UndertaleSequence.Keyframe<UndertaleSequence.Moment> moment in obj.Moments)
             {
-                for (var j = 0; j < obj.Moments[i].Channels.Count; j++)
+                foreach (UndertaleSimpleListString messageList in moment.Channels.Select(c => c.Value.Events).Where(e => e is not null))
                 {
-                    if (obj.Moments[i].Channels[j].Event != null)
+                    foreach (UndertaleString message in messageList)
                     {
-                        stringsUsageCountArray[Data.Strings.IndexOf(obj.Moments[i].Channels[j].Event)] += 1;
+                        stringsUsageCountArray[Data.Strings.IndexOf(message)] += 1;
                     }
                 }
             }
@@ -595,9 +596,9 @@ UndertaleSequence.Track RecurseTracks(UndertaleSequence.Track trackRecurse)
     {
         stringsUsageCountArray[Data.Strings.IndexOf(trackRecurse.Name)] += 1;
     }
-    if (trackRecurse.GMAnimCurveString != null)
+    if (trackRecurse.GMAnimCurveString is UndertaleString curveString)
     {
-        stringsUsageCountArray[Data.Strings.IndexOf(trackRecurse.GMAnimCurveString)] += 1;
+        stringsUsageCountArray[Data.Strings.IndexOf(curveString)] += 1;
     }
     if ((trackRecurse.ModelName.Content) == "GMStringTrack")
     {
@@ -607,7 +608,7 @@ UndertaleSequence.Track RecurseTracks(UndertaleSequence.Track trackRecurse)
             {
                 if ((trackRecurse.Keyframes as UndertaleSequence.StringKeyframes).List[j].Channels[k].Value != null)
                 {
-                    stringsUsageCountArray[Data.Strings.IndexOf((trackRecurse.Keyframes as UndertaleSequence.StringKeyframes).List[j].Channels[k].Value)] += 1;
+                    stringsUsageCountArray[Data.Strings.IndexOf((trackRecurse.Keyframes as UndertaleSequence.StringKeyframes).List[j].Channels[k].Value.Value)] += 1;
                 }
             }
         }

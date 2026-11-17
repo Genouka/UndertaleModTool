@@ -39,6 +39,10 @@ public static class MirrorChyanClient
     public static string GetResourceId()
         => OperatingSystem.IsAndroid() ? AndroidResourceId : DesktopResourceId;
 
+    /// <summary>Chinese project page used by the in-app promotion card.</summary>
+    public static string GetProjectPageUrl()
+        => $"https://mirrorchyan.com/zh/projects?rid={Uri.EscapeDataString(GetResourceId())}";
+
     public static string GetOs()
     {
         if (OperatingSystem.IsWindows())

@@ -2449,9 +2449,14 @@ namespace UndertaleModTool
                 // Go over each csx file
                 foreach (var file in directory.EnumerateFiles("*.csx"))
                 {
-                    var filename = file.Name;
+                    ScriptMetadata metadata = ScriptMetadata.FromFile(file.FullName);
+                    string displayName = metadata.GetDisplayName(file.FullName, Settings.Instance.ScriptNameDisplay,
+                                                                  LocalizationSource.Instance.CurrentCulture);
                     // Replace _ with __ because WPF uses _ for keyboard navigation
-                    MenuItem subitem = new MenuItem {Header = filename.Replace("_", "__")};
+                    MenuItem subitem = new MenuItem {Header = displayName.Replace("_", "__")};
+                    string description = metadata.GetLocalizedDescription(LocalizationSource.Instance.CurrentCulture);
+                    if (!string.IsNullOrWhiteSpace(description))
+                        subitem.ToolTip = description;
                     subitem.Click += MenuItem_RunBuiltinScript_Item_Click;
                     subitem.CommandParameter = file.FullName;
                     item.Items.Add(subitem);
@@ -2596,6 +2601,86 @@ namespace UndertaleModTool
         {
             if (!this.IsEnabled)
                 this.IsEnabled = true;
+        }
+
+        [Obsolete("SyncBinding() is deprecated and does not make data mutations thread-safe. Use MainThreadAction to mutate data on the main thread instead.")]
+        public void SyncBinding(string resourceType, bool enable)
+        {
+            ScriptingUtil.WarnDeprecatedScriptAPI(nameof(SyncBinding),
+                                                  "Use MainThreadAction to mutate data on the main thread instead.");
+
+            if (resourceType.Contains(',')) // if several types are listed
+            {
+                string[] resTypes = resourceType.Replace(" ", "").Split(',');
+
+                if (enable)
+                {
+                    foreach (string resType in resTypes)
+                    {
+                        if (Data[resType] is IEnumerable resListCollection)
+                        {
+                            BindingOperations.EnableCollectionSynchronization(resListCollection, bindingLock);
+
+                            syncBindings.Add(resType);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (string resType in resTypes)
+                    {
+                        if (syncBindings.Contains(resType))
+                        {
+                            if (Data[resType] is IEnumerable resListCollection)
+                            {
+                                BindingOperations.DisableCollectionSynchronization(resListCollection);
+                            }
+
+                            syncBindings.Remove(resType);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (enable)
+                {
+                    if (Data[resourceType] is IEnumerable resListCollection)
+                    {
+                        BindingOperations.EnableCollectionSynchronization(resListCollection, bindingLock);
+
+                        syncBindings.Add(resourceType);
+                    }
+                }
+                else if (syncBindings.Contains(resourceType))
+                {
+                    if (Data[resourceType] is IEnumerable resListCollection)
+                    {
+                        BindingOperations.DisableCollectionSynchronization(resListCollection);
+                    }
+
+                    syncBindings.Remove(resourceType);
+                }
+            }
+        }
+
+        [Obsolete("DisableAllSyncBindings() is deprecated. Use MainThreadAction to mutate data on the main thread instead.")]
+        public void DisableAllSyncBindings() // disable all sync. bindings
+        {
+            ScriptingUtil.WarnDeprecatedScriptAPI(nameof(DisableAllSyncBindings),
+                                                  "Use MainThreadAction to mutate data on the main thread instead.");
+
+            if (syncBindings.Count <= 0) return;
+
+            foreach (string resType in syncBindings)
+            {
+                if (Data[resType] is IEnumerable resListCollection)
+                {
+                    BindingOperations.DisableCollectionSynchronization(resListCollection);
+                }
+            }
+
+            syncBindings.Clear();
         }
 
         private void ProgressUpdater()
@@ -3010,6 +3095,42 @@ namespace UndertaleModTool
             OpenBrowser("https://github.com/genouka/UndertaleModTool");
         }
 
+        private async void MenuItem_CheckForUpdates_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                UpdateCheckResult check;
+                using (HttpClient client = UpdateChecker.CreateHttpClient())
+                {
+                    check = await UpdateChecker.CheckAsync(client, UpdateChecker.IsSingleFile, forcePackage: false,
+                        localBuildTime: File.GetLastWriteTime(Environment.ProcessPath));
+                }
+
+                if (ReportUpdateCheckFailure(check, null))
+                    return;
+
+                if (check.Status != UpdateCheckStatus.UpdateAvailable || check.Package is null)
+                {
+                    this.ShowMessage(LocalizationSource.GetString("Msg_UpToDate"));
+                    return;
+                }
+
+                // MirrorChyan cannot serve a package without a CDK, so explain why GitHub is used instead.
+                if (check.CdkRequired
+                    && this.ShowQuestion(LocalizationSource.GetString("Msg_MirrorChyanCdkRequired")) != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                if (ConfirmUpdate(check.Package, isNewer: true))
+                    UpdateApp(null, skipUpdatePrompt: true);
+            }
+            catch (Exception ex)
+            {
+                this.ShowError(string.Format(LocalizationSource.GetString("Msg_FailedToFetchBuild"), ex.Message));
+            }
+        }
+
         private void MenuItem_About_Click(object sender, RoutedEventArgs e)
         {
             this.ShowMessage(LocalizationSource.GetString("Common_UndertaleModTool") + " by krzys_h and the Underminers team\nBy GenOuka\nVersion " + Version, LocalizationSource.GetString("Main_About"));
@@ -3143,23 +3264,10 @@ namespace UndertaleModTool
                 return;
             }
 
-            if (!skipUpdatePrompt)
+            if (!skipUpdatePrompt && !ConfirmUpdate(package, isNewer))
             {
-                if (isNewer)
-                {
-                    if (package.Channel == UpdateChannel.Stable
-                        && this.ShowQuestion(string.Format(LocalizationSource.GetString("Msg_UpdateAvailableWithVersion"),
-                            package.VersionLabel, UpdateChecker.GetLocalVersion())) != MessageBoxResult.Yes)
-                    {
-                        window.UpdateButtonEnabled = true;
-                        return;
-                    }
-                }
-                else if (this.ShowQuestion(LocalizationSource.GetString("Msg_AlreadyUpToDate")) != MessageBoxResult.Yes)
-                {
-                    window.UpdateButtonEnabled = true;
-                    return;
-                }
+                window.UpdateButtonEnabled = true;
+                return;
             }
 
             if (Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess)
@@ -3263,7 +3371,7 @@ namespace UndertaleModTool
         /// <summary>
         /// Shows the error of a failed update check. Returns whether the check failed.
         /// </summary>
-        private bool ReportUpdateCheckFailure(UpdateCheckResult result, SettingsWindow window)
+        private bool ReportUpdateCheckFailure(UpdateCheckResult result, SettingsWindow window = null)
         {
             bool nightly = (Settings.Instance?.UpdateChannel ?? UpdateChannel.Nightly) == UpdateChannel.Nightly;
 
@@ -3291,7 +3399,8 @@ namespace UndertaleModTool
             }
 
             this.ShowError(message);
-            window.UpdateButtonEnabled = true;
+            if (window is not null)
+                window.UpdateButtonEnabled = true;
             return true;
         }
 
@@ -3474,18 +3583,24 @@ namespace UndertaleModTool
                 if (check.Status != UpdateCheckStatus.UpdateAvailable || check.Package is null)
                     return;
 
-                string message = check.Package.Channel == UpdateChannel.Nightly
-                    ? LocalizationSource.GetString("Msg_UpdateAvailable")
-                    : string.Format(LocalizationSource.GetString("Msg_UpdateAvailableWithVersion"),
-                        check.Package.VersionLabel, UpdateChecker.GetLocalVersion());
-
-                if (this.ShowQuestion(message) == MessageBoxResult.Yes)
+                if (ConfirmUpdate(check.Package, isNewer: true))
                     UpdateApp(null, skipUpdatePrompt: true);
             }
             catch
             {
                 // Silently ignore any errors - this is just a convenience check
             }
+        }
+
+        /// <summary>Shows the update dialog and returns whether the user chose to update.</summary>
+        private bool ConfirmUpdate(UpdatePackage package, bool isNewer)
+        {
+            string currentVersion = package.Channel == UpdateChannel.Stable
+                ? UpdateChecker.GetLocalVersion()
+                : Version;
+
+            UpdateWindow dialog = new(package, currentVersion, isNewer) { Owner = this };
+            return dialog.ShowDialog() == true;
         }
 
         private async void Command_Run(object sender, ExecutedRoutedEventArgs e)

@@ -120,6 +120,21 @@ public static class UpdateChecker
             DateTime updatedAt = dateEl.GetDateTimeOffset().UtcDateTime;
             string version = $"nightly-{runId.ToString(CultureInfo.InvariantCulture)}";
 
+            string changelog = "";
+            if (run.TryGetProperty("head_commit", out JsonElement headCommit)
+                && headCommit.ValueKind == JsonValueKind.Object
+                && headCommit.TryGetProperty("message", out JsonElement commitMessage)
+                && commitMessage.ValueKind == JsonValueKind.String)
+            {
+                changelog = commitMessage.GetString() ?? "";
+            }
+            if (string.IsNullOrWhiteSpace(changelog)
+                && run.TryGetProperty("display_title", out JsonElement displayTitle)
+                && displayTitle.ValueKind == JsonValueKind.String)
+            {
+                changelog = displayTitle.GetString() ?? "";
+            }
+
             return new UpdateInfo(
                 Channel: UpdateChannel.Nightly,
                 Source: UpdateSource.GitHub,
@@ -134,30 +149,31 @@ public static class UpdateChecker
                 CacheKey: UpdateInfo.BuildCacheKey(UpdateChannel.Nightly, version, artifactName),
                 IsApk: false,
                 RunId: runId,
-                UpdatedAt: updatedAt);
+                UpdatedAt: updatedAt,
+                Changelog: changelog);
         }
 
         return null;
     }
 
+    /// <summary>Last write time of the installed executable (UTC), or null when it is unknown.</summary>
+    public static DateTime? GetLocalBuildTimeUtc()
+    {
+        if (LocalBuildTimeUtcOverride is not null)
+            return LocalBuildTimeUtcOverride();
+
+        string? localExe = Environment.ProcessPath;
+        return localExe is null ? null : File.GetLastWriteTime(localExe).ToUniversalTime();
+    }
+
     /// <summary>Returns whether the given nightly build is at least <see cref="NewerThanMinutes"/> minutes newer than the local install.</summary>
     public static bool IsNewerThanLocal(UpdateInfo info)
     {
-        DateTime localUtc;
-        if (LocalBuildTimeUtcOverride is not null)
-        {
-            localUtc = LocalBuildTimeUtcOverride();
-        }
-        else
-        {
-            string? localExe = Environment.ProcessPath;
-            if (localExe is null)
-                return true;
+        DateTime? localUtc = GetLocalBuildTimeUtc();
+        if (localUtc is null)
+            return true;
 
-            localUtc = File.GetLastWriteTime(localExe).ToUniversalTime();
-        }
-
-        return info.UpdatedAt.Subtract(localUtc).TotalMinutes > NewerThanMinutes;
+        return info.UpdatedAt.Subtract(localUtc.Value).TotalMinutes > NewerThanMinutes;
     }
 
     /// <summary>
@@ -262,7 +278,8 @@ public static class UpdateChecker
             DownloadUrls: [asset.BrowserDownloadUrl],
             ReleasePageUrl: $"https://github.com/{Owner}/{Repo}/releases/tag/{Uri.EscapeDataString(tag)}",
             CacheKey: UpdateInfo.BuildCacheKey(UpdateChannel.Stable, tag, asset.Name),
-            IsApk: asset.Name.EndsWith(".apk", StringComparison.OrdinalIgnoreCase));
+            IsApk: asset.Name.EndsWith(".apk", StringComparison.OrdinalIgnoreCase),
+            Changelog: release.Body);
     }
 
     static async Task<UpdateCheckResult> CheckStableMirrorChyanAsync(
@@ -336,12 +353,15 @@ public static class UpdateChecker
         List<string> downloadUrls = [release.Url!];
         string assetName = GitHubReleaseClient.GetStableAssetSuffix()?.TrimStart('-') ?? version;
         string releasePageUrl = ReleasesPageUrl;
+        string changelog = release.ReleaseNote ?? "";
 
         // Best effort: the GitHub asset can be used as a fallback when MirrorChyan's CDN fails.
         try
         {
             GitHubRelease? githubRelease = await GitHubReleaseClient.FetchLatestReleaseAsync(client);
             GitHubReleaseAsset? asset = githubRelease is null ? null : GitHubReleaseClient.SelectStableAsset(githubRelease);
+            if (githubRelease is not null && string.IsNullOrWhiteSpace(changelog))
+                changelog = githubRelease.Body;
             if (asset is not null)
             {
                 assetName = asset.Name;
@@ -366,7 +386,8 @@ public static class UpdateChecker
             DownloadUrls: downloadUrls,
             ReleasePageUrl: releasePageUrl,
             CacheKey: UpdateInfo.BuildCacheKey(UpdateChannel.Stable, version, assetName),
-            IsApk: OperatingSystem.IsAndroid());
+            IsApk: OperatingSystem.IsAndroid(),
+            Changelog: changelog);
 
         bool isNewer = UpdateVersion.CompareForUpdate(GetLocalVersion(settings), version) < 0;
         if (!isNewer && !forcePackage)

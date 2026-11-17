@@ -189,7 +189,7 @@ UndertaleData LoadAudioGroup(string groupFilePath)
     {
         UndertaleData data = null;
         using (var stream = new FileStream(groupFilePath, FileMode.Open, FileAccess.Read))
-            data = UndertaleIO.Read(stream, warning => ScriptMessage("A warning occured while trying to load " + groupFilePath + ":\n" + warning));
+            data = UndertaleIO.Read(stream, (warning, isImportant) => ScriptMessage("A warning occured while trying to load " + groupFilePath + ":\n" + warning));
         return data;
     }
     catch (Exception e) 

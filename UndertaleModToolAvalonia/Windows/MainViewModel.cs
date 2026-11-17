@@ -191,6 +191,10 @@ public partial class MainViewModel : ObservableObject
             if (!string.IsNullOrEmpty(Settings.Language))
                 LocalizationSource.Instance.CurrentCulture = new System.Globalization.CultureInfo(Settings.Language);
 
+            // Localized script names depend on the culture, so rebuild the Scripts menu
+            // (a no-op when the menu bar has not attached yet; it catches up via ScriptsVersion).
+            BuiltInScripts.NotifyScriptsChanged();
+
             await TabOpen(new DescriptionViewModel(
                 LocalizationSource.GetString("Main_WelcomeHeading"),
                 LocalizationSource.GetString("Main_WelcomeDescription")));
@@ -1857,11 +1861,8 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             if (!await ConfirmMirrorChyanFallbackAsync(result))
                 return;
 
-            if (await View!.MessageDialog(GetUpdateAvailableMessage(result.Update!),
-                    buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes)
-            {
-                await UpdateAppAsync(result.Update);
-            }
+            if (await View!.UpdateDialog(result.Update!, GetUpdateDialogCurrentVersion(result.Update!), isNewer: true))
+                await UpdateAppAsync(result.Update!);
         }
         catch
         {
@@ -1902,11 +1903,8 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             if (!await ConfirmMirrorChyanFallbackAsync(result))
                 return;
 
-            if (await View!.MessageDialog(GetUpdateAvailableMessage(result.Update!),
-                    buttons: MessageWindow.Buttons.YesNo) == MessageWindow.Result.Yes)
-            {
+            if (await View!.UpdateDialog(result.Update!, GetUpdateDialogCurrentVersion(result.Update!), isNewer: true))
                 await UpdateAppAsync(result.Update!);
-            }
         }
         catch (Exception e)
         {
@@ -1937,24 +1935,17 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 return;
             }
 
-            if (result.Status == UpdateCheckStatus.UpToDate)
-            {
-                if (await View!.MessageDialog(LocalizationSource.GetString("Msg_AlreadyUpToDate"),
-                        buttons: MessageWindow.Buttons.YesNo) != MessageWindow.Result.Yes)
-                {
-                    return;
-                }
-            }
-
-            if (!await ConfirmMirrorChyanFallbackAsync(result))
-                return;
-
             // Stable + MirrorChyan only offers a package when a newer build exists, so there may be
             // nothing to download even after the user asked to reinstall.
             if (result.Update is null)
                 return;
 
-            await UpdateAppAsync(result.Update!);
+            if (!await ConfirmMirrorChyanFallbackAsync(result))
+                return;
+
+            bool isNewer = result.Status == UpdateCheckStatus.UpdateAvailable;
+            if (await View!.UpdateDialog(result.Update!, GetUpdateDialogCurrentVersion(result.Update!), isNewer))
+                await UpdateAppAsync(result.Update!);
         }
         catch (Exception e)
         {
@@ -1962,14 +1953,14 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
     }
 
-    string GetUpdateAvailableMessage(UpdateInfo info)
-    {
-        if (info.Channel != UpdateChannel.Stable)
-            return LocalizationSource.GetString("Msg_UpdateAvailable");
-
-        return string.Format(LocalizationSource.GetString("Msg_UpdateAvailableWithVersion"),
-            info.Version, UpdateChecker.GetLocalVersion(Settings));
-    }
+    /// <summary>
+    /// Installed version shown in the update dialog. Nightly builds use the assembly version,
+    /// because the recorded stable tag belongs to another channel.
+    /// </summary>
+    string GetUpdateDialogCurrentVersion(UpdateInfo info)
+        => info.Channel == UpdateChannel.Stable
+            ? UpdateChecker.GetLocalVersion(Settings)
+            : App.VersionString;
 
     string GetUpdateCheckFailureMessage(UpdateCheckResult result)
     {
