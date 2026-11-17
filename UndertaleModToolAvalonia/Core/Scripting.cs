@@ -106,6 +106,16 @@ public class Scripting
         return false;
     }
 
+    // State of the last script run, read by scripts through IScriptInterface.
+    public bool ScriptExecutionSuccess { get; private set; } = true;
+    public string ScriptErrorMessage { get; private set; } = "";
+    public string ScriptErrorType { get; private set; } = "";
+
+    // A script can turn off the "finished" message for its own run only.
+    public bool FinishedMessageEnabled = true;
+
+    public bool IsAppClosed;
+
     public Scripting(MainViewModel mainVM)
     {
         MainVM = mainVM;
@@ -138,6 +148,11 @@ public class Scripting
                 ? handler(message, title)
                 : MainVM.View!.MessageDialog(message, title: title);
 
+        ClearError();
+
+        // A script can run another script with RunUMTScript, and the UI must stay disabled until the outer one is done.
+        bool wasEnabled = MainVM.IsEnabled;
+
         try
         {
             MainVM.IsEnabled = false;
@@ -147,85 +162,24 @@ public class Scripting
             // engine can resolve metadata references from real files.
             PrepareScriptAssemblies?.Invoke();
 
-            ScriptOptions options = ScriptOptions.Default
-                .AddImports(
-                    "System",
-                    "System.Collections.Generic",
-                    "System.Linq",
-                    "System.IO",
-                    "System.Text",
-                    "System.Text.RegularExpressions",
-                    "System.Threading.Tasks",
-                    "UndertaleModLib",
-                    "UndertaleModLib.Compiler",
-                    "UndertaleModLib.Decompiler",
-                    "UndertaleModLib.Models",
-                    "UndertaleModLib.Scripting")
-                .WithFilePath(filePath)
-                .WithFileEncoding(Encoding.Default)
-                .WithEmitDebugInformation(true);
-
-            if (!string.IsNullOrEmpty(ScriptAssembliesDirectory) && Directory.Exists(ScriptAssembliesDirectory))
-            {
-                // Reference the relevant DLLs next to the app directly, and let #r / name-based
-                // references resolve from that directory: the default resolver only looks at the
-                // trusted platform assemblies, which on Android are stored inside the APK and
-                // cannot be resolved from the filesystem.
-                IEnumerable<MetadataReference> references = Directory
-                    .EnumerateFiles(ScriptAssembliesDirectory, "*.dll", SearchOption.TopDirectoryOnly)
-                    .Where(IsScriptReferenceCandidate)
-                    .Select(path => MetadataReference.CreateFromFile(path));
-                options = options
-                    .AddReferences(references)
-                    .WithMetadataResolver(ScriptMetadataResolver.Default.WithSearchPaths(ScriptAssembliesDirectory));
-
-                // Roslyn's scripting engine always converts two assemblies to metadata references
-                // through Assembly.Location: the core library (typeof(object).Assembly) and the
-                // globals-type host assembly (IScriptInterface's UndertaleModLib). On Android those
-                // locations are names inside the APK, not filesystem paths: "/System.Private.CoreLib.dll"
-                // without AOT, but just "System.Private.CoreLib" (no extension) with Mono AOT, plus
-                // bare relative names like "UndertaleModLib.dll". None of them exist on disk, which
-                // crashed compilation with FileNotFoundException no matter how many explicit
-                // references were supplied. Redirect every such conversion to the extracted plain
-                // DLL copies instead (Roslyn >= 4.4 provides ScriptOptions.WithCreateFromFileFunc
-                // for exactly this purpose).
-                options = TryUseFileBasedAssemblyReferences(options, ScriptAssembliesDirectory);
-            }
-            else
-            {
-                options = options.AddReferences("System.Core", "UndertaleModLib");
-            }
-
             Script<object?> script;
-            ImmutableArray<Diagnostic> diagnostics;
-
             try
             {
-                script = CSharpScript.Create(text, options, typeof(IScriptInterface));
-
-                // Compile on a dedicated large-stack thread: Roslyn's binder recurses deeply and
-                // .NET thread pool workers (especially under Mono/Android) have small stacks,
-                // which ended in a native stack-overflow SIGSEGV inside libmonosgen.
-                diagnostics = await RunOnDedicatedThread(() => script.Compile());
+                script = CreateScript(text, filePath);
             }
             catch (Exception e)
             {
                 // Compilation infrastructure failures (e.g. missing reference assemblies on
                 // platforms that don't support scripting) must surface as a dialog, not escape the
                 // async void command handler and crash the whole app.
+                SetError(e.Message, "CompilationErrorException");
                 await ReportErrorAsync(e.ToString(), LocalizationSource.GetString("Msg_ScriptCompilationError"));
 
                 return null;
             }
 
-            IEnumerable<Diagnostic> errors = diagnostics.Where((Diagnostic diagnostic) => diagnostic.Severity == DiagnosticSeverity.Error);
-            if (errors.Any())
-            {
-                string message = String.Join("\n", errors);
-                await ReportErrorAsync(message, LocalizationSource.GetString("Msg_ScriptCompilationError"));
-
+            if (!await CompileScript(script, ReportErrorAsync))
                 return null;
-            }
 
             // Platforms that drive scripts without a UI (the Android cross-app API) pass their own
             // capturing host; everything else runs with the regular UI-backed host.
@@ -241,14 +195,25 @@ public class Scripting
                 // The big stack also covers deeply recursive decompiler calls made by scripts.
                 ScriptState<object?> state = await RunOnDedicatedThread(
                     () => script.RunAsync(scripting).GetAwaiter().GetResult());
+
+                // A nested script may have failed and set the error state; this script itself succeeded.
+                ClearError();
+
+                string defaultMessage = filePath is not null
+                    ? string.Format(LocalizationSource.GetString("Main_ScriptFinished"), Path.GetFileName(filePath))
+                    : "";
+                ShowFinishedMessage(state.ReturnValue?.ToString() ?? defaultMessage);
+
                 return state.ReturnValue;
             }
             catch (ScriptException e)
             {
+                SetError(e.Message, "Exception");
                 await ReportErrorAsync(e.Message, LocalizationSource.GetString("Msg_ErrorFromScript"));
             }
             catch (Exception e)
             {
+                SetError(e.Message, "Exception");
                 await ReportErrorAsync(e.ToString(), LocalizationSource.GetString("Msg_ScriptExecutionError"));
             }
             finally
@@ -258,10 +223,142 @@ public class Scripting
         }
         finally
         {
-            MainVM.IsEnabled = true;
+            MainVM.IsEnabled = wasEnabled;
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Compiles a script without running it. Returns whether it compiled without errors.
+    /// </summary>
+    public async Task<bool> LintScript(string text, string? filePath = null)
+    {
+        ClearError();
+
+        Task ReportErrorAsync(string message, string title)
+            => MainVM.View!.MessageDialog(message, title: title);
+
+        try
+        {
+            PrepareScriptAssemblies?.Invoke();
+            return await CompileScript(CreateScript(text, filePath), ReportErrorAsync);
+        }
+        catch (Exception e)
+        {
+            SetError(e.Message, "CompilationErrorException");
+            await ReportErrorAsync(e.ToString(), LocalizationSource.GetString("Msg_ScriptCompilationError"));
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Builds the script compilation options: the imports every script sees, the platform's
+    /// reference set, and the source-path settings used for diagnostics.
+    /// </summary>
+    Script<object?> CreateScript(string text, string? filePath)
+    {
+        ScriptOptions options = ScriptOptions.Default
+            .AddImports(
+                "System",
+                "System.Collections.Generic",
+                "System.Linq",
+                "System.IO",
+                "System.Text",
+                "System.Text.RegularExpressions",
+                "System.Threading.Tasks",
+                "UndertaleModLib",
+                "UndertaleModLib.Compiler",
+                "UndertaleModLib.Decompiler",
+                "UndertaleModLib.Models",
+                "UndertaleModLib.Scripting")
+            .WithFilePath(filePath)
+            .WithFileEncoding(Encoding.Default)
+            .WithEmitDebugInformation(true);
+
+        if (!string.IsNullOrEmpty(ScriptAssembliesDirectory) && Directory.Exists(ScriptAssembliesDirectory))
+        {
+            // Reference the relevant DLLs next to the app directly, and let #r / name-based
+            // references resolve from that directory: the default resolver only looks at the
+            // trusted platform assemblies, which on Android are stored inside the APK and
+            // cannot be resolved from the filesystem.
+            IEnumerable<MetadataReference> references = Directory
+                .EnumerateFiles(ScriptAssembliesDirectory, "*.dll", SearchOption.TopDirectoryOnly)
+                .Where(IsScriptReferenceCandidate)
+                .Select(path => MetadataReference.CreateFromFile(path));
+            options = options
+                .AddReferences(references)
+                .WithMetadataResolver(ScriptMetadataResolver.Default.WithSearchPaths(ScriptAssembliesDirectory));
+
+            // Roslyn's scripting engine always converts two assemblies to metadata references
+            // through Assembly.Location: the core library (typeof(object).Assembly) and the
+            // globals-type host assembly (IScriptInterface's UndertaleModLib). On Android those
+            // locations are names inside the APK, not filesystem paths: "/System.Private.CoreLib.dll"
+            // without AOT, but just "System.Private.CoreLib" (no extension) with Mono AOT, plus
+            // bare relative names like "UndertaleModLib.dll". None of them exist on disk, which
+            // crashed compilation with FileNotFoundException no matter how many explicit
+            // references were supplied. Redirect every such conversion to the extracted plain
+            // DLL copies instead (Roslyn >= 4.4 provides ScriptOptions.WithCreateFromFileFunc
+            // for exactly this purpose).
+            options = TryUseFileBasedAssemblyReferences(options, ScriptAssembliesDirectory);
+        }
+        else
+        {
+            options = options.AddReferences(
+                "System.Core",
+                "UndertaleModLib",
+                // Used by bundled scripts: System.Timers (AutoBackup) and System.Text.Json (the JSON importers and exporters).
+                "System.ComponentModel.TypeConverter",
+                "System.Text.Json",
+                "System.Text.Encodings.Web");
+        }
+
+        return CSharpScript.Create(text, options, typeof(IScriptInterface));
+    }
+
+    /// <summary>
+    /// Compiles <paramref name="script"/>, reporting errors through
+    /// <paramref name="reportError"/> and recording them in the script state.
+    /// </summary>
+    async Task<bool> CompileScript(Script<object?> script, Func<string, string?, Task> reportError)
+    {
+        // Compile on a dedicated large-stack thread: Roslyn's binder recurses deeply and
+        // .NET thread pool workers (especially under Mono/Android) have small stacks,
+        // which ended in a native stack-overflow SIGSEGV inside libmonosgen.
+        ImmutableArray<Diagnostic> diagnostics = await RunOnDedicatedThread(() => script.Compile());
+
+        IEnumerable<Diagnostic> errors = diagnostics.Where((Diagnostic diagnostic) => diagnostic.Severity == DiagnosticSeverity.Error);
+        if (!errors.Any())
+            return true;
+
+        string message = String.Join("\n", errors);
+        SetError(message, "CompilationErrorException");
+        await reportError(message, LocalizationSource.GetString("Msg_ScriptCompilationError"));
+
+        return false;
+    }
+
+    void ClearError()
+    {
+        ScriptExecutionSuccess = true;
+        ScriptErrorMessage = "";
+        ScriptErrorType = "";
+    }
+
+    void SetError(string message, string type)
+    {
+        ScriptExecutionSuccess = false;
+        ScriptErrorMessage = message;
+        ScriptErrorType = type;
+        MainVM.CommandTextBoxText = message;
+    }
+
+    void ShowFinishedMessage(string message)
+    {
+        if (FinishedMessageEnabled)
+            MainVM.CommandTextBoxText = message;
+        else
+            FinishedMessageEnabled = true;
     }
 
     /// <summary>
@@ -435,20 +532,31 @@ public class Scripting
 
 public class ScriptGlobals : IScriptInterface, IDisposable
 {
+    private readonly Scripting scripting;
     private readonly MainViewModel mainVM;
     private readonly string? scriptPath;
 
     private ILoaderWindow? loaderWindow;
     private int loaderValue;
 
+    // While the progress bar updater runs, progress changes aren't posted one by one to the UI thread;
+    // a timer shows the latest value instead, which is cheaper for scripts that make many changes.
+    private DispatcherTimer? progressBarUpdater;
+    private volatile bool isProgressBarUpdaterRunning;
+
     public ScriptGlobals(Scripting scripting, string? scriptPath)
     {
+        this.scripting = scripting;
         mainVM = scripting.MainVM;
         this.scriptPath = scriptPath;
     }
 
     public virtual void Dispose()
     {
+        progressBarUpdater?.Stop();
+        progressBarUpdater = null;
+        isProgressBarUpdaterRunning = false;
+
         // Runs on whatever thread the script ended on; closing the simulated window touches the
         // visual tree, so it must be marshaled to the UI thread.
         Dispatcher.UIThread.Invoke(CloseLoaderWindow);
@@ -462,21 +570,23 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public string? ScriptPath => scriptPath;
 
-    public virtual object Highlighted => throw new NotImplementedException();
+    // The item selected in the data explorer tree.
+    public virtual object? Highlighted => mainVM.DataExplorer.HighlightedValue;
 
-    public virtual object Selected => throw new NotImplementedException();
+    // The resource open in the current tab. Tabs that aren't a resource, like General info, give null.
+    public virtual object? Selected => (mainVM.Tabs.TabSelected?.Content as IUndertaleResourceViewModel)?.Resource;
 
-    public virtual bool CanSave => throw new NotImplementedException();
+    public virtual bool CanSave => mainVM.Data is not null;
 
-    public virtual bool ScriptExecutionSuccess => throw new NotImplementedException();
+    public virtual bool ScriptExecutionSuccess => scripting.ScriptExecutionSuccess;
 
-    public virtual string ScriptErrorMessage => throw new NotImplementedException();
+    public virtual string ScriptErrorMessage => scripting.ScriptErrorMessage;
 
     public string? ExePath => Scripting.ExePathOverride ?? Path.GetDirectoryName(Environment.ProcessPath);
 
-    public virtual string ScriptErrorType => throw new NotImplementedException();
+    public virtual string ScriptErrorType => scripting.ScriptErrorType;
 
-    public virtual bool IsAppClosed => throw new NotImplementedException();
+    public virtual bool IsAppClosed => scripting.IsAppClosed;
 
     public virtual Action<Action> MainThreadAction => Dispatcher.UIThread.Invoke;
 
@@ -502,39 +612,61 @@ public class ScriptGlobals : IScriptInterface, IDisposable
             Dispatcher.UIThread.InvokeAsync(dialog).GetAwaiter().GetResult();
     }
 
-    public virtual void AddProgress(int amount)
+    void PostProgressValue(DispatcherPriority priority)
     {
-        loaderValue += amount;
+        if (isProgressBarUpdaterRunning)
+            return;
 
         Dispatcher.UIThread.Post(() =>
         {
             loaderWindow?.SetValue(loaderValue);
-        });
+        }, priority);
+    }
+
+    public virtual void AddProgress(int amount)
+    {
+        loaderValue += amount;
+        PostProgressValue(DispatcherPriority.Default);
     }
 
     public virtual void AddProgressParallel(int amount)
     {
         Interlocked.Add(ref loaderValue, amount);
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            loaderWindow?.SetValue(loaderValue);
-        }, DispatcherPriority.Background);
+        PostProgressValue(DispatcherPriority.Background);
     }
 
     public void ChangeSelection(object newSelection, bool inNewTab = false)
     {
-        // TODO: Implement
+        // Wait so the script continues only after the tab is open (which may ask to save the current tab), like the WPF version.
+        WaitOnUIThread(() => mainVM.Tabs.TabOpen(newSelection, inNewTab));
     }
 
     public virtual Task ClickableSearchOutput(string title, string query, int resultsCount, IOrderedEnumerable<KeyValuePair<string, List<(int lineNum, string codeLine)>>> resultsDict, bool showInDecompiledView, IOrderedEnumerable<string>? failedList = null)
     {
-        throw new NotImplementedException();
+        ShowSearchResults(title, query, resultsDict, showInDecompiledView, failedList);
+        return Task.CompletedTask;
     }
 
     public virtual Task ClickableSearchOutput(string title, string query, int resultsCount, IDictionary<string, List<(int lineNum, string codeLine)>> resultsDict, bool showInDecompiledView, IEnumerable<string>? failedList = null)
     {
-        throw new NotImplementedException();
+        ShowSearchResults(title, query, resultsDict, showInDecompiledView, failedList);
+        return Task.CompletedTask;
+    }
+
+    // Shows the results in a "Search in code" window, where they can be opened like the window's own results.
+    // Search scripts may gather results inside Task.Run and call this from there, but windows must be created on the UI thread.
+    void ShowSearchResults(string title, string query, IEnumerable<KeyValuePair<string, List<(int lineNum, string codeLine)>>> results, bool showInDecompiledView, IEnumerable<string>? failedList)
+    {
+        if (mainVM.View is not MainView mainView)
+            return;
+
+        WaitOnUIThread(() =>
+        {
+            SearchInCodeViewModel searchVM = new(mainVM.ServiceProvider);
+            searchVM.ShowResults(query, results, inAssembly: !showInDecompiledView, failedCount: failedList?.Count() ?? 0);
+            mainView.OpenSearchInCode(searchVM, title);
+            return Task.FromResult(true);
+        });
     }
 
     public virtual void EnableUI()
@@ -604,31 +736,44 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     public virtual void IncrementProgress()
     {
         loaderValue++;
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            loaderWindow?.SetValue(loaderValue);
-        });
+        PostProgressValue(DispatcherPriority.Default);
     }
 
     public virtual void IncrementProgressParallel()
     {
         Interlocked.Increment(ref loaderValue);
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            loaderWindow?.SetValue(loaderValue);
-        }, DispatcherPriority.Background);
+        PostProgressValue(DispatcherPriority.Background);
     }
 
     public virtual void InitializeScriptDialog()
     {
-        // TODO: Implement
+        Dispatcher.UIThread.Invoke(() =>
+        {
+            loaderWindow ??= mainVM.View!.LoaderOpen();
+            loaderWindow.SetMessage("Script in progress...");
+            loaderWindow.SetStatus("Please wait...");
+        });
     }
 
     public virtual bool LintUMTScript(string path)
     {
-        throw new NotImplementedException();
+        if (!File.Exists(path))
+        {
+            ScriptError(path + " does not exist!");
+            return false;
+        }
+
+        string text = File.ReadAllText(path);
+        return WaitOnUIThread(() => scripting.LintScript(text, path));
+    }
+
+    // Scripts can call this from a background thread (e.g. LintAllScripts.csx lints inside Task.Run), but scripts and dialogs run on the UI thread.
+    static T WaitOnUIThread<T>(Func<Task<T>> action)
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+            return action().WaitOnDispatcherFrame();
+
+        return Dispatcher.UIThread.InvokeAsync(action).GetAwaiter().GetResult();
     }
 
     public virtual bool MakeNewDataFile()
@@ -654,11 +799,10 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public virtual string? PromptLoadFile(string? defaultExt, string? filter)
     {
-        // TODO: filter
         var files = ShowDialogBlocking(() => mainVM.View!.OpenFileDialog(new FilePickerOpenOptions()
         {
             Title = LocalizationSource.GetString("Msg_LoadFile"),
-            FileTypeFilter = FilePickerFileTypes.All,
+            FileTypeFilter = ScriptFileTypes(filter),
         }));
 
         if (files is null || files.Count != 1)
@@ -669,12 +813,11 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public virtual string? PromptSaveFile(string defaultExt, string filter)
     {
-        // TODO: filter
         var file = ShowDialogBlocking(() => mainVM.View!.SaveFileDialog(new FilePickerSaveOptions()
         {
             Title = LocalizationSource.GetString("Msg_SaveFile"),
-            FileTypeChoices = FilePickerFileTypes.All,
-            DefaultExtension = defaultExt,
+            FileTypeChoices = ScriptFileTypes(filter),
+            DefaultExtension = ScriptDefaultExtension(defaultExt),
         }));
 
         if (file is null)
@@ -683,9 +826,42 @@ public class ScriptGlobals : IScriptInterface, IDisposable
         return file.TryGetLocalPath();
     }
 
+    // Scripts that pass no filter get the data file filter, like in the WPF version.
+    static IReadOnlyList<FilePickerFileType> ScriptFileTypes(string? filter)
+    {
+        if (filter is null)
+            return FilePickerFileTypes.Data;
+
+        List<FilePickerFileType> types = FilePickerFileTypes.FromWindowsFilter(filter);
+        if (types.Count == 0)
+            return FilePickerFileTypes.All;
+
+        return types;
+    }
+
+    // Scripts pass extensions both with and without the dot ("txt", ".txt"), and null means a data file, like in the WPF version.
+    static string? ScriptDefaultExtension(string? defaultExt)
+    {
+        if (defaultExt is null)
+            return ".win";
+        if (defaultExt == "")
+            return null;
+
+        return defaultExt.StartsWith('.') ? defaultExt : "." + defaultExt;
+    }
+
     public virtual bool RunUMTScript(string path)
     {
-        throw new NotImplementedException();
+        if (!File.Exists(path))
+        {
+            ScriptError(path + " does not exist!");
+            return false;
+        }
+
+        // Errors are already shown by RunScript, so unlike the WPF version, no second error message is shown here.
+        string text = File.ReadAllText(path);
+        WaitOnUIThread(() => scripting.RunScript(text, path));
+        return scripting.ScriptExecutionSuccess;
     }
 
     public virtual void ScriptError(string error, string? title = null, bool SetConsoleText = true)
@@ -700,13 +876,28 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public virtual string? ScriptInputDialog(string title, string label, string defaultInput, string cancelText, string submitText, bool isMultiline, bool preventClose)
     {
-        // TODO: cancelText, submitText, preventClose
-        return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultInput, title: title, isMultiline: isMultiline));
+        return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultInput, title: title, isMultiline: isMultiline,
+            okText: submitText, cancelText: cancelText, preventClose: preventClose));
     }
 
     public virtual void ScriptMessage(string message)
     {
         ShowDialogBlocking(() => mainVM.View!.MessageDialog(message, title: LocalizationSource.GetString("Msg_ScriptMessageTitle")));
+    }
+
+    public void ExportRoomAsPNG(UndertaleRoom room, string filePath)
+    {
+        ArgumentNullException.ThrowIfNull(room);
+
+        // The room renderer shares the app's image cache with the open editors, and that cache isn't thread-safe.
+        // It renders into memory first so a failed render doesn't leave a broken PNG behind, or replace a good one.
+        MemoryStream png = new();
+        WaitOnUIThread(async () =>
+        {
+            await ImportExport.ExportRoomAsPNG(room, png);
+            return true;
+        });
+        File.WriteAllBytes(filePath, png.ToArray());
     }
 
     public virtual void ScriptOpenURL(string url)
@@ -726,17 +917,13 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public virtual void SetFinishedMessage(bool isFinishedMessageEnabled)
     {
-        // TODO: Implement
+        scripting.FinishedMessageEnabled = isFinishedMessageEnabled;
     }
 
     public virtual void SetProgress(int value)
     {
         loaderValue = value;
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            loaderWindow?.SetValue(loaderValue);
-        });
+        PostProgressValue(DispatcherPriority.Default);
     }
 
     public virtual void SetProgressBar(string message, string status, double progressValue, double maxValue)
@@ -770,7 +957,13 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public virtual string? SimpleTextInput(string title, string label, string defaultValue, bool allowMultiline, bool showDialog = true)
     {
-        // TODO: showDialog
+        // Like the WPF version, a non-blocking input window lets the script continue right away, so there's no input to return.
+        if (!showDialog)
+        {
+            mainVM.View!.TextBoxShow(label, defaultValue, title: title, isMultiline: allowMultiline);
+            return null;
+        }
+
         return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultValue, title: title, isMultiline: allowMultiline));
     }
 
@@ -781,12 +974,34 @@ public class ScriptGlobals : IScriptInterface, IDisposable
 
     public virtual void StartProgressBarUpdater()
     {
-        // TODO: Implement
+        Dispatcher.UIThread.Invoke(() =>
+        {
+            if (progressBarUpdater is not null)
+                return;
+
+            // About 30 times per second, like the WPF version.
+            progressBarUpdater = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Background,
+                (_, _) => loaderWindow?.SetValue(loaderValue));
+            progressBarUpdater.Start();
+            isProgressBarUpdaterRunning = true;
+        });
     }
 
     public virtual Task StopProgressBarUpdater()
     {
-        // TODO: Implement
+        Dispatcher.UIThread.Invoke(() =>
+        {
+            if (progressBarUpdater is null)
+                return;
+
+            progressBarUpdater.Stop();
+            progressBarUpdater = null;
+            isProgressBarUpdaterRunning = false;
+
+            // Show the final value, which the timer may not have shown yet.
+            loaderWindow?.SetValue(loaderValue);
+        });
+
         return Task.CompletedTask;
     }
 
@@ -806,10 +1021,6 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     public virtual void UpdateProgressValue(double progressValue)
     {
         loaderValue = (int)progressValue;
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            loaderWindow?.SetValue(loaderValue);
-        });
+        PostProgressValue(DispatcherPriority.Default);
     }
 }

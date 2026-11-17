@@ -51,21 +51,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia.Android" Version="12.1.0" />
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
-        <PackageReference Include="Magick.NET.Core" Version="14.16.0" />
+        <PackageReference Include="Avalonia.Android" Version="12.1.6" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.6" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
+        <PackageReference Include="Magick.NET.Core" Version="14.17.1" />
         <!-- Android 版 Magick 原生包：arm64 / x64 都引用，打包时按当前 ABI 只打进对应的 .so。
              ExcludeAssets="native" 阻止包内 runtimes/android-*/native/Magick.Native-Q8-<abi>.dll.so
              直接进 APK（见下方 StageMagickNativeLibraries 的原因），改由该目标以 lib 前缀名字打包。
              "compile;runtime" 同时丢掉 flavor 的托管程序集：它们与 AnyCPU 程序集定义同一套
              ImageMagick 类型（一起参与编译会 CS0433），而项目里没有任何地方引用它们，
              它们只是原生 so 的载体。 -->
-        <PackageReference Include="Magick.NET-Q8-arm64" Version="14.16.0" ExcludeAssets="compile;runtime;native" GeneratePathProperty="true" />
-        <PackageReference Include="Magick.NET-Q8-x64" Version="14.16.0" ExcludeAssets="compile;runtime;native" GeneratePathProperty="true" />
+        <PackageReference Include="Magick.NET-Q8-arm64" Version="14.17.1" ExcludeAssets="compile;runtime;native" GeneratePathProperty="true" />
+        <PackageReference Include="Magick.NET-Q8-x64" Version="14.17.1" ExcludeAssets="compile;runtime;native" GeneratePathProperty="true" />
         <!-- 安全网：共享项目会把桌面包 Magick.NET-Q8-AnyCPU 传递进来，这里显式排除其 runtimes，
              确保 linux-* 的 .so 永远不会混进 Android APK -->
-        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0" ExcludeAssets="runtimes;native" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.17.1" ExcludeAssets="runtimes;native" />
         <!-- The AAR already carries the same jni/<abi>/libSDL3.so files under lib/, so the
              runtimes/<rid>/native copies only produce a duplicate-entry warning (XA4301) while
              packing. Exclude the redundant native assets and let the AAR provide the library. -->

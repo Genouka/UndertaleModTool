@@ -47,7 +47,19 @@
                 <l:ImageViewer Image="{Binding TexturePageItem}" />
             </ScrollViewer>
 
-            <!-- TODO: Show item in texture -->
+            <Separator />
+
+            <!-- The whole texture page, dimmed except for this item, which is also outlined -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" HorizontalAlignment="Center"
+                          MaxHeight="{Binding $parent[ScrollViewer].Viewport.Height}">
+                <Panel>
+                    <l:ImageViewer Name="TextureImage" Image="{Binding TexturePageItem.TexturePage.TextureData.Image}" />
+                    <Canvas IsHitTestVisible="False">
+                        <Path Name="DimOverlay" IsVisible="False" Fill="Black" Opacity="0.5" />
+                        <Border Name="ItemOutline" IsVisible="False" BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}" BorderThickness="1" />
+                    </Canvas>
+                </Panel>
+            </ScrollViewer>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

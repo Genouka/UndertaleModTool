@@ -27,23 +27,29 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.1.0" />
+        <PackageReference Include="Avalonia" Version="12.1.6" />
         <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
-        <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.0" />
-        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.0" />
-        <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
-        <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="12.1.0" />
-        <PackageReference Include="Avalonia.Skia" Version="12.1.0" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+        <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.6" />
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+        <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+        <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="12.1.6" />
+        <PackageReference Include="Avalonia.Skia" Version="12.1.6" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
         <PackageReference Include="AvaloniaEdit.TextMate" Version="12.0.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0" />
+        <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.17.1" />
         <!-- Keep in sync with the 5.3.x pin in UndertaleModLib (Android Mono Volatile.ReadBarrier bug). -->
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.3.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
-        <PackageReference Include="SDL3-CS" Version="3.4.14.1" />
-        <PackageReference Include="TreeDataGrid" Version="12.0.0" />
-        <PackageReference Include="Xaml.Behaviors" Version="12.0.5" />
+        <PackageReference Include="SDL3-CS" Version="3.4.20" />
+        <PackageReference Include="SDL3-CS.Linux" Version="3.4.20" />
+        <PackageReference Include="SDL3-CS.Linux.Mixer" Version="3.2.4.15" />
+        <PackageReference Include="SDL3-CS.MacOS" Version="3.4.20" />
+        <PackageReference Include="SDL3-CS.MacOS.Mixer" Version="3.2.4.15" />
+        <PackageReference Include="SDL3-CS.Windows" Version="3.4.20" />
+        <PackageReference Include="SDL3-CS.Windows.Mixer" Version="3.2.4.15" />
+        <PackageReference Include="TreeDataGrid" Version="12.1.5" />
+        <PackageReference Include="Xaml.Behaviors" Version="12.1.5" />
     </ItemGroup>
 
     <ItemGroup>
@@ -67,4 +73,13 @@
             <Reference Remove="@(Reference)" Condition="'%(Reference.NuGetPackageId)' == 'Avalonia' And '%(Reference.HintPath)' != ''" />
         </ItemGroup>
     </Target>
+
+    <!-- Bundled scripts, shipped next to the app for the Scripts menu and for scripts that use ExePath. -->
+    <ItemGroup>
+        <None Remove="Scripts\**" />
+        <Content Include="Scripts\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        </Content>
+    </ItemGroup>
 </Project>

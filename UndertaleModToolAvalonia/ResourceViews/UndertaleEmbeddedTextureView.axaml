@@ -37,11 +37,17 @@
                 <Button Command="{Binding ExportImageAsPNG}" Content="{l:Loc Editor_ExportAsPNG}"/>
             </StackPanel>
             
-            <!-- TODO: Click on item to open -->
             <!-- TODO: Failed to load message -->
             <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" HorizontalAlignment="Center"
                           MaxHeight="{Binding $parent[ScrollViewer].Viewport.Height}">
-                <l:ImageViewer Image="{Binding EmbeddedTexture.TextureData.Image}" />
+                <Panel Cursor="Hand" Background="Transparent"
+                       PointerMoved="TextureImage_PointerMoved" PointerExited="TextureImage_PointerExited" PointerReleased="TextureImage_PointerReleased">
+                    <l:ImageViewer Name="TextureImage" Image="{Binding EmbeddedTexture.TextureData.Image}" />
+                    <Canvas IsHitTestVisible="False">
+                        <Border Name="HoveredItemBorder" IsVisible="False"
+                                BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}" BorderThickness="1" Opacity="0.5" />
+                    </Canvas>
+                </Panel>
             </ScrollViewer>
         </StackPanel>
     </ScrollViewer>

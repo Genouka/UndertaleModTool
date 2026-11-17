@@ -233,6 +233,9 @@ public sealed class SimulatedPopupImpl : IPopupImpl
     public void Show(bool activate, bool isDialog) { }
     public void SetTopmost(bool topmost) { }
 
+    // Simulated popups are never shown, so hit-testing never applies.
+    public void SetHitTestVisible(bool visible) { }
+
     public IPopupImpl CreatePopup() => new SimulatedPopupImpl();
 
     public Point PointToClient(PixelPoint point) => new(point.X, point.Y);
