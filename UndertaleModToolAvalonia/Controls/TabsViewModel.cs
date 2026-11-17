@@ -46,7 +46,7 @@ public partial class TabsViewModel : ObservableObject
                 UndertalePath r => new UndertalePathViewModel(r),
                 UndertaleScript r => new UndertaleScriptViewModel(r),
                 UndertaleShader r => new UndertaleShaderViewModel(r, MainVM.ServiceProvider),
-                UndertaleFont r => new UndertaleFontViewModel(r),
+                UndertaleFont r => new UndertaleFontViewModel(r, MainVM.ServiceProvider),
                 UndertaleTimeline r => new UndertaleTimelineViewModel(r),
                 UndertaleGameObject r => new UndertaleGameObjectViewModel(r, MainVM.ServiceProvider),
                 UndertaleRoom r => new UndertaleRoomViewModel(r, MainVM.ServiceProvider),

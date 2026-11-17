@@ -1,3 +1,4 @@
+using System;
 using Avalonia.Controls;
 using UndertaleModTool.Localization;
 
@@ -30,5 +31,13 @@ public partial class MainWindow : Window
         }
 
         base.OnClosing(e);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.Scripting.IsAppClosed = true;
+
+        base.OnClosed(e);
     }
 }

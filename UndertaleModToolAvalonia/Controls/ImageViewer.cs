@@ -38,6 +38,20 @@ public class ImageViewer : Control
 
     double scaling = 1;
 
+    /// <summary>Current zoom factor (Ctrl+scroll doubles/halves it). Can be set to fit content programmatically.</summary>
+    public double Scaling
+    {
+        get => scaling;
+        set
+        {
+            if (scaling != value && value > 0)
+            {
+                scaling = value;
+                Invalidate();
+            }
+        }
+    }
+
     public ImageViewer()
     {
         ClipToBounds = true;

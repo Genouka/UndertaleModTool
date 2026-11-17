@@ -1292,8 +1292,6 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
 
         await Scripting.RunScript(WithLineDirective(text, filePath), filePath);
-
-        CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(filePath) ?? "Script");
     }
 
     public async void ScriptsRunScript(string filePath)
@@ -1304,8 +1302,6 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         string text = File.ReadAllText(filePath);
 
         await Scripting.RunScript(WithLineDirective(text, filePath), filePath);
-
-        CommandTextBoxText = string.Format(LocalizationSource.GetString("Msg_ScriptFinished"), Path.GetFileName(filePath));
     }
 
     /// <summary>

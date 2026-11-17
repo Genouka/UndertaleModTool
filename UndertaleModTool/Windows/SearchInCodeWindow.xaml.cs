@@ -412,10 +412,7 @@ namespace UndertaleModTool.Windows
 
             isSearchInProgress = true;
 
-            loaderDialog = new(LocalizationSource.GetString("Dialog_Replacing"), null);
-            loaderDialog.Owner = this;
-            loaderDialog.PreventClose = true;
-            loaderDialog.Show();
+            mainWindow.InitializeProgressDialog(LocalizationSource.GetString("Dialog_Replacing"), null);
 
             int replacedCount = 0;
             List<string> failedNames = new();
@@ -480,9 +477,7 @@ namespace UndertaleModTool.Windows
                 }
             });
 
-            loaderDialog.PreventClose = false;
-            loaderDialog.Close();
-            loaderDialog = null;
+            mainWindow.CloseProgressBar();
 
             if (failedNames.Count > 0)
             {

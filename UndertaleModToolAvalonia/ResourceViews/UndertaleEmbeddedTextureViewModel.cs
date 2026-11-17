@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Avalonia.Platform.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using UndertaleModLib;
@@ -16,11 +17,35 @@ public partial class UndertaleEmbeddedTextureViewModel : IUndertaleResourceViewM
     public UndertaleResource Resource => EmbeddedTexture;
     public UndertaleEmbeddedTexture EmbeddedTexture { get; }
 
+    readonly List<UndertaleTexturePageItem> itemsInTexture;
+
     public UndertaleEmbeddedTextureViewModel(UndertaleEmbeddedTexture embeddedTexture, IServiceProvider serviceProvider)
     {
         MainVM = serviceProvider.GetRequiredService<MainViewModel>();
 
         EmbeddedTexture = embeddedTexture;
+
+        itemsInTexture = MainVM.Data!.TexturePageItems.Where(item => item.TexturePage == embeddedTexture).ToList();
+    }
+
+    /// <summary>
+    /// Returns the texture page item drawn at this pixel of the texture, if any.
+    /// </summary>
+    public UndertaleTexturePageItem? FindItemAt(double x, double y)
+    {
+        foreach (UndertaleTexturePageItem item in itemsInTexture)
+        {
+            bool isInsideX = x >= item.SourceX && x < item.SourceX + item.SourceWidth;
+            bool isInsideY = y >= item.SourceY && y < item.SourceY + item.SourceHeight;
+            if (isInsideX && isInsideY)
+                return item;
+        }
+        return null;
+    }
+
+    public async void OpenItem(UndertaleTexturePageItem item, bool inNewTab)
+    {
+        await MainVM.Tabs.TabOpen(item, inNewTab);
     }
 
     public async void ImportImage()

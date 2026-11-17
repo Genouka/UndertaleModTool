@@ -1,0 +1,53 @@
+public ScriptGlobals(Scripting scripting, string? scriptPath)
+public Scripting(MainViewModel mainVM)
+public async Task<object?> RunScript(string text, string? filePath = null,
+public string GetDecompiledText(UndertaleCode code, GlobalDecompileContext? context = null, IDecompileSettings? settings = null)
+public string GetDecompiledText(string codeName, GlobalDecompileContext? context = null, IDecompileSettings? settings = null)
+public string GetDisassemblyText(UndertaleCode code)
+public string GetDisassemblyText(string codeName)
+public string? ExePath => Scripting.ExePathOverride ?? Path.GetDirectoryName(Environment.ProcessPath);
+public virtual Task ClickableSearchOutput(string title, string query, int resultsCount, IDictionary<string, List<(int lineNum, string codeLine)>> resultsDict, bool showInDecompiledView, IEnumerable<string>? failedList = null)
+public virtual Task ClickableSearchOutput(string title, string query, int resultsCount, IOrderedEnumerable<KeyValuePair<string, List<(int lineNum, string codeLine)>>> resultsDict, bool showInDecompiledView, IOrderedEnumerable<string>? failedList = null)
+public virtual Task StopProgressBarUpdater()
+public virtual bool CanSave => throw new NotImplementedException();
+public virtual bool IsAppClosed => throw new NotImplementedException();
+public virtual bool LintUMTScript(string path)
+public virtual bool MakeNewDataFile()
+public virtual bool RunUMTScript(string path)
+public virtual bool ScriptExecutionSuccess => throw new NotImplementedException();
+public virtual bool ScriptQuestion(string message)
+public virtual int GetProgress()
+public virtual object Highlighted => throw new NotImplementedException();
+public virtual object Selected => throw new NotImplementedException();
+public virtual string ScriptErrorMessage => throw new NotImplementedException();
+public virtual string ScriptErrorType => throw new NotImplementedException();
+public virtual string? PromptChooseDirectory()
+public virtual string? PromptLoadFile(string? defaultExt, string? filter)
+public virtual string? PromptSaveFile(string defaultExt, string filter)
+public virtual string? ScriptInputDialog(string title, string label, string defaultInput, string cancelText, string submitText, bool isMultiline, bool preventClose)
+public virtual string? SimpleTextInput(string title, string label, string defaultValue, bool allowMultiline, bool showDialog = true)
+public virtual void AddProgress(int amount)
+public virtual void AddProgressParallel(int amount)
+public virtual void DisableAllSyncBindings()
+public virtual void Dispose()
+public virtual void EnableUI()
+public virtual void HideProgressBar()
+public virtual void IncrementProgress()
+public virtual void IncrementProgressParallel()
+public virtual void InitializeScriptDialog()
+public virtual void ScriptError(string error, string? title = null, bool SetConsoleText = true)
+public virtual void ScriptMessage(string message)
+public virtual void ScriptOpenURL(string url)
+public virtual void ScriptWarning(string message)
+public virtual void SetFinishedMessage(bool isFinishedMessageEnabled)
+public virtual void SetProgress(int value)
+public virtual void SetProgressBar()
+public virtual void SetProgressBar(string message, string status, double progressValue, double maxValue)
+public virtual void SetUMTConsoleText(string message)
+public virtual void SimpleTextOutput(string title, string label, string message, bool allowMultiline)
+public virtual void StartProgressBarUpdater()
+public virtual void SyncBinding(string resourceType, bool enable)
+public virtual void UpdateProgressBar(string message, string status, double progressValue, double maxValue)
+public virtual void UpdateProgressStatus(string status)
+public virtual void UpdateProgressValue(double progressValue)
+public void ChangeSelection(object newSelection, bool inNewTab = false)

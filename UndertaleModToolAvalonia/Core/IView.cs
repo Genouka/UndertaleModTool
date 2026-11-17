@@ -59,10 +59,20 @@ public interface IView
         return await WindowHost.ShowDialog<bool>(window, new UpdateWindow(info, currentVersion, isNewer));
     }
 
-    public async Task<string?> TextBoxDialog(string message, string text = "", string? title = null, bool isMultiline = false, bool isReadOnly = false)
+    public async Task<string?> TextBoxDialog(string message, string text = "", string? title = null, bool isMultiline = false, bool isReadOnly = false,
+        string? okText = null, string? cancelText = null, bool preventClose = false)
     {
         Window? window = WindowHost.ResolveOwner(View);
-        return await WindowHost.ShowDialog<string?>(window, new TextBoxWindow(message, text, title, isMultiline, isReadOnly));
+        return await WindowHost.ShowDialog<string?>(window, new TextBoxWindow(message, text, title, isMultiline, isReadOnly, okText, cancelText, preventClose));
+    }
+
+    /// <summary>
+    /// Shows a text box window without waiting for it to close.
+    /// </summary>
+    public void TextBoxShow(string message, string text = "", string? title = null, bool isMultiline = false, bool isReadOnly = false)
+    {
+        Window window = WindowHost.ResolveOwner(View) ?? throw new InvalidOperationException("Window not found");
+        WindowHost.Show(window, new TextBoxWindow(message, text, title, isMultiline, isReadOnly));
     }
 
     public ILoaderWindow LoaderOpen()

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
@@ -121,10 +122,22 @@ public partial class UndertaleSpriteViewModel : ObservableObject, IUndertaleReso
             CollisionMasksSelected = (UndertaleSprite.MaskEntry?)item!;
     }
 
+    string GetFileNameOfTexture(int i, string extension) => $"{Sprite.Name?.Content ?? "image"}_{i}.{extension}";
+
+    async Task<Stream?> CreateAndOpenWriteFile(IStorageFolder folder, string fileName)
+    {
+        IStorageFile? file = await folder.CreateFileAsync(fileName);
+        if (file is null)
+        {
+            await MainVM.View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_ErrorCreateFile"), fileName));
+            return null;
+        }
+
+        return await file.OpenWriteAsync();
+    }
+
     public async void ExportAllTexturesAsPNGs()
     {
-        string GetFileNameOfTexture(int i) => $"{Sprite.Name?.Content ?? "image"}_{i}.png";
-
         IReadOnlyList<IStorageFolder> folders = await MainVM.View!.OpenFolderDialog(new FolderPickerOpenOptions()
         {
             Title = LocalizationSource.GetString("Msg_ExportAllTexturesToFolder"),
@@ -138,7 +151,7 @@ public partial class UndertaleSpriteViewModel : ObservableObject, IUndertaleReso
         List<string> filesThatAlreadyExist = [];
         for (int i = 0; i < Sprite.Textures.Count; i++)
         {
-            var fileName = GetFileNameOfTexture(i);
+            var fileName = GetFileNameOfTexture(i, "png");
             if (await folder.GetFileAsync(fileName) is not null)
             {
                 filesThatAlreadyExist.Add(fileName);
@@ -156,20 +169,65 @@ public partial class UndertaleSpriteViewModel : ObservableObject, IUndertaleReso
 
         for (int i = 0; i < Sprite.Textures.Count; i++)
         {
-            var fileName = GetFileNameOfTexture(i);
+            var fileName = GetFileNameOfTexture(i, "png");
             var texture = Sprite.Textures[i].Texture;
 
-            IStorageFile? file = await folder.CreateFileAsync(fileName);
-            if (file is null)
-            {
-                await MainVM.View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_ErrorCreateFile"), fileName));
+            using Stream? stream = await CreateAndOpenWriteFile(folder, fileName);
+            if (stream is null)
                 return;
-            }
 
-            using (var stream = await file.OpenWriteAsync())
+            await ImportExport.ExportTexturePageItemAsPNG(texture, stream, includePadding: true);
+        }
+    }
+
+    public async void ExportSpineData()
+    {
+        if (Sprite.SpineTextures is null && Sprite.SpineJSON is null && Sprite.SpineAtlas is null)
+            return;
+
+        IReadOnlyList<IStorageFolder> folders = await MainVM.View!.OpenFolderDialog(new FolderPickerOpenOptions()
+        {
+            Title = "Export spine data into folder",
+        });
+
+        if (folders.Count != 1)
+            return;
+
+        IStorageFolder folder = folders[0];
+
+        if (Sprite.SpineTextures is not null && Sprite.SpineHasTextureData)
+        {
+            for (int i = 0; i < Sprite.SpineTextures.Count; i++)
             {
-                await ImportExport.ExportTexturePageItemAsPNG(texture, stream, includePadding: true);
+                UndertaleSpineTextureEntry? spineTextureEntry = Sprite.SpineTextures[i];
+                string fileName = GetFileNameOfTexture(i, spineTextureEntry.IsQOI ? "qoi" : "png");
+
+                using Stream? stream = await CreateAndOpenWriteFile(folder, fileName);
+                if (stream is null)
+                    return;
+
+                await stream.WriteAsync(spineTextureEntry.TexBlob);
             }
+        }
+
+        if (Sprite.SpineJSON is not null)
+        {
+            using Stream? stream = await CreateAndOpenWriteFile(folder, $"{Sprite.Name?.Content ?? "image"}_spine.json");
+            if (stream is null)
+                return;
+
+            using StreamWriter streamWriter = new(stream);
+            await streamWriter.WriteAsync(Sprite.SpineJSON);
+        }
+
+        if (Sprite.SpineAtlas is not null)
+        {
+            using Stream? stream = await CreateAndOpenWriteFile(folder, $"{Sprite.Name?.Content ?? "image"}_atlas.atlas");
+            if (stream is null)
+                return;
+
+            using StreamWriter streamWriter = new(stream);
+            await streamWriter.WriteAsync(Sprite.SpineAtlas);
         }
     }
 

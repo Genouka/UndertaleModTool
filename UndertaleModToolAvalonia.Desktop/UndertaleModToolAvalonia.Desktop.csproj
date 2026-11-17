@@ -26,14 +26,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
-        <PackageReference Include="SDL3-CS" Version="3.4.14.1" />
-        <PackageReference Include="SDL3-CS.Linux" Version="3.4.14.1" />
-        <PackageReference Include="SDL3-CS.Linux.Mixer" Version="3.2.4.7" />
-        <PackageReference Include="SDL3-CS.MacOS" Version="3.4.14.1" />
-        <PackageReference Include="SDL3-CS.MacOS.Mixer" Version="3.2.4.7" />
-        <PackageReference Include="SDL3-CS.Windows" Version="3.4.14.1" />
-        <PackageReference Include="SDL3-CS.Windows.Mixer" Version="3.2.4.7" />
+        <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+        <PackageReference Include="SDL3-CS" Version="3.4.20" />
+        <PackageReference Include="SDL3-CS.Linux" Version="3.4.20" />
+        <PackageReference Include="SDL3-CS.Linux.Mixer" Version="3.2.4.15" />
+        <PackageReference Include="SDL3-CS.MacOS" Version="3.4.20" />
+        <PackageReference Include="SDL3-CS.MacOS.Mixer" Version="3.2.4.15" />
+        <PackageReference Include="SDL3-CS.Windows" Version="3.4.20" />
+        <PackageReference Include="SDL3-CS.Windows.Mixer" Version="3.2.4.15" />
     </ItemGroup>
 
     <ItemGroup>

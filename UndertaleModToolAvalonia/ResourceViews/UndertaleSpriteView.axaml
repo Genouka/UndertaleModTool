@@ -82,6 +82,7 @@
 
             <StackPanel Orientation="Horizontal">
                 <Button Command="{Binding ExportAllTexturesAsPNGs}" Content="{l:Loc Editor_Sprite_ExportAllTexturesAsPNGs}"/>
+                <Button Command="{Binding ExportSpineData}" Content="Export spine data"/>
             </StackPanel>
 
             <Grid l:AutoGridBehavior.Enable="True" ColumnDefinitions="1*,3*">
