@@ -42,7 +42,7 @@
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="0,0,1,0"
                 Padding="8">
-            <ContentPresenter Content="{Binding $parent[l:DrawerPage].DrawerContent}"/>
+            <ContentPresenter x:Name="DrawerPresenter" Content="{Binding $parent[l:DrawerPage].DrawerContent}"/>
         </Border>
 
         <!-- Push-mode width drag handle, centered on the drawer's right edge. -->

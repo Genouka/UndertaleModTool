@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using Avalonia.Media.Transformation;
 using Avalonia.Threading;
 
@@ -169,27 +170,32 @@ public partial class DrawerPage : UserControl
     }
 
     // Workaround for an Android-only rendering bug: while the drawer is closed it sits fully
-    // outside the root Panel's clip, and when it slides back in the compositor does not
-    // re-upload its whole area - only a thin left sliver is painted until a touch forces a
-    // full redraw. Nudging Opacity and invalidating the visual after the slide transition
-    // finishes makes the compositor re-render the drawer immediately.
+    // outside the root Panel's clip, and when it slides back in the compositor only re-uploads
+    // part of the frame - and the virtualized TreeDataGrid rows inside do not re-render either
+    // (no layout change happened, only the parent's render transform moved), so rows recycled
+    // while the drawer was off-screen come back blank. Scrolling or expanding a row re-realizes
+    // them, which is why "slide or expand to refresh" worked.
+    //
+    // The fix forces a full re-composite after the slide transition: nudge the PAGE's opacity
+    // (not the drawer's - a root-level change makes the compositor rebuild the whole frame,
+    // including the revealed main-content strip), invalidate every visual in the drawer subtree
+    // so recycled row templates re-render, and re-run measure on the content presenter.
     private DispatcherTimer? _androidRepaintTimer;
 
     private void ForceRepaintOnAndroid()
     {
-        if (!OperatingSystem.IsAndroid() || DrawerRoot is null)
+        if (!OperatingSystem.IsAndroid())
             return;
 
-        // Slightly non-1 opacity during the transition already forces a fresh layer upload.
-        DrawerRoot.Opacity = 0.999;
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (DrawerRoot is not null)
-                DrawerRoot.Opacity = 1;
-        }, DispatcherPriority.Background);
+        // A slightly non-1 opacity on the page root forces the compositor to build a fresh
+        // layer for the whole frame (drawer + main content behind it) instead of blitting
+        // only the damage rect of the moved visual.
+        Opacity = 0.999;
+        Dispatcher.UIThread.Post(() => Opacity = 1, DispatcherPriority.Background);
 
-        // And after the 0.2s transition completes, invalidate once more in case the compositor
-        // reused the stale frame from before the slide.
+        // After the 0.2s slide transition finishes: re-run measure on the drawer content and
+        // repaint every visual in the subtree, so virtualized rows re-realize with fresh
+        // templates instead of stale recycled ones.
         _androidRepaintTimer?.Stop();
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         timer.Tick += (_, _) =>
@@ -197,11 +203,28 @@ public partial class DrawerPage : UserControl
             timer.Stop();
             if (ReferenceEquals(_androidRepaintTimer, timer))
                 _androidRepaintTimer = null;
-            if (IsDrawerOpen && DrawerRoot is not null)
-                DrawerRoot.InvalidateVisual();
+            if (!IsDrawerOpen)
+                return;
+
+            DrawerPresenter?.InvalidateMeasure();
+            DrawerPresenter?.InvalidateVisual();
+            InvalidateSubtreeVisuals(DrawerRoot);
         };
         _androidRepaintTimer = timer;
         timer.Start();
+    }
+
+    /// <summary>Walks the drawer subtree and invalidates each visual's rendering.</summary>
+    private static void InvalidateSubtreeVisuals(Visual? visual)
+    {
+        if (visual is null)
+            return;
+
+        foreach (Visual child in visual.GetVisualChildren())
+        {
+            child.InvalidateVisual();
+            InvalidateSubtreeVisuals(child);
+        }
     }
 
     private void Scrim_Tapped(object? sender, TappedEventArgs e) => CloseDrawer();

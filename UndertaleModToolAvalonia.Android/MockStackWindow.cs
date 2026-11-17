@@ -485,12 +485,25 @@ public class MockStackWindow : UserControl
             bool isSelected = ReferenceEquals(page, selectedPage) && modalStack.Count == 0;
             page.IsSelected = isSelected;
 
+            // Fixed-width tabs keep the bar navigable on a phone screen: a window whose title
+            // is long (e.g. an editor named after a nested resource) previously stretched its
+            // tab and pushed the others out of reach. The full title stays available as a
+            // long-press tooltip (Avalonia shows ToolTip on press-and-hold on touch).
             Button tab = new()
             {
-                Content = page.EffectiveTitle,
+                Content = new TextBlock
+                {
+                    Text = page.EffectiveTitle,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                },
+                Width = 88,
+                Padding = new Thickness(10, 4),
                 Margin = new Thickness(0, 0, 4, 0),
-                HorizontalAlignment = HorizontalAlignment.Left,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
             };
+            ToolTip.SetTip(tab, page.EffectiveTitle);
+            ToolTip.SetPlacement(tab, PlacementMode.Bottom);
+            ToolTip.SetShowDelay(tab, 350);
             if (isSelected)
                 tab.Classes.Add("accent");
 
