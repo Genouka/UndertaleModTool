@@ -55,6 +55,8 @@ public partial class ButterscotchGameView : UserControl
 
     void OnStop(object? sender, RoutedEventArgs e) => Debug.Stop();
 
+    void OnShowLog(object? sender, RoutedEventArgs e) => Debug.ShowLogWindow(this);
+
     void OnToggleFullscreen(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not ButterscotchGameViewModel viewModel)

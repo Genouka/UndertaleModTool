@@ -43,6 +43,7 @@ public static class AndroidWindowHost
 
         WindowHost.ShowDialogHandler = (owner, dialog) => host.ShowDialogAsync(owner, dialog);
         WindowHost.ShowHandler = (owner, window) => host.Show(owner, window);
+        WindowHost.FocusHandler = host.Focus;
 
         if (Application.Current?.ApplicationLifetime is ISingleViewApplicationLifetime singleView)
         {

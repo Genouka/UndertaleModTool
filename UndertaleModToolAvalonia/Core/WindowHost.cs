@@ -26,6 +26,12 @@ public static class WindowHost
     public static Action<Window?, Window>? ShowHandler;
 
     /// <summary>
+    /// Replaced by single-window platforms. Receives a window to bring to the front; simulated
+    /// window stacks are not native windows, so <see cref="Window.Activate"/> would do nothing.
+    /// </summary>
+    public static Action<Window>? FocusHandler;
+
+    /// <summary>
     /// Optional factory for the main window, so desktop platforms can provide their own (e.g., a
     /// <c>MockStackWindow</c>) instead of the plain <c>MainWindow</c>.
     /// </summary>
@@ -38,11 +44,11 @@ public static class WindowHost
     public static Action<MainViewModel>? InitializeAppHook;
 
     /// <summary>
-    /// Resolves the <see cref="Window"/> an interactive control belongs to, if any.
+    /// Resolves the <see cref="Window"/> a control is or belongs to, if any.
     /// Single-window platforms have no real window in the tree, so this can return null.
     /// </summary>
     public static Window? ResolveOwner(Control view)
-        => view.FindLogicalAncestorOfType<Window>();
+        => view as Window ?? view.FindLogicalAncestorOfType<Window>();
 
     /// <summary>
     /// Resolves the <see cref="TopLevel"/> a control belongs to, falling back to the platform's
@@ -101,5 +107,14 @@ public static class WindowHost
 
         window.Show(owner ?? throw new InvalidOperationException(
             "No window host is installed and no owner window was found."));
+    }
+
+    /// <summary>Brings a window to the front (or selects its page in a simulated window stack).</summary>
+    public static void Focus(Window window)
+    {
+        if (FocusHandler is not null)
+            FocusHandler(window);
+        else
+            window.Activate();
     }
 }

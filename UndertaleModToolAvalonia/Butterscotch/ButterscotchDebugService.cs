@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using UndertaleModLib.Models;
@@ -50,6 +51,8 @@ public sealed class ButterscotchDebugService : IDisposable
     public bool IsPaused => State?.Paused == true;
 
     readonly DispatcherTimer _stateTimer = new() { Interval = TimeSpan.FromMilliseconds(200) };
+    DebugOutputWindow? _logWindow;
+    DebugPanelWindow? _panelWindow;
 
     public ButterscotchDebugService(MainViewModel main)
     {
@@ -123,6 +126,13 @@ public sealed class ButterscotchDebugService : IDisposable
 
         AppendLog($"Butterscotch session started: {dataPath}");
         _stateTimer.Start();
+
+        // Single-window hosts render the game into a tab and already carry the transport bar
+        // there; a panel would replace the game view. Desktop has no such bar, so it gets the
+        // control panel, like the WPF tool does.
+        if (embedWindow == IntPtr.Zero)
+            ShowPanel();
+
         return true;
     }
 
@@ -305,6 +315,39 @@ public sealed class ButterscotchDebugService : IDisposable
     }
 
     public void Log(string message) => AppendLog(message);
+
+    /// <summary>
+    /// Opens the log window, or focuses it when it is already open. The anchor locates the owning
+    /// window on desktop; single-window hosts (Android) ignore it.
+    /// </summary>
+    public void ShowLogWindow(Control? anchor)
+    {
+        if (_logWindow is not null)
+        {
+            WindowHost.Focus(_logWindow);
+            return;
+        }
+
+        DebugOutputWindow window = new();
+        window.Closed += (_, _) => _logWindow = null;
+        _logWindow = window;
+        WindowHost.Show(anchor is null ? null : WindowHost.ResolveOwner(anchor), window);
+    }
+
+    /// <summary>Opens the debug control panel, or focuses it when it is already open.</summary>
+    public void ShowPanel()
+    {
+        if (_panelWindow is not null)
+        {
+            WindowHost.Focus(_panelWindow);
+            return;
+        }
+
+        DebugPanelWindow window = new();
+        window.Closed += (_, _) => _panelWindow = null;
+        _panelWindow = window;
+        WindowHost.Show(Main.View is Control view ? WindowHost.ResolveOwner(view) : null, window);
+    }
 
     public bool HotReload(IEnumerable<UndertaleCode> codes)
     {

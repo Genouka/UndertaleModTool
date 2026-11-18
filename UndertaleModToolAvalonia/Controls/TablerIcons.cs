@@ -46,6 +46,12 @@ public static class TablerIcons
     public static Geometry PlayerStop { get; } = StreamGeometry.Parse(
         "M5 7a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2l0 -10");
 
+    /// <summary>file-text, used for the debug log window</summary>
+    public static Geometry FileText { get; } = StreamGeometry.Parse(
+        "M14 3v4a1 1 0 0 0 1 1h4 " +
+        "M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2 " +
+        "M9 9l1 0 M9 13l6 0 M9 17l6 0");
+
     /// <summary>maximize</summary>
     public static Geometry Maximize { get; } = StreamGeometry.Parse(
         "M4 8v-2a2 2 0 0 1 2 -2h2 M4 16v2a2 2 0 0 0 2 2h2 " +

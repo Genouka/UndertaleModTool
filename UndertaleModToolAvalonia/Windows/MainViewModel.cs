@@ -935,6 +935,13 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
     Process? externalButterscotchProcess;
 
+    /// <summary>Opens the Butterscotch log window (File menu; the in-tab debug bar has its own button).</summary>
+    public void ShowButterscotchLog()
+    {
+        if (View is Control view)
+            Butterscotch.ShowLogWindow(view);
+    }
+
     /// <summary>
     /// "Run/Debug with Butterscotch": saves the data file, then either starts the embedded
     /// bsdbg session (debugging) or launches a standalone runner of the configured architecture.

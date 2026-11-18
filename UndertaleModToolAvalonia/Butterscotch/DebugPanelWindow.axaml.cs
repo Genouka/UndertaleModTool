@@ -104,7 +104,7 @@ public partial class DebugPanelWindow : Window
     void VariablesButton_Click(object? sender, RoutedEventArgs e) => ShowWindow(new DebugVariablesWindow());
     void InstancesButton_Click(object? sender, RoutedEventArgs e) => ShowWindow(new DebugInstancesWindow());
     void CallStackButton_Click(object? sender, RoutedEventArgs e) => ShowWindow(new DebugCallStackWindow());
-    void OutputButton_Click(object? sender, RoutedEventArgs e) => ShowWindow(new DebugOutputWindow());
+    void OutputButton_Click(object? sender, RoutedEventArgs e) => Service.ShowLogWindow(this);
 
     void ShowWindow(Window window)
         => WindowHost.Show(WindowHost.ResolveOwner(this), window);

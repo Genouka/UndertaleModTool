@@ -276,6 +276,19 @@ public class MockStackWindow : UserControl
         PushPage(window, isModal: false);
     }
 
+    /// <summary>Brings a non-modal simulated window to the front.</summary>
+    public void Focus(Window window)
+    {
+        foreach (MockPage page in nonModalPages)
+        {
+            if (ReferenceEquals(page.Window, window))
+            {
+                SelectPage(page);
+                return;
+            }
+        }
+    }
+
     void PushModalPage(Window window, TaskCompletionSource<object?> result)
     {
         MockPage page = CreatePage(window, isModal: true);
