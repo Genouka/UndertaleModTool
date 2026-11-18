@@ -161,15 +161,29 @@ public partial class AppMenuBar : UserControl
         Item(file, "Menu_File_Open", command: new RelayCommand(vm.FileOpen), gesture: new KeyGesture(Key.O, modifier));
         Item(file, "Menu_File_Save", command: new RelayCommand(vm.FileSave), gesture: new KeyGesture(Key.S, modifier));
         Item(file, "Menu_File_Close", command: new RelayCommand(vm.FileClose));
-        file.Items.Add(new NativeMenuItemSeparator());
-        Item(file, "Menu_File_TempRun", command: new RelayCommand(vm.FileTempRun), gesture: new KeyGesture(Key.F5));
-        Item(file, "Menu_File_RunWithDataProjectRunner", command: new RelayCommand(vm.FileRun), gesture: new KeyGesture(Key.F5, KeyModifiers.Alt));
-        Item(file, "Menu_File_RunOtherRunner", command: new RelayCommand(vm.FileRunWithOther));
-        file.Items.Add(new NativeMenuItemSeparator());
+        // Single-window (mobile) hosts cannot launch an external runner at all, so those entries
+        // are left out there. The separator before them then depends on the Butterscotch group,
+        // which can still be enabled in Settings on mobile.
+        bool isMobile = OperatingSystem.IsAndroid();
+        NativeMenuItemSeparator runnerSeparator = new();
+        if (isMobile)
+            runnerSeparator.Bind(NativeMenuItem.IsVisibleProperty, ShowButterscotchBinding(vm));
+        file.Items.Add(runnerSeparator);
+
+        if (!isMobile)
+        {
+            Item(file, "Menu_File_TempRun", command: new RelayCommand(vm.FileTempRun), gesture: new KeyGesture(Key.F5));
+            Item(file, "Menu_File_RunWithDataProjectRunner", command: new RelayCommand(vm.FileRun), gesture: new KeyGesture(Key.F5, KeyModifiers.Alt));
+            Item(file, "Menu_File_RunOtherRunner", command: new RelayCommand(vm.FileRunWithOther));
+            file.Items.Add(new NativeMenuItemSeparator());
+        }
+
         Item(file, "Menu_File_RunButterscotch", command: new RelayCommand(() => vm.StartButterscotchSession(false)),
             gesture: new KeyGesture(Key.F6), isVisible: ShowButterscotchBinding(vm));
         Item(file, "Menu_File_DebugButterscotch", command: new RelayCommand(() => vm.StartButterscotchSession(true)),
             gesture: new KeyGesture(Key.F6, KeyModifiers.Shift), isVisible: ShowButterscotchBinding(vm));
+        Item(file, "Menu_File_ShowDebugLog", command: new RelayCommand(vm.ShowButterscotchLog),
+            isVisible: ShowButterscotchBinding(vm));
         file.Items.Add(new NativeMenuItemSeparator());
         Item(file, "Menu_File_ClearAudioGroupCache", command: new RelayCommand(vm.FileClearAudioGroupCache));
         file.Items.Add(new NativeMenuItemSeparator());

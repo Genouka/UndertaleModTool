@@ -47,6 +47,9 @@
                 <Button Click="OnStop" ToolTip.Tip="Stop">
                     <l:TablerIcon Data="{x:Static l:TablerIcons.PlayerStop}" />
                 </Button>
+                <Button Click="OnShowLog" ToolTip.Tip="{l:Loc Debug_Log_Title}">
+                    <l:TablerIcon Data="{x:Static l:TablerIcons.FileText}" />
+                </Button>
                 <Button Click="OnToggleFullscreen" IsVisible="{Binding ShowFullscreen}"
                         ToolTip.Tip="Fullscreen">
                     <l:TablerIcon Data="{x:Static l:TablerIcons.Maximize}" />

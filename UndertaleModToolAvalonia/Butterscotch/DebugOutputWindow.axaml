@@ -6,11 +6,19 @@
         mc:Ignorable="d" d:DesignWidth="820" d:DesignHeight="420"
         x:Class="UndertaleModToolAvalonia.DebugOutputWindow"
         x:CompileBindings="False"
-        Title="{l:Loc Debug_Output_Title}" Width="820" Height="420"
+        Title="{l:Loc Debug_Log_Title}" Width="820" Height="420"
         WindowStartupLocation="CenterOwner">
     <Grid Margin="8" RowDefinitions="*,Auto">
         <ListBox x:Name="LogList" Grid.Row="0" FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
-                 FontSize="12" SelectionMode="Multiple">
+                 FontSize="12" SelectionMode="Multiple"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto">
+            <!-- Session logs can be long: an explicitly virtualizing panel realizes only the
+                 visible lines, no matter how many the session has produced. -->
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
             <ListBox.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="{l:Loc Common_Copy}" Click="CopySelected_Click" />
