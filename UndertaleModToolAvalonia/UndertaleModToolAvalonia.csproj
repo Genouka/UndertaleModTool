@@ -41,13 +41,15 @@
         <!-- Keep in sync with the 5.3.x pin in UndertaleModLib (Android Mono Volatile.ReadBarrier bug). -->
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.3.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+        <!-- Managed SDL3 binding only. The native SDL3 packages (SDL3-CS.Linux/Windows/MacOS and
+             their Mixer siblings) belong to the heads that run the app:
+             UndertaleModToolAvalonia.Desktop references them, the Android head uses
+             SDL3-CS.Android instead. Keeping them here leaked desktop natives into the Android
+             APK: NuGet's RID graph falls back android-arm64 -> linux-arm64, so
+             runtimes/linux-arm64/native/libSDL3.so (glibc, DT_NEEDED libm.so.6) was resolved for
+             the android-arm64 target and packed over the AAR's Bionic copy, and the app died in
+             JavaSystem.LoadLibrary("SDL3") with "library libm.so.6 not found". -->
         <PackageReference Include="SDL3-CS" Version="3.4.20" />
-        <PackageReference Include="SDL3-CS.Linux" Version="3.4.20" />
-        <PackageReference Include="SDL3-CS.Linux.Mixer" Version="3.2.4.15" />
-        <PackageReference Include="SDL3-CS.MacOS" Version="3.4.20" />
-        <PackageReference Include="SDL3-CS.MacOS.Mixer" Version="3.2.4.15" />
-        <PackageReference Include="SDL3-CS.Windows" Version="3.4.20" />
-        <PackageReference Include="SDL3-CS.Windows.Mixer" Version="3.2.4.15" />
         <PackageReference Include="TreeDataGrid" Version="12.1.5" />
         <PackageReference Include="Xaml.Behaviors" Version="12.1.5" />
     </ItemGroup>

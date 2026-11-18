@@ -68,9 +68,15 @@
         <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.17.1" ExcludeAssets="runtimes;native" />
         <!-- The AAR already carries the same jni/<abi>/libSDL3.so files under lib/, so the
              runtimes/<rid>/native copies only produce a duplicate-entry warning (XA4301) while
-             packing. Exclude the redundant native assets and let the AAR provide the library. -->
-        <PackageReference Include="SDL3-CS.Android" Version="3.4.14.1" ExcludeAssets="native" />
-        <PackageReference Include="SDL3-CS.Android.Mixer" Version="3.2.4.9" />
+             packing. Exclude the redundant native assets and let the AAR provide the library.
+             Versions track the managed SDL3-CS binding referenced by the shared project (3.4.20
+             and Mixer 3.2.4.15): a native library older than its binding misses entry points.
+             Never reference SDL3-CS.Linux/Windows/MacOS from this project or anything it depends
+             on: NuGet's RID graph maps android-arm64 -> linux-arm64, so a desktop package's
+             glibc build ends up in lib/<abi>/ and the APK dies on startup with
+             "library libm.so.6 not found". -->
+        <PackageReference Include="SDL3-CS.Android" Version="3.4.20" ExcludeAssets="native" />
+        <PackageReference Include="SDL3-CS.Android.Mixer" Version="3.2.4.15" />
     </ItemGroup>
 
     <ItemGroup>
