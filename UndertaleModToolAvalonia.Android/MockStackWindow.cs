@@ -477,6 +477,7 @@ public class MockStackWindow : UserControl
 
     void RebuildTabs()
     {
+        TouchToolTip.Close();
         tabPanel.Children.Clear();
 
         for (int i = 0; i < nonModalPages.Count; i++)
@@ -488,7 +489,8 @@ public class MockStackWindow : UserControl
             // Fixed-width tabs keep the bar navigable on a phone screen: a window whose title
             // is long (e.g. an editor named after a nested resource) previously stretched its
             // tab and pushed the others out of reach. The full title stays available as a
-            // long-press tooltip (Avalonia shows ToolTip on press-and-hold on touch).
+            // long-press tooltip; see TouchToolTip for why the tip cannot rely on Avalonia's
+            // own tooltip service on touch.
             Button tab = new()
             {
                 Content = new TextBlock
@@ -501,14 +503,23 @@ public class MockStackWindow : UserControl
                 Margin = new Thickness(0, 0, 4, 0),
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
             };
-            ToolTip.SetTip(tab, page.EffectiveTitle);
-            ToolTip.SetPlacement(tab, PlacementMode.Bottom);
-            ToolTip.SetShowDelay(tab, 350);
+            TouchToolTip.Enable(tab, page.EffectiveTitle);
             if (isSelected)
                 tab.Classes.Add("accent");
 
             MockPage captured = page;
-            tab.Click += (_, _) => SelectPage(captured);
+            tab.Click += (_, _) =>
+            {
+                // Holding.Completed is raised after Click, so a long press that only reveals the
+                // full title still has the tip open here and must not also switch tabs.
+                if (ToolTip.GetIsOpen(tab))
+                {
+                    ToolTip.SetIsOpen(tab, false);
+                    return;
+                }
+
+                SelectPage(captured);
+            };
             tabPanel.Children.Add(tab);
 
             if (i > 0)
