@@ -1,3 +1,4 @@
 UndertaleModTool/Corrections/** linguist-generated=true
 *.patch text eol=lf -whitespace
+*.sh text eol=lf
 UndertaleModRunner/native/win-x64/SDL2.COPYING.txt -whitespace

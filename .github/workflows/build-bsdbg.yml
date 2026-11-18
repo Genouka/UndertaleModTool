@@ -30,9 +30,11 @@ jobs:
           # distributions with an older glibc than the runner image.
           - os: ubuntu-22.04
             rid: linux-x64
-          - os: macos-13
+          # macos-13 (Intel) was retired 2025-12-04 and macos-14 (arm64) on
+          # 2026-11-02; both labels queue forever instead of provisioning.
+          - os: macos-15-intel
             rid: osx-x64
-          - os: macos-14
+          - os: macos-15
             rid: osx-arm64
     runs-on: ${{ matrix.os }}
     steps:
