@@ -70,8 +70,14 @@ public sealed class ButterscotchSession : IDisposable
             Marshal.FreeCoTaskMem(ptr);
         _allocatedStrings.Clear();
 
+        // The library itself loaded (otherwise the DllImport above would have thrown), so a null
+        // session means Bsdbg_Create rejected the config or, far more common, this process already
+        // owns one: Bsdbg keeps a single process-global session. Dispose every session before
+        // creating the next one.
         if (_session == IntPtr.Zero)
-            throw new InvalidOperationException("Bsdbg_Create failed (bsdbg.dll missing or invalid config).");
+            throw new InvalidOperationException(
+                "Bsdbg_Create failed: the native runner rejected the configuration, or another " +
+                "Bsdbg session is still alive in this process (Bsdbg allows one per process).");
 
         NativeMethods.Bsdbg_SetEventCallback(_session, _eventCallback, IntPtr.Zero);
         NativeMethods.Bsdbg_SetLogCallback(_session, _logCallback, IntPtr.Zero);

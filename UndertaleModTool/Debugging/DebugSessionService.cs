@@ -101,7 +101,7 @@ namespace UndertaleModTool.Debugging
             Session.Exited += code => Dispatch(() =>
             {
                 AppendLog($"Game exited (code {code}).");
-                CloseSession();
+                Stop();
             });
             Session.Error += message => Dispatch(() => AppendLog("ERROR: " + message));
             Session.Log += (level, message) => Dispatch(() => AppendLog($"[{LevelName(level)}] {message}"));
@@ -122,17 +122,25 @@ namespace UndertaleModTool.Debugging
 
         public void Stop()
         {
-            if (Session is null)
-                return;
-            try { Session.Dispose(); }
-            catch { /* ignore shutdown races */ }
             CloseSession();
             _stateTimer.Stop();
         }
 
+        /// <summary>
+        /// Drops the session and releases the native one. Bsdbg allows one session per process
+        /// (Bsdbg_Create claims a process-global slot), so every path that ends a session - game
+        /// exit, failed start, close - must dispose it, or every later start fails with
+        /// "Bsdbg_Create failed".
+        /// </summary>
         private void CloseSession()
         {
+            ButterscotchSession session = Session;
             Session = null;
+            if (session is not null)
+            {
+                try { session.Dispose(); }
+                catch { /* ignore shutdown races */ }
+            }
             State = new DebugState();
             Dispatch(() => Updated?.Invoke());
         }
