@@ -543,8 +543,6 @@ static void bs_run_session(BsdbgControl* c) {
     args.hasSeed = c->config.seed != 0;
     args.debug = false;
     args.disableLogColours = true;
-    args.embedWindow = c->config.embedWindow;
-    args.embedWindowKind = c->config.embedWindowKind;
     /* argv[0] placeholder + "-game <data.win>" + caller supplied game args. */
     arrput(gameArgs, bs_strdup_checked("<bsdbg>"));
     arrput(gameArgs, bs_strdup_checked("-game"));
@@ -560,16 +558,6 @@ static void bs_run_session(BsdbgControl* c) {
 
     Bsdbg_EmitEvent(c, BSDBG_EVENT_STATE,
                     "{\"running\":true,\"paused\":false,\"frameCount\":0}");
-    /* The platform backends create the window inside loop(), on this thread, so the
-     * host-supplied window (single-window hosts such as Android) has to be registered
-     * right before it runs. Backends without embeddable windows simply decline and the
-     * runner opens its own. */
-    if (args.embedWindow != 0 &&
-        !platformSetEmbeddedWindow(args.embedWindow, args.embedWindowKind)) {
-        logWarn("Bsdbg: this platform backend cannot render into an embedded window; "
-                "the runner will create its own\n");
-    }
-
 
     result = loop(args, "bsdbg");
 
@@ -822,6 +810,17 @@ int32_t Bsdbg_Start(BsdbgSession* session) {
     /* Makes stale-runtime reports diagnosable: the host tool shows this line in
      * its output window, so an outdated bsdbg.dll is immediately visible. */
     Bsdbg_Log(c, 1, "ButterscotchDbg runtime built " __DATE__ " " __TIME__ "\n");
+
+    /* Register the host-supplied window here, on the caller's thread, not on the
+     * runner thread below: on Android the handle is a JNI reference, and JNI
+     * references and JNIEnv are thread-affine. platformInit() consumes the
+     * registration when it creates the window inside loop(). Backends without
+     * embeddable windows simply decline and the runner opens its own. */
+    if (c->config.embedWindow != 0 &&
+        !platformSetEmbeddedWindow(c->config.embedWindow, c->config.embedWindowKind)) {
+        logWarn("Bsdbg: this platform backend cannot render into an embedded window; "
+                "the runner will create its own\n");
+    }
 
 #if defined(_WIN32)
     {
