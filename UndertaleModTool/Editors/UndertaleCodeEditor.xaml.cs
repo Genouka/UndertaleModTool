@@ -4206,41 +4206,10 @@ namespace UndertaleModTool
                         codeEditorInst.DecompiledFocused = true;
                         UndertaleData data = mainWindow.Data;
 
-                        List<UndertaleObject> possibleObjects = new List<UndertaleObject>();
-                        if (id >= 0)
-                        {
-                            if (id < data.Sprites.Count)
-                                possibleObjects.Add(data.Sprites[id]);
-                            if (id < data.Rooms.Count)
-                                possibleObjects.Add(data.Rooms[id]);
-                            if (id < data.GameObjects.Count)
-                                possibleObjects.Add(data.GameObjects[id]);
-                            if (id < data.Backgrounds.Count)
-                                possibleObjects.Add(data.Backgrounds[id]);
-                            if (id < data.Scripts.Count)
-                                possibleObjects.Add(data.Scripts[id]);
-                            if (id < data.Paths.Count)
-                                possibleObjects.Add(data.Paths[id]);
-                            if (id < data.Fonts.Count)
-                                possibleObjects.Add(data.Fonts[id]);
-                            if (id < data.Sounds.Count)
-                                possibleObjects.Add(data.Sounds[id]);
-                            if (id < data.Shaders.Count)
-                                possibleObjects.Add(data.Shaders[id]);
-                            if (id < data.Timelines.Count)
-                                possibleObjects.Add(data.Timelines[id]);
-                            if (id < (data.AnimationCurves?.Count ?? 0))
-                                possibleObjects.Add(data.AnimationCurves[id]);
-                            if (id < (data.Sequences?.Count ?? 0))
-                                possibleObjects.Add(data.Sequences[id]);
-                            if (id < (data.ParticleSystems?.Count ?? 0))
-                                possibleObjects.Add(data.ParticleSystems[id]);
-                            if (id < (data.AudioGroups?.Count ?? 0))
-                                possibleObjects.Add(data.AudioGroups[id]);
-                        }
+                        List<UndertaleNamedResource> possibleObjects = GetResourceIdCandidates(data, id);
 
                         List<object> menuItems = new List<object>();
-                        foreach (UndertaleObject obj in possibleObjects)
+                        foreach (UndertaleNamedResource obj in possibleObjects)
                         {
                             if (obj is null)
                             {
@@ -4265,7 +4234,7 @@ namespace UndertaleModTool
                                 else
                                 {
                                     doc.Replace(line.ParentVisualLine.StartOffset + line.RelativeTextOffset,
-                                                text.Length, (obj as UndertaleNamedResource).Name.Content, null);
+                                                text.Length, obj.Name.Content, null);
                                     codeEditorInst.DecompiledChanged = true;
                                 }
                             };
@@ -4318,6 +4287,48 @@ namespace UndertaleModTool
                 };
 
                 return line;
+            }
+
+            /// <summary>
+            /// Returns every resource that a legacy numeric asset ID can refer to, in the order the
+            /// number context menu lists them.
+            /// </summary>
+            internal static List<UndertaleNamedResource> GetResourceIdCandidates(UndertaleData data, int id)
+            {
+                List<UndertaleNamedResource> candidates = new();
+                if (id < 0)
+                    return candidates;
+
+                if (id < data.Sprites.Count)
+                    candidates.Add(data.Sprites[id]);
+                if (id < data.Rooms.Count)
+                    candidates.Add(data.Rooms[id]);
+                if (id < data.GameObjects.Count)
+                    candidates.Add(data.GameObjects[id]);
+                if (id < data.Backgrounds.Count)
+                    candidates.Add(data.Backgrounds[id]);
+                if (id < data.Scripts.Count)
+                    candidates.Add(data.Scripts[id]);
+                if (id < data.Paths.Count)
+                    candidates.Add(data.Paths[id]);
+                if (id < data.Fonts.Count)
+                    candidates.Add(data.Fonts[id]);
+                if (id < data.Sounds.Count)
+                    candidates.Add(data.Sounds[id]);
+                if (id < data.Shaders.Count)
+                    candidates.Add(data.Shaders[id]);
+                if (id < data.Timelines.Count)
+                    candidates.Add(data.Timelines[id]);
+                if (id < (data.AnimationCurves?.Count ?? 0))
+                    candidates.Add(data.AnimationCurves[id]);
+                if (id < (data.Sequences?.Count ?? 0))
+                    candidates.Add(data.Sequences[id]);
+                if (id < (data.ParticleSystems?.Count ?? 0))
+                    candidates.Add(data.ParticleSystems[id]);
+                if (id < (data.AudioGroups?.Count ?? 0))
+                    candidates.Add(data.AudioGroups[id]);
+
+                return candidates;
             }
         }
 
@@ -4561,14 +4572,45 @@ namespace UndertaleModTool
 
                         if (button == Input.MouseButton.Right)
                         {
-                            MenuItemDark menuItem = new()
+                            List<object> menuItems = new();
+
+                            MenuItemDark openItem = new()
                             {
                                 Header = LocalizationSource.GetString("Menu_OpenInNewTab"),
                                 DataContext = val
                             };
-                            menuItem.Click += (sender2, _) =>
+                            openItem.Click += (sender2, _) =>
                                 mainWindow.ChangeSelection((sender2 as FrameworkElement).DataContext, true);
-                            codeEditorInst?.SetPendingTokenItems(new object[] { menuItem });
+                            menuItems.Add(openItem);
+
+                            // A name can be replaced with its own numeric ID, and with the names of
+                            // the other resource types that share that ID.
+                            int id = data.IndexOf(val, false);
+                            List<UndertaleNamedResource> possibleResources = NumberGenerator.GetResourceIdCandidates(data, id);
+                            if (possibleResources.Contains(val))
+                            {
+                                menuItems.Add(new Separator());
+
+                                void AddReplaceItem(string header, string replacement)
+                                {
+                                    MenuItemDark item = new() { Header = header };
+                                    item.Click += (_, _) => doc.Replace(
+                                        line.ParentVisualLine.StartOffset + line.RelativeTextOffset,
+                                        text.Length, replacement, null);
+                                    menuItems.Add(item);
+                                }
+
+                                AddReplaceItem(id + " " + LocalizationSource.GetString("Editor_Number"), id.ToString());
+                                foreach (UndertaleNamedResource obj in possibleResources)
+                                {
+                                    if (obj is null || ReferenceEquals(obj, val) || string.IsNullOrEmpty(obj.Name?.Content))
+                                        continue;
+
+                                    AddReplaceItem(obj.ToString().Replace("_", "__"), obj.Name.Content);
+                                }
+                            }
+
+                            codeEditorInst?.SetPendingTokenItems(menuItems);
                         }
                         else
                             mainWindow.ChangeSelection(val, button == Input.MouseButton.Middle);

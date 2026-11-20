@@ -3207,40 +3207,7 @@ public partial class UndertaleCodeView : UserControl
 
                 int documentOffset = visualLine.ParentVisualLine.StartOffset + visualLine.RelativeTextOffset;
 
-                List<UndertaleNamedResource?> possibleObjects = [];
-
-                if (id >= 0)
-                {
-                    // NOTE: Remember to add new types
-                    if (id < data.Sprites.Count)
-                        possibleObjects.Add(data.Sprites[id]);
-                    if (id < data.Rooms.Count)
-                        possibleObjects.Add(data.Rooms[id]);
-                    if (id < data.GameObjects.Count)
-                        possibleObjects.Add(data.GameObjects[id]);
-                    if (id < data.Backgrounds.Count)
-                        possibleObjects.Add(data.Backgrounds[id]);
-                    if (id < data.Scripts.Count)
-                        possibleObjects.Add(data.Scripts[id]);
-                    if (id < data.Paths.Count)
-                        possibleObjects.Add(data.Paths[id]);
-                    if (id < data.Fonts.Count)
-                        possibleObjects.Add(data.Fonts[id]);
-                    if (id < data.Sounds.Count)
-                        possibleObjects.Add(data.Sounds[id]);
-                    if (id < data.Shaders.Count)
-                        possibleObjects.Add(data.Shaders[id]);
-                    if (id < data.Timelines.Count)
-                        possibleObjects.Add(data.Timelines[id]);
-                    if (id < data.AnimationCurves?.Count)
-                        possibleObjects.Add(data.AnimationCurves[id]);
-                    if (id < data.Sequences?.Count)
-                        possibleObjects.Add(data.Sequences[id]);
-                    if (id < data.ParticleSystems?.Count)
-                        possibleObjects.Add(data.ParticleSystems[id]);
-                    if (id < data.AudioGroups?.Count)
-                        possibleObjects.Add(data.AudioGroups[id]);
-                }
+                List<UndertaleNamedResource?> possibleObjects = GetResourceIdCandidates(data, id);
 
                 contextMenu.Items.Clear();
 
@@ -3304,6 +3271,48 @@ public partial class UndertaleCodeView : UserControl
             };
 
             return visualLine;
+        }
+
+        /// <summary>
+        /// Returns every resource that a legacy numeric asset ID can refer to, in the order the
+        /// number context menu lists them.
+        /// </summary>
+        internal static List<UndertaleNamedResource?> GetResourceIdCandidates(UndertaleData data, int id)
+        {
+            List<UndertaleNamedResource?> candidates = [];
+            if (id < 0)
+                return candidates;
+
+            if (id < data.Sprites.Count)
+                candidates.Add(data.Sprites[id]);
+            if (id < data.Rooms.Count)
+                candidates.Add(data.Rooms[id]);
+            if (id < data.GameObjects.Count)
+                candidates.Add(data.GameObjects[id]);
+            if (id < data.Backgrounds.Count)
+                candidates.Add(data.Backgrounds[id]);
+            if (id < data.Scripts.Count)
+                candidates.Add(data.Scripts[id]);
+            if (id < data.Paths.Count)
+                candidates.Add(data.Paths[id]);
+            if (id < data.Fonts.Count)
+                candidates.Add(data.Fonts[id]);
+            if (id < data.Sounds.Count)
+                candidates.Add(data.Sounds[id]);
+            if (id < data.Shaders.Count)
+                candidates.Add(data.Shaders[id]);
+            if (id < data.Timelines.Count)
+                candidates.Add(data.Timelines[id]);
+            if (id < data.AnimationCurves?.Count)
+                candidates.Add(data.AnimationCurves[id]);
+            if (id < data.Sequences?.Count)
+                candidates.Add(data.Sequences[id]);
+            if (id < data.ParticleSystems?.Count)
+                candidates.Add(data.ParticleSystems[id]);
+            if (id < data.AudioGroups?.Count)
+                candidates.Add(data.AudioGroups[id]);
+
+            return candidates;
         }
     }
 
@@ -3530,6 +3539,39 @@ public partial class UndertaleCodeView : UserControl
                             _ = codeViewModel.MainVM.TabOpen(namedResource, true);
                         };
                         contextMenu.Items.Add(openInNewTabMenuItem);
+
+                        // A name can be replaced with its own numeric ID, and with the names of
+                        // the other resource types that share that ID.
+                        int id = data.IndexOf(namedResource, false);
+                        List<UndertaleNamedResource?> possibleResources = NumberGenerator.GetResourceIdCandidates(data, id);
+                        if (possibleResources.Contains(namedResource))
+                        {
+                            int documentOffset = visualLine.ParentVisualLine.StartOffset + visualLine.RelativeTextOffset;
+                            contextMenu.Items.Add(new Separator());
+
+                            MenuItem numberItem = new();
+                            numberItem.Header = id + " " + LocalizationSource.GetString("Editor_NumberSuffix");
+                            numberItem.Click += (_, _) =>
+                            {
+                                document.Replace(documentOffset, text.Length, id.ToString(), null);
+                            };
+                            contextMenu.Items.Add(numberItem);
+
+                            foreach (UndertaleNamedResource? obj in possibleResources)
+                            {
+                                if (obj is null || ReferenceEquals(obj, namedResource) || obj.Name is null)
+                                    continue;
+
+                                MenuItem item = new();
+                                item.Header = obj.ToString()?.Replace("_", "__");
+                                string objName = obj.Name.Content;
+                                item.Click += (_, _) =>
+                                {
+                                    document.Replace(documentOffset, text.Length, objName, null);
+                                };
+                                contextMenu.Items.Add(item);
+                            }
+                        }
 
                         codeViewModel.GMLFocused = false;
                         codeViewModel.ASMFocused = false;
