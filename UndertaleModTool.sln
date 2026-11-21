@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModToolLocalizatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UndertaleModWad", "UndertaleModWad\UndertaleModWad.csproj", "{A4A727AD-F30A-4D35-8B66-6A290B612B3C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QiuForms", "QiuForms\QiuForms.csproj", "{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -223,6 +225,18 @@ Global
 		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Release|x64.Build.0 = Release|Any CPU
 		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Release|x86.ActiveCfg = Release|Any CPU
 		{A4A727AD-F30A-4D35-8B66-6A290B612B3C}.Release|x86.Build.0 = Release|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Debug|x64.Build.0 = Debug|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Debug|x86.Build.0 = Debug|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Release|x64.ActiveCfg = Release|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Release|x64.Build.0 = Release|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Release|x86.ActiveCfg = Release|Any CPU
+		{6B1F2C4A-9D3E-4B71-8C55-2E0A7F4D9B12}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

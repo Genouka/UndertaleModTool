@@ -1,4 +1,4 @@
-﻿/*
+/*
     BetterExportSpritesAsGIF.csx
 		by burnedpopcorn180, with parts based off of ExportSpritesAsGIFDLL.csx by CST1229
 
@@ -6,9 +6,7 @@
 	older versions of UTMT won't work, because of new TextureWorker and ImageMagick
  */
 
-// For UI
-using System.Drawing;
-using System.Windows.Forms;
+using QiuForms;
 
 using System.Reflection;
 using System.Threading;
@@ -26,7 +24,6 @@ if (folder == null)
 folder = Path.GetDirectoryName(folder);
 
 List<string> Selected_Sprites = new List<string>();
-public bool okbt_pressed = false;
 public bool custom_fpsENABLED = true;
 public int custom_fps = 24;
 
@@ -34,207 +31,72 @@ private int currentFrameIndex = 0;
 
 #region Main UI
 
-Form MAINFORM = new Form()
-{
-    AutoSize = true,
-    Text = "Sprite Selector",
-    MaximizeBox = false,
-    MinimizeBox = false,
-    StartPosition = FormStartPosition.CenterScreen,
-    FormBorderStyle = FormBorderStyle.FixedDialog,
-};
+QiuForm form = new("Sprite Selector");
 
-// tree view
-var treeView = new TreeView()
-{
-    Location = new System.Drawing.Point(4, 24 + 4 + 4),
-    Height = 400,
-    Width = 200,
-};
+QiuPanel columns = form.Panel(QiuOrientation.Horizontal);
 
-treeView.BeginUpdate();
-treeView.Nodes.Add("Sprites").Expand();
+QiuPanel left = columns.Panel(QiuOrientation.Vertical);
+QiuTextBox searchbar = left.Text("", "", id: "search");
+searchbar.ShowLabel = false;
+searchbar.Placeholder = "Search sprites";
+QiuTreeView treeView = left.Tree("Sprites", height: 320, width: 220, id: "tree");
 
-UpdateTree(treeView, Data, "");
-treeView.EndUpdate();
+QiuPanel middle = columns.Panel(QiuOrientation.Vertical);
+middle.Button("->", _ => AddSelected(treeView.SelectedText));
+middle.Button("<-", _ =>
+{
+    if (listbox.SelectedItem is not null)
+        Selected_Sprites.RemoveAll(r => r == listbox.SelectedItem);
+    RefreshList();
+});
 
-// search bar
-var searchbar = new TextBox()
-{
-    Location = new System.Drawing.Point(4, 4),
-    Width = 200,
-};
-searchbar.TextChanged += (o, s) =>
-{
-    treeView.BeginUpdate();
-    UpdateTree(treeView, Data, searchbar.Text);
-    treeView.EndUpdate();
-};
+QiuPanel right = columns.Panel(QiuOrientation.Vertical);
+QiuTextBox searchbar2 = right.Text("", "", id: "search2");
+searchbar2.ShowLabel = false;
+searchbar2.Placeholder = "Search selection";
+QiuListBox listbox = right.List(height: 320, width: 220, id: "selected");
 
-// list box
-var listbox = new ListBox()
-{
-    Location = new System.Drawing.Point(300, 24 + 4 + 4),
-    Height = 400,
-    Width = 200,
-    HorizontalScrollbar = true
-};
-UpdateList(listbox, "");
+QiuCheckBox useGameFps = form.Check("Use In-Game FPS", false, id: "useGameFps");
+QiuSlider fps = form.Slider("FPS", 24, minimum: 1, maximum: 60, id: "fps");
+fps.EnabledWhen(() => !useGameFps.Value);
 
-// search bar 2
-var searchbar2 = new TextBox()
+void AddSelected(string name)
 {
-    Location = new System.Drawing.Point(300, 4),
-    Width = 200,
-};
-searchbar2.TextChanged += (o, s) =>
-{
-    listbox.BeginUpdate();
-    UpdateList(listbox, searchbar2.Text);
-    listbox.EndUpdate();
-};
-
-// double click left side
-treeView.NodeMouseDoubleClick += (s, e) =>
-{
-    if (!Selected_Sprites.Contains(e.Node.Text) && e.Node.Level == 1)
-        Selected_Sprites.Add(e.Node.Text);
-    UpdateList(listbox, searchbar2.Text);
-};
-listbox.DoubleClick += (s, e) =>
-{
-    Selected_Sprites.RemoveAll(r => r == listbox.SelectedItem);
-    UpdateList(listbox, searchbar2.Text);
-};
-
-// ok
-var OKBT = new Button()
-{
-    Location = new System.Drawing.Point(215, 180),
-    Text = "OK",
-    Height = 32
-};
-OKBT.Click += (o, s) => {
-    okbt_pressed = true;
-    MAINFORM.Close();
-};
-MAINFORM.Controls.Add(OKBT);
-
-// >
-var ADBT = new Button()
-{
-    Location = new System.Drawing.Point(215, 140),
-    Text = "->",
-    Height = 32
-};
-ADBT.Click += (o, s) =>
-{
-    if (!Selected_Sprites.Contains(treeView.SelectedNode.Text))
-        Selected_Sprites.Add(treeView.SelectedNode.Text);
-    UpdateList(listbox, searchbar2.Text);
-};
-MAINFORM.Controls.Add(ADBT);
-
-// <
-var RMBT = new Button()
-{
-    Location = new System.Drawing.Point(215, 220),
-    Text = "<-",
-    Height = 32
-};
-RMBT.Click += (o, s) =>
-{
-    Selected_Sprites.RemoveAll(r => r == listbox.SelectedItem);
-    UpdateList(listbox, searchbar2.Text);
-};
-MAINFORM.Controls.Add(RMBT);
-
-// add them
-MAINFORM.Controls.Add(treeView);
-MAINFORM.Controls.Add(searchbar);
-MAINFORM.Controls.Add(listbox);
-MAINFORM.Controls.Add(searchbar2);
-
-void UpdateList(ListBox list, string search)
-{
-    list.Items.Clear();
-    foreach (var i in Selected_Sprites)
-    {
-        if (i.Contains(search))
-            list.Items.Add(i);
-    }
-}
-void UpdateTree(TreeView tree, UndertaleData data, string search)
-{
-    foreach (TreeNode i in tree.Nodes)
-        i.Nodes.Clear();
-
-    // sprites
-    foreach (var i in data.Sprites)
-    {
-        if (i.Name.Content.Contains(search))
-            tree.Nodes[0].Nodes.Add(new TreeNode(i.Name.Content));
-    }
+    if (name is not null && !Selected_Sprites.Contains(name))
+        Selected_Sprites.Add(name);
+    RefreshList();
 }
 
-// FPS Stuff
-var fpsTrackBar = new TrackBar()
-{
-    Minimum = 1, // Minimum FPS
-    Maximum = 60, // Maximum FPS
-    TickFrequency = 1,
-    Value = custom_fps, // Set initial value to 24
-    Location = new Point(150, 500),
-    Width = 200,
-};
-fpsTrackBar.Scroll += FpsTrackBar_Scroll;
+void RefreshTree() =>
+    treeView.SetItems(Data.Sprites
+        .Where(sprite => sprite.Name.Content.Contains(searchbar.Value))
+        .Select(sprite => sprite.Name.Content));
 
-var fpsLabel = new Label()
-{
-    Text = $"FPS: {custom_fps}",
-    Location = new Point(230, 475),
-    Width = 100,
-};
+void RefreshList() =>
+    listbox.SetItems(Selected_Sprites.Where(name => name.Contains(searchbar2.Value)));
 
-void FpsTrackBar_Scroll(object o, EventArgs e)
+searchbar.Changed += _ => RefreshTree();
+searchbar2.Changed += _ => RefreshList();
+treeView.ItemActivated += _ => AddSelected(treeView.SelectedText);
+listbox.ItemActivated += _ =>
 {
-    custom_fps = fpsTrackBar.Value;
-    fpsLabel.Text = $"FPS: {custom_fps}";
-}
-MAINFORM.Controls.Add(fpsTrackBar);
-MAINFORM.Controls.Add(fpsLabel);
-
-// Create Checkbox
-var FPSBox = new CheckBox()
-{
-    Text = "Use In-Game FPS",
-    Location = new Point(200, 440),
-    AutoSize = true,
+    if (listbox.SelectedItem is not null)
+        Selected_Sprites.RemoveAll(r => r == listbox.SelectedItem);
+    RefreshList();
 };
 
-// CheckBox to use Custom FPS or In-Game FPS
-FPSBox.CheckedChanged += (o, e) =>
-{
-    custom_fpsENABLED = FPSBox.Checked;
-
-    // Enable/Disable other stuff
-    fpsTrackBar.Enabled = !custom_fpsENABLED;
-    fpsLabel.Enabled = !custom_fpsENABLED;
-};
-MAINFORM.Controls.Add(FPSBox);
-
-// Initialize
-MAINFORM.AcceptButton = OKBT;
-MAINFORM.ShowDialog();
+RefreshTree();
+RefreshList();
 
 #endregion
 
-// if OK Button was pressed, continue
-// else if X button was pressed, exit
-if (okbt_pressed)
-    await ExtractSprites(folder, Selected_Sprites);
-else
+if (ShowQiuForm(form) != QiuDialogResult.Submit)
     return;
+
+custom_fpsENABLED = !useGameFps.Value;
+custom_fps = fps.Value;
+
+await ExtractSprites(folder, Selected_Sprites);
 
 private async Task ExtractSprites(string folder, List<string> Selected_Sprites)
 {

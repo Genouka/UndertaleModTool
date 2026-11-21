@@ -1,4 +1,4 @@
-﻿/*
+/*
     Ultimate_GMS1_Decompiler_v4.csx
         Improved by burnedpopcorn180
 
@@ -39,19 +39,10 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Reflection;
-using System.Security;
-using System.Runtime.InteropServices;
-using System.Drawing;
-using System.Drawing.Imaging;
 using ImageMagick;
 // new ui
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
-using System.Windows.Shell;
-using System.Windows.Input;
 // Basic UTMT stuff
+using QiuForms;
 using UndertaleModLib.Models;
 using UndertaleModLib.Util;
 using Underanalyzer.Decompiler;
@@ -120,161 +111,11 @@ IDecompileSettings decompilerSettings = Data.ToolInfo.DecompilerSettings;
 
 #region Get Runner Data
 // thanks https://stackoverflow.com/questions/17830853/how-can-i-load-a-program-icon-in-c-sharp
-#region Extract Icon Functions
-internal static class ExtractIcon
-{
-    [UnmanagedFunctionPointer(CallingConvention.Winapi, SetLastError = true, CharSet = CharSet.Unicode)]
-    [SuppressUnmanagedCodeSecurity]
-    internal delegate bool ENUMRESNAMEPROC(IntPtr hModule, IntPtr lpszType, IntPtr lpszName, IntPtr lParam);
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
-
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern IntPtr FindResource(IntPtr hModule, IntPtr lpName, IntPtr lpType);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr LoadResource(IntPtr hModule, IntPtr hResInfo);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr LockResource(IntPtr hResData);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern uint SizeofResource(IntPtr hModule, IntPtr hResInfo);
-
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    [SuppressUnmanagedCodeSecurity]
-    public static extern bool EnumResourceNames(IntPtr hModule, IntPtr lpszType, ENUMRESNAMEPROC lpEnumFunc, IntPtr lParam);
-
-
-    private const uint LOAD_LIBRARY_AS_DATAFILE = 0x00000002;
-    private readonly static IntPtr RT_ICON = (IntPtr)3;
-    private readonly static IntPtr RT_GROUP_ICON = (IntPtr)14;
-
-    public static Icon ExtractIconFromExecutable(string path)
-    {
-        IntPtr hModule = LoadLibraryEx(path, IntPtr.Zero, LOAD_LIBRARY_AS_DATAFILE);
-        var tmpData = new List<byte[]>();
-
-        ENUMRESNAMEPROC callback = (h, t, name, l) =>
-        {
-            var dir = GetDataFromResource(hModule, RT_GROUP_ICON, name);
-
-            // Calculate the size of an entire .icon file.
-
-            int count = BitConverter.ToUInt16(dir, 4);  // GRPICONDIR.idCount
-            int len = 6 + 16 * count;                   // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
-            for (int i = 0; i < count; ++i)
-                len += BitConverter.ToInt32(dir, 6 + 14 * i + 8);   // GRPICONDIRENTRY.dwBytesInRes
-
-            using (var dst = new BinaryWriter(new MemoryStream(len)))
-            {
-                // Copy GRPICONDIR to ICONDIR.
-
-                dst.Write(dir, 0, 6);
-
-                int picOffset = 6 + 16 * count; // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
-
-                for (int i = 0; i < count; ++i)
-                {
-                    // Load the picture.
-
-                    ushort id = BitConverter.ToUInt16(dir, 6 + 14 * i + 12);    // GRPICONDIRENTRY.nID
-                    var pic = GetDataFromResource(hModule, RT_ICON, (IntPtr)id);
-
-                    // Copy GRPICONDIRENTRY to ICONDIRENTRY.
-
-                    dst.Seek(6 + 16 * i, 0);
-
-                    dst.Write(dir, 6 + 14 * i, 8);  // First 8bytes are identical.
-                    dst.Write(pic.Length);          // ICONDIRENTRY.dwBytesInRes
-                    dst.Write(picOffset);           // ICONDIRENTRY.dwImageOffset
-
-                    // Copy a picture.
-
-                    dst.Seek(picOffset, 0);
-                    dst.Write(pic, 0, pic.Length);
-
-                    picOffset += pic.Length;
-                }
-
-                tmpData.Add(((MemoryStream)dst.BaseStream).ToArray());
-            }
-            return true;
-        };
-        EnumResourceNames(hModule, RT_GROUP_ICON, callback, IntPtr.Zero);
-        byte[][] iconData = tmpData.ToArray();
-        using (var ms = new MemoryStream(iconData[0]))
-        {
-            return new Icon(ms);
-        }
-    }
-    private static byte[] GetDataFromResource(IntPtr hModule, IntPtr type, IntPtr name)
-    {
-        // Load the binary data from the specified resource.
-
-        IntPtr hResInfo = FindResource(hModule, name, type);
-
-        IntPtr hResData = LoadResource(hModule, hResInfo);
-
-        IntPtr pResData = LockResource(hResData);
-
-        uint size = SizeofResource(hModule, hResInfo);
-
-        byte[] buf = new byte[size];
-        Marshal.Copy(pResData, buf, 0, buf.Length);
-
-        return buf;
-    }
-}
-
-public IMagickImage? Convert_Icon(Bitmap _icon, uint _width, uint _height)
-{
-    try
-    {
-        // create new IMagick image
-        IMagickImage img = null;
-
-        // Convert bitmap to IMagickImage
-        using (var memoryStream = new MemoryStream())
-        {
-            // save Bitmap to MemoryStream
-            _icon.Save(memoryStream, ImageFormat.Png);
-
-            // reset memory stream position
-            memoryStream.Seek(0, SeekOrigin.Begin);
-
-            // create a MagickImage from MemoryStream
-            img = new MagickImage(memoryStream);
-        }
-
-        // stop interpolation
-        img.FilterType = FilterType.Point;
-
-        // set size
-        var size = new MagickGeometry(_width, _height);
-        // maintain the aspect ratio
-        size.IgnoreAspectRatio = false;
-        // resize image
-        img.Resize(size);
-
-        return img;
-    }
-    catch (Exception)
-    {
-        // if it fails, just return null
-        return null;
-    }
-}
-#endregion
-
 // Get Runner Data
 string Runner = GetFolder(FilePath) + GameName + ".exe";
 string rName = "", rVersion = "", 
         rCompany = "", rProduct = "", 
         rCopyright = "", rDescription = "";
-// Icons
-public IMagickImage? WinIcon = null, BigIcon = null;
-
 if (File.Exists(Runner))
 {
     var rInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(Runner);
@@ -286,10 +127,6 @@ if (File.Exists(Runner))
     rCopyright = rInfo.LegalCopyright;
     rDescription = rInfo.FileDescription;
 
-    // Icon
-    Bitmap ExeIcon = ExtractIcon.ExtractIconFromExecutable(Runner).ToBitmap();
-    WinIcon = Convert_Icon(ExeIcon, 48, 48); // 48x48
-    BigIcon = Convert_Icon(ExeIcon, 256, 256); // 256x256
 }
 #endregion
 
@@ -322,200 +159,47 @@ List<Images> SavedImages = [];
 
 public static class UISettings
 {
-    public static bool DUMP, // If user chose to go through with decompiling
-        // main resources user wants to dump
+    public static bool DUMP,
         OBJT, ROOM, SCPT, TMLN, SOND, SHDR, EXTN, PATH, FONT, SPRT, BGND;
 }
 
-#region Theme Class
-public static class Theme
-{
-    // If Dark Mode
-    public static bool IsDark = SettingsWindow.EnableDarkMode;
+QiuForm ui = new("Ultimate_GMS1_Decompiler_v4");
+ui.Message = "Welcome to Ultimate_GMS1_Decompiler_v4!\n\n" +
+             "Select the parts you want to be included in the project, or just press \"Start Dump\" to do a full Export";
+ui.Label("Select Resources to Dump:", heading: true);
 
-    // Individual Colors
-    public static SolidColorBrush LightGrey = new(System.Windows.Media.Color.FromRgb(245, 245, 245));
-    public static SolidColorBrush DarkGrey = new(System.Windows.Media.Color.FromRgb(45, 45, 48));
-    public static SolidColorBrush BG_Grey = new(System.Windows.Media.Color.FromRgb(23, 23, 23));
-    public static SolidColorBrush BG_White = new(System.Windows.Media.Color.FromRgb(230, 230, 230));
+QiuCheckBox _OBJT = ui.Check("Objects", true);
+QiuCheckBox _ROOM = ui.Check("Rooms", true);
+QiuCheckBox _SCPT = ui.Check("Scripts", true);
+QiuCheckBox _TMLN = ui.Check("Timelines", true);
+QiuCheckBox _SOND = ui.Check("Sounds", true);
+QiuCheckBox _SHDR = ui.Check("Shaders", true);
+QiuCheckBox _EXTN = ui.Check("Extensions", true);
+QiuCheckBox _PATH = ui.Check("Paths", true);
+QiuCheckBox _FONT = ui.Check("Fonts", true);
+QiuCheckBox _SPRT = ui.Check("Sprites", true);
+QiuCheckBox _BGND = ui.Check("Tilesets", true);
 
-    // Simple Colors
-    public static SolidColorBrush BasicWhite = System.Windows.Media.Brushes.White;
-    public static SolidColorBrush BasicBlack = System.Windows.Media.Brushes.Black;
-    public static SolidColorBrush Transparent = System.Windows.Media.Brushes.Transparent;
+ui.SubmitText = "Start Dump";
 
-    // Main Colors
-    public static SolidColorBrush WindowBackground = IsDark ? BG_Grey : BG_White;
-    public static SolidColorBrush WindowForeground = IsDark ? BasicWhite : BasicBlack;
-    public static SolidColorBrush ElementBackground = IsDark ? DarkGrey : LightGrey;
-    public static SolidColorBrush ButtonBrush = IsDark ? BG_Grey : LightGrey;
-}
-#endregion
-
-#region Main Window stuffs
-public class UIWindow : Window
-{
-    public UIWindow()
-    {
-        Title = "Ultimate_GMS1_Decompiler_v4";
-        // remove OS title bar
-        WindowStyle = WindowStyle.None;
-        AllowsTransparency = false;
-        ResizeMode = ResizeMode.NoResize;
-        SizeToContent = SizeToContent.WidthAndHeight;
-        WindowStartupLocation = WindowStartupLocation.CenterScreen;
-
-        Background = Theme.WindowBackground;
-        Foreground = Theme.WindowForeground;
-
-        StackPanel mainPanel = new() { Margin = new Thickness(8) };
-        ToolTip tooltip = new();
-
-        #region New Titlebar
-        DockPanel titleBar = new()
-        {
-            Height = 30,
-            Background = Theme.ElementBackground,
-        };
-
-        TextBlock titleText = new()
-        {
-            Text = Title,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(10, 0, 0, 0),
-            Foreground = Foreground,
-        };
-
-        Button closeButton = new()
-        {
-            Content = "X",
-            Width = 40,
-            Height = 30,
-            Background = Theme.Transparent,
-            Foreground = Foreground,
-            BorderBrush = Theme.Transparent,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Padding = new Thickness(0),
-            FontWeight = FontWeights.Bold,
-        };
-
-        closeButton.Click += (s, e) => this.Close();
-
-        // Enable window dragging via title bar
-        titleBar.MouseLeftButtonDown += (s, e) =>
-        {
-            if (e.ButtonState == MouseButtonState.Pressed)
-                DragMove();
-        };
-
-        titleBar.Children.Add(titleText);
-        DockPanel.SetDock(closeButton, Dock.Right);
-        titleBar.Children.Add(closeButton);
-        mainPanel.Children.Insert(0, titleBar);
-        #endregion
-
-        // Back to sanity kinda
-        mainPanel.Children.Add(new TextBlock
-        {
-            Text = "Welcome to Ultimate_GMS1_Decompiler_v4!\n\nSelect the parts you want to be included in the project, or just press \"Start Dump\" to do a full Export",
-            Margin = new Thickness(0, 20, 0, 8)
-        });
-
-        // Resources section
-        mainPanel.Children.Add(new TextBlock
-        {
-            Text = "Select Resources to Dump:",
-            FontWeight = FontWeights.Bold,
-            Margin = new Thickness(0, 8, 0, 4)
-        });
-
-        UniformGrid resourceGrid = new() { Columns = 6 };
-        CheckBox _OBJT = CreateCheckBox("Objects", true);
-        CheckBox _ROOM = CreateCheckBox("Rooms", true);
-        CheckBox _SCPT = CreateCheckBox("Scripts", true);
-        CheckBox _TMLN = CreateCheckBox("Timelines", true);
-        CheckBox _SOND = CreateCheckBox("Sounds", true);
-        CheckBox _SHDR = CreateCheckBox("Shaders", true);
-        CheckBox _EXTN = CreateCheckBox("Extensions", true);
-        CheckBox _PATH = CreateCheckBox("Paths", true);
-        CheckBox _FONT = CreateCheckBox("Fonts", true);
-        CheckBox _SPRT = CreateCheckBox("Sprites", true);
-        CheckBox _BGND = CreateCheckBox("Tilesets", true);
-
-        resourceGrid.Children.Add(_OBJT);
-        resourceGrid.Children.Add(_ROOM);
-        resourceGrid.Children.Add(_SCPT);
-        resourceGrid.Children.Add(_TMLN);
-        resourceGrid.Children.Add(_SOND);
-        resourceGrid.Children.Add(_SHDR);
-        resourceGrid.Children.Add(_EXTN);
-        resourceGrid.Children.Add(_PATH);
-        resourceGrid.Children.Add(_FONT);
-        resourceGrid.Children.Add(_SPRT);
-        resourceGrid.Children.Add(_BGND);
-
-        mainPanel.Children.Add(resourceGrid);
-
-        // OK Button
-        Button OKBT = new()
-        {
-            Content = "Start Dump",
-            Height = 48,
-            Margin = new Thickness(0, 10, 0, 0),
-
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-        OKBT.Click += (o, s) =>
-        {
-            UISettings.DUMP = true;
-
-            UISettings.OBJT = _OBJT.IsChecked == true;
-            UISettings.ROOM = _ROOM.IsChecked == true;
-            UISettings.SCPT = _SCPT.IsChecked == true;
-            UISettings.TMLN = _TMLN.IsChecked == true;
-            UISettings.SOND = _SOND.IsChecked == true;
-            UISettings.SHDR = _SHDR.IsChecked == true;
-            UISettings.EXTN = _EXTN.IsChecked == true;
-            UISettings.PATH = _PATH.IsChecked == true;
-            UISettings.FONT = _FONT.IsChecked == true;
-            UISettings.SPRT = _SPRT.IsChecked == true;
-            UISettings.BGND = _BGND.IsChecked == true;
-
-            Close();
-        };
-
-        mainPanel.Children.Add(OKBT);
-
-        //no scroll bar
-        Content = mainPanel;
-    }
-
-    private CheckBox CreateCheckBox(string content, bool isChecked = false, bool enabled = true)
-    {
-        return new CheckBox
-        {
-            Content = content,
-            IsChecked = isChecked,
-            IsEnabled = enabled,
-            Margin = new Thickness(4),
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground
-        };
-    }
-}
-#endregion
-
-// open main window
-new UIWindow().ShowDialog();
-
-// if exit
-if (!UISettings.DUMP)
+if (ShowQiuForm(ui) != QiuDialogResult.Submit)
 {
     GC.Collect();
     return;
 }
+
+UISettings.DUMP = true;
+UISettings.OBJT = _OBJT.Value;
+UISettings.ROOM = _ROOM.Value;
+UISettings.SCPT = _SCPT.Value;
+UISettings.TMLN = _TMLN.Value;
+UISettings.SOND = _SOND.Value;
+UISettings.SHDR = _SHDR.Value;
+UISettings.EXTN = _EXTN.Value;
+UISettings.PATH = _PATH.Value;
+UISettings.FONT = _FONT.Value;
+UISettings.SPRT = _SPRT.Value;
+UISettings.BGND = _BGND.Value;
 
 #endregion
 
@@ -1527,11 +1211,8 @@ async Task ExportConfig()
             new XElement("option_windows_company_info", rCompany),
             new XElement("option_windows_copyright_info", rCopyright),
             new XElement("option_windows_description_info", rDescription),
-            new XElement("option_windows_product_info", rProduct),
-            new XElement("option_windows_game_icon", "runner_icon.ico")
+            new XElement("option_windows_product_info", rProduct)
         );
-        if (WinIcon != null) WinIcon.Write($"{ConfigDir}/runner_icon.ico");
-        if (BigIcon != null) BigIcon.Write($"{ConfigDir}/Runner_Icon_256.ico");
     }
 
     // splash screen handling

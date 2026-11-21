@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Text.Json;
 using UndertaleModLib.Util;
 using System.Collections.Generic;
 
@@ -206,7 +206,7 @@ await Task.Run(() => Parallel.ForEach(Data.GameObjects, (UndertaleGameObject gam
             }
         }
     }
-    string json = JsonConvert.SerializeObject(objectData, Formatting.Indented);
+    string json = JsonSerializer.Serialize(objectData, new JsonSerializerOptions { WriteIndented = true });
     File.WriteAllText(objectDir + gameObject.Name.Content + ".yy", json);
     IncrementProgressParallel();
 }));

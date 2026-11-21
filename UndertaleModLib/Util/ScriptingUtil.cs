@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using UndertaleModLib.Scripting;
+using QiuForms;
 
 namespace UndertaleModLib.Util;
 
@@ -28,11 +29,12 @@ public static class ScriptingUtil
             .AddImports("UndertaleModLib", "UndertaleModLib.Models", "UndertaleModLib.Decompiler",
                         "UndertaleModLib.Scripting", "UndertaleModLib.Compiler",
                         "System", "System.IO", "System.Collections.Generic",
-                        "System.Text.RegularExpressions")
+                        "System.Text.RegularExpressions", "QiuForms")
             .AddReferences(typeof(UndertaleObject).GetTypeInfo().Assembly,
                             typeof(System.Text.RegularExpressions.Regex).GetTypeInfo().Assembly,
                             typeof(ImageMagick.MagickImage).GetTypeInfo().Assembly,
-                            typeof(Underanalyzer.Decompiler.DecompileContext).Assembly)
+                            typeof(Underanalyzer.Decompiler.DecompileContext).Assembly,
+                            typeof(QiuForm).GetTypeInfo().Assembly)
             .WithEmitDebugInformation(true); // When script throws an exception, adds an exception location (line number)
     }
 

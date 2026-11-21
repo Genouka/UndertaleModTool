@@ -18,6 +18,7 @@ using UndertaleModLib.Models;
 using UndertaleModLib.Project;
 using UndertaleModLib.Scripting;
 using UndertaleModLib.Util;
+using QiuForms;
 
 namespace UndertaleModCli;
 
@@ -307,6 +308,12 @@ public partial class Program : IScriptInterface
     {
         // CLI has no dialogs to initialize
     }
+
+    /// <inheritdoc/>
+    public bool SupportsQiuForms => true;
+
+    /// <inheritdoc/>
+    public QiuDialogResult ShowQiuForm(QiuForm form) => ConsoleQiuFormsHost.Show(form, ReadLineWithFallback);
 
     /// <inheritdoc/>
     public void SetProgressBar()

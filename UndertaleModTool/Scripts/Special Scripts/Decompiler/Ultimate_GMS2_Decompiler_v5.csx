@@ -1,4 +1,4 @@
-﻿#region LICENSE
+#region LICENSE
 /*
                                  Apache License
                            Version 2.0, January 2004
@@ -251,20 +251,15 @@
 using ImageMagick;
 using NAudio.Vorbis;
 using NAudio.Wave;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Dynamic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Security;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -272,18 +267,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 // new ui
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shell;
 using Underanalyzer;
 using Underanalyzer.Decompiler;
 using Underanalyzer.Decompiler.AST;
 using Underanalyzer.Decompiler.ControlFlow;
 using Underanalyzer.Decompiler.GameSpecific;
+using QiuForms;
 using UndertaleModLib.Models;
 using UndertaleModLib.Util;
 using static UndertaleModLib.Models.UndertaleRoom;
@@ -387,199 +376,7 @@ public enum eOrigin
 #endregion
 #region Internal Data Classes
 // thanks https://stackoverflow.com/questions/17830853/how-can-i-load-a-program-icon-in-c-sharp
-#region Extract Icon Functions
-internal static class ExtractIcon
-{
-    [UnmanagedFunctionPointer(CallingConvention.Winapi, SetLastError = true, CharSet = CharSet.Unicode)]
-    [SuppressUnmanagedCodeSecurity]
-    internal delegate bool ENUMRESNAMEPROC(IntPtr hModule, IntPtr lpszType, IntPtr lpszName, IntPtr lParam);
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
 
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern IntPtr FindResource(IntPtr hModule, IntPtr lpName, IntPtr lpType);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr LoadResource(IntPtr hModule, IntPtr hResInfo);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr LockResource(IntPtr hResData);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern uint SizeofResource(IntPtr hModule, IntPtr hResInfo);
-
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    [SuppressUnmanagedCodeSecurity]
-    public static extern bool EnumResourceNames(IntPtr hModule, IntPtr lpszType, ENUMRESNAMEPROC lpEnumFunc, IntPtr lParam);
-
-
-    private const uint LOAD_LIBRARY_AS_DATAFILE = 0x00000002;
-    private readonly static IntPtr RT_ICON = (IntPtr)3;
-    private readonly static IntPtr RT_GROUP_ICON = (IntPtr)14;
-
-    public static IMagickImage ExtractIconFromExecutable(string path)
-    {
-        IntPtr hModule = LoadLibraryEx(path, IntPtr.Zero, LOAD_LIBRARY_AS_DATAFILE);
-        var tmpData = new List<byte[]>();
-
-        ENUMRESNAMEPROC callback = (h, t, name, l) =>
-        {
-            var dir = GetDataFromResource(hModule, RT_GROUP_ICON, name);
-
-            // Calculate the size of an entire .icon file.
-
-            int count = BitConverter.ToUInt16(dir, 4);  // GRPICONDIR.idCount
-            int len = 6 + 16 * count;                   // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
-            for (int i = 0; i < count; ++i)
-                len += BitConverter.ToInt32(dir, 6 + 14 * i + 8);   // GRPICONDIRENTRY.dwBytesInRes
-
-            using (var dst = new BinaryWriter(new MemoryStream(len)))
-            {
-                // Copy GRPICONDIR to ICONDIR.
-
-                dst.Write(dir, 0, 6);
-
-                int picOffset = 6 + 16 * count; // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
-
-                for (int i = 0; i < count; ++i)
-                {
-                    // Load the picture.
-
-                    ushort id = BitConverter.ToUInt16(dir, 6 + 14 * i + 12);    // GRPICONDIRENTRY.nID
-                    var pic = GetDataFromResource(hModule, RT_ICON, (IntPtr)id);
-
-                    // Copy GRPICONDIRENTRY to ICONDIRENTRY.
-
-                    dst.Seek(6 + 16 * i, 0);
-
-                    dst.Write(dir, 6 + 14 * i, 8);  // First 8bytes are identical.
-                    dst.Write(pic.Length);          // ICONDIRENTRY.dwBytesInRes
-                    dst.Write(picOffset);           // ICONDIRENTRY.dwImageOffset
-
-                    // Copy a picture.
-
-                    dst.Seek(picOffset, 0);
-                    dst.Write(pic, 0, pic.Length);
-
-                    picOffset += pic.Length;
-                }
-
-                tmpData.Add(((MemoryStream)dst.BaseStream).ToArray());
-            }
-            return true;
-        };
-        EnumResourceNames(hModule, RT_GROUP_ICON, callback, IntPtr.Zero);
-        byte[][] iconData = tmpData.ToArray();
-        using (var ms = new MemoryStream(iconData[0]))
-        {
-            var ico = new Icon(ms);
-            return ConvertIcon(ico.ToBitmap());
-        }
-    }
-    private static IMagickImage ConvertIcon(Bitmap _icon)
-    {
-        // Convert bitmap to IMagickImage
-        using (MemoryStream memoryStream = new())
-        {
-            // save Bitmap to MemoryStream
-            _icon.Save(memoryStream, ImageFormat.Png);
-
-            // reset memory stream position
-            memoryStream.Seek(0, SeekOrigin.Begin);
-
-            // create a MagickImage from MemoryStream
-            return new MagickImage(memoryStream);
-        }
-    }
-    private static byte[] GetDataFromResource(IntPtr hModule, IntPtr type, IntPtr name)
-    {
-        // Load the binary data from the specified resource.
-
-        IntPtr hResInfo = FindResource(hModule, name, type);
-
-        IntPtr hResData = LoadResource(hModule, hResInfo);
-
-        IntPtr pResData = LockResource(hResData);
-
-        uint size = SizeofResource(hModule, hResInfo);
-
-        byte[] buf = new byte[size];
-        Marshal.Copy(pResData, buf, 0, buf.Length);
-
-        return buf;
-    }
-}
-#endregion
-
-public class RunnerData
-{
-    public RunnerData(string filePath)
-    {
-        if (filePath == String.Empty || filePath == null)
-            return;
-
-        name = Path.GetFileNameWithoutExtension(filePath);
-        path = filePath;
-        iconData = ExtractIcon.ExtractIconFromExecutable(filePath);
-        var runnerInfo = FileVersionInfo.GetVersionInfo(filePath);
-
-        if (runnerInfo is null)
-            return;
-
-        version = runnerInfo.FileVersion;
-        companyName = runnerInfo.CompanyName;
-        productName = runnerInfo.ProductName;
-        copyright = runnerInfo.LegalCopyright;
-        description = runnerInfo.FileDescription;
-    }
-    public string name { get; set; } = "decompiledGame";
-    public string path { get; set; } = "";
-    public IMagickImage? iconData { get; set; } = null;
-    public string version { get; set; } = "";
-    public string companyName { get; set; } = "";
-    public string productName { get; set; } = "";
-    public string copyright { get; set; } = "";
-    public string description { get; set; } = "";
-
-    public void DumpIcon(string filepath, uint _width = 256, uint _height = 256)
-    {
-        // stop interpolation
-        iconData.FilterType = FilterType.Point;
-        // set size
-        MagickGeometry size = new(_width, _height);
-        // maintain the aspect ratio
-        size.IgnoreAspectRatio = false;
-        // resize image
-        iconData.Resize(size);
-
-        // write to file
-        iconData.Write(filepath);
-    }
-}
-
-public class ImageAssetData
-{
-    public ImageAssetData(dynamic image, string filePath, string imageName, string spriteName)
-    {
-        this.image = image;
-        this.filePath = filePath;
-        this.imageName = imageName;
-        this.spriteName = spriteName;
-    }
-    // either UndertaleTexturePageItem or MagickImage
-    public dynamic image { get; set; }
-    public string filePath { get; set; }
-    public string imageName { get; set; }
-    public string spriteName { get; set; }
-    public void Dump(TextureWorker tw)
-    {
-        if (image is null) return;
-
-        tw.ExportAsPNG(image, filePath + imageName, null, true);
-    }
-}
-
-#endregion
 #region Common Classes
 
 public class GMResource
@@ -1861,1244 +1658,513 @@ public int r_num = 0;
 #region UI Settings Variables
 public static class UISettings
 {
-    public static bool DUMP, // If user continued with decompiling
-        // Main Asset Types to decompile
-        OBJT, ROOM, EXTN, SCPT, TMLN, 
-        SOND, SHDR, PATH, ACRV, SEQN, FONT, 
-        SPRT, BGND,
-        // If Fix Tileset
+    public static bool DUMP,
+        OBJT, ROOM, EXTN, SCPT, TMLN, SOND, SHDR, PATH, ACRV, SEQN, FONT, SPRT, BGND,
         FIXTILE,
-        // Other Options
-        LOG, YYMPS, ENUM, ADDFILES, FIXAUDIO, GENROOM, 
-        // Clean GML Options
+        LOG, YYMPS, ENUM, ADDFILES, FIXAUDIO, GENROOM,
         DSCLEAN, STRCLEAN;
 
-    // Asset Picker List and if enabled
     public static List<string> CSTM = new List<string>();
     public static bool CSTM_Enable = false;
-
-    // should be obvious
     public static int CPU_Usage = 70;
 }
 #endregion
-#region Theme Class
-public static class Theme
-{
-    // If Dark Mode
-    public static bool IsDark = SettingsWindow.EnableDarkMode;
 
-    // Individual Colors
-    public static SolidColorBrush LightGrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 245, 245)); 
-    public static SolidColorBrush DarkGrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 48)); 
-    public static SolidColorBrush BG_Grey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(23, 23, 23)); 
-    public static SolidColorBrush BG_White = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
-
-    // Simple Colors
-    public static SolidColorBrush BasicWhite = System.Windows.Media.Brushes.White;
-    public static SolidColorBrush BasicBlack = System.Windows.Media.Brushes.Black;
-    public static SolidColorBrush Transparent = System.Windows.Media.Brushes.Transparent;
-
-    // Main Colors
-    public static SolidColorBrush WindowBackground = IsDark ? BG_Grey : BG_White;
-    public static SolidColorBrush WindowForeground = IsDark ? BasicWhite : BasicBlack;
-    public static SolidColorBrush ElementBackground = IsDark ? DarkGrey : LightGrey;
-    public static SolidColorBrush ButtonBrush = IsDark ? BG_Grey : LightGrey;
-
-    // Get Grid Tile Colors from Settings
-    public static SolidColorBrush GridTileLight = (SolidColorBrush)Application.Current.Resources["TransparencyGridColor1"];
-    public static SolidColorBrush GridTileDark = (SolidColorBrush)Application.Current.Resources["TransparencyGridColor2"];
-}
-#endregion
-
-#region Main UI Window
-public class UIWindow : Window
-{
-    // Get data.win in this scope
-    private readonly UndertaleData Data = ((MainWindow)Application.Current.MainWindow).Data;
-
-    private AssetPickerWindow PickerWindow;
-    private UnscrambleWindow TilesetWindow;
-
-    public UIWindow()
-	{
-		Title = "Ultimate_GMS2_Decompiler_v5";
-		// remove OS title bar
-		WindowStyle = WindowStyle.None;
-		AllowsTransparency = false;
-		ResizeMode = ResizeMode.NoResize;
-		SizeToContent = SizeToContent.WidthAndHeight;
-		WindowStartupLocation = WindowStartupLocation.CenterScreen;
-		
-		// Theme
-		Background = Theme.WindowBackground;
-		Foreground = Theme.WindowForeground;
-
-        StackPanel mainPanel = new() { Margin = new Thickness(8) };
-
-        #region Title Bar
-        DockPanel titleBar = new() 
-        { 
-            Height = 30,
-            Background = Theme.ElementBackground
-        };
-
-        TextBlock titleText = new()
-        {
-			Text = Title,
-			VerticalAlignment = VerticalAlignment.Center,
-			Margin = new Thickness(10, 0, 0, 0),
-            Foreground = Theme.WindowForeground
-        };
-
-        Button closeButton = new()
-        {
-			Content = "X",
-			Width = 40,
-			Height = 30,
-            Background = Theme.Transparent,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.Transparent,
-			HorizontalAlignment = HorizontalAlignment.Right,
-			Padding = new Thickness(0),
-			FontWeight = FontWeights.Bold
-		};
-
-		closeButton.Click += (s, e) => this.Close();
-
-        // Enable window dragging via title bar
-        titleBar.MouseLeftButtonDown += (s, e) =>
-		{
-			if (e.ButtonState == MouseButtonState.Pressed)
-				DragMove();
-		};
-
-		titleBar.Children.Add(titleText);
-		DockPanel.SetDock(closeButton, Dock.Right);
-		titleBar.Children.Add(closeButton);
-		mainPanel.Children.Insert(0, titleBar);
-        #endregion
-
-        #region Main Resource Checkboxes
-
-        mainPanel.Children.Add(new TextBlock
-		{
-			Text = "Original Script by setupwitch\n\tImproved by burnedpopcorn180",
-			Margin = new Thickness(0, 20, 0, 8)
-		});
-
-		// Resources section
-		mainPanel.Children.Add(new TextBlock
-		{
-			Text = "Select Resources to Dump:",
-			FontWeight = FontWeights.Bold,
-			Margin = new Thickness(0, 8, 0, 4)
-		});
-
-        UniformGrid resourceGrid = new() { Columns = 6 };
-        CheckBox _PRJT = CreateCheckBox("Project File", true, false);
-        CheckBox _OBJT = CreateCheckBox("Objects", true);
-        CheckBox _ROOM = CreateCheckBox("Rooms", true);
-        CheckBox _EXTN = CreateCheckBox("Extensions", true);
-        CheckBox _SCPT = CreateCheckBox("Scripts", true);
-        CheckBox _TMLN = CreateCheckBox("Timelines", true);
-        CheckBox _SOND = CreateCheckBox("Sounds", true);
-        CheckBox _SHDR = CreateCheckBox("Shaders", true);
-        CheckBox _PATH = CreateCheckBox("Paths", true);
-
-        CheckBox _ACRV = CreateCheckBox("Anim. Curves", true);
-		if (Data.AnimationCurves == null)
-		{
-			_ACRV.IsEnabled = false;
-			_ACRV.IsChecked = false;
-			_ACRV.Content = "ACRV (2.3+)";
-		}
-
-        CheckBox _SEQN = CreateCheckBox("Sequences", true);
-		if (Data.Sequences == null)
-		{
-			_SEQN.IsEnabled = false;
-			_SEQN.IsChecked = false;
-			_SEQN.Content = "SEQN (2.3+)";
-		}
-
-        CheckBox _FONT = CreateCheckBox("Fonts", true);
-        CheckBox _SPRT = CreateCheckBox("Sprites", true);
-        CheckBox _BGND = CreateCheckBox("Tilesets", true);
-
-		resourceGrid.Children.Add(_PRJT);
-		resourceGrid.Children.Add(_OBJT);
-		resourceGrid.Children.Add(_ROOM);
-		resourceGrid.Children.Add(_EXTN);
-		resourceGrid.Children.Add(_SCPT);
-		resourceGrid.Children.Add(_TMLN);
-		resourceGrid.Children.Add(_SOND);
-		resourceGrid.Children.Add(_SHDR);
-		resourceGrid.Children.Add(_PATH);
-		resourceGrid.Children.Add(_ACRV);
-		resourceGrid.Children.Add(_SEQN);
-		resourceGrid.Children.Add(_FONT);
-		resourceGrid.Children.Add(_SPRT);
-		resourceGrid.Children.Add(_BGND);
-
-		mainPanel.Children.Add(resourceGrid);
-        #endregion
-
-        #region AssetPicker Shit
-        Grid centerContainer = new()
-		{
-			HorizontalAlignment = HorizontalAlignment.Center,
-			VerticalAlignment = VerticalAlignment.Center,
-			Margin = new Thickness(0, 10, 0, 10)
-		};
-		centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-		centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        // CheckBox + Label
-        StackPanel leftStack = new()
-		{
-			Orientation = Orientation.Vertical,
-			HorizontalAlignment = HorizontalAlignment.Center,
-			VerticalAlignment = VerticalAlignment.Center,
-			Margin = new Thickness(0, 0, 16, 0) // space between left and right
-		};
-
-        CheckBox _CSTM = new()
-        {
-			Content = "Pick Assets",
-			IsChecked = false,
-			HorizontalAlignment = HorizontalAlignment.Center,
-			Margin = new Thickness(0, 0, 0, 4),
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground
-        };
-
-        TextBlock CSTMLabel = new()
-        {
-			Text = "",
-			HorizontalAlignment = HorizontalAlignment.Center,
-            Foreground = Theme.WindowForeground
-        };
-
-        leftStack.Children.Add(_CSTM);
-		leftStack.Children.Add(CSTMLabel);
-		Grid.SetColumn(leftStack, 0);
-		centerContainer.Children.Add(leftStack);
-
-        // Right side Button
-        Button pickAssetsButton = new()
-        {
-			Content = "Pick Individual Assets...",
-			Width = 150,
-			Height = 30,
-			Margin = new Thickness(0, 0, 0, 4),
-			HorizontalAlignment = HorizontalAlignment.Center,
-			VerticalAlignment = VerticalAlignment.Center,
-			IsEnabled = false,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-
-		pickAssetsButton.Click += (s, e) =>
-		{
-            PickerWindow = new AssetPickerWindow();
-            PickerWindow.Owner = this;
-            PickerWindow.ShowDialog();
-
-            // Reload Number of Assets Selected
-			CSTMLabel.Text = $"Assets Selected: {UISettings.CSTM.Count}";
-		};
-
-		Grid.SetColumn(pickAssetsButton, 1);
-		centerContainer.Children.Add(pickAssetsButton);
-
-        // bulk
-        var resourceCheckboxes = new List<CheckBox> { _OBJT, _ROOM, _EXTN, _SCPT, _TMLN, _SOND, _SHDR, _PATH, _ACRV, _SEQN, _FONT, _SPRT, _BGND };
-        // For Pick Assets CHECKBOX
-        _CSTM.Checked += (s, e) =>
-        {
-            // disable all resource checkboxes
-            resourceCheckboxes.ForEach(cb => { cb.IsChecked = false; cb.IsEnabled = false; });
-
-            // Enable Pick Assets button
-            pickAssetsButton.IsEnabled = true;
-
-            // Load Number of Assets Selected
-            CSTMLabel.Text = $"Assets Selected: {UISettings.CSTM.Count}";
-        };
-
-        _CSTM.Unchecked += (s, e) =>
-        {
-            // Re-enable all resource checkboxes
-            resourceCheckboxes.ForEach(cb => cb.IsEnabled = true);
-
-            // Disable the Pick Assets button
-            pickAssetsButton.IsEnabled = false;
-
-            // Check these if they're null first
-            _SEQN.IsEnabled = Data?.Sequences != null;
-            _SEQN.IsChecked = Data?.Sequences != null;
-            _ACRV.IsEnabled = Data?.AnimationCurves != null;
-            _ACRV.IsChecked = Data?.AnimationCurves != null;
-
-            // Check all the enabled checkboxes
-            resourceCheckboxes.Where(cb => cb.IsEnabled).ToList().ForEach(cb => cb.IsChecked = true);
-
-            // WIPE
-            CSTMLabel.Text = "";
-            UISettings.CSTM.Clear();
-        };
-        #endregion
-        #region Fix Tilesets
-        StackPanel rightStack = new()
-        {
-            Orientation = Orientation.Vertical,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(16, 0, 16, 0) // space between left and right
-        };
-        CheckBox _FIXTS = new()
-        {
-            Content = "Fix Tilesets",
-            IsChecked = false,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 4),
-            ToolTip = "Allows you to manually fix all Tileset Images\nThis is completely optional and a bit time-consuming, but is highly recommended to do so",
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground
-        };
-
-        // Right side Button
-        Button FixTSButton = new()
-        {
-            Content = "Check All Tilesets...",
-            Width = 150,
-            Height = 30,
-            Margin = new Thickness(0),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = "Opens a Window that allows you to manually fix all Tileset Images",
-            IsEnabled = false,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-
-        FixTSButton.Click += (s, e) =>
-        {
-            TilesetWindow = new UnscrambleWindow();
-            TilesetWindow.Owner = this;
-            TilesetWindow.ShowDialog();
-        };
-
-        // For Fix Tileset CHECKBOX
-        _FIXTS.Checked += (s, e) =>
-        {
-            // Enable Fix Tileset button
-            FixTSButton.IsEnabled = true;
-        };
-
-        _FIXTS.Unchecked += (s, e) =>
-        {
-            // Disable Fix Tileset button
-            FixTSButton.IsEnabled = false;
-        };
-
-        rightStack.Children.Add(_FIXTS);
-        Grid.SetColumn(rightStack, 2);
-        centerContainer.Children.Add(rightStack);
-
-        Grid.SetColumn(FixTSButton, 3);
-        centerContainer.Children.Add(FixTSButton);
-        #endregion
-
-        // Add Asset Picker and Fix Tileset elements
-        mainPanel.Children.Add(centerContainer);
-
-        #region Decompiler Settings
-        mainPanel.Children.Add(new TextBlock
-		{
-			Text = "Decompiler Settings",
-			FontWeight = FontWeights.Bold,
-			Margin = new Thickness(0, 12, 0, 4)
-		});
-
-        UniformGrid settingsGrid = new() { Columns = 4 };
-
-        CheckBox _LOG = CreateCheckBox("Log Assets");
-		_LOG.ToolTip = "Logs every Asset that gets decompiled" +
-            "\nMostly for Debugging, will clog up the logs if enabled.";
-
-        CheckBox _YYMPS = CreateCheckBox("Export as YYMPS");
-		_YYMPS.ToolTip = "Exports decompiled resources as a GameMaker Importable Package." +
-            "\nUseful for importing assets from the loaded data.win into your own GameMaker project";
-
-        CheckBox _ENUM = CreateCheckBox("Bitwise Enums");
-		_ENUM.ToolTip = "Turns Unknown Enums into Bitwise Operations.\n\nExample:\nUnknownEnum.Value_1 -> (1 << 0)";
-
-        CheckBox _DSCLEAN = CreateCheckBox("Clean DS functions", true);
-        _DSCLEAN.ToolTip = "Converts all DS functions to their accessor syntax." +
-            "\n\nExample:" +
-            "\nds_map_set(map, key, value); -> map[? key] = value;";
-
-        CheckBox _ADDFILES = CreateCheckBox("Add Datafiles", true);
-		_ADDFILES.ToolTip = "Automatically add included datafiles" +
-            "\n(Note that it will copy any external file in the same directory as the data.win)";
-
-        CheckBox _FIXA = CreateCheckBox("Fix Audio");
-		_FIXA.ToolTip = "Labels audio files with their technically correct file extension." +
-            "\nSo if a .wav file is incorrectly labelled as an .mp3 in the data.win, this setting will label it back to .wav.";
-
-        CheckBox _GENROOM = CreateCheckBox("Generate Room Name");
-		_GENROOM.ToolTip = "Simulates GameMaker asset naming behavior.";
-
-        CheckBox _STRCLEAN = CreateCheckBox("Clean String Function", Data.IsVersionAtLeast(2022, 9));
-        _STRCLEAN.ToolTip = "Convert all string() functions to literal strings." +
-
-            "\n\nNOTE: GMS2 versions older than 2022.9 do not support this" +
-            "\nUsing this WILL make force you to update to 2022.9 or newer" +
-
-            "\n\nExample:" +
-            "\nstring(\"Value: {0}\", variable); -> $\"Value: {variable}\";";
-
-        settingsGrid.Children.Add(_LOG);
-		settingsGrid.Children.Add(_YYMPS);
-		settingsGrid.Children.Add(_ENUM);
-        settingsGrid.Children.Add(_DSCLEAN);
-        settingsGrid.Children.Add(_ADDFILES);
-		settingsGrid.Children.Add(_FIXA);
-		settingsGrid.Children.Add(_GENROOM);
-        settingsGrid.Children.Add(_STRCLEAN);
-
-        mainPanel.Children.Add(settingsGrid);
-        #endregion
-        #region CPU Controls
-        Label cpuLabel = new()
-		{
-			Content = $"CPU Usage: {UISettings.CPU_Usage}%",
-			HorizontalAlignment = HorizontalAlignment.Center,
-			Margin = new Thickness(0, 10, 0, 0)
-		};
-
-        Slider cpuSlider = new()
-        {
-			Minimum = 1,
-			Maximum = 100,
-			Value = UISettings.CPU_Usage,
-			Width = 200,
-			Margin = new Thickness(0, 0, 0, 0),
-			HorizontalAlignment = HorizontalAlignment.Center,
-            Foreground = Theme.WindowForeground
-        };
-
-		cpuSlider.ValueChanged += (s, e) =>
-		{
-            UISettings.CPU_Usage = (int)cpuSlider.Value;
-			cpuLabel.Content = $"CPU Usage: {UISettings.CPU_Usage}%";
-		};
-
-        StackPanel cpuPanel = new()
-		{
-			Orientation = Orientation.Vertical,
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-
-		cpuPanel.Children.Add(cpuLabel);
-		cpuPanel.Children.Add(cpuSlider);
-		mainPanel.Children.Add(cpuPanel);
-        #endregion
-
-        #region OK Button
-        Button OKBT = new()
-        {
-			Content = "Start Dump",
-			Height = 48,
-			Margin = new Thickness(0, 10, 0, 0),
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-        // Save Options
-		OKBT.Click += (o, s) =>
-		{
-            UISettings.DUMP = true;
-
-            UISettings.OBJT = _OBJT.IsChecked == true;
-            UISettings.ROOM = _ROOM.IsChecked == true;
-            UISettings.EXTN = _EXTN.IsChecked == true;
-            UISettings.SCPT = _SCPT.IsChecked == true;
-            UISettings.TMLN = _TMLN.IsChecked == true;
-            UISettings.SOND = _SOND.IsChecked == true;
-            UISettings.SHDR = _SHDR.IsChecked == true;
-            UISettings.PATH = _PATH.IsChecked == true;
-            UISettings.ACRV = _ACRV.IsChecked == true;
-            UISettings.SEQN = _SEQN.IsChecked == true;
-            UISettings.FONT = _FONT.IsChecked == true;
-            UISettings.SPRT = _SPRT.IsChecked == true;
-            UISettings.BGND = _BGND.IsChecked == true;
-
-            UISettings.LOG = _LOG.IsChecked == true;
-            UISettings.YYMPS = _YYMPS.IsChecked == true;
-            UISettings.ENUM = _ENUM.IsChecked == true;
-            UISettings.DSCLEAN = _DSCLEAN.IsChecked == true;
-            UISettings.ADDFILES = _ADDFILES.IsChecked == true;
-            UISettings.FIXAUDIO = _FIXA.IsChecked == true;
-            UISettings.GENROOM = _GENROOM.IsChecked == true;
-            UISettings.STRCLEAN = _STRCLEAN.IsChecked == true;
-
-            UISettings.CSTM_Enable = _CSTM.IsChecked == true;
-
-            UISettings.FIXTILE = _FIXTS.IsChecked == true;
-
-            Close();
-		};
-
-        mainPanel.Children.Add(OKBT);
-        #endregion
-
-        //no scroll bar
-        Content = mainPanel;
-	}
-
-	private CheckBox CreateCheckBox(string content, bool isChecked = false, bool enabled = true)
-	{
-		return new CheckBox
-        {
-			Content = content,
-			IsChecked = isChecked,
-			IsEnabled = enabled,
-			Margin = new Thickness(4),
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground
-        };
-	}
-}
-#endregion
-#region Asset Picker Window
-public class AssetPickerWindow : Window
-{
-    // Get data.win in this scope
-    private readonly UndertaleData Data = ((MainWindow)Application.Current.MainWindow).Data;
-
-    private TreeView treeView;
-    private ListBox listBox;
-    private TextBox searchTreeBox, searchListBox;
-
-    public AssetPickerWindow()
-    {
-        Title = "Asset Picker";
-        WindowStyle = WindowStyle.None;
-        ResizeMode = ResizeMode.NoResize;
-        SizeToContent = SizeToContent.WidthAndHeight;
-        WindowStartupLocation = WindowStartupLocation.CenterScreen;
-
-		// Themes
-        Background = Theme.WindowBackground;
-        Foreground = Theme.WindowForeground;
-
-        #region Title Bar
-        DockPanel titleBar = new()
-        {
-            Height = 30,
-			LastChildFill = true,
-            Background = Theme.ElementBackground
-        };
-
-        TextBlock titleText = new()
-        {
-            Text = Title,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(10, 0, 0, 0),
-            Foreground = Theme.WindowForeground
-        };
-
-        Button closeButton = new()
-        {
-            Content = "X",
-            Width = 40,
-            Height = 30,
-            Background = Theme.Transparent,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.Transparent,
-            FontWeight = FontWeights.Bold,
-			HorizontalAlignment = HorizontalAlignment.Right
-        };
-        closeButton.Click += (s, e) => Close();
-        titleBar.MouseLeftButtonDown += (s, e) => { if (e.ButtonState == MouseButtonState.Pressed) DragMove(); };
-
-        titleBar.Children.Add(titleText);
-        DockPanel.SetDock(closeButton, Dock.Right);
-        titleBar.Children.Add(closeButton);
-
-        StackPanel layout = new();
-        layout.Children.Add(titleBar);
-        #endregion
-
-        Grid grid = new() { Margin = new Thickness(10) };
-
-        for (int i = 0; i < 3; i++)
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        for (int i = 0; i < 3; i++)
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-        #region Left (All Assets) TreeView + SearchBox
-        // Search box for tree
-        searchTreeBox = new TextBox { Width = 200, Margin = new Thickness(0, 0, 8, 4) };
-        searchTreeBox.TextChanged += (s, e) => UpdateTree(searchTreeBox.Text);
-        Grid.SetRow(searchTreeBox, 0);
-        Grid.SetColumn(searchTreeBox, 0);
-        grid.Children.Add(searchTreeBox);
-
-        // TreeView
-        treeView = new TreeView { Height = 400, Width = 200 };
-        treeView.MouseDoubleClick += (s, e) =>
-        {
-            if (treeView.SelectedItem is TreeViewItem item && item.Parent is TreeViewItem pitem && pitem.Parent is TreeViewItem)
-            {
-                if (!UISettings.CSTM.Contains(item.Header.ToString()))
-                    UISettings.CSTM.Add(item.Header.ToString());
-                UpdateList(searchListBox.Text);
-            }
-        };
-        Grid.SetRow(treeView, 1);
-        Grid.SetColumn(treeView, 0);
-        grid.Children.Add(treeView);
-        #endregion
-        #region Arrow Buttons
-        StackPanel buttonPanel = new() { Orientation = Orientation.Vertical, Margin = new Thickness(8, 0, 8, 0) };
-
-        #region -> Button
-        Button addButton = new()
-        { 
-			Content = "->", 
-			Width = 40, 
-			Height = 32, 
-			Margin = new Thickness(0, 4, 0, 4),
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-        addButton.Click += (s, e) =>
-        {
-            if (treeView.SelectedItem is TreeViewItem item && item.Parent is TreeViewItem)
-            {
-                if (!UISettings.CSTM.Contains(item.Header.ToString()))
-                    UISettings.CSTM.Add(item.Header.ToString());
-                UpdateList(searchListBox.Text);
-            }
-        };
-        buttonPanel.Children.Add(addButton);
-        #endregion
-        #region <- Button
-        Button removeButton = new()
-        { 
-			Content = "<-", 
-			Width = 40, 
-			Height = 32,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-        removeButton.Click += (s, e) =>
-        {
-            if (listBox.SelectedItem != null)
-            {
-                UISettings.CSTM.RemoveAll(r => r == listBox.SelectedItem.ToString());
-                UpdateList(searchListBox.Text);
-            }
-        };
-        buttonPanel.Children.Add(removeButton);
-        #endregion
-
-        Grid.SetRow(buttonPanel, 1);
-        Grid.SetColumn(buttonPanel, 1);
-        grid.Children.Add(buttonPanel);
-        #endregion
-        #region Right (Selected Assets) ListBox + SearchBox
-        // Search box for list
-        searchListBox = new TextBox { Width = 200, Margin = new Thickness(0, 0, 0, 4) };
-        searchListBox.TextChanged += (s, e) => UpdateList(searchListBox.Text);
-        Grid.SetRow(searchListBox, 0);
-        Grid.SetColumn(searchListBox, 2);
-        grid.Children.Add(searchListBox);
-
-        // ListBox
-        listBox = new ListBox
-        { 
-			Width = 200, 
-			Height = 400,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground
-        };
-        listBox.MouseDoubleClick += (s, e) =>
-        {
-            if (listBox.SelectedItem != null)
-            {
-                UISettings.CSTM.RemoveAll(r => r == listBox.SelectedItem.ToString());
-                UpdateList(searchListBox.Text);
-            }
-        };
-        Grid.SetRow(listBox, 1);
-        Grid.SetColumn(listBox, 2);
-        grid.Children.Add(listBox);
-        #endregion
-        #region OK Button
-        Button okButton = new()
-        {
-            Content = "OK",
-            Width = 100,
-            Height = 32,
-            Margin = new Thickness(0, 8, 0, 0),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-        okButton.Click += (s, e) => Close();
-
-        Grid.SetRow(okButton, 2);
-        Grid.SetColumnSpan(okButton, 3);
-        grid.Children.Add(okButton);
-        #endregion
-
-        layout.Children.Add(grid);
-        Content = layout;
-
-        BuildInitialTree();
-        UpdateList("");
-    }
-
-    #region Helper Funcs
-    private void BuildInitialTree()
-    {
-        treeView.Items.Clear();
-        TreeViewItem root = new() { Header = "Data", IsExpanded = true };
-
-        var categories = new[]
-        {
-            "Sounds", "Sprites", "Tilesets", "Paths", "Scripts", "Shaders", "Fonts",
-            "Timelines", "Objects", "Rooms", "Extensions", "Sequences", "Animation Curves"
-        };
-        foreach (var c in categories)
-            root.Items.Add(new TreeViewItem { Header = c });
-
-        treeView.Items.Add(root);
-        UpdateTree("");
-    }
-
-    private void UpdateTree(string search)
-    {
-        foreach (TreeViewItem cat in ((TreeViewItem)treeView.Items[0]).Items)
-        {
-            cat.Items.Clear();
-            var name = cat.Header.ToString();
-
-            IEnumerable<string> items = name switch
-            {
-                "Sounds" => Data?.Sounds?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                "Sprites" => Data?.Sprites?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                "Tilesets" => Data?.Backgrounds?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                "Paths" => Data?.Paths?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-
-                // Ensures only Code entries are here
-                "Scripts" => Data?.Code?.Select(s => s?.Name?.Content)
-                    .Where(n => n != null && n.StartsWith("gml_GlobalScript_"))
-                    .Select(n => n.Substring("gml_GlobalScript_".Length)) 
-                    ?? Enumerable.Empty<string>(),
-
-                // Exclude GameMaker Internal Shaders
-                "Shaders" => Data?.Shaders?.Select(s => s?.Name?.Content)
-                    .Where(n => n != null && !n.StartsWith("__yy_") && !n.StartsWith("_filter_")) 
-                    ?? Enumerable.Empty<string>(),
-
-                "Fonts" => Data?.Fonts?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                "Timelines" => Data?.Timelines?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                "Objects" => Data?.GameObjects?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                "Rooms" => Data?.Rooms?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                "Extensions" => Data?.Extensions?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                "Sequences" => Data?.Sequences?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                "Animation Curves" => Data?.AnimationCurves?.Select(s => s?.Name?.Content) ?? Enumerable.Empty<string>(),
-                _ => Enumerable.Empty<string>()
-            };
-
-            foreach (var item in items)
-            {
-                if (item != null && item.Contains(search, StringComparison.OrdinalIgnoreCase))
-                    cat.Items.Add(new TreeViewItem { Header = item });
-            }
-        }
-    }
-
-    private void UpdateList(string search)
-    {
-        listBox.Items.Clear();
-        foreach (var item in UISettings.CSTM)
-        {
-            if (item != null && item.Contains(search, StringComparison.OrdinalIgnoreCase))
-                listBox.Items.Add(item);
-        }
-    }
-    #endregion
-}
-#endregion
-#region Fix Tileset Window
-// Save data for when Decompiling
-// and if user wants to go back into Fix TS Window with their progress intact
+// Save data for the optional manual tileset fixer. The cross-platform UI does not offer the
+// interactive editor yet, so these maps stay empty and the export uses the original tilesets.
 public static class TilesetSaveData
 {
-    // store tile column amount
     public static Dictionary<string, uint> TileColumnsMap = new();
-
-    // store modified images
     public static Dictionary<string, MagickImage> TilesetImageMap = new();
 }
 
-public class UnscrambleWindow : Window
+public class UIWindow
 {
-    // Get data.win in this scope
-    private readonly UndertaleData Data = ((MainWindow)Application.Current.MainWindow).Data;
+    private readonly QiuForm form;
+    private readonly QiuCheckBox _OBJT, _ROOM, _EXTN, _SCPT, _TMLN, _SOND, _SHDR, _PATH;
+    private readonly QiuCheckBox _ACRV, _SEQN, _FONT, _SPRT, _BGND;
+    private readonly QiuCheckBox _LOG, _YYMPS, _ENUM, _DSCLEAN, _ADDFILES, _FIXA, _GENROOM, _STRCLEAN;
+    private readonly QiuCheckBox _CSTM, _FIXT;
+    private readonly QiuSlider _CPU;
 
-    private int CurrentIndex = 0;
-    private Dictionary<string, Layer.LayerTilesData> TileDataMap = new();
-    private Layer.LayerTilesData TileData => TileDataMap[CurrentBackground.Name.Content];
-    private UndertaleBackground CurrentBackground => Data.Backgrounds[CurrentIndex];
-    private uint TileColumns
+    public UIWindow()
     {
-        get => TilesetSaveData.TileColumnsMap[CurrentBackground.Name.Content];
-        set => TilesetSaveData.TileColumnsMap[CurrentBackground.Name.Content] = value;
-    }
+        form = new("Ultimate_GMS2_Decompiler_v5");
+        form.Message = "Original Script by setupwitch\n\tImproved by burnedpopcorn180";
 
-    private System.Windows.Controls.TextBlock titleText;
-    private System.Windows.Controls.TextBox ColumnsText;
-    private System.Windows.Controls.Image TilesImage;
-    private Canvas TilesCanvas;
-    private DrawingBrush GridBrush;
-    private ScrollViewer TilesScroller;
+        form.Label("Select Resources to Dump:", heading: true);
 
-    private bool LowPerformance = false;
+        QiuCheckBox projectFile = form.Check("Project File", true);
+        projectFile.IsEnabled = false;
 
-    public UnscrambleWindow()
-    {
-        Title = "Unscramble Tilesets";
-        WindowStyle = WindowStyle.None;
-        ResizeMode = ResizeMode.NoResize;
-        Width = 960;
-        Height = 540;
-        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        _OBJT = form.Check("Objects", true);
+        _ROOM = form.Check("Rooms", true);
+        _EXTN = form.Check("Extensions", true);
+        _SCPT = form.Check("Scripts", true);
+        _TMLN = form.Check("Timelines", true);
+        _SOND = form.Check("Sounds", true);
+        _SHDR = form.Check("Shaders", true);
+        _PATH = form.Check("Paths", true);
 
-        // Theme
-        Background = Theme.WindowBackground;
-        Foreground = Theme.WindowForeground;
-
-        #region Init
-        foreach (var bg in Data.Backgrounds)
+        _ACRV = form.Check("Anim. Curves", true);
+        if (Data.AnimationCurves is null)
         {
-            var tsName = bg.Name.Content;
-            TileDataMap[tsName] = new Layer.LayerTilesData() { Background = bg };
-
-            if (!TilesetSaveData.TileColumnsMap.ContainsKey(tsName))
-                TilesetSaveData.TileColumnsMap[tsName] = bg.GMS2TileColumns > 0 ? bg.GMS2TileColumns : 10;
+            _ACRV.IsEnabled = false;
+            _ACRV.SetValueFromHost(false);
+            _ACRV.Label = "ACRV (2.3+)";
         }
 
-        MouseLeave += Window_MouseLeave;
-        MouseUp += Tiles_MouseUp;
-        MouseMove += Tiles_MouseMove;
-
-        // layout root
-        var layout = new DockPanel();
-        #endregion
-
-        #region Title Bar
-        DockPanel titleBar = new()
+        _SEQN = form.Check("Sequences", true);
+        if (Data.Sequences is null)
         {
-            Height = 30,
-            LastChildFill = true,
-            Background = Theme.ElementBackground
-        };
-
-        titleText = new TextBlock
-        {
-            Text = Title,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(10, 0, 0, 0),
-            Foreground = Theme.WindowForeground
-        };
-
-        Button closeButton = new()
-        {
-            Content = "X",
-            Width = 40,
-            Height = 30,
-            Background = Theme.Transparent,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.Transparent,
-            FontWeight = FontWeights.Bold,
-            HorizontalAlignment = HorizontalAlignment.Right
-        };
-        closeButton.Click += (s, e) => Close();
-        titleBar.MouseLeftButtonDown += (s, e) => { if (e.ButtonState == MouseButtonState.Pressed) DragMove(); };
-
-        DockPanel.SetDock(closeButton, Dock.Right);
-        titleBar.Children.Add(closeButton);
-        titleBar.Children.Add(titleText);
-
-        DockPanel.SetDock(titleBar, Dock.Top);
-        layout.Children.Add(titleBar);
-        #endregion
-
-        // main Grid
-        Grid grid = new() { Margin = new Thickness(10) };
-        grid.RowDefinitions.Add(new RowDefinition());
-        grid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(0, GridUnitType.Auto) });
-        grid.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(0, GridUnitType.Auto) });
-
-        DockPanel.SetDock(grid, Dock.Bottom);
-        layout.Children.Add(grid);
-
-        #region Canvas
-        TilesScroller = new ScrollViewer
-        {
-            Margin = new Thickness(0, 0, 0, 8),
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
-            Background = Theme.ElementBackground
-        };
-        grid.Children.Add(TilesScroller);
-
-        TilesCanvas = new Canvas();
-        TilesCanvas.MouseDown += Tiles_MouseDown;
-        TilesScroller.Content = TilesCanvas;
-
-        // grid pattern BG
-        GridBrush = new DrawingBrush()
-        {
-            Stretch = Stretch.Fill,
-            TileMode = TileMode.Tile,
-            Viewbox = new Rect(0, 0, 20, 20),
-            ViewboxUnits = BrushMappingMode.Absolute,
-            ViewportUnits = BrushMappingMode.Absolute,
-        };
-        var grp = new DrawingGroup();
-        grp.Children.Add(new GeometryDrawing(
-            Theme.GridTileLight, null, new PathGeometry
-            {
-                Figures = PathFigureCollection.Parse("M0,0 L20,0 20,20, 0,20Z")
-            }
-        ));
-        grp.Children.Add(new GeometryDrawing(
-            Theme.GridTileDark, null, new PathGeometry
-            {
-                Figures = PathFigureCollection.Parse("M0,10 L20,10 20,20, 10,20 10,0 0,0Z")
-            }
-        ));
-        GridBrush.Drawing = grp;
-        TilesCanvas.Background = GridBrush;
-
-        // Tile Image
-        TilesImage = new System.Windows.Controls.Image
-        {
-            Stretch = Stretch.None,
-            SnapsToDevicePixels = true
-        };
-        RenderOptions.SetBitmapScalingMode(TilesImage, BitmapScalingMode.NearestNeighbor);
-        TilesCanvas.Children.Add(TilesImage);
-        #endregion
-        #region Controls
-        StackPanel stack = new()
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        Grid.SetRow(stack, 1);
-        grid.Children.Add(stack);
-
-        TextBlock instructions = new()
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            Text = "Adjust the number of columns until the tileset looks right:",
-            Margin = new Thickness(0, 0, 8, 0),
-            Foreground = Theme.WindowForeground
-        };
-        stack.Children.Add(instructions);
-
-        #region Minus Button
-        Button MinusButton = new()
-        {
-            Content = "-",
-            Width = 24,
-            Height = 24,
-            VerticalAlignment = VerticalAlignment.Center,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-        MinusButton.Click += (s, e) =>
-        {
-            TileColumns = Math.Max(1, TileColumns - 1);
-            ColumnsText.Text = TileColumns.ToString();
-            if (!LowPerformance)
-                RebuildCurrentTileset();
-        };
-        MinusButton.Margin = new Thickness(0, 0, 8, 0);
-        stack.Children.Add(MinusButton);
-        #endregion
-        #region Value Textbox
-        ColumnsText = new TextBox
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            Width = 48,
-            Margin = new Thickness(0, 0, 8, 0)
-        };
-        stack.Children.Add(ColumnsText);
-
-        ColumnsText.TextChanged += (s, e) =>
-        {
-            if (uint.TryParse(ColumnsText.Text, out uint val))
-            {
-                TileColumns = Math.Max(1, val);
-                if (!LowPerformance)
-                    RebuildCurrentTileset();
-            }
-        };
-        #endregion
-        #region Plus Button
-        Button PlusButton = new()
-        {
-            Content = "+",
-            Width = 24,
-            Height = 24,
-            VerticalAlignment = VerticalAlignment.Center,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-        PlusButton.Click += (s, e) =>
-        {
-            TileColumns++;
-            ColumnsText.Text = TileColumns.ToString();
-            if (!LowPerformance)
-                RebuildCurrentTileset();
-        };
-        stack.Children.Add(PlusButton);
-        #endregion
-
-        TextBlock doneInstructions = new()
-        {
-            VerticalAlignment = VerticalAlignment.Center,
-            Text = "Navigate Tilesets:",
-            Margin = new Thickness(16, 0, 8, 0),
-            Foreground = Theme.WindowForeground
-        };
-        stack.Children.Add(doneInstructions);
-
-        #region Previous Button
-        Button PrevButton = new()
-        {
-            Content = "<-",
-            Width = 32,
-            Height = 24,
-            VerticalAlignment = VerticalAlignment.Center,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-        PrevButton.Click += (s, e) =>
-        {
-            if (!LowPerformance)
-                RebuildCurrentTileset();
-            CurrentIndex = (CurrentIndex - 1 + Data.Backgrounds.Count) % Data.Backgrounds.Count;
-            LoadCurrentTileset();
-        };
-        stack.Children.Add(PrevButton);
-        #endregion
-        #region Next Button
-        Button NextButton = new()
-        {
-            Content = "->",
-            Width = 32,
-            Height = 24,
-            VerticalAlignment = VerticalAlignment.Center,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-        NextButton.Click += (s, e) =>
-        {
-            if (!LowPerformance)
-                RebuildCurrentTileset();
-            CurrentIndex = (CurrentIndex + 1) % Data.Backgrounds.Count;
-            LoadCurrentTileset();
-        };
-        stack.Children.Add(NextButton);
-        #endregion
-
-        #endregion
-
-        #region Low Performance Mode
-        StackPanel stack2 = new()
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        Grid.SetRow(stack2, 2);
-        grid.Children.Add(stack2);
-
-        CheckBox LowPerCheckBox = new()
-        {
-            Content = "Enable Low Performance",
-            IsChecked = false,
-            IsEnabled = true,
-            ToolTip = "Allows you to manually update the canvas whenever needed" +
-                "\nEnable this if Automatic Canvas updating is causing intense lag.",
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(4),
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground
-        };
-
-        Button ReloadButton = new()
-        {
-            Content = "Reload Canvas",
-            Width = 100,
-            Height = 24,
-            IsEnabled = false,
-            ToolTip = "Manually Reload the Canvas" +
-                "\n(Enable Low Performance Mode to use it)",
-            Margin = new Thickness(4, 4, 0, 4),
-            VerticalAlignment = VerticalAlignment.Center,
-            Background = Theme.ElementBackground,
-            Foreground = Theme.WindowForeground,
-            BorderBrush = Theme.ButtonBrush
-        };
-
-        ReloadButton.Click += (s, e) => RebuildCurrentTileset();
-
-        LowPerCheckBox.Click += (s, e) =>
-        {
-            LowPerformance = !LowPerformance;
-            ReloadButton.IsEnabled = LowPerformance;
-        };
-
-        stack2.Children.Add(LowPerCheckBox);
-        stack2.Children.Add(ReloadButton);
-        #endregion
-
-        Content = layout;
-
-        LoadCurrentTileset();
-    }
-
-    #region Rendering and Saving Tileset Functions
-    private void LoadCurrentTileset()
-    {
-        Title = $"Unscramble Tileset [{CurrentIndex + 1}/{Data.Backgrounds.Count}] - {CurrentBackground.Name.Content}";
-        titleText.Text = Title;
-        ColumnsText.Text = TileColumns.ToString();
-        RebuildCurrentTileset();
-    }
-
-    private void RebuildCurrentTileset()
-    {
-        #region Set Variables
-        var bg = CurrentBackground;
-        var tsName = bg.Name.Content;
-        var data = TileData;
-
-        if (data.TileData == null || data.TileData.Length == 0)
-            data.TileData = new uint[(int)Math.Ceiling(bg.GMS2TileCount / (double)TileColumns)][];
-
-        data.TilesX = Math.Max(TileColumns, 1);
-        data.TilesY = (uint)Math.Ceiling((double)bg.GMS2TileCount / data.TilesX);
-
-        GridBrush.Viewport = new Rect(0, 0, bg.GMS2TileWidth, bg.GMS2TileHeight);
-
-        TilesImage.Width = data.TilesX * bg.GMS2TileWidth;
-        TilesImage.Height = data.TilesY * bg.GMS2TileHeight;
-        TilesCanvas.Width = TilesImage.Width;
-        TilesCanvas.Height = TilesImage.Height;
-        #endregion
-        #region Fill Tiles
-        data.TileData = Enumerable.Range(0, (int)data.TilesY)
-            .Select(_ => new uint[(int)data.TilesX])
-            .ToArray();
-
-        int i = 0;
-        int itemsPerTile = (int)bg.GMS2ItemsPerTileCount;
-        int count = (int)bg.GMS2TileCount * itemsPerTile;
-
-        for (int y = 0; y < data.TilesY; y++)
-        {
-            for (int x = 0; x < data.TilesX; x++)
-            {
-                if (i >= count)
-                    data.TileData[y][x] = 0;
-                else
-                    data.TileData[y][x] = bg.GMS2TileIds[i].ID;
-                i += itemsPerTile;
-            }
+            _SEQN.IsEnabled = false;
+            _SEQN.SetValueFromHost(false);
+            _SEQN.Label = "SEQN (2.3+)";
         }
-        #endregion
-        #region Save Image
-        TilesImage.Source = GetTilesetImage();
-        // Convert to MagickImage and store
-        if (TilesImage.Source != null)
-            TilesetSaveData.TilesetImageMap[tsName] = ConvertTilesetToMagickImage();
-        #endregion
+
+        _FONT = form.Check("Fonts", true);
+        _SPRT = form.Check("Sprites", true);
+        _BGND = form.Check("Tilesets", true);
+
+        _CSTM = form.Check("Pick individual assets", false);
+
+        form.Label("Decompiler Settings", heading: true);
+
+        _LOG = form.Check("Log Assets", false);
+        _YYMPS = form.Check("Export as YYMPS", false);
+        _ENUM = form.Check("Bitwise Enums", false);
+        _DSCLEAN = form.Check("Clean DS functions", true);
+        _ADDFILES = form.Check("Add Datafiles", true);
+        _FIXA = form.Check("Fix Audio", false);
+        _GENROOM = form.Check("Generate Room Name", false);
+        _STRCLEAN = form.Check("Clean String Function", Data.IsVersionAtLeast(2022, 9));
+
+        _CPU = form.Slider("CPU usage (%)", UISettings.CPU_Usage, 1, 100);
+        _CPU.Changed += value => UISettings.CPU_Usage = value;
+
+        _FIXT = form.Check("Fix Tilesets (open the tileset editor after this dialog)", false);
+        _FIXT.ToolTip = "Opens a cross-platform tileset editor after this dialog, allowing the tile columns to be adjusted.";
+
+        form.SubmitText = "Start Dump";
     }
-    #endregion
-    #region Helper Shit
 
-    #region Mouse Funcs
-    // drag scrolling
-    private bool IsDragging = false;
-    public System.Windows.Point DrawingStart;
-    public System.Windows.Point ScrollViewStart;
-
-    private void Tiles_MouseDown(object sender, MouseButtonEventArgs e)
+    public void ShowDialog()
     {
-        IsDragging = true;
-        DrawingStart = e.GetPosition(this as Window);
-        ScrollViewStart = new System.Windows.Point(TilesScroller.HorizontalOffset, TilesScroller.VerticalOffset);
+        if (ShowQiuForm(form) != QiuDialogResult.Submit)
+            return;
+
+        UISettings.DUMP = true;
+
+        UISettings.OBJT = _OBJT.Value;
+        UISettings.ROOM = _ROOM.Value;
+        UISettings.EXTN = _EXTN.Value;
+        UISettings.SCPT = _SCPT.Value;
+        UISettings.TMLN = _TMLN.Value;
+        UISettings.SOND = _SOND.Value;
+        UISettings.SHDR = _SHDR.Value;
+        UISettings.PATH = _PATH.Value;
+        UISettings.ACRV = _ACRV.Value;
+        UISettings.SEQN = _SEQN.Value;
+        UISettings.FONT = _FONT.Value;
+        UISettings.SPRT = _SPRT.Value;
+        UISettings.BGND = _BGND.Value;
+
+        UISettings.LOG = _LOG.Value;
+        UISettings.YYMPS = _YYMPS.Value;
+        UISettings.ENUM = _ENUM.Value;
+        UISettings.DSCLEAN = _DSCLEAN.Value;
+        UISettings.ADDFILES = _ADDFILES.Value;
+        UISettings.FIXAUDIO = _FIXA.Value;
+        UISettings.GENROOM = _GENROOM.Value;
+        UISettings.STRCLEAN = _STRCLEAN.Value;
+
+        UISettings.CSTM_Enable = _CSTM.Value;
+        UISettings.FIXTILE = _FIXT.Value;
+        UISettings.CPU_Usage = _CPU.Value;
+
+        UISettings.CSTM = UISettings.CSTM_Enable ? AssetPicker.Pick(Data, UISettings.CSTM) : new List<string>();
+
+        if (UISettings.FIXTILE)
+            TilesetEditor.Run(Data);
     }
-    private void Tiles_MouseUp(object sender, MouseButtonEventArgs e) => IsDragging = false;
-    private void Tiles_MouseMove(object sender, MouseEventArgs e)
-    {
-        if (!IsDragging) return;
-        System.Windows.Point pos = e.GetPosition(this as Window);
-        TilesScroller.ScrollToHorizontalOffset(Math.Clamp(
-            ScrollViewStart.X + -(pos.X - DrawingStart.X), 0, TilesScroller.ScrollableWidth
-        ));
-        TilesScroller.ScrollToVerticalOffset(Math.Clamp(
-            ScrollViewStart.Y + -(pos.Y - DrawingStart.Y), 0, TilesScroller.ScrollableHeight
-        ));
-    }
-    private void Window_MouseLeave(object sender, MouseEventArgs e) => IsDragging = false;
-    #endregion
-
-    private ImageSource GetTilesetImage() {
-        return (ImageSource)(new CachedTileDataLoader().Convert(new object[] { TileData }, null, null, null));
-    }
-
-    private MagickImage ConvertTilesetToMagickImage()
-    {
-        using var memoryStream = new MemoryStream();
-
-        // Encode the BitmapSource into a common format (like PNG)
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create((BitmapSource)TilesImage.Source));
-        encoder.Save(memoryStream);
-
-        // Reset stream position before reading
-        memoryStream.Position = 0;
-
-        // Create a MagickImage from the stream
-        return new MagickImage(memoryStream);
-    }
-    #endregion
 }
-#endregion
+
+public static class AssetPicker
+{
+    public static List<string> Pick(UndertaleData data, List<string> initial)
+    {
+        List<string> chosen = new(initial);
+
+        QiuForm form = new("Asset Picker");
+        QiuPanel columns = form.Panel(QiuOrientation.Horizontal);
+
+        QiuPanel left = columns.Panel(QiuOrientation.Vertical);
+        QiuTextBox search = left.Text("", "", id: "search");
+        search.ShowLabel = false;
+        search.Placeholder = "Search assets";
+        QiuTreeView tree = left.Tree("Data", height: 320, width: 260, id: "tree");
+
+        QiuPanel middle = columns.Panel(QiuOrientation.Vertical);
+        middle.Button("->", _ => AddSelected(tree.SelectedNode?.Tag as string));
+        middle.Button("<-", _ => RemoveSelected(list.SelectedItem));
+
+        QiuPanel right = columns.Panel(QiuOrientation.Vertical);
+        QiuTextBox listSearch = right.Text("", "", id: "listSearch");
+        listSearch.ShowLabel = false;
+        listSearch.Placeholder = "Search selection";
+        QiuListBox list = right.List(height: 320, width: 260, id: "selected");
+
+        void AddSelected(string? name)
+        {
+            if (name is not null && !chosen.Contains(name))
+                chosen.Add(name);
+            RefreshList();
+        }
+
+        void RemoveSelected(string? name)
+        {
+            if (name is not null)
+                chosen.RemoveAll(item => item == name);
+            RefreshList();
+        }
+
+        void RefreshTree()
+        {
+            tree.Root.Children.Clear();
+            foreach ((string category, IEnumerable<string> items) in Categories(data))
+            {
+                QiuTreeNode node = new(category) { IsExpanded = true };
+                foreach (string item in items)
+                {
+                    if (item.Contains(search.Value, StringComparison.OrdinalIgnoreCase))
+                        node.Children.Add(new QiuTreeNode(item) { Tag = item });
+                }
+                tree.Root.Children.Add(node);
+            }
+            tree.Refresh();
+        }
+
+        void RefreshList() =>
+            list.SetItems(chosen.Where(item => item.Contains(listSearch.Value, StringComparison.OrdinalIgnoreCase)));
+
+        search.Changed += _ => RefreshTree();
+        listSearch.Changed += _ => RefreshList();
+        tree.ItemActivated += _ => AddSelected(tree.SelectedNode?.Tag as string);
+        list.ItemActivated += _ => RemoveSelected(list.SelectedItem);
+
+        RefreshTree();
+        RefreshList();
+
+        return ShowQiuForm(form) == QiuDialogResult.Submit ? chosen : initial;
+    }
+
+    private static IEnumerable<(string Category, IEnumerable<string> Items)> Categories(UndertaleData data)
+    {
+        yield return ("Sounds", data.Sounds.Select(item => item.Name.Content));
+        yield return ("Sprites", data.Sprites.Select(item => item.Name.Content));
+        yield return ("Tilesets", data.Backgrounds.Select(item => item.Name.Content));
+        yield return ("Paths", data.Paths.Select(item => item.Name.Content));
+        yield return ("Scripts", data.Code.Select(item => item.Name.Content)
+                                           .Where(name => name.StartsWith("gml_GlobalScript_"))
+                                           .Select(name => name.Substring("gml_GlobalScript_".Length)));
+        yield return ("Shaders", data.Shaders.Select(item => item.Name.Content));
+        yield return ("Fonts", data.Fonts.Select(item => item.Name.Content));
+        yield return ("Timelines", data.Timelines.Select(item => item.Name.Content));
+        yield return ("Game objects", data.GameObjects.Select(item => item.Name.Content));
+        yield return ("Rooms", data.Rooms.Select(item => item.Name.Content));
+        yield return ("Extensions", data.Extensions.Select(item => item.Name.Content));
+
+        if (data.Sequences is not null)
+            yield return ("Sequences", data.Sequences.Select(item => item.Name.Content));
+        if (data.AnimationCurves is not null)
+            yield return ("Curves", data.AnimationCurves.Select(item => item.Name.Content));
+    }
+}
+
+/// <summary>
+/// Cross-platform replacement for the old WPF UnscrambleWindow: adjusts the tile columns of each
+/// tileset, re-composites the image with Magick.NET, and stores the result for the exporter.
+/// </summary>
+public static class TilesetEditor
+{
+    public static void Run(UndertaleData data)
+    {
+        if (data.Backgrounds.Count == 0)
+        {
+            ScriptMessage("This data file has no tilesets.");
+            return;
+        }
+
+        List<UndertaleBackground> backgrounds = data.Backgrounds.ToList();
+
+        foreach (UndertaleBackground background in backgrounds)
+        {
+            string name = background.Name.Content;
+            if (!TilesetSaveData.TileColumnsMap.ContainsKey(name))
+                TilesetSaveData.TileColumnsMap[name] = background.GMS2TileColumns > 0 ? background.GMS2TileColumns : 10;
+        }
+
+        using TextureWorker worker = new();
+
+        QiuForm form = new("Unscramble Tilesets");
+        form.SubmitText = "Done";
+
+        QiuChoice tilesetChoice = form.Choice("Tileset", backgrounds.Select(background => background.Name.Content), 0);
+        QiuNumberBox columnsBox = form.Number("Tile columns", 10, minimum: 1, maximum: 4096, integer: true);
+        QiuCanvas preview = form.Canvas(480, 270);
+        QiuLabel status = form.Label("");
+        QiuCheckBox lowPerformance = form.Check("Low performance mode (manual reload)", false);
+        QiuButton reload = form.Button("Reload canvas", _ => Rebuild(), isDefault: false);
+
+        UndertaleBackground CurrentBackground => backgrounds[Math.Clamp(tilesetChoice.SelectedIndex, 0, backgrounds.Count - 1)];
+
+        void Rebuild()
+        {
+            UndertaleBackground background = CurrentBackground;
+            string name = background.Name.Content;
+            TilesetSaveData.TileColumnsMap[name] = (uint)Math.Max(1, (int)columnsBox.Value);
+
+            try
+            {
+                TilesetImage image = TilesetRenderer.Render(background, (int)TilesetSaveData.TileColumnsMap[name], worker);
+                TilesetSaveData.TilesetImageMap[name] = new MagickImage(image.ToPng());
+
+                byte[] png = image.ToPng();
+                double scale = Math.Min(480.0 / image.Width, 270.0 / image.Height);
+                preview.Paint = context =>
+                {
+                    context.Clear(QiuColor.FromRgb(40, 40, 40));
+                    context.DrawImage(png, 0, 0, image.Width * scale, image.Height * scale);
+                };
+                preview.Invalidate();
+
+                status.Text = $"{name}: {image.Width} x {image.Height} px, {TilesetSaveData.TileColumnsMap[name]} columns.";
+            }
+            catch (Exception exception)
+            {
+                status.Text = $"{name}: {exception.Message}";
+            }
+        }
+
+        void Load()
+        {
+            UndertaleBackground background = CurrentBackground;
+            columnsBox.SetValueFromHost(TilesetSaveData.TileColumnsMap[background.Name.Content]);
+            Rebuild();
+        }
+
+        tilesetChoice.Changed += _ => Load();
+        columnsBox.Changed += _ =>
+        {
+            if (!lowPerformance.Value)
+                Rebuild();
+        };
+        lowPerformance.Changed += value => reload.IsEnabled = value;
+        reload.IsEnabled = false;
+
+        form.Button("<- Previous", _ =>
+        {
+            tilesetChoice.SelectedIndex = (tilesetChoice.SelectedIndex - 1 + backgrounds.Count) % backgrounds.Count;
+        });
+        form.Button("Next ->", _ =>
+        {
+            tilesetChoice.SelectedIndex = (tilesetChoice.SelectedIndex + 1) % backgrounds.Count;
+        });
+
+        Load();
+        ShowQiuForm(form);
+    }
+}
+
+/// <summary>Minimal BGRA image buffer used by the cross-platform tileset renderer.</summary>
+public sealed class TilesetImage
+{
+    public int Width { get; }
+    public int Height { get; }
+    public byte[] Pixels { get; }
+
+    public TilesetImage(int width, int height)
+    {
+        Width = Math.Max(1, width);
+        Height = Math.Max(1, height);
+        Pixels = new byte[Width * Height * 4];
+    }
+
+    public static TilesetImage FromGm(GMImage image)
+    {
+        GMImage raw = image.Format == GMImage.ImageFormat.RawBgra ? image : image.ConvertToRawBgra();
+        TilesetImage result = new(raw.Width, raw.Height);
+        Array.Copy(raw.GetRawImageDataArray(), result.Pixels, Math.Min(raw.GetRawImageDataArray().Length, result.Pixels.Length));
+        return result;
+    }
+
+    public byte[] ToPng()
+    {
+        GMImage image = new(Width, Height);
+        Array.Copy(Pixels, image.GetRawImageDataArray(), Pixels.Length);
+        return image.ConvertToPng().GetData();
+    }
+
+    public TilesetImage Crop(int x, int y, int width, int height)
+    {
+        TilesetImage result = new(width, height);
+        for (int row = 0; row < height; row++)
+        {
+            for (int column = 0; column < width; column++)
+            {
+                int source = ((y + row) * Width + (x + column)) * 4;
+                int target = (row * result.Width + column) * 4;
+                if (source >= 0 && source + 3 < Pixels.Length)
+                    Array.Copy(Pixels, source, result.Pixels, target, 4);
+            }
+        }
+        return result;
+    }
+
+    public TilesetImage Clone()
+    {
+        TilesetImage copy = new(Width, Height);
+        Array.Copy(Pixels, copy.Pixels, Pixels.Length);
+        return copy;
+    }
+
+    public void Blit(TilesetImage source, int x, int y)
+    {
+        for (int row = 0; row < source.Height; row++)
+        {
+            for (int column = 0; column < source.Width; column++)
+            {
+                int sourceIndex = (row * source.Width + column) * 4;
+                int targetX = x + column;
+                int targetY = y + row;
+                if (targetX < 0 || targetY < 0 || targetX >= Width || targetY >= Height)
+                    continue;
+
+                int targetIndex = (targetY * Width + targetX) * 4;
+                Array.Copy(source.Pixels, sourceIndex, Pixels, targetIndex, 4);
+            }
+        }
+    }
+
+    public TilesetImage FlipX()
+    {
+        TilesetImage result = new(Width, Height);
+        for (int y = 0; y < Height; y++)
+            for (int x = 0; x < Width; x++)
+                CopyPixel(this, Width - 1 - x, y, result, x, y);
+        return result;
+    }
+
+    public TilesetImage FlipY()
+    {
+        TilesetImage result = new(Width, Height);
+        for (int y = 0; y < Height; y++)
+            for (int x = 0; x < Width; x++)
+                CopyPixel(this, x, Height - 1 - y, result, x, y);
+        return result;
+    }
+
+    public TilesetImage Rotate90()
+    {
+        TilesetImage result = new(Height, Width);
+        for (int y = 0; y < Height; y++)
+            for (int x = 0; x < Width; x++)
+                CopyPixel(this, x, y, result, Height - 1 - y, x);
+        return result;
+    }
+
+    private static void CopyPixel(TilesetImage source, int x, int y, TilesetImage target, int targetX, int targetY)
+    {
+        int sourceIndex = (y * source.Width + x) * 4;
+        int targetIndex = (targetY * target.Width + targetX) * 4;
+        Array.Copy(source.Pixels, sourceIndex, target.Pixels, targetIndex, 4);
+    }
+}
+
+/// <summary>Re-composites a GMS2 tileset from its tile IDs and texture page.</summary>
+public static class TilesetRenderer
+{
+    public static TilesetImage Render(UndertaleBackground background, int columns, TextureWorker worker)
+    {
+        int tileWidth = (int)background.GMS2TileWidth;
+        int tileHeight = (int)background.GMS2TileHeight;
+        int borderX = (int)background.GMS2OutputBorderX;
+        int borderY = (int)background.GMS2OutputBorderY;
+
+        using IMagickImage<byte> pageMagick = worker.GetTextureFor(background.Texture, null);
+        TilesetImage page = TilesetImage.FromGm(GMImage.FromMagickImage(pageMagick));
+
+        int sourceColumns = Math.Max(1, (int)background.GMS2TileColumns);
+        int tileCount = (int)background.GMS2TileCount;
+        int itemsPerTile = Math.Max(1, (int)background.GMS2ItemsPerTileCount);
+        int maxId = background.GMS2TileIds.Count == 0 ? 0 : (int)background.GMS2TileIds.Max(tile => tile.ID);
+
+        Dictionary<uint, TilesetImage> cache = new();
+
+        TilesetImage GetTile(uint id)
+        {
+            if (cache.TryGetValue(id, out TilesetImage? cached))
+                return cached;
+
+            int index = (int)id;
+            int x = index % sourceColumns;
+            int y = index / sourceColumns;
+            int x1 = ((x + 1) * borderX) + (x * (tileWidth + borderX));
+            int y1 = ((y + 1) * borderY) + (y * (tileHeight + borderY));
+
+            TilesetImage tile = page.Crop(x1, y1, tileWidth, tileHeight);
+            cache[id] = tile;
+            return tile;
+        }
+
+        TilesetImage GetTileWithFlags(uint id)
+        {
+            if (id <= maxId)
+                return GetTile(id);
+
+            uint realId = id & 0x0FFFFFFF;
+            if (realId > maxId)
+                return new TilesetImage(tileWidth, tileHeight);
+
+            TilesetImage tile = GetTile(realId).Clone();
+            return (id >> 28) switch
+            {
+                1 => tile.FlipX(),
+                2 => tile.FlipY(),
+                3 => tile.FlipX().FlipY(),
+                4 => tile.Rotate90(),
+                5 => tile.Rotate90().FlipY(),
+                6 => tile.Rotate90().FlipX(),
+                7 => tile.Rotate90().FlipX().FlipY(),
+                _ => tile,
+            };
+        }
+
+        int rows = (int)Math.Ceiling(tileCount / (double)columns);
+        TilesetImage output = new(columns * tileWidth, rows * tileHeight);
+
+        int counter = 0;
+        for (int y = 0; y < rows; y++)
+        {
+            for (int x = 0; x < columns; x++)
+            {
+                int sourceIndex = counter * itemsPerTile;
+                counter++;
+
+                if (sourceIndex >= background.GMS2TileIds.Count)
+                    continue;
+
+                uint id = background.GMS2TileIds[sourceIndex].ID;
+                if (id == 0)
+                    continue;
+
+                output.Blit(GetTileWithFlags(id), x * tileWidth, y * tileHeight);
+            }
+        }
+
+        return output;
+    }
+}
 
 // open main window
 new UIWindow().ShowDialog();
@@ -3109,7 +2175,6 @@ if (!UISettings.DUMP)
     GC.Collect();
     return;
 }
-
 #endregion
 
 #region Useful Tools

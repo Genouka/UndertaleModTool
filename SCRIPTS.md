@@ -15,7 +15,6 @@ Most of these scripts will prompt you to select a folder/directory to export fil
 - `ExportAllFonts.csx`: Exports PNGs and glyph information of all fonts.
 - `ExportAllMasks.csx`: Exports sprite collision masks as black-and-white PNGs.
 - `ExportAllRoomsToPNG.csx`: Exports previews of all rooms as PNG files.
-	* (Note: This is currently only supported on the Windows GUI.)
 - `ExportAllShaders.csx`: Exports shader metadata, source code, and compiled (binary) code.
 - `ExportAllSounds.csx`: Exports sounds as WAV/OGG files.
 - `ExportAllSprites.csx`: Exports sprites as PNG files. Optionally includes padding, which is when a sprite frame doesn't use its full extents.
@@ -42,7 +41,6 @@ These are scripts designed to import assets into a game, usually requiring certa
 - `ImportGMS2FontData.csx`: Imports font data directly from a GMS2 .yy font project file. May break depending on GameMaker version.
 - `ImportGraphics.csx`: Imports sprites or backgrounds as PNG files from a folder. Sprites are in the format `filename_N.png`, where N is the frame number starting at 0. Put files in a folder named "Backgrounds" to import them as backgrounds.
 - `ImportGraphicsAdvanced.csx`: Imports sprites or backgrounds as PNG or GIF files from a folder. Supports a variety of formats (frame numbers starting at 1 or 0, GameMaker `_stripN`, animated GIFs, single-frame sprites). Has an additional dialog after importing to set sprite offsets and, for GMS2 games, animation speed.
-	* (Note: This is currently only supported on the Windows GUI.)
 - `ImportMasks.csx`: Imports sprite collision masks from black-and-white PNG files.
 - `ImportShaders.csx`: Imports shader data, expected to be formatted as exported by `ExportShaders.csx`.
 - `ImportSingleSound.csx`: Imports a single sound asset, WAV or OGG format.
@@ -101,7 +99,7 @@ These are scripts developed primarily for use in Undertale/Deltarune.
 - `FindObjectsInRooms.csx`: Finds instances of the desired object types in all room data of a game.
 - `FindObjectsWithSprite.csx`: Finds object types assigned the desired sprite pattern in a game.
 - `FontEditor.csx`: Allows for editing font data in detail using a custom GUI.
-	* (Note: This is currently only supported on the Windows GUI.)
+- `QiuForms Demo.csx`: Sample script for the cross-platform QiuForms API (text, numbers, choices, validation and conditional fields).
 - `GoToRoom_AutoLocatePersistentObj.csx`: Similar to `GoToRoom.csx` for Undertale/Deltarune, but instead attempts to locate a persistent object automatically, making it portable. Results will vary by game.
 - `MergeImages.csx`: Loads images from two directories, and exports side-by-side images of all corresponding images.
 - `ScaleAllTextures.csx`: Scales all texture pages in a game. Very likely to cause visual problems.

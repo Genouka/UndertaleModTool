@@ -3,7 +3,8 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using Underanalyzer.Decompiler;
 using Underanalyzer.Decompiler.AST;
 
@@ -150,7 +151,9 @@ void MakeJSON(string language)
     }
 
     string outputPath = Path.Join(langFolder, "lang_" + language + ".json");
-    File.WriteAllText(outputPath, JsonConvert.SerializeObject(contents, Formatting.Indented));
+    // Keep Japanese text and symbols readable in the file, instead of escaping them as \uXXXX.
+    JsonSerializerOptions jsonOptions = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+    File.WriteAllText(outputPath, JsonSerializer.Serialize(contents, jsonOptions));
 
     IncProgressLocal();
     UpdateProgressValue(GetProgress());

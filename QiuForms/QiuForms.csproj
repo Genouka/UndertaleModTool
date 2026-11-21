@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>13.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyTitle>QiuForms</AssemblyTitle>
+    <ProductName>QiuForms</ProductName>
+    <Description>Toolkit-neutral declarative forms for UndertaleModTool scripts.</Description>
+    <Copyright>Copyright © 2026, QiuForms contributors, licensed under MPL-2.0</Copyright>
+    <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Suppress all missing XML comment warnings -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+</Project>
