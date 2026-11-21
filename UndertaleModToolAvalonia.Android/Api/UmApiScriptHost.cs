@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UndertaleModToolAvalonia;
+using QiuForms;
 
 namespace UndertaleModToolAvalonia.Android.Api;
 
@@ -118,6 +119,17 @@ internal sealed class UmApiScriptHost : ScriptGlobals
         => Emit(string.IsNullOrWhiteSpace(title) ? message + "\n" : $"[{title}] {message}\n");
 
     public override void ScriptOpenURL(string url) => Emit("[url] " + url + "\n");
+
+    // -- forms -------------------------------------------------------------------------------
+
+    public override bool SupportsQiuForms => false;
+
+    public override QiuDialogResult ShowQiuForm(QiuForm form)
+    {
+        Emit($"[form] \"{form.Title}\" was requested; the API cannot show dialogs (cancelled).\n");
+        form.Result = QiuDialogResult.Cancel;
+        return QiuDialogResult.Cancel;
+    }
 
     // -- file / folder pickers ---------------------------------------------------------------
 

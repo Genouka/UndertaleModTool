@@ -10,6 +10,7 @@ using UndertaleModLib.Compiler;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
 using UndertaleModLib.Util;
+using QiuForms;
 
 namespace UndertaleModLib.Scripting;
 
@@ -212,6 +213,28 @@ public interface IScriptInterface
     /// Initializes a Script Dialog with default values
     /// </summary>
     void InitializeScriptDialog();
+
+    /// <summary>
+    /// Whether this host can display <see cref="QiuForm"/> dialogs.
+    /// </summary>
+    /// <remarks>
+    /// Declared here (rather than only inherited from <see cref="IQiuFormsHost"/>) because the
+    /// Roslyn scripting engine only exposes members declared directly on the globals type to
+    /// scripts. Hosts override it; hosts without a UI leave it at the default.
+    /// </remarks>
+    bool SupportsQiuForms => false;
+
+    /// <summary>
+    /// Shows <paramref name="form"/> and blocks until it is closed.
+    /// </summary>
+    /// <param name="form">The form to display.</param>
+    /// <returns>How the form was closed. Also stored in <see cref="QiuForm.Result"/>.</returns>
+    /// <exception cref="QiuFormUnavailableException">The host has no user interface.</exception>
+    QiuDialogResult ShowQiuForm(QiuForm form)
+    {
+        ArgumentNullException.ThrowIfNull(form);
+        throw new QiuFormUnavailableException();
+    }
 
     /// <summary>
     ///Get the decompiled text from a code entry (like <c>gml_Script_moveTo</c>).

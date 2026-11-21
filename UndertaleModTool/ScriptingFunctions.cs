@@ -16,6 +16,7 @@ using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using System.IO.Pipes;
 using System.Threading.Tasks;
+using QiuForms;
 using UndertaleModTool.Localization;
 
 namespace UndertaleModTool
@@ -36,6 +37,13 @@ namespace UndertaleModTool
                 ScriptError(string.Format(LocalizationSource.GetString("Msg_ScriptErrorWithType"), ScriptErrorType, ScriptErrorMessage), ScriptErrorType);
             return ScriptExecutionSuccess;
         }
+
+        /// <inheritdoc/>
+        public bool SupportsQiuForms => true;
+
+        /// <inheritdoc/>
+        public QiuDialogResult ShowQiuForm(QiuForm form) => WpfQiuFormsHost.Show(form, this);
+
         public void InitializeScriptDialog()
         {
             if (scriptDialog == null)

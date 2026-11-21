@@ -259,7 +259,7 @@
                  assets/ScriptAssemblies/.
                  Keep the prefix list in sync with ScriptReferencePrefixes in Core/Scripting.cs. -->
             <_ScriptDllFiltered Include="@(_ScriptDll)"
-                                Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(_ScriptDll.Filename)', '(?i)^(System|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft)(\..*)?$'))" />
+                                Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(_ScriptDll.Filename)', '(?i)^(System|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|QiuForms|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft)(\..*)?$'))" />
         </ItemGroup>
         <ItemGroup>
             <AndroidAsset Include="@(_ScriptDllFiltered)"
@@ -289,7 +289,7 @@
             Condition="'$(PublishTrimmed)' == 'true' And '$(EmbedAssembliesIntoApk)' == 'True'">
         <ItemGroup>
             <TrimmerRootAssembly Include="@(ManagedAssemblyToLink->'%(Filename)')"
-                                 Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Filename)', '(?i)^(System\.Private\.CoreLib|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft)(\..*)?$'))"
+                                 Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Filename)', '(?i)^(System\.Private\.CoreLib|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|QiuForms|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft)(\..*)?$'))"
                                  RootMode="All" />
         </ItemGroup>
     </Target>

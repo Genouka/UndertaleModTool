@@ -9,6 +9,7 @@ using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using QiuForms;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Microsoft.CodeAnalysis;
@@ -74,6 +75,8 @@ public class Scripting
         "Underanalyzer",
         "UndertaleModToolAvalonia",
         "UndertaleModToolLocalization",
+        // The toolkit-neutral form model scripts build against (see QiuForms/README.md).
+        "QiuForms",
         // Texture import/export (ImageMagick wrapper) and zip support. The Magick.NET assemblies
         // have to be listed in full. A prefix only matches at a "." boundary, so the bare
         // "Magick.NET" entry this list used to carry matched the abstractions (Magick.NET.Core)
@@ -271,7 +274,8 @@ public class Scripting
                 "UndertaleModLib.Compiler",
                 "UndertaleModLib.Decompiler",
                 "UndertaleModLib.Models",
-                "UndertaleModLib.Scripting")
+                "UndertaleModLib.Scripting",
+                "QiuForms")
             .WithFilePath(filePath)
             .WithFileEncoding(Encoding.Default)
             .WithEmitDebugInformation(true);
@@ -307,6 +311,7 @@ public class Scripting
             options = options.AddReferences(
                 "System.Core",
                 "UndertaleModLib",
+                "QiuForms",
                 // Used by bundled scripts: System.Timers (AutoBackup) and System.Text.Json (the JSON importers and exporters).
                 "System.ComponentModel.TypeConverter",
                 "System.Text.Json",
@@ -878,6 +883,16 @@ public class ScriptGlobals : IScriptInterface, IDisposable
     {
         return ShowDialogBlocking(() => mainVM.View!.TextBoxDialog(label, defaultInput, title: title, isMultiline: isMultiline,
             okText: submitText, cancelText: cancelText, preventClose: preventClose));
+    }
+
+    /// <inheritdoc/>
+    public virtual bool SupportsQiuForms => true;
+
+    /// <inheritdoc/>
+    public virtual QiuDialogResult ShowQiuForm(QiuForm form)
+    {
+        ArgumentNullException.ThrowIfNull(form);
+        return AvaloniaQiuFormsHost.Show(form, mainVM);
     }
 
     public virtual void ScriptMessage(string message)

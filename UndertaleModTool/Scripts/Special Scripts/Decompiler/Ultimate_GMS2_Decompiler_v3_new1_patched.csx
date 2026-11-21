@@ -36,13 +36,11 @@ using System.Reflection;
 using System.Dynamic;
 using System.Linq;
 using System.Security;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
@@ -58,12 +56,6 @@ using Underanalyzer.Decompiler.ControlFlow;
 using ImageMagick;
 
 // new ui
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
-using System.Windows.Shell;
-using System.Windows.Input;
 
 // checks
 EnsureDataLoaded();
@@ -263,7 +255,10 @@ public class RunnerData
     }
     public string name { get; set; } = "decompiledGame";
     public string path { get; set; } = "";
-    public Icon? iconData { get; set; } = null;
+    public object? iconData { get; set; } = null;
+
+    // Icon images extracted from the runner; null when no runner icon is available.
+    public IMagickImage? mainoptionimg = null, winoptionimg = null;
     public string version { get; set; } = "";
     public string companyName { get; set; } = "";
     public string productName { get; set; } = "";
@@ -1591,869 +1586,241 @@ public int r_num = 0;
 
 #endregion
 
-#region Icon shit
-public IMagickImage ToMagickImage(Bitmap bitmap)
-{
-    using (var memoryStream = new MemoryStream())
-    {
-        // save Bitmap to MemoryStream
-        bitmap.Save(memoryStream, ImageFormat.Png);
-
-        // reset memory stream position
-        memoryStream.Seek(0, SeekOrigin.Begin);
-
-        // create a MagickImage from MemoryStream
-        IMagickImage magickImage = new MagickImage(memoryStream);
-
-        return magickImage;
-    }
-}
-
-// thanks https://stackoverflow.com/questions/17830853/how-can-i-load-a-program-icon-in-c-sharp
-#region Extract Icon Functions
-internal static class ExtractIcon
-{
-    [UnmanagedFunctionPointer(CallingConvention.Winapi, SetLastError = true, CharSet = CharSet.Unicode)]
-    [SuppressUnmanagedCodeSecurity]
-    internal delegate bool ENUMRESNAMEPROC(IntPtr hModule, IntPtr lpszType, IntPtr lpszName, IntPtr lParam);
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hFile, uint dwFlags);
-
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern IntPtr FindResource(IntPtr hModule, IntPtr lpName, IntPtr lpType);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr LoadResource(IntPtr hModule, IntPtr hResInfo);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern IntPtr LockResource(IntPtr hResData);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern uint SizeofResource(IntPtr hModule, IntPtr hResInfo);
-
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    [SuppressUnmanagedCodeSecurity]
-    public static extern bool EnumResourceNames(IntPtr hModule, IntPtr lpszType, ENUMRESNAMEPROC lpEnumFunc, IntPtr lParam);
-
-
-    private const uint LOAD_LIBRARY_AS_DATAFILE = 0x00000002;
-    private readonly static IntPtr RT_ICON = (IntPtr)3;
-    private readonly static IntPtr RT_GROUP_ICON = (IntPtr)14;
-
-    public static Icon ExtractIconFromExecutable(string path)
-    {
-        IntPtr hModule = LoadLibraryEx(path, IntPtr.Zero, LOAD_LIBRARY_AS_DATAFILE);
-        var tmpData = new List<byte[]>();
-
-        ENUMRESNAMEPROC callback = (h, t, name, l) =>
-        {
-            var dir = GetDataFromResource(hModule, RT_GROUP_ICON, name);
-
-            // Calculate the size of an entire .icon file.
-
-            int count = BitConverter.ToUInt16(dir, 4);  // GRPICONDIR.idCount
-            int len = 6 + 16 * count;                   // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
-            for (int i = 0; i < count; ++i)
-                len += BitConverter.ToInt32(dir, 6 + 14 * i + 8);   // GRPICONDIRENTRY.dwBytesInRes
-
-            using (var dst = new BinaryWriter(new MemoryStream(len)))
-            {
-                // Copy GRPICONDIR to ICONDIR.
-
-                dst.Write(dir, 0, 6);
-
-                int picOffset = 6 + 16 * count; // sizeof(ICONDIR) + sizeof(ICONDIRENTRY) * count
-
-                for (int i = 0; i < count; ++i)
-                {
-                    // Load the picture.
-
-                    ushort id = BitConverter.ToUInt16(dir, 6 + 14 * i + 12);    // GRPICONDIRENTRY.nID
-                    var pic = GetDataFromResource(hModule, RT_ICON, (IntPtr)id);
-
-                    // Copy GRPICONDIRENTRY to ICONDIRENTRY.
-
-                    dst.Seek(6 + 16 * i, 0);
-
-                    dst.Write(dir, 6 + 14 * i, 8);  // First 8bytes are identical.
-                    dst.Write(pic.Length);          // ICONDIRENTRY.dwBytesInRes
-                    dst.Write(picOffset);           // ICONDIRENTRY.dwImageOffset
-
-                    // Copy a picture.
-
-                    dst.Seek(picOffset, 0);
-                    dst.Write(pic, 0, pic.Length);
-
-                    picOffset += pic.Length;
-                }
-
-                tmpData.Add(((MemoryStream)dst.BaseStream).ToArray());
-            }
-            return true;
-        };
-        EnumResourceNames(hModule, RT_GROUP_ICON, callback, IntPtr.Zero);
-        byte[][] iconData = tmpData.ToArray();
-        using (var ms = new MemoryStream(iconData[0]))
-        {
-            return new Icon(ms);
-        }
-    }
-    private static byte[] GetDataFromResource(IntPtr hModule, IntPtr type, IntPtr name)
-    {
-        // Load the binary data from the specified resource.
-
-        IntPtr hResInfo = FindResource(hModule, name, type);
-
-        IntPtr hResData = LoadResource(hModule, hResInfo);
-
-        IntPtr pResData = LockResource(hResData);
-
-        uint size = SizeofResource(hModule, hResInfo);
-
-        byte[] buf = new byte[size];
-        Marshal.Copy(pResData, buf, 0, buf.Length);
-
-        return buf;
-    }
-}
-#endregion
-
-// get icon
-public IMagickImage mainoptionimg, winoptionimg;
-if (!YYMPS)
-{
-    try
-    {
-        Icon ExeIcon = ExtractIcon.ExtractIconFromExecutable(runnerFile);
-
-        // for main option
-        mainoptionimg = ToMagickImage(ExeIcon.ToBitmap());
-        // resize image
-        var mainsize = new MagickGeometry(172, 172);
-        mainsize.IgnoreAspectRatio = false; // maintain the aspect ratio
-        mainoptionimg.FilterType = FilterType.Point; // stop interpolation
-        mainoptionimg.Resize(mainsize);
-
-        // for windows icon
-        winoptionimg = ToMagickImage(ExeIcon.ToBitmap());
-        // resize image
-        var winsize = new MagickGeometry(256, 256);
-        winsize.IgnoreAspectRatio = false; // maintain the aspect ratio
-        winoptionimg.FilterType = FilterType.Point; // stop interpolation
-        winoptionimg.Resize(winsize);
-    }
-    catch (Exception e)
-    {
-        mainoptionimg = null;
-        winoptionimg = null;
-    }
-}
-#endregion
-
-#region Main UI (kinda shit, less now)
-
-public bool DUMP, OBJT, ROOM, EXTN, SCPT, TMLN, SOND, SHDR, PATH, ACRV, SEQN, FONT, SPRT, BGND, LOG, YYMPS, ENUM, ADDFILES, FIXAUDIO, FIXTILE, GENROOM;
-public bool CSTM_Enable = false;
-public bool WRAPSCRIPTS = true;
-public List<string> CSTM = new List<string>();
-public int cpu_usage = 70;
-
 #region Main Window stuffs
-public class MainWindow : Window
+public class MainWindow
 {
-    public bool DUMP, OBJT, ROOM, EXTN, SCPT, TMLN, SOND, SHDR, PATH, ACRV, SEQN, FONT, SPRT, BGND, LOG, YYMPS, ENUM, ADDFILES, FIXAUDIO, FIXTILE, GENROOM;
-	public int cpu_usage = 70;
-	public bool CSTM_Enable = false;
-	public bool WRAPSCRIPTS = true;
-	public List<string> CSTM = new List<string>();
-	
-	private AssetPickerWindow pickerWindow;
+    public bool DUMP, OBJT, ROOM, EXTN, SCPT, TMLN, SOND, SHDR, PATH, ACRV, SEQN, FONT, SPRT, BGND;
+    public bool LOG, YYMPS, ENUM, ADDFILES, FIXAUDIO, FIXTILE, GENROOM, WRAPSCRIPTS;
+    public int cpu_usage = 70;
+    public bool CSTM_Enable = false;
+    public List<string> CSTM = new();
 
-	public MainWindow(UndertaleData _data, string scriptDir, bool isDark)
-	{
-		Title = "Qiuming_Decompiler_v401";
-		// remove OS title bar
-		WindowStyle = WindowStyle.None;
-		AllowsTransparency = false;
-		ResizeMode = ResizeMode.NoResize;
-		SizeToContent = SizeToContent.WidthAndHeight;
-		WindowStartupLocation = WindowStartupLocation.CenterScreen;
-		
-		// Theme
-		var lightgrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 245, 245));
-		var darkgrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 48));
-		var BGgrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(23, 23, 23));
-        var BGwhite = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
+    private readonly UndertaleData data;
+    private readonly QiuForm form;
+    private readonly QiuCheckBox _PRJT, _OBJT, _ROOM, _EXTN, _SCPT, _TMLN, _SOND, _SHDR, _PATH;
+    private readonly QiuCheckBox _ACRV, _SEQN, _FONT, _SPRT, _BGND;
+    private readonly QiuCheckBox _LOG, _YYMPS, _ENUM, _ADDFILES, _FIXA, _FIXT, _GENROOM, _WRAPSCRIPTS;
+    private readonly QiuCheckBox _CSTM;
+    private readonly QiuSlider _CPU;
 
-        var BasicWhite = System.Windows.Media.Brushes.White;
-		var BasicBlack = System.Windows.Media.Brushes.Black;
-		
-		Background = isDark ? BGgrey : BGwhite;
-		Foreground = isDark ? BasicWhite : BasicBlack;//text
-		
-		var mainPanel = new StackPanel { Margin = new Thickness(8) };
-		var tooltip = new ToolTip();
+    public MainWindow(UndertaleData data, string scriptDir, bool isDark)
+    {
+        this.data = data;
 
-        #region New Titlebar
-        var titleBar = new DockPanel
-		{
-			Height = 30,
-			Background = isDark ? darkgrey : lightgrey,
-		};
+        form = new("Qiuming_Decompiler_v401");
+        form.Message = "Original Script by crystallizedsparkle\n\tImproved by burnedpopcorn180";
 
-		var titleText = new TextBlock
-		{
-			Text = Title,
-			VerticalAlignment = VerticalAlignment.Center,
-			Margin = new Thickness(10, 0, 0, 0),
-			Foreground = Foreground,
-		};
+        form.Label("Select Resources to Dump:", heading: true);
 
-		var closeButton = new Button
-		{
-			Content = "X",
-			Width = 40,
-			Height = 30,
-			Background = System.Windows.Media.Brushes.Transparent,
-			Foreground = Foreground,
-			BorderBrush = System.Windows.Media.Brushes.Transparent,
-			HorizontalAlignment = HorizontalAlignment.Right,
-			Padding = new Thickness(0),
-			FontWeight = FontWeights.Bold,
-		};
+        _PRJT = form.Check("Project File", true);
+        _PRJT.IsEnabled = false;
 
-		closeButton.Click += (s, e) => this.Close();
+        _OBJT = form.Check("Objects", true);
+        _ROOM = form.Check("Rooms", true);
+        _EXTN = form.Check("Extensions", true);
+        _SCPT = form.Check("Scripts", true);
+        _TMLN = form.Check("Timelines", true);
+        _SOND = form.Check("Sounds", true);
+        _SHDR = form.Check("Shaders", true);
+        _PATH = form.Check("Paths", true);
 
-        // Enable window dragging via title bar
-        titleBar.MouseLeftButtonDown += (s, e) =>
-		{
-			if (e.ButtonState == MouseButtonState.Pressed)
-				DragMove();
-		};
+        _ACRV = form.Check("Anim. Curves", true);
+        if (data.AnimationCurves is null)
+        {
+            _ACRV.IsEnabled = false;
+            _ACRV.SetValueFromHost(false);
+            _ACRV.Label = "ACRV (2.3+)";
+        }
 
-		titleBar.Children.Add(titleText);
-		DockPanel.SetDock(closeButton, Dock.Right);
-		titleBar.Children.Add(closeButton);
-		mainPanel.Children.Insert(0, titleBar);
-        #endregion
+        _SEQN = form.Check("Sequences", true);
+        if (data.Sequences is null)
+        {
+            _SEQN.IsEnabled = false;
+            _SEQN.SetValueFromHost(false);
+            _SEQN.Label = "SEQN (2.3+)";
+        }
 
-        // Back to sanity kinda
-        mainPanel.Children.Add(new TextBlock
-		{
-			Text = "Original Script by crystallizedsparkle\n\tImproved by burnedpopcorn180",
-			Margin = new Thickness(0, 20, 0, 8)
-		});
+        _FONT = form.Check("Fonts", true);
+        _SPRT = form.Check("Sprites", true);
+        _BGND = form.Check("Tilesets", true);
 
-		// Resources section
-		mainPanel.Children.Add(new TextBlock
-		{
-			Text = "Select Resources to Dump:",
-			FontWeight = FontWeights.Bold,
-			Margin = new Thickness(0, 8, 0, 4)
-		});
+        _CSTM = form.Check("Pick individual assets", false);
 
-		var resourceGrid = new UniformGrid { Columns = 6 };
-		var _PRJT = CreateCheckBox(isDark, "Project File", true, false);
-		var _OBJT = CreateCheckBox(isDark, "Objects", true);
-		var _ROOM = CreateCheckBox(isDark, "Rooms", true);
-		var _EXTN = CreateCheckBox(isDark, "Extensions", true);
-		var _SCPT = CreateCheckBox(isDark, "Scripts", true);
-		var _TMLN = CreateCheckBox(isDark, "Timelines", true);
-		var _SOND = CreateCheckBox(isDark, "Sounds", true);
-		var _SHDR = CreateCheckBox(isDark, "Shaders", true);
-		var _PATH = CreateCheckBox(isDark, "Paths", true);
+        form.Label("Decompiler Settings", heading: true);
 
-		var _ACRV = CreateCheckBox(isDark, "Anim. Curves", true);
-		if (_data.AnimationCurves == null)
-		{
-			_ACRV.IsEnabled = false;
-			_ACRV.IsChecked = false;
-			_ACRV.Content = "ACRV (2.3+)";
-		}
+        _LOG = form.Check("Log Assets", false);
+        _LOG.ToolTip = "Logs every asset that gets decompiled. Mostly for debugging.";
 
-		var _SEQN = CreateCheckBox(isDark, "Sequences", true);
-		if (_data.Sequences == null)
-		{
-			_SEQN.IsEnabled = false;
-			_SEQN.IsChecked = false;
-			_SEQN.Content = "SEQN (2.3+)";
-		}
+        _YYMPS = form.Check("Export as YYMPS", false);
+        _YYMPS.ToolTip = "Exports decompiled resources as a GameMaker importable package.";
 
-		var _FONT = CreateCheckBox(isDark, "Fonts", true);
-		var _SPRT = CreateCheckBox(isDark, "Sprites", true);
-		var _BGND = CreateCheckBox(isDark, "Tilesets", true);
+        _ENUM = form.Check("Bitwise Enums", true);
+        _ENUM.IsEnabled = false;
+        _ENUM.ToolTip = "Turns unknown enums into bitwise operations.";
 
-		resourceGrid.Children.Add(_PRJT);
-		resourceGrid.Children.Add(_OBJT);
-		resourceGrid.Children.Add(_ROOM);
-		resourceGrid.Children.Add(_EXTN);
-		resourceGrid.Children.Add(_SCPT);
-		resourceGrid.Children.Add(_TMLN);
-		resourceGrid.Children.Add(_SOND);
-		resourceGrid.Children.Add(_SHDR);
-		resourceGrid.Children.Add(_PATH);
-		resourceGrid.Children.Add(_ACRV);
-		resourceGrid.Children.Add(_SEQN);
-		resourceGrid.Children.Add(_FONT);
-		resourceGrid.Children.Add(_SPRT);
-		resourceGrid.Children.Add(_BGND);
+        _ADDFILES = form.Check("Add Datafiles", true);
+        _ADDFILES.ToolTip = "Attempts to automatically add included datafiles.";
 
-		mainPanel.Children.Add(resourceGrid);
-		
-		#region AssetPicker Shit
-		var centerContainer = new Grid
-		{
-			HorizontalAlignment = HorizontalAlignment.Center,
-			VerticalAlignment = VerticalAlignment.Center,
-			Margin = new Thickness(0, 10, 0, 10)
-		};
-		centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-		centerContainer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        _FIXA = form.Check("Fix Audio", true);
+        _FIXA.IsEnabled = false;
+        _FIXA.ToolTip = "Relabels .wav files that are mislabelled as .mp3.";
 
-		// CheckBox + Label
-		var leftStack = new StackPanel
-		{
-			Orientation = Orientation.Vertical,
-			HorizontalAlignment = HorizontalAlignment.Center,
-			VerticalAlignment = VerticalAlignment.Center,
-			Margin = new Thickness(0, 0, 16, 0) // space between left and right
-		};
+        _FIXT = form.Check("Fix Tilesets", true);
+        _FIXT.IsEnabled = false;
+        _FIXT.ToolTip = "Fixes tileset separation. Slower due to image processing.";
 
-		var _CSTM = new CheckBox
-		{
-			Content = "Pick Assets",
-			IsChecked = false,
-			HorizontalAlignment = HorizontalAlignment.Center,
-			Margin = new Thickness(0, 0, 0, 4),
-			
-			Background = isDark ? darkgrey : lightgrey,
-			Foreground = isDark ? BasicWhite : BasicBlack
-		};
+        _GENROOM = form.Check("Generate Room Name", false);
+        _GENROOM.ToolTip = "Simulates GameMaker asset naming behavior.";
 
-		var CSTMLabel = new TextBlock
-		{
-			Text = "",
-			Foreground = Foreground,
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
+        _WRAPSCRIPTS = form.Check("Wrap Scripts as Functions", true);
+        if (data.IsVersionAtLeast(2, 3))
+        {
+            _WRAPSCRIPTS.IsEnabled = false;
+            _WRAPSCRIPTS.SetValueFromHost(false);
+            _WRAPSCRIPTS.Label = "Wrap Scripts (2.3-)";
+        }
 
-		leftStack.Children.Add(_CSTM);
-		leftStack.Children.Add(CSTMLabel);
-		Grid.SetColumn(leftStack, 0);
-		centerContainer.Children.Add(leftStack);
+        _CPU = form.Slider("CPU usage (%)", cpu_usage, 1, 100);
+        _CPU.Changed += value => cpu_usage = value;
 
-		// Right side: Button
-		var pickAssetsButton = new Button
-		{
-			Content = "Pick Individual Assets...",
-			Width = 180,
-			Height = 30,
-			Margin = new Thickness(0),
-			HorizontalAlignment = HorizontalAlignment.Center,
-			VerticalAlignment = VerticalAlignment.Center,
-			IsEnabled = false,
-			
-			Background = isDark ? darkgrey : lightgrey,
-			Foreground = isDark ? BasicWhite : BasicBlack,
-			BorderBrush = isDark ? BGgrey : lightgrey
-		};
+        form.SubmitText = Directory.Exists(scriptDir) ? "Overwrite Dump" : "Start Dump";
+    }
 
-		pickAssetsButton.Click += (s, e) =>
-		{
-			pickerWindow = new AssetPickerWindow(_data, isDark);
-			pickerWindow.Owner = this;
-			pickerWindow.ShowDialog();
+    public void ShowDialog()
+    {
+        if (ShowQiuForm(form) != QiuDialogResult.Submit)
+            return;
 
-			// Save
-			CSTM = pickerWindow.CSTM.ToList();
-			CSTMLabel.Text = $"Assets Selected: {CSTM.Count}";
-		};
+        DUMP = true;
 
-		Grid.SetColumn(pickAssetsButton, 1);
-		centerContainer.Children.Add(pickAssetsButton);
+        OBJT = _OBJT.Value;
+        ROOM = _ROOM.Value;
+        EXTN = _EXTN.Value;
+        SCPT = _SCPT.Value;
+        TMLN = _TMLN.Value;
+        SOND = _SOND.Value;
+        SHDR = _SHDR.Value;
+        PATH = _PATH.Value;
+        ACRV = _ACRV.Value;
+        SEQN = _SEQN.Value;
+        FONT = _FONT.Value;
+        SPRT = _SPRT.Value;
+        BGND = _BGND.Value;
 
-		// Add to main layout
-		mainPanel.Children.Add(centerContainer);
+        LOG = _LOG.Value;
+        YYMPS = _YYMPS.Value;
+        ENUM = _ENUM.Value;
+        ADDFILES = _ADDFILES.Value;
+        FIXAUDIO = _FIXA.Value;
+        FIXTILE = _FIXT.Value;
+        GENROOM = _GENROOM.Value;
+        WRAPSCRIPTS = _WRAPSCRIPTS.Value;
 
-		// bulk
-		var resourceCheckboxes = new List<CheckBox>
-		{
-			_OBJT, _ROOM, _EXTN, _SCPT, _TMLN, _SOND, _SHDR, _PATH,
-			_ACRV, _SEQN, _FONT, _SPRT, _BGND
-		};
-		// For Pick Assets CHECKBOX
-		_CSTM.Checked += (s, e) =>
-		{
-			// disable all resource checkboxes
-			resourceCheckboxes.ForEach(cb => { cb.IsChecked = false; cb.IsEnabled = false; });
+        CSTM_Enable = _CSTM.Value;
+        cpu_usage = _CPU.Value;
 
-			// Enable Pick Assets button
-			pickAssetsButton.IsEnabled = true;
-			
-			// because why not
-			CSTMLabel.Text = $"Assets Selected: 0";
-		};
-
-		_CSTM.Unchecked += (s, e) =>
-		{
-			// enable all resource checkboxes
-			resourceCheckboxes.ForEach(cb => cb.IsEnabled = true);
-
-			// Disable the Pick Assets button
-			pickAssetsButton.IsEnabled = false;
-
-			// Handle specific checkboxes based on data availability
-			_SEQN.IsEnabled = _data.Sequences != null;
-			_SEQN.IsChecked = _data.Sequences != null;
-
-			_ACRV.IsEnabled = _data.AnimationCurves != null;
-			_ACRV.IsChecked = _data.AnimationCurves != null;
-
-			// Check all the enabled checkboxes
-			resourceCheckboxes.Where(cb => cb.IsEnabled).ToList().ForEach(cb => cb.IsChecked = true);
-			
-			// WIPE
-			CSTMLabel.Text = "";
-			CSTM.Clear();
-		};
-        #endregion
-
-        // Settings section
-        mainPanel.Children.Add(new TextBlock
-		{
-			Text = "Decompiler Settings",
-			FontWeight = FontWeights.Bold,
-			Margin = new Thickness(0, 12, 0, 4)
-		});
-
-		var settingsGrid = new UniformGrid { Columns = 4 };
-
-		var _LOG = CreateCheckBox(isDark, "Log Assets");
-		_LOG.ToolTip = "Logs every Asset that gets decompiled\nMostly for Debugging, will clog up the logs if enabled.";
-
-		var _YYMPS = CreateCheckBox(isDark, "Export as YYMPS");
-		_YYMPS.ToolTip = "Exports decompiled resources\nas a GameMaker Importable Package.";
-
-		var _ENUM = CreateCheckBox(isDark, "Bitwise Enums", true, false);
-		_ENUM.ToolTip = "Turns Unknown Enums into Bitwise Operations.\n\nExample:\nUnknownEnum.Value_1 -> (1 << 0)";
-
-		var _ADDFILES = CreateCheckBox(isDark, "Add Datafiles", true);
-		_ADDFILES.ToolTip = "Attempts to automatically add included datafiles\nMight be inaccurate and might miss some files";
-
-		var _FIXA = CreateCheckBox(isDark, "Fix Audio", true, false);
-		_FIXA.ToolTip = "If a .wav file is labelled a .mp3, this setting will label it back to .wav.";
-
-		var _FIXT = CreateCheckBox(isDark, "Fix Tilesets", true, false);
-		_FIXT.ToolTip = "Fixes Tileset Separation, slower due to image processing.";
-
-		var _GENROOM = CreateCheckBox(isDark, "Generate Room Name");
-		_GENROOM.ToolTip = "Simulates GameMaker asset naming behavior.";
-
-		var _WRAPSCRIPTS = CreateCheckBox(isDark, "Wrap Scripts as Functions", true);
-		_WRAPSCRIPTS.ToolTip = "Wraps pre-2.3 scripts in 'function name(arg0, arg1...)' declarations\nand converts argument0/argument[0] to arg0/arg1.\nDynamic access like argument[i] is left untouched.\nOnly applies to GMS 2.3 and below games.";
-		if (_data.IsVersionAtLeast(2, 3))
-		{
-			_WRAPSCRIPTS.IsEnabled = false;
-			_WRAPSCRIPTS.IsChecked = false;
-			_WRAPSCRIPTS.Content = "Wrap Scripts (2.3-)";
-		}
-
-		settingsGrid.Children.Add(_LOG);
-		settingsGrid.Children.Add(_YYMPS);
-		settingsGrid.Children.Add(_ENUM);
-		settingsGrid.Children.Add(_ADDFILES);
-		settingsGrid.Children.Add(_FIXA);
-		settingsGrid.Children.Add(_FIXT);
-		settingsGrid.Children.Add(_GENROOM);
-		settingsGrid.Children.Add(_WRAPSCRIPTS);
-
-		mainPanel.Children.Add(settingsGrid);
-
-        #region CPU Controls
-        var cpuLabel = new Label
-		{
-			Content = $"CPU Usage: {cpu_usage}%",
-			HorizontalAlignment = HorizontalAlignment.Center,
-			Margin = new Thickness(0, 10, 0, 0)
-		};
-
-		var cpuSlider = new Slider
-		{
-			Minimum = 1,
-			Maximum = 100,
-			Value = cpu_usage,
-			Width = 200,
-			Margin = new Thickness(0, 0, 0, 0),
-			HorizontalAlignment = HorizontalAlignment.Center,
-			
-			Foreground = isDark ? BasicWhite : BasicBlack
-		};
-
-		cpuSlider.ValueChanged += (s, e) =>
-		{
-			cpu_usage = (int)cpuSlider.Value;
-			cpuLabel.Content = $"CPU Usage: {cpu_usage}%";
-		};
-
-		var cpuPanel = new StackPanel
-		{
-			Orientation = Orientation.Vertical,
-			HorizontalAlignment = HorizontalAlignment.Center
-		};
-
-		cpuPanel.Children.Add(cpuLabel);
-		cpuPanel.Children.Add(cpuSlider);
-		mainPanel.Children.Add(cpuPanel);
-        #endregion
-
-        // OK Button
-        var OKBT = new Button
-		{
-			Content = Directory.Exists($"{scriptDir}") ? "Overwrite Dump" : "Start Dump",
-			Height = 48,
-			Margin = new Thickness(0, 10, 0, 0),
-			
-			Background = isDark ? darkgrey : lightgrey,
-			Foreground = isDark ? BasicWhite : BasicBlack,
-			BorderBrush = isDark ? BGgrey : lightgrey
-		};
-		OKBT.Click += (o, s) =>
-		{
-			DUMP = true;
-
-			OBJT = _OBJT.IsChecked == true;
-			ROOM = _ROOM.IsChecked == true;
-			EXTN = _EXTN.IsChecked == true;
-			SCPT = _SCPT.IsChecked == true;
-			TMLN = _TMLN.IsChecked == true;
-			SOND = _SOND.IsChecked == true;
-			SHDR = _SHDR.IsChecked == true;
-			PATH = _PATH.IsChecked == true;
-			ACRV = _ACRV.IsChecked == true;
-			SEQN = _SEQN.IsChecked == true;
-			FONT = _FONT.IsChecked == true;
-			SPRT = _SPRT.IsChecked == true;
-			BGND = _BGND.IsChecked == true;
-
-			LOG = _LOG.IsChecked == true;
-			YYMPS = _YYMPS.IsChecked == true;
-			ENUM = _ENUM.IsChecked == true;
-			ADDFILES = _ADDFILES.IsChecked == true;
-			FIXAUDIO = _FIXA.IsChecked == true;
-			FIXTILE = _FIXT.IsChecked == true;
-			GENROOM = _GENROOM.IsChecked == true;
-			WRAPSCRIPTS = _WRAPSCRIPTS.IsChecked == true;
-			
-			CSTM_Enable = _CSTM.IsChecked == true;
-
-			Close();
-		};
-
-		mainPanel.Children.Add(OKBT);
-
-		//no scroll bar
-		Content = mainPanel;
-	}
-
-	private CheckBox CreateCheckBox(bool isDark, string content, bool isChecked = false, bool? enabled = true)
-	{
-		var lightgrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 245, 245));
-		var darkgrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 48));
-		var BasicWhite = System.Windows.Media.Brushes.White;
-		var BasicBlack = System.Windows.Media.Brushes.Black;
-		
-		return new CheckBox
-		{
-			Content = content,
-			IsChecked = isChecked,
-			IsEnabled = enabled ?? true,
-			Margin = new Thickness(4),
-			Background = isDark ? darkgrey : lightgrey,
-			Foreground = isDark ? BasicWhite : BasicBlack
-		};
-	}
+        CSTM = CSTM_Enable ? AssetPicker.Pick(data, CSTM) : new List<string>();
+    }
 }
 #endregion
+
 #region Asset Picker stuffs
-public class AssetPickerWindow : Window
+public static class AssetPicker
 {
-    private TreeView treeView;
-    private ListBox listBox;
-    private TextBox searchTreeBox, searchListBox;
-	public List<string> CSTM = new List<string>();
-
-    public AssetPickerWindow(UndertaleData Data, bool isDark)
+    public static List<string> Pick(UndertaleData data, List<string> initial)
     {
-        Title = "Asset Picker";
-        WindowStyle = WindowStyle.None;
-        ResizeMode = ResizeMode.NoResize;
-        SizeToContent = SizeToContent.WidthAndHeight;
-        WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        List<string> chosen = new(initial);
 
-		// Themes
-        var lightgrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 245, 245));
-        var darkgrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 48));
-		var BGgrey = new SolidColorBrush(System.Windows.Media.Color.FromRgb(23, 23, 23));
-        var BGwhite = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
+        QiuForm form = new("Pick Individual Assets");
 
-        var BasicWhite = System.Windows.Media.Brushes.White;
-		var BasicBlack = System.Windows.Media.Brushes.Black;
+        QiuPanel columns = form.Panel(QiuOrientation.Horizontal);
 
-        Background = isDark ? BGgrey : BGwhite;
-        Foreground = isDark ? BasicWhite : BasicBlack;
+        QiuPanel left = columns.Panel(QiuOrientation.Vertical);
+        QiuTextBox search = left.Text("", "", id: "search");
+        search.ShowLabel = false;
+        search.Placeholder = "Search assets";
+        QiuTreeView tree = left.Tree("Data", height: 320, width: 260, id: "tree");
 
-        #region title bar
-        var titleBar = new DockPanel
+        QiuPanel middle = columns.Panel(QiuOrientation.Vertical);
+        middle.Button("->", _ => AddSelected(tree.SelectedNode?.Tag as string));
+        middle.Button("<-", _ => RemoveSelected(list.SelectedItem));
+
+        QiuPanel right = columns.Panel(QiuOrientation.Vertical);
+        QiuTextBox listSearch = right.Text("", "", id: "listSearch");
+        listSearch.ShowLabel = false;
+        listSearch.Placeholder = "Search selection";
+        QiuListBox list = right.List(height: 320, width: 260, id: "selected");
+
+        void AddSelected(string? name)
         {
-            Height = 30,
-			LastChildFill = true,
-            Background = isDark ? darkgrey : lightgrey
-        };
-
-        var titleText = new TextBlock
-        {
-            Text = Title,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(10, 0, 0, 0),
-            Foreground = Foreground,
-        };
-
-        var closeButton = new Button
-        {
-            Content = "X",
-            Width = 40,
-            Height = 30,
-            Background = System.Windows.Media.Brushes.Transparent,
-            Foreground = Foreground,
-            BorderBrush = System.Windows.Media.Brushes.Transparent,
-            FontWeight = FontWeights.Bold,
-			HorizontalAlignment = HorizontalAlignment.Right
-        };
-        closeButton.Click += (s, e) => Close();
-        titleBar.MouseLeftButtonDown += (s, e) => { if (e.ButtonState == MouseButtonState.Pressed) DragMove(); };
-
-        titleBar.Children.Add(titleText);
-        DockPanel.SetDock(closeButton, Dock.Right);
-        titleBar.Children.Add(closeButton);
-
-        var layout = new StackPanel();
-        layout.Children.Add(titleBar);
-        #endregion
-
-        var grid = new Grid
-        {
-            Margin = new Thickness(10)
-        };
-
-        for (int i = 0; i < 3; i++)
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        for (int i = 0; i < 3; i++)
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-        // Search box for tree
-        searchTreeBox = new TextBox { Width = 200, Margin = new Thickness(0, 0, 8, 4) };
-        searchTreeBox.TextChanged += (s, e) => UpdateTree(searchTreeBox.Text, Data);
-        Grid.SetRow(searchTreeBox, 0);
-        Grid.SetColumn(searchTreeBox, 0);
-        grid.Children.Add(searchTreeBox);
-
-        // TreeView
-        treeView = new TreeView { Height = 400, Width = 200 };
-        treeView.MouseDoubleClick += (s, e) =>
-        {
-            if (treeView.SelectedItem is TreeViewItem item && item.Parent is TreeViewItem)
-            {
-                if (!CSTM.Contains(item.Header.ToString()))
-                    CSTM.Add(item.Header.ToString());
-                UpdateList(searchListBox.Text);
-            }
-        };
-        Grid.SetRow(treeView, 1);
-        Grid.SetColumn(treeView, 0);
-        grid.Children.Add(treeView);
-
-        #region Arrow Buttons
-        var buttonPanel = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(8, 0, 8, 0) };
-
-        var addButton = new Button 
-		{ 
-			Content = "->", 
-			Width = 40, 
-			Height = 32, 
-			Margin = new Thickness(0, 4, 0, 4),
-			
-			Background = isDark ? darkgrey : lightgrey,
-			Foreground = isDark ? BasicWhite : BasicBlack,
-			BorderBrush = isDark ? BGgrey : lightgrey
-		};
-        addButton.Click += (s, e) =>
-        {
-            if (treeView.SelectedItem is TreeViewItem item && item.Parent is TreeViewItem)
-            {
-                if (!CSTM.Contains(item.Header.ToString()))
-                    CSTM.Add(item.Header.ToString());
-                UpdateList(searchListBox.Text);
-            }
-        };
-        buttonPanel.Children.Add(addButton);
-
-        var removeButton = new Button 
-		{ 
-			Content = "<-", 
-			Width = 40, 
-			Height = 32,
-			
-			Background = isDark ? darkgrey : lightgrey,
-			Foreground = isDark ? BasicWhite : BasicBlack,
-			BorderBrush = isDark ? BGgrey : lightgrey
-		};
-        removeButton.Click += (s, e) =>
-        {
-            if (listBox.SelectedItem != null)
-            {
-                CSTM.RemoveAll(r => r == listBox.SelectedItem.ToString());
-                UpdateList(searchListBox.Text);
-            }
-        };
-        buttonPanel.Children.Add(removeButton);
-
-        Grid.SetRow(buttonPanel, 1);
-        Grid.SetColumn(buttonPanel, 1);
-        grid.Children.Add(buttonPanel);
-        #endregion
-
-        // Search box for list
-        searchListBox = new TextBox { Width = 200, Margin = new Thickness(0, 0, 0, 4) };
-        searchListBox.TextChanged += (s, e) => UpdateList(searchListBox.Text);
-        Grid.SetRow(searchListBox, 0);
-        Grid.SetColumn(searchListBox, 2);
-        grid.Children.Add(searchListBox);
-
-        // ListBox
-        listBox = new ListBox 
-		{ 
-			Width = 200, 
-			Height = 400,
-			
-			Background = isDark ? darkgrey : lightgrey,
-			Foreground = isDark ? BasicWhite : BasicBlack
-		};
-        listBox.MouseDoubleClick += (s, e) =>
-        {
-            if (listBox.SelectedItem != null)
-            {
-                CSTM.RemoveAll(r => r == listBox.SelectedItem.ToString());
-                UpdateList(searchListBox.Text);
-            }
-        };
-        Grid.SetRow(listBox, 1);
-        Grid.SetColumn(listBox, 2);
-        grid.Children.Add(listBox);
-
-        // OK Button
-        var okButton = new Button
-        {
-            Content = "OK",
-            Width = 100,
-            Height = 32,
-            Margin = new Thickness(0, 8, 0, 0),
-            HorizontalAlignment = HorizontalAlignment.Center,
-			
-			Background = isDark ? darkgrey : lightgrey,
-			Foreground = isDark ? BasicWhite : BasicBlack,
-			BorderBrush = isDark ? BGgrey : lightgrey
-        };
-        okButton.Click += (s, e) => Close();
-		
-        Grid.SetRow(okButton, 2);
-        Grid.SetColumnSpan(okButton, 3);
-        grid.Children.Add(okButton);
-
-        layout.Children.Add(grid);
-        Content = layout;
-
-        BuildInitialTree(Data);
-        UpdateList("");
-    }
-
-    private void BuildInitialTree(UndertaleData Data)
-    {
-        treeView.Items.Clear();
-        var root = new TreeViewItem { Header = "Data", IsExpanded = true };
-
-        var categories = new[]
-        {
-            "Sounds", "Sprites", "Tilesets", "Paths", "Scripts", "Shaders", "Fonts",
-            "Timelines", "Game objects", "Rooms", "Extensions"
-        };
-        foreach (var c in categories)
-            root.Items.Add(new TreeViewItem { Header = c });
-
-        if (Data.Sequences != null)
-            root.Items.Add(new TreeViewItem { Header = "Sequences" });
-        if (Data.AnimationCurves != null)
-            root.Items.Add(new TreeViewItem { Header = "Curves" });
-
-        treeView.Items.Add(root);
-        UpdateTree("", Data);
-    }
-
-    private void UpdateTree(string search, UndertaleData Data)
-    {
-        foreach (TreeViewItem cat in ((TreeViewItem)treeView.Items[0]).Items)
-        {
-            cat.Items.Clear();
-            var name = cat.Header.ToString();
-
-            IEnumerable<string> items = name switch
-            {
-                "Sounds" => Data.Sounds.Select(s => s.Name.Content),
-                "Sprites" => Data.Sprites.Select(s => s.Name.Content),
-                "Tilesets" => Data.Backgrounds.Select(s => s.Name.Content),
-                "Paths" => Data.Paths.Select(s => s.Name.Content),
-                /*"Scripts" => Data.Scripts.Select(s => s.Name.Content),*/
-                // filters out non-scripts
-                "Scripts" => Data.Code.Select(s => s.Name.Content)
-                .Where(n => n.StartsWith("gml_GlobalScript_"))
-                .Select(n => n.Substring("gml_GlobalScript_".Length)),
-
-                "Shaders" => Data.Shaders.Select(s => s.Name.Content),
-                "Fonts" => Data.Fonts.Select(s => s.Name.Content),
-                "Timelines" => Data.Timelines.Select(s => s.Name.Content),
-                "Game objects" => Data.GameObjects.Select(s => s.Name.Content),
-                "Rooms" => Data.Rooms.Select(s => s.Name.Content),
-                "Extensions" => Data.Extensions.Select(s => s.Name.Content),
-                "Sequences" => Data.Sequences?.Select(s => s.Name.Content) ?? Enumerable.Empty<string>(),
-                "Curves" => Data.AnimationCurves?.Select(s => s.Name.Content) ?? Enumerable.Empty<string>(),
-                _ => Enumerable.Empty<string>()
-            };
-
-            foreach (var item in items)
-            {
-                if (item.Contains(search, StringComparison.OrdinalIgnoreCase))
-                    cat.Items.Add(new TreeViewItem { Header = item });
-            }
+            if (name is not null && !chosen.Contains(name))
+                chosen.Add(name);
+            RefreshList();
         }
+
+        void RemoveSelected(string? name)
+        {
+            if (name is not null)
+                chosen.RemoveAll(item => item == name);
+            RefreshList();
+        }
+
+        void RefreshTree()
+        {
+            tree.Root.Children.Clear();
+            foreach ((string category, IEnumerable<string> items) in Categories(data))
+            {
+                QiuTreeNode node = new(category) { IsExpanded = true };
+                foreach (string item in items)
+                {
+                    if (item.Contains(search.Value, StringComparison.OrdinalIgnoreCase))
+                        node.Children.Add(new QiuTreeNode(item) { Tag = item });
+                }
+                tree.Root.Children.Add(node);
+            }
+            tree.Refresh();
+        }
+
+        void RefreshList() =>
+            list.SetItems(chosen.Where(item => item.Contains(listSearch.Value, StringComparison.OrdinalIgnoreCase)));
+
+        search.Changed += _ => RefreshTree();
+        listSearch.Changed += _ => RefreshList();
+        tree.ItemActivated += _ => AddSelected(tree.SelectedNode?.Tag as string);
+        list.ItemActivated += _ => RemoveSelected(list.SelectedItem);
+
+        RefreshTree();
+        RefreshList();
+
+        return ShowQiuForm(form) == QiuDialogResult.Submit ? chosen : initial;
     }
 
-    private void UpdateList(string search)
+    private static IEnumerable<(string Category, IEnumerable<string> Items)> Categories(UndertaleData data)
     {
-        listBox.Items.Clear();
-        foreach (var item in CSTM)
-        {
-            if (item.Contains(search, StringComparison.OrdinalIgnoreCase))
-                listBox.Items.Add(item);
-        }
+        yield return ("Sounds", data.Sounds.Select(item => item.Name.Content));
+        yield return ("Sprites", data.Sprites.Select(item => item.Name.Content));
+        yield return ("Tilesets", data.Backgrounds.Select(item => item.Name.Content));
+        yield return ("Paths", data.Paths.Select(item => item.Name.Content));
+        yield return ("Scripts", data.Code.Select(item => item.Name.Content)
+                                           .Where(name => name.StartsWith("gml_GlobalScript_"))
+                                           .Select(name => name.Substring("gml_GlobalScript_".Length)));
+        yield return ("Shaders", data.Shaders.Select(item => item.Name.Content));
+        yield return ("Fonts", data.Fonts.Select(item => item.Name.Content));
+        yield return ("Timelines", data.Timelines.Select(item => item.Name.Content));
+        yield return ("Game objects", data.GameObjects.Select(item => item.Name.Content));
+        yield return ("Rooms", data.Rooms.Select(item => item.Name.Content));
+        yield return ("Extensions", data.Extensions.Select(item => item.Name.Content));
+
+        if (data.Sequences is not null)
+            yield return ("Sequences", data.Sequences.Select(item => item.Name.Content));
+        if (data.AnimationCurves is not null)
+            yield return ("Curves", data.AnimationCurves.Select(item => item.Name.Content));
     }
 }
 #endregion
-
-// thank god this works
-// the other solution was such a hack
-bool isDarkEnabled = SettingsWindow.EnableDarkMode;
 
 // open main window
-var window = new MainWindow(Data, scriptDir, isDarkEnabled);
+var window = new MainWindow(Data, scriptDir, false);
 window.ShowDialog();
 
 #region save values
@@ -2491,8 +1858,6 @@ CSTM = window.CSTM;
 // if exit
 if (!DUMP)
     return;
-
-#endregion
 
 #region Datafile Copier
 async Task CopyDataFiles()
@@ -2601,19 +1966,13 @@ string GetRunnerFile(string fileDir)
 
     while (doSearch)
     {
-		// damn, new ui made me do it
-        System.Windows.Forms.OpenFileDialog fileDialog = new()
+        string? runnerPath = PromptLoadFile("exe", "Executable Files (*.exe)|*.exe");
+        if (runnerPath is not null)
         {
-            Title = "Take me to your runner.......",
-            InitialDirectory = rootDir,
-            Filter = "Executable Files (*.exe)|*.exe",
-        };
-        if (fileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-        {
-            string lastLine = File.ReadAllLines(fileDialog.FileName).Last();
+            string lastLine = File.ReadAllLines(runnerPath).Last();
             // these always appear in the last line of the actual gamemaker runner.
             if (lastLine.Contains($"name=\"YoYoGames.GameMaker.Runner\"") || lastLine.Contains("GameMaker C++ Core Runner."))
-                return fileDialog.FileName;
+                return runnerPath;
             else
                 doSearch = ScriptQuestion("Thats not the runner! Would you like to try again?");
         }
@@ -6274,8 +5633,8 @@ if (YYMPS)
     string jsonContent = File.ReadAllText($"{scriptDir}{finalExport.name}.yyp");
 
     // parse it
-    JObject jsonObject = JObject.Parse(jsonContent);
-    JObject metaData = (JObject)jsonObject["MetaData"];
+    JsonObject jsonObject = JsonNode.Parse(jsonContent, documentOptions: new JsonDocumentOptions { AllowTrailingCommas = true }).AsObject();
+    JsonObject metaData = jsonObject["MetaData"].AsObject();
 
     // Add new properties or modify existing ones
     metaData["PackageType"] = "Asset";
@@ -6284,7 +5643,7 @@ if (YYMPS)
     metaData["PackagePublisher"] = "Package";
     metaData["PackageVersion"] = "1.0.0";
 
-    string modifiedJson = jsonObject.ToString(Newtonsoft.Json.Formatting.Indented);
+    string modifiedJson = jsonObject.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
     File.WriteAllText($"{scriptDir}{finalExport.name}.yyp", modifiedJson);
     #endregion
 

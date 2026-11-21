@@ -33,7 +33,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Text.Json;
-using Newtonsoft.Json;
+using System.Text.Json;
 using UndertaleModLib.Util;
 using UndertaleModLib.Models;
 using Json = System.Text.Json.JsonSerializer;
@@ -596,7 +596,7 @@ await Task.Run(() => Parallel.ForEach(Data.Rooms, (UndertaleRoom room) => {
         }
 	};
 
-    string json = JsonConvert.SerializeObject(roomData, Formatting.Indented);
+    string json = JsonSerializer.Serialize(roomData, new JsonSerializerOptions { WriteIndented = true });
 	json = ConvertEnumToConst(json);
     File.WriteAllText(roomDir + room.Name.Content + ".yy", json);
 
@@ -930,7 +930,7 @@ void ExportObjects()
                 }
             }
         }
-        string json = JsonConvert.SerializeObject(objectData, Formatting.Indented);
+        string json = JsonSerializer.Serialize(objectData, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(objectDir + gameObject.Name.Content + ".yy", json);
         IncrementProgressParallel();
     });

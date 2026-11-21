@@ -38,3 +38,31 @@ The "Script name display" setting in the settings window picks one of:
 
 Other keys (such as `@author` or `@version`) are stored and available to tooling but are not
 currently shown in the menu.
+
+## Cross-platform forms (QiuForms)
+
+Scripts that need more than `ScriptMessage` / `SimpleTextInput` can build a `QiuForm` instead of
+creating WinForms or WPF windows. The same script then renders on the WPF tool, Avalonia desktop,
+Android, and the CLI:
+
+```csharp
+using QiuForms;
+
+QiuForm form = new("Import options");
+QiuCheckBox special = form.Check("Special type", false);
+QiuNumberBox speed = form.Number("Animation speed", 1, minimum: 0, maximum: 100);
+speed.EnabledWhen(() => special.Value);
+speed.Validate(_ => speed.Value > 0 ? null : "Animation speed must be greater than zero.");
+
+if (ShowQiuForm(form) != QiuDialogResult.Submit)
+    return;
+
+float value = (float)speed.Value;
+```
+
+- `ShowQiuForm` blocks until the window closes and may be called from any thread.
+- Hosts without a UI report `SupportsQiuForms == false`; check it if a script must work there.
+- The model is toolkit-neutral: see `QiuForms/README.md` for the full list of controls, layout rules
+  and threading rules.
+
+See `Special Scripts/QiuForms Demo.csx` for a runnable example.

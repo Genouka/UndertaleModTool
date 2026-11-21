@@ -1,106 +1,53 @@
+// Exports every room as a PNG image.
+// Version for the cross-platform UndertaleModTool: it renders rooms with ExportRoomAsPNG
+// (the same renderer as "Save as image" in the room editor), instead of driving the WPF room editor.
 using System;
-using System.Text;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Controls;
-using System.Runtime;
-
-using UndertaleModLib;
-using UndertaleModLib.Util;
-using UndertaleModLib.Models;
-
 
 EnsureDataLoaded();
 
-UndertaleModTool.MainWindow mainWindow = Application.Current.MainWindow as UndertaleModTool.MainWindow;
-
-ContentControl dataEditor = mainWindow.FindName("DataEditor") as ContentControl;
-if (dataEditor is null)
-    throw new ScriptException("Can't find \"DataEditor\" control.");
-
-DependencyObject dataEditorChild = VisualTreeHelper.GetChild(dataEditor, 0);
-if (dataEditorChild is null)
-    throw new ScriptException("Can't find \"DataEditor\" child control.");
-
-UndertaleRoomRenderer roomRenderer;
-int roomCount = Data.Rooms.Count;
-
-string exportedTexturesFolder = PromptChooseDirectory();
-if (exportedTexturesFolder == null)
+string exportFolder = PromptChooseDirectory();
+if (exportFolder is null)
     throw new ScriptCancelledException("The export folder was not set, stopping script.");
 
-bool displayGrid = ScriptQuestion("Draw room grid?");
-
-if (mainWindow.IsGMS2 == Visibility.Visible)
-    if (!ScriptQuestion("Use the memory economy mode (uses less RAM, but slower)?"))
-        TileLayerTemplateSelector.ForcedMode = 1; // render tile layers as whole images
-
-DirectoryInfo dir = new DirectoryInfo(exportedTexturesFolder);
-
-mainWindow.LastOpenedObject = mainWindow.Selected;
-
-SetProgressBar(null, "Rooms Exported", 0, roomCount);
+SetProgressBar(null, "Rooms exported", 0, Data.Rooms.Count);
 StartProgressBarUpdater();
 
-await DumpRooms();
+int skippedCount = 0;
 
-await StopProgressBarUpdater();
-HideProgressBar();
-
-GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce; // force full garbage collection
-GC.Collect();
-
-ScriptMessage("Exported successfully.");
-
-
-async Task DumpRooms()
+// The loop runs off the UI thread so the progress window stays responsive.
+await Task.Run(() =>
 {
-    for (int i = 0; i < roomCount; i++) {
+    foreach (UndertaleRoom room in Data.Rooms)
+    {
         if (IsAppClosed)
             break;
 
-        UndertaleRoom room = Data.Rooms[i];
-
-        mainWindow.CurrentTab.CurrentObject = room; 
-
-        if (roomRenderer is null)
+        bool hasNoImage = room is null || room.Width == 0 || room.Height == 0;
+        if (hasNoImage)
         {
-            await Task.Delay(150);
-            mainWindow.RoomRendererEnabled = true;
-            await Task.Delay(150);
-
-            DependencyObject obj = VisualTreeHelper.GetChild(dataEditorChild, 0);
-            if (obj is UndertaleRoomRenderer)
-                roomRenderer = obj as UndertaleRoomRenderer;
-            else
-                throw new ScriptException("Can't find the room renderer object, try again.");
+            skippedCount++;
+            IncrementProgressParallel();
+            continue;
         }
 
-        DumpRoom(room.Name.Content, (i == roomCount - 1));
-    }
-
-    mainWindow.RoomRendererEnabled = false;
-}
-
-void DumpRoom(string roomName, bool last)
-{
-    using (var file = File.OpenWrite(exportedTexturesFolder + System.IO.Path.DirectorySeparatorChar + roomName + ".png"))
-    {
+        string roomName = room.Name?.Content ?? $"room_{Data.Rooms.IndexOf(room)}";
         try
         {
-            roomRenderer.SaveImagePNG(file, displayGrid, last);
+            ExportRoomAsPNG(room, Path.Join(exportFolder, roomName + ".png"));
         }
         catch (Exception e)
         {
             throw new ScriptException($"An error occurred while exporting room \"{roomName}\".\n{e}");
         }
-    }
 
-    IncrementProgress();
-}
+        IncrementProgressParallel();
+    }
+});
+
+await StopProgressBarUpdater();
+HideProgressBar();
+
+string skippedText = skippedCount > 0 ? $"\n{skippedCount} empty or zero-sized rooms were skipped." : "";
+ScriptMessage("Exported successfully." + skippedText);

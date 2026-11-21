@@ -76,10 +76,14 @@
         </ItemGroup>
     </Target>
 
-    <!-- Bundled scripts, shipped next to the app for the Scripts menu and for scripts that use ExePath. -->
+    <!--
+        Bundled scripts. There is exactly one script tree in the repository
+        (UndertaleModTool/Scripts); the Avalonia app links it instead of keeping a second copy
+        that would drift. The files still land in a "Scripts" folder next to the executable.
+    -->
     <ItemGroup>
-        <None Remove="Scripts\**" />
-        <Content Include="Scripts\**">
+        <Content Include="..\UndertaleModTool\Scripts\**\*.csx"
+                 Link="Scripts\%(RecursiveDir)%(Filename)%(Extension)">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         </Content>

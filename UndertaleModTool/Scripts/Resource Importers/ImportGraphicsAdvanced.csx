@@ -18,16 +18,15 @@
 
 using System;
 using System.IO;
-using System.Drawing;
 using System.Collections;
 using System.IO.Compression;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using QiuForms;
 using UndertaleModLib.Util;
 using UndertaleModLib.Models;
-using System.Windows.Forms;
 using ImageMagick;
 
 EnsureDataLoaded();
@@ -1092,148 +1091,30 @@ Pressing ""No"" will cause the program to ignore these images.");
 
 public void OffsetResult()
 {
-    Form form = new Form()
-    {
-        Size = new Size(300, 200),
-        Text = "Select Sprite Parameters",
-        FormBorderStyle = FormBorderStyle.FixedDialog,
-        MaximizeBox = false,
-        MinimizeBox = false,
-        StartPosition = FormStartPosition.CenterScreen,
-        AutoScaleMode = AutoScaleMode.Dpi,
-        AutoScaleDimensions = new Size(96, 96),
-    };
+    QiuForm form = new("Select Sprite Parameters");
 
-    Func<int, int, Size> logicalSize = (w, h) => form.LogicalToDeviceUnits(new Size(w, h));
+    bool gm2 = Data.IsGameMaker2();
 
-    ToolTip toolTip = new ToolTip();
+    QiuCheckBox isSpecialBox = form.Check("Special type (required for setting animation speed)", false, id: "special");
+    isSpecialBox.IsEnabled = gm2;
 
-    // for some reason the labels cover eachother on hi-dpi screens,
-    // so this is a bit of a hack for that
-    int labelCover = 3;
+    QiuNumberBox specialVerBox = form.Number("Special version", 1, minimum: 1, maximum: uint.MaxValue, integer: true, id: "specialVersion");
+    specialVerBox.EnabledWhen(() => isSpecialBox.Value);
 
-    Label specialLabel = new Label();
-    specialLabel.Location = new Point(5, 10);
-    specialLabel.Text = "Special Version:";
-    specialLabel.Size = logicalSize(110, 30 - labelCover);
-    form.Controls.Add(specialLabel);
+    QiuNumberBox animSpeedBox = form.Number("Animation speed", 1, minimum: 0, maximum: double.PositiveInfinity, decimals: -1, id: "animationSpeed");
+    animSpeedBox.EnabledWhen(() => isSpecialBox.Value);
 
-    CheckBox isSpecialBox = new System.Windows.Forms.CheckBox();
-    isSpecialBox.Enabled = Data.IsGameMaker2();
-    isSpecialBox.Location = new Point(specialLabel.Width + 5, 10);
-    isSpecialBox.Size = logicalSize(20, 20);
-    toolTip.SetToolTip(isSpecialBox, "Is special type? (required for setting animation speed)");
-    form.Controls.Add(isSpecialBox);
+    QiuChoice playbackBox = form.Choice("Playback type", playbacks, selectedIndex: 1, id: "playback");
+    playbackBox.IsEnabled = gm2;
 
-    TextBox specialVerBox = new System.Windows.Forms.TextBox();
-    specialVerBox.Enabled = Data.IsGameMaker2();
-    specialVerBox.AcceptsReturn = false;
-    specialVerBox.AcceptsTab = false;
-    specialVerBox.AutoSize = true;
-    specialVerBox.Multiline = false;
-    specialVerBox.Text = "1";
-    specialVerBox.Name = "Special Version";
-    specialVerBox.Location = new Point(specialLabel.Width + 5 + isSpecialBox.Width, 10);
-    specialVerBox.Size = logicalSize(30, 30);
-    specialVerBox.Anchor = AnchorStyles.Right;
-    form.Controls.Add(specialVerBox);
+    QiuChoice originBox = form.Choice("Origin position", offsets, selectedIndex: 0, id: "origin");
 
-    Label label1 = new Label();
-    label1.Location = new Point(5, specialVerBox.Height + 15);
-    label1.Text = "Animation Speed:";
-    label1.Size = logicalSize(110, 30 - labelCover);
-    form.Controls.Add(label1);
+    if (ShowQiuForm(form) != QiuDialogResult.Submit)
+        return;
 
-    TextBox textBox = new System.Windows.Forms.TextBox();
-    textBox.Enabled = Data.IsGameMaker2();
-    textBox.AcceptsReturn = false;
-    textBox.AcceptsTab = false;
-    textBox.AutoSize = true;
-    textBox.Multiline = false;
-    textBox.Text = "1";
-    textBox.Name = "Animation Speed";
-    textBox.Location = new Point(label1.Width + 5, specialVerBox.Height + 15);
-    textBox.Size = logicalSize(30, 30);
-    textBox.Anchor = AnchorStyles.Right;
-    form.Controls.Add(textBox);
-
-    Label label2 = new Label();
-    label2.Location = new Point(5, 20 + specialVerBox.Height + textBox.Height);
-    label2.Text = "Playback Type:";
-    label2.Size = logicalSize(110, 30 - labelCover);
-    form.Controls.Add(label2);
-
-    ComboBox comboBox = new ComboBox();
-    comboBox.Enabled = Data.IsGameMaker2();
-    comboBox.Name = "Playback Type";
-    comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-    comboBox.Location = new Point(label2.Width + 5, 20 + specialVerBox.Height + textBox.Height);
-    comboBox.Size = logicalSize(160, 30);
-    comboBox.Anchor = AnchorStyles.Right;
-    foreach (string play in playbacks)
-        comboBox.Items.Add(play);
-    int defaultSelection = comboBox.Items.IndexOf("Frames Per Game Frame");
-    comboBox.SelectedIndex = defaultSelection == -1 ? 0 : defaultSelection;
-    form.Controls.Add(comboBox);
-
-    Label label3 = new Label();
-    label3.Location = new Point(5, 25 + specialVerBox.Height + textBox.Height + comboBox.Height);
-    label3.Text = "Origin Position:";
-    label3.Size = logicalSize(110, 30 - labelCover);
-    form.Controls.Add(label3);
-
-    ComboBox comboBox2 = new ComboBox();
-    comboBox2.Name = "Origin Position";
-    comboBox2.DropDownStyle = ComboBoxStyle.DropDownList;
-    comboBox2.Location = new Point(label2.Width + 5, 25 + specialVerBox.Height + textBox.Height + comboBox.Height);
-    comboBox2.Size = logicalSize(160, 30);
-    comboBox2.Anchor = AnchorStyles.Right;
-    foreach (string off in offsets)
-        comboBox2.Items.Add(off);
-    int defaultSelection2 = comboBox2.Items.IndexOf("Top Left");
-    comboBox2.SelectedIndex = defaultSelection2 == -1 ? 0 : defaultSelection2;
-    form.Controls.Add(comboBox2);
-
-    int bottomY = form.Size.Height - 30;
-
-    Button okBtn = new Button();
-    okBtn.Text = "&Confirm";
-    okBtn.Size = logicalSize(90, 30);
-    okBtn.Location = new Point(5, 35 + specialVerBox.Height + textBox.Height + comboBox.Height + comboBox2.Height);
-    okBtn.Anchor = AnchorStyles.Left;
-    form.Controls.Add(okBtn);
-
-    EventHandler updateFramesActive = (o, e) =>
-    {
-        specialVerBox.Enabled = isSpecialBox.Checked;
-        textBox.Enabled = isSpecialBox.Checked;
-    };
-
-    isSpecialBox.CheckedChanged += updateFramesActive;
-    updateFramesActive(null, null);
-
-    okBtn.Click += (o, e) =>
-    {
-        if (float.TryParse(textBox.Text, out float j))
-        {
-            if (uint.TryParse(specialVerBox.Text, out uint k))
-            {
-                isSpecial = isSpecialBox.Checked;
-                specialVer = k;
-                animSpd = j;
-                offresult = offsets[comboBox2.SelectedIndex];
-                playback = comboBox.SelectedIndex;
-                form.Close();
-            }
-            else
-            {
-                MessageBox.Show("Please use a number in the special version.");
-            }
-        }
-        else
-        {
-            MessageBox.Show("Please use a number in the animation speed.");
-        }
-    };
-    form.ShowDialog();
+    isSpecial = isSpecialBox.Value;
+    specialVer = (uint)specialVerBox.Value;
+    animSpd = (float)animSpeedBox.Value;
+    playback = playbackBox.SelectedIndex;
+    offresult = originBox.SelectedItem;
 }
