@@ -6,6 +6,7 @@ name: Build bsdbg (Unix)
 
 on:
   workflow_dispatch:
+  workflow_call:
   push:
     paths:
       - 'ButterscotchDbg/**'
@@ -20,7 +21,7 @@ on:
       - '.github/workflows/build-bsdbg.yml'
 
 jobs:
-  build:
+  build-bsdbg-unix:
     name: Build (${{ matrix.rid }})
     strategy:
       fail-fast: false
@@ -60,8 +61,12 @@ jobs:
           path: UndertaleModRunner/native/${{ matrix.rid }}/*
           if-no-files-found: error
 
-  build-android:
-    name: Build (android-arm64)
+  build-bsdbg-android:
+    name: Build (android-${{ matrix.abi }})
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, x86_64]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v7
@@ -82,11 +87,11 @@ jobs:
       - name: Build bsdbg
         env:
           ANDROID_NDK_ROOT: ${{ steps.ndk.outputs.ndk-path }}
-        run: ./tools/build-bsdbg-android.sh --abi arm64-v8a --clean
+        run: ./tools/build-bsdbg-android.sh --abi ${{ matrix.abi }} --clean
 
       - name: Upload runtime
         uses: actions/upload-artifact@v4
         with:
-          name: bsdbg-android-arm64
-          path: UndertaleModRunner/native/android-arm64/*
+          name: bsdbg-android-${{ matrix.abi }}
+          path: UndertaleModRunner/native/android-${{ matrix.abi == 'arm64-v8a' && 'arm64' || 'x64' }}/*
           if-no-files-found: error

@@ -1,16 +1,18 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Builds the ButterscotchDbg embedded runner (bsdbg.dll) for Windows.
+    Builds the ButterscotchDbg runtime (bsdbg.dll) and the out-of-process
+    debug host (bsdbg-host.exe) for Windows.
 
 .DESCRIPTION
     Configures Butterscotch with PLATFORM=embedded and BACKEND=sdl2 (or noop),
-    builds the shared bsdbg.dll, and stages it together with SDL2.dll in
-    UndertaleModRunner/native/win-<arch>.
+    builds bsdbg.dll and the native debug host, and stages both together with
+    SDL2.dll in UndertaleModRunner/native/win-<arch>.
 
 .PARAMETER Architecture
-    x64 (default), x86, or all. x86 produces the 32-bit embedded runner used by
-    a 32-bit UndertaleModTool build; all builds both.
+    x64 (default) or all. 'all' is kept for compatibility and now builds only
+    x64: the 32-bit runtime + host are produced by the same loop when passed
+    explicitly (-Architecture x86), but CI and the managed build only need x64.
 
 .PARAMETER Configuration
     CMake build type: Release (default) or Debug.
@@ -43,14 +45,14 @@ $ButterscotchDir = Join-Path $RepoRoot 'Butterscotch'
 $SDLVersion = '2.30.9'
 $SDLZip = Join-Path $RepoRoot "extern/SDL2-devel-$SDLVersion-VC.zip"
 $SDLRoot = Join-Path $RepoRoot "extern/SDL2-$SDLVersion"
-$Architectures = if ($Architecture -eq 'all') { @('x64', 'x86') } else { @($Architecture) }
+$Architectures = if ($Architecture -eq 'all') { @('x64') } else { @($Architecture) }
 
 function Write-Step([string] $Message) {
     Write-Host "==> $Message" -ForegroundColor Cyan
 }
 
-function Find-VcVars([string] $Arch) {
-    $vcvarsName = if ($Arch -eq 'x86') { 'vcvars32.bat' } else { 'vcvars64.bat' }
+function Find-VcVars {
+    $vcvarsName = 'vcvars64.bat'
     $candidates = @(
         "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\$vcvarsName",
         "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\$vcvarsName",
@@ -71,7 +73,7 @@ function Find-VcVars([string] $Arch) {
         }
     }
 
-    throw "Could not locate $vcvarsName (Visual Studio 2022 C++ workload with x86/x64 tools required)."
+    throw "Could not locate $vcvarsName (Visual Studio 2022 C++ workload with x64 tools required)."
 }
 
 function Invoke-VcCommand([string] $VcVars, [string] $Command) {
@@ -183,7 +185,7 @@ foreach ($arch in $Architectures) {
         }
     }
 
-    $VcVars = Find-VcVars $arch
+    $VcVars = Find-VcVars
     Write-Step "[$arch] Using $VcVars"
 
     $cmakeArgs = @(
@@ -220,6 +222,20 @@ foreach ($arch in $Architectures) {
     (Get-Item $stagedDll).LastWriteTime = $stagedAt
     Write-Step "[$arch] Staged $($dll.FullName) -> $OutDir"
 
+    # Out-of-process debug host. It loads bsdbg.dll dynamically, so it must be
+    # compiled for the same architecture and staged next to it.
+    $hostSource = Join-Path $RepoRoot 'ButterscotchDbg/host/bsdbg_host.c'
+    $hostInclude = Join-Path $RepoRoot 'ButterscotchDbg/include'
+    $stagedHost = Join-Path $OutDir 'bsdbg-host.exe'
+    $hostObj = Join-Path $BuildDir 'bsdbg_host.obj'
+    Write-Step "[$arch] Building bsdbg-host.exe"
+    Invoke-VcCommand $VcVars ("cl /nologo /W4 /O2 /MT /I`"$hostInclude`" `"$hostSource`" /Fo:`"$hostObj`" /Fe:`"$stagedHost`" /link /SUBSYSTEM:CONSOLE")
+    if (-not (Test-Path $stagedHost)) {
+        throw "bsdbg-host.exe was not produced for $arch"
+    }
+    (Get-Item $stagedHost).LastWriteTime = $stagedAt
+    Write-Step "[$arch] Staged $stagedHost"
+
     if ($Backend -eq 'sdl2') {
         $stagedSdl = Join-Path $OutDir 'SDL2.dll'
         Copy-Item -Force (Join-Path $SDLRoot "lib/$arch/SDL2.dll") $stagedSdl
@@ -233,9 +249,9 @@ foreach ($arch in $Architectures) {
         Write-Step "[$arch] Staged SDL2.dll -> $OutDir"
     }
 
-    $results += [pscustomobject]@{ Architecture = $arch; Dll = $stagedDll }
+    $results += [pscustomobject]@{ Architecture = $arch; Dll = $stagedDll; Host = $stagedHost }
 }
 
 foreach ($result in $results) {
-    Write-Host "Build succeeded ($($result.Architecture)): $($result.Dll)" -ForegroundColor Green
+    Write-Host "Build succeeded ($($result.Architecture)): $($result.Dll), $($result.Host)" -ForegroundColor Green
 }

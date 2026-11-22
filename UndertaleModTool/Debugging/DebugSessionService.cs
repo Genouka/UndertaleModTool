@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using UndertaleModLib;
@@ -33,7 +34,7 @@ namespace UndertaleModTool.Debugging
         public static DebugSessionService Instance { get; private set; }
 
         public MainWindow MainWindow { get; }
-        public ButterscotchSession Session { get; private set; }
+        public IButterscotchSession Session { get; private set; }
         public DebugState State { get; private set; } = new();
         public ObservableCollection<BreakpointEntry> Breakpoints { get; } = new();
         public ObservableCollection<string> LogLines { get; } = new();
@@ -67,6 +68,20 @@ namespace UndertaleModTool.Debugging
 
         public bool Start(string dataPath, bool stopOnEntry)
         {
+            return StartWithFactory(dataPath, stopOnEntry, config => new ButterscotchSession(config));
+        }
+
+        /// <summary>Starts an out-of-process host session for the given architecture.</summary>
+        public bool StartRemote(string dataPath, bool stopOnEntry,
+                                ButterscotchArchitecture architecture, string hostPath)
+        {
+            return StartWithFactory(dataPath, stopOnEntry,
+                config => new RemoteButterscotchSession(config, architecture, hostPath));
+        }
+
+        private bool StartWithFactory(string dataPath, bool stopOnEntry,
+                                      Func<ButterscotchConfig, IButterscotchSession> factory)
+        {
             if (Session is not null)
                 Stop();
 
@@ -87,30 +102,29 @@ namespace UndertaleModTool.Debugging
 
             try
             {
-                Session = new ButterscotchSession(config);
+                Session = factory(config);
             }
             catch (Exception ex)
             {
-                MainWindow.ShowError($"Could not load ButterscotchDbg: {ex.Message}");
+                MainWindow.ShowError($"Could not create the Butterscotch session: {ex.Message}");
                 Session = null;
                 return false;
             }
 
-            Session.StateChanged += s => OnState(s, false);
-            Session.Stopped += s => OnState(s, true);
-            Session.Exited += code => Dispatch(() =>
-            {
-                AppendLog($"Game exited (code {code}).");
-                Stop();
-            });
-            Session.Error += message => Dispatch(() => AppendLog("ERROR: " + message));
-            Session.Log += (level, message) => Dispatch(() => AppendLog($"[{LevelName(level)}] {message}"));
-            Session.Reloaded += r => Dispatch(() => AppendLog($"Hot reload applied: {r.Applied} code entries."));
-
+            AttachSessionEvents();
             ApplyBreakpoints();
-            if (!Session.Start())
+            try
             {
-                MainWindow.ShowError("Butterscotch runner failed to start (see output window).");
+                if (!Session.Start())
+                {
+                    MainWindow.ShowError("Butterscotch runner failed to start (see output window).");
+                    CloseSession();
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                MainWindow.ShowError("Butterscotch runner failed to start: " + ex.Message);
                 CloseSession();
                 return false;
             }
@@ -118,6 +132,25 @@ namespace UndertaleModTool.Debugging
             AppendLog($"Butterscotch session started: {dataPath}");
             _stateTimer.Start();
             return true;
+        }
+
+        private void AttachSessionEvents()
+        {
+            Session.StateChanged += s => OnState(s, false);
+            Session.Stopped += s => OnState(s, true);
+            Session.Exited += code => Dispatch(() =>
+            {
+                AppendLog($"Game exited (code {code}).");
+                Stop();
+            });
+            Session.Error += message => Dispatch(() =>
+            {
+                AppendLog("ERROR: " + message);
+                if (message.Contains("exited unexpectedly", StringComparison.OrdinalIgnoreCase))
+                    MainWindow.ShowError(message);
+            });
+            Session.Log += (level, message) => Dispatch(() => AppendLog($"[{LevelName(level)}] {message}"));
+            Session.Reloaded += r => Dispatch(() => AppendLog($"Hot reload applied: {r.Applied} code entries."));
         }
 
         public void Stop()
@@ -134,7 +167,7 @@ namespace UndertaleModTool.Debugging
         /// </summary>
         private void CloseSession()
         {
-            ButterscotchSession session = Session;
+            IButterscotchSession session = Session;
             Session = null;
             if (session is not null)
             {
@@ -188,12 +221,23 @@ namespace UndertaleModTool.Debugging
         /// </summary>
         public void RefreshState()
         {
-            if (Session is null)
+            _ = RefreshStateAsync();
+        }
+
+        /// <summary>
+        /// Pulls the current runner state from the session. Remote sessions keep a
+        /// cached snapshot and complete the pipe round-trip off the UI thread.
+        /// </summary>
+        public async Task RefreshStateAsync()
+        {
+            IButterscotchSession session = Session;
+            if (session is null)
                 return;
 
             try
             {
-                DebugState state = Session.GetState() ?? new DebugState();
+                await session.RefreshStateAsync();
+                DebugState state = session.GetState() ?? new DebugState();
                 bool pausedChanged = State?.Paused != state.Paused;
                 State = state;
                 StatusUpdated?.Invoke();
@@ -204,6 +248,23 @@ namespace UndertaleModTool.Debugging
             {
                 // The session may be tearing down while the timer fires.
             }
+        }
+
+        /// <summary>Refreshes call stack / instances / globals, then redraws the tool windows.</summary>
+        public async Task RefreshInspectionAsync()
+        {
+            IButterscotchSession session = Session;
+            if (session is null)
+                return;
+            try
+            {
+                await session.RefreshInspectionAsync();
+            }
+            catch
+            {
+                return;
+            }
+            Dispatch(() => Updated?.Invoke());
         }
 
         public void ToggleBreakpoint(UndertaleCode code, uint offset)
@@ -342,6 +403,9 @@ namespace UndertaleModTool.Debugging
                 }
                 Updated?.Invoke();
             });
+
+            if (stopped)
+                _ = RefreshInspectionAsync();
         }
 
         private void AppendLog(string message)

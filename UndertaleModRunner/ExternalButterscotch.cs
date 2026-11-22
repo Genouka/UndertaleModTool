@@ -13,13 +13,15 @@ namespace UndertaleModRunner;
 [JsonConverter(typeof(JsonStringEnumConverter<ButterscotchArchitecture>))]
 public enum ButterscotchArchitecture
 {
-    /// <summary>Embedded bsdbg session inside the current UndertaleModTool process (supports debugging).</summary>
+    /// <summary>Choose an out-of-process host from the game's native DLLs, then the process architecture.</summary>
+    Auto,
+    /// <summary>Embedded bsdbg session inside the current UndertaleModTool process (Android / legacy fallback).</summary>
     InProcess,
-    /// <summary>External 64-bit Butterscotch executable (run only).</summary>
+    /// <summary>Out-of-process 64-bit debug host (and standalone runner).</summary>
     X64,
-    /// <summary>External 32-bit x86 Butterscotch executable (run only).</summary>
+    /// <summary>Out-of-process 32-bit x86 debug host (and standalone runner).</summary>
     X86,
-    /// <summary>External ARM64 Butterscotch executable (run only).</summary>
+    /// <summary>Out-of-process ARM64 debug host (and standalone runner).</summary>
     Arm64,
 }
 
@@ -132,6 +134,7 @@ public static class ExternalButterscotch
     /// <summary>Returns the display name of an architecture.</summary>
     public static string DescribeArchitecture(ButterscotchArchitecture architecture) => architecture switch
     {
+        ButterscotchArchitecture.Auto => "auto",
         ButterscotchArchitecture.X64 => "x64",
         ButterscotchArchitecture.X86 => "x86",
         ButterscotchArchitecture.Arm64 => "ARM64",

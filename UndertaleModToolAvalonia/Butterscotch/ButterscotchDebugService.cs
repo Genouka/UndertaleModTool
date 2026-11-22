@@ -36,7 +36,7 @@ public sealed class ButterscotchDebugService : IDisposable
 
     public MainViewModel Main { get; }
 
-    public ButterscotchSession? Session { get; private set; }
+    public IButterscotchSession? Session { get; private set; }
     public DebugState State { get; private set; } = new();
     public ObservableCollection<BreakpointEntry> Breakpoints { get; } = new();
     public ObservableCollection<string> LogLines { get; } = new();
@@ -51,13 +51,14 @@ public sealed class ButterscotchDebugService : IDisposable
     public bool IsPaused => State?.Paused == true;
 
     readonly DispatcherTimer _stateTimer = new() { Interval = TimeSpan.FromMilliseconds(200) };
+    bool _inspectionRefreshPending;
     DebugOutputWindow? _logWindow;
     DebugPanelWindow? _panelWindow;
 
     public ButterscotchDebugService(MainViewModel main)
     {
         Main = main;
-        _stateTimer.Tick += (_, _) => RefreshState();
+        _stateTimer.Tick += async (_, _) => await RefreshStateAsync();
     }
 
     /// <summary>The data file a session runs: the project's exported file when one is open.</summary>
@@ -73,6 +74,48 @@ public sealed class ButterscotchDebugService : IDisposable
     /// </summary>
     public bool Start(string? dataPath, bool stopOnEntry,
                       IntPtr embedWindow = default, BsdbgEmbedWindowKind embedKind = BsdbgEmbedWindowKind.None)
+    {
+        return StartWithFactory(dataPath, stopOnEntry,
+            config => new ButterscotchSession(config), embedWindow, embedKind);
+    }
+
+    /// <summary>Starts an isolated debug host (Windows desktop).</summary>
+    public bool StartRemote(string? dataPath, bool stopOnEntry,
+                            ButterscotchArchitecture architecture, string hostPath)
+    {
+        return StartWithFactory(dataPath, stopOnEntry,
+            config => new RemoteButterscotchSession(config, architecture, hostPath),
+            IntPtr.Zero, BsdbgEmbedWindowKind.None);
+    }
+
+    /// <summary>Starts a host over a custom transport (Android side process / Unix socket).</summary>
+    public bool StartRemoteWithTransport(string? dataPath, bool stopOnEntry,
+                                         ButterscotchArchitecture architecture, string hostPath,
+                                         string socketPath,
+                                         Func<string, IReadOnlyList<string>, IHostProcess> processFactory,
+                                         IntPtr embedWindow, BsdbgEmbedWindowKind embedKind)
+    {
+        return StartWithFactory(dataPath, stopOnEntry,
+            config => new RemoteButterscotchSession(config, architecture, hostPath,
+                ButterscotchHostTransportKind.UnixSocket, socketPath, processFactory),
+            embedWindow, embedKind);
+    }
+
+    /// <summary>Starts a POSIX debug host over a Unix domain socket.</summary>
+    public bool StartRemoteUnix(string? dataPath, bool stopOnEntry,
+                                ButterscotchArchitecture architecture, string hostPath)
+    {
+        string socketPath = Path.Combine(Path.GetTempPath(),
+            $"utmt-bsdbg-{Environment.ProcessId}-{Guid.NewGuid():N}.sock");
+        return StartWithFactory(dataPath, stopOnEntry,
+            config => new RemoteButterscotchSession(config, architecture, hostPath,
+                ButterscotchHostTransportKind.UnixSocket, socketPath),
+            IntPtr.Zero, BsdbgEmbedWindowKind.None);
+    }
+
+    bool StartWithFactory(string? dataPath, bool stopOnEntry,
+                          Func<ButterscotchConfig, IButterscotchSession> factory,
+                          IntPtr embedWindow, BsdbgEmbedWindowKind embedKind)
     {
         if (Session is not null)
             Stop();
@@ -96,7 +139,8 @@ public sealed class ButterscotchDebugService : IDisposable
 
         try
         {
-            Session = new ButterscotchSession(config);
+            Session = factory(config);
+            ButterscotchInput.Target = Session;
         }
         catch (Exception ex)
         {
@@ -112,14 +156,28 @@ public sealed class ButterscotchDebugService : IDisposable
             AppendLog($"Game exited (code {code}).");
             Stop();
         });
-        Session.Error += message => Dispatch(() => AppendLog("ERROR: " + message));
+        Session.Error += message => Dispatch(() =>
+        {
+            AppendLog("ERROR: " + message);
+            if (message.Contains("exited unexpectedly", StringComparison.OrdinalIgnoreCase))
+                _ = Main.View?.MessageDialog(message);
+        });
         Session.Log += (level, message) => Dispatch(() => AppendLog($"[{LevelName(level)}] {message}"));
         Session.Reloaded += result => Dispatch(() => AppendLog($"Hot reload applied: {result.Applied} code entries."));
 
         ApplyBreakpoints();
-        if (!Session.Start())
+        try
         {
-            ReportError("Butterscotch runner failed to start (see the debug output window).");
+            if (!Session.Start())
+            {
+                ReportError("Butterscotch runner failed to start (see the debug output window).");
+                CloseSession();
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            ReportError("Butterscotch runner failed to start: " + ex.Message);
             CloseSession();
             return false;
         }
@@ -150,8 +208,9 @@ public sealed class ButterscotchDebugService : IDisposable
     /// </summary>
     void CloseSession()
     {
-        ButterscotchSession? session = Session;
+        IButterscotchSession? session = Session;
         Session = null;
+        ButterscotchInput.Target = null;
         if (session is not null)
         {
             try { session.Dispose(); }
@@ -198,17 +257,19 @@ public sealed class ButterscotchDebugService : IDisposable
     }
 
     /// <summary>
-    /// Pulls the current runner state from the native side. While the game is running only the
-    /// lightweight status fields change; full stop data is only present while paused.
+    /// Pulls the current runner state from the session. Remote sessions keep a
+    /// cached snapshot and complete the round-trip off the UI thread.
     /// </summary>
-    public void RefreshState()
+    public async Task RefreshStateAsync()
     {
-        if (Session is null)
+        IButterscotchSession? session = Session;
+        if (session is null)
             return;
 
         try
         {
-            DebugState state = Session.GetState() ?? new DebugState();
+            await session.RefreshStateAsync();
+            DebugState state = session.GetState() ?? new DebugState();
             bool pausedChanged = State?.Paused != state.Paused;
             State = state;
             StatusUpdated?.Invoke();
@@ -219,6 +280,33 @@ public sealed class ButterscotchDebugService : IDisposable
         {
             // The session may be tearing down while the timer fires.
         }
+    }
+
+    public void RefreshState()
+    {
+        _ = RefreshStateAsync();
+    }
+
+    /// <summary>Refreshes call stack / instances / globals, then redraws the tool windows.</summary>
+    public async Task RefreshInspectionAsync()
+    {
+        IButterscotchSession? session = Session;
+        if (session is null || _inspectionRefreshPending)
+            return;
+        _inspectionRefreshPending = true;
+        try
+        {
+            await session.RefreshInspectionAsync();
+        }
+        catch
+        {
+            return;
+        }
+        finally
+        {
+            _inspectionRefreshPending = false;
+        }
+        Dispatch(() => Updated?.Invoke());
     }
 
     public void ToggleBreakpoint(UndertaleCode? code, uint offset)
@@ -403,6 +491,8 @@ public sealed class ButterscotchDebugService : IDisposable
             }
             Updated?.Invoke();
         });
+        if (stopped)
+            _ = RefreshInspectionAsync();
     }
 
     void AppendLog(string message)

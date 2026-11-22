@@ -137,6 +137,7 @@
                     <TextBlock Text="{loc:Loc Settings_ButterscotchArchitecture}" ToolTip="{loc:Loc Settings_ButterscotchArchitecture_Tooltip}"/>
                     <local:ComboBoxDark Grid.Column="1" SelectedValue="{Binding ButterscotchArchitecture}" SelectedValuePath="Tag"
                               ToolTip="{loc:Loc Settings_ButterscotchArchitecture_Tooltip}">
+                        <ComboBoxItem Content="{loc:Loc Settings_ButterscotchArch_Auto}" Tag="{x:Static runner:ButterscotchArchitecture.Auto}"/>
                         <ComboBoxItem Content="{loc:Loc Settings_ButterscotchArch_InProcess}" Tag="{x:Static runner:ButterscotchArchitecture.InProcess}"/>
                         <ComboBoxItem Content="{loc:Loc Settings_ButterscotchArch_X64}" Tag="{x:Static runner:ButterscotchArchitecture.X64}"/>
                         <ComboBoxItem Content="{loc:Loc Settings_ButterscotchArch_X86}" Tag="{x:Static runner:ButterscotchArchitecture.X86}"/>

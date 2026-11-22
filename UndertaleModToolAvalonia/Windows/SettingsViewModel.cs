@@ -150,7 +150,7 @@ public partial class SettingsViewModel : ObservableObject
         get => (int)MainVM.Settings.ButterscotchArchitecture;
         set
         {
-            if (value is < 0 or > 3)
+            if (value is < 0 or > 4)
                 return;
 
             UndertaleModRunner.ButterscotchArchitecture architecture =

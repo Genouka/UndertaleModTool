@@ -40,6 +40,15 @@ public static class ButterscotchSurfaceHost
     /// <summary>Installed by platforms that can hide their system chrome (Android).</summary>
     public static Action<bool>? FullscreenRequested;
 
+    /// <summary>True when the platform starts the runner in a separate process (Android).</summary>
+    public static bool UseRemoteHost;
+
+    /// <summary>
+    /// Platform-specific start for single-window hosts that use a side process.
+    /// Arguments: data path, stop on entry, native window pointer, window kind.
+    /// </summary>
+    public static Func<string, bool, IntPtr, BsdbgEmbedWindowKind, bool>? StartRemote;
+
     public static bool IsSupported => Factory is not null;
 
     public static bool SupportsFullscreen => FullscreenRequested is not null;

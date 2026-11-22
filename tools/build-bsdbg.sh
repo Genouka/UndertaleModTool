@@ -104,6 +104,16 @@ cp -f "$BUILT_LIB" "$OUT_DIR/$LIB_NAME"
 touch "$OUT_DIR/$LIB_NAME"
 echo "==> [$RID] Staged $BUILT_LIB -> $OUT_DIR"
 
+HOST_NAME="bsdbg-host"
+BUILT_HOST="$(find "$BUILD_DIR" -name "$HOST_NAME" -type f | head -1)"
+if [[ -n "$BUILT_HOST" ]]; then
+    cp -f "$BUILT_HOST" "$OUT_DIR/$HOST_NAME"
+    touch "$OUT_DIR/$HOST_NAME"
+    echo "==> [$RID] Staged $BUILT_HOST -> $OUT_DIR/$HOST_NAME"
+else
+    echo "==> [$RID] warning: no POSIX debug host was built"
+fi
+
 # Stage a private SDL2 runtime next to the library when one is available, so the
 # embedded runner does not depend on the system package at runtime. libbsdbg.so
 # carries an $ORIGIN RPATH for exactly this layout.

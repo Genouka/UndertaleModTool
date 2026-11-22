@@ -959,10 +959,52 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             return;
 
         ButterscotchArchitecture architecture = Settings.ButterscotchArchitecture;
+        if (architecture == ButterscotchArchitecture.Auto && !OperatingSystem.IsWindows())
+            architecture = ButterscotchArchitecture.InProcess;
+        string? dataPath = Project?.SaveDataPath ?? DataPath;
+        if (string.IsNullOrEmpty(dataPath) || !File.Exists(dataPath))
+        {
+            await View!.MessageDialog(LocalizationSource.GetString("Msg_ButterscotchSaveBeforeRun"));
+            return;
+        }
+
+        // Windows desktop runs the game and debugger in a separate host. This is
+        // also what lets a 64-bit app debug 32-bit games.
+        if (OperatingSystem.IsWindows() && architecture != ButterscotchArchitecture.InProcess &&
+            ButterscotchSurfaceHost.Factory is null)
+        {
+            ButterscotchArchitecture effective = ButterscotchHost.ResolveArchitecture(architecture, dataPath);
+            if (!ButterscotchHost.TryResolveExecutable(effective, Settings.ButterscotchExecutablePath,
+                                                       out string hostPath, out string hostError))
+            {
+                await View!.MessageDialog(hostError);
+                return;
+            }
+
+            if (Butterscotch.StartRemote(dataPath, stopOnEntry, effective, hostPath))
+            {
+                Butterscotch.Log($"Started out-of-process {ButterscotchHost.DescribeArchitecture(effective)} " +
+                                 $"Butterscotch: {hostPath}");
+            }
+            return;
+        }
+
+        if (!OperatingSystem.IsAndroid() && architecture != ButterscotchArchitecture.InProcess &&
+            ButterscotchHost.TryResolvePosixExecutable(architecture,
+                                                       Settings.ButterscotchExecutablePath,
+                                                       out string posixHostPath, out _))
+        {
+            ButterscotchArchitecture effective = ButterscotchHost.ResolveArchitecture(architecture, dataPath);
+            if (Butterscotch.StartRemoteUnix(dataPath, stopOnEntry, effective, posixHostPath))
+            {
+                Butterscotch.Log($"Started out-of-process {ButterscotchHost.DescribeArchitecture(effective)} " +
+                                 $"Butterscotch: {posixHostPath}");
+            }
+            return;
+        }
 
         if (architecture != ButterscotchArchitecture.InProcess)
         {
-            // Debugging is only available through the embedded bsdbg session.
             if (stopOnEntry)
             {
                 await View!.MessageDialog(LocalizationSource.GetString("Msg_ButterscotchExternalDebugUnsupported"));
@@ -977,15 +1019,8 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
             externalButterscotchProcess?.Dispose();
             externalButterscotchProcess = null;
 
-            string? externalDataPath = Project?.SaveDataPath ?? DataPath;
-            if (string.IsNullOrEmpty(externalDataPath) || !File.Exists(externalDataPath))
-            {
-                await View!.MessageDialog(LocalizationSource.GetString("Msg_ButterscotchSaveBeforeRun"));
-                return;
-            }
-
             if (!ExternalButterscotch.TryStart(architecture, Settings.ButterscotchExecutablePath,
-                                               externalDataPath, out Process process, out string error))
+                                               dataPath, out Process process, out string error))
             {
                 await View!.MessageDialog(error);
                 return;
@@ -1045,8 +1080,22 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
                 return;
             }
 
-            Butterscotch.Start(Butterscotch.CurrentDataPath, stopOnEntry,
-                               surface.NativeWindowHandle, surface.Kind);
+            if (ButterscotchSurfaceHost.UseRemoteHost && ButterscotchSurfaceHost.StartRemote is not null)
+            {
+                string? dataPath = Butterscotch.CurrentDataPath;
+                if (dataPath is null || !File.Exists(dataPath))
+                {
+                    await View!.MessageDialog(LocalizationSource.GetString("Msg_ButterscotchSaveBeforeRun"));
+                    return;
+                }
+                ButterscotchSurfaceHost.StartRemote(dataPath, stopOnEntry,
+                                                    surface.NativeWindowHandle, surface.Kind);
+            }
+            else
+            {
+                Butterscotch.Start(Butterscotch.CurrentDataPath, stopOnEntry,
+                                   surface.NativeWindowHandle, surface.Kind);
+            }
         }
         finally
         {

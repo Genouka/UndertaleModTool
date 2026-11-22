@@ -21,6 +21,8 @@ public enum BsdbgEmbedWindowKind
     Win32Hwnd = 1,
     /// <summary><see cref="ButterscotchConfig.EmbedWindow"/> is an Android <c>android.view.Surface</c> jobject.</summary>
     AndroidSurface = 2,
+    /// <summary>Pointer to an acquired ANativeWindow, passed from another process.</summary>
+    AndroidNativeWindow = 3,
 }
 
 public sealed class ButterscotchConfig
