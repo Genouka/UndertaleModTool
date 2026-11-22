@@ -21,9 +21,17 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>native\win-x64\%(Filename)%(Extension)</Link>
     </Content>
-    <Content Include="native\win-x86\**">
+    <Content Include="native\win-x86\**" Condition="Exists('native\win-x86\bsdbg.dll')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>native\win-x86\%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="native\win-x64\bsdbg-host.exe" Condition="Exists('native\win-x64\bsdbg-host.exe')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>native\win-x64\bsdbg-host.exe</Link>
+    </Content>
+    <Content Include="native\win-x86\bsdbg-host.exe" Condition="Exists('native\win-x86\bsdbg-host.exe')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>native\win-x86\bsdbg-host.exe</Link>
     </Content>
     <Content Include="native\win-arm64\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -73,14 +81,15 @@
     <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\Butterscotch\vendor\**\*.h" />
     <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\ButterscotchDbg\include\**\*" />
     <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\ButterscotchDbg\src\**\*" />
+    <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\ButterscotchDbg\host\**\*" />
     <ButterscotchBuildInput Include="$(MSBuildThisFileDirectory)..\ButterscotchDbg\patches\**\*" />
   </ItemGroup>
   <Target Name="BuildButterscotchRuntime"
           BeforeTargets="PrepareForBuild"
           Condition="'$(BuildButterscotch)' == 'true' and '$(CanBuildButterscotch)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(BuildingProject)' == 'true'"
           Inputs="@(ButterscotchBuildInput)"
-          Outputs="$(MSBuildThisFileDirectory)native\win-x64\bsdbg.dll;$(MSBuildThisFileDirectory)native\win-x86\bsdbg.dll;$(MSBuildThisFileDirectory)native\win-x64\SDL2.dll;$(MSBuildThisFileDirectory)native\win-x86\SDL2.dll">
-    <Message Importance="high" Text="Butterscotch sources changed; rebuilding bsdbg.dll (x64 + x86; set -p:BuildButterscotch=false to skip)..." />
+          Outputs="$(MSBuildThisFileDirectory)native\win-x64\bsdbg.dll;$(MSBuildThisFileDirectory)native\win-x64\bsdbg-host.exe;$(MSBuildThisFileDirectory)native\win-x64\SDL2.dll">
+    <Message Importance="high" Text="Butterscotch sources changed; rebuilding bsdbg.dll + bsdbg-host.exe (x64; set -p:BuildButterscotch=false to skip)..." />
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ButterscotchBuildScript)&quot; -Architecture all -Configuration Release"
           ContinueOnError="WarnAndContinue" />
   </Target>

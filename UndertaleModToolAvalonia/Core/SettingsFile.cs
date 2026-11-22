@@ -240,11 +240,11 @@ public partial class SettingsFile
     public bool ShowButterscotchDebug { get; set; } = OperatingSystem.IsWindows();
 
     /// <summary>
-    /// Runtime used by "Run with Butterscotch". InProcess is the embedded bsdbg session; the
-    /// other values launch a standalone executable of that architecture (Windows only).
+    /// Runtime used by "Run/Debug with Butterscotch". Auto picks an isolated
+    /// out-of-process host; InProcess keeps the embedded runtime (Android / legacy).
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter<ButterscotchArchitecture>))]
-    public ButterscotchArchitecture ButterscotchArchitecture { get; set; } = ButterscotchArchitecture.InProcess;
+    public ButterscotchArchitecture ButterscotchArchitecture { get; set; } = ButterscotchArchitecture.Auto;
 
     /// <summary>
     /// Optional standalone Butterscotch executable. Empty means auto-probe next to the tool and

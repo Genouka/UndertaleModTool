@@ -162,6 +162,7 @@
                            Content="{l:Loc Settings_ButterscotchArchitecture}"
                            ToolTip.Tip="{l:Loc Settings_ButterscotchArchitecture_Tooltip}" />
                     <ComboBox Grid.Column="1" SelectedIndex="{Binding ButterscotchArchitectureIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="{l:Loc Settings_ButterscotchArch_Auto}" />
                         <ComboBoxItem Content="{l:Loc Settings_ButterscotchArch_InProcess}" />
                         <ComboBoxItem Content="{l:Loc Settings_ButterscotchArch_X64}" />
                         <ComboBoxItem Content="{l:Loc Settings_ButterscotchArch_X86}" />

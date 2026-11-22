@@ -89,6 +89,7 @@ enum BsdbgEmbedWindowKind {
     BSDBG_EMBED_NONE            = 0,
     BSDBG_EMBED_WIN32_HWND      = 1,
     BSDBG_EMBED_ANDROID_SURFACE = 2, /* embedWindow is an android.view.Surface jobject */
+    BSDBG_EMBED_ANDROID_NATIVE_WINDOW = 3, /* embedWindow is an acquired ANativeWindow* */
 };
 
 typedef struct BsdbgBreakpoint {
@@ -243,6 +244,12 @@ BSDBG_API void Bsdbg_SetEventCallback(BsdbgSession* session, BsdbgEventCallback 
 BSDBG_API void Bsdbg_SetLogCallback(BsdbgSession* session, BsdbgLogCallback callback, void* user);
 
 BSDBG_API void Bsdbg_FreeString(char* str);
+
+/* Android out-of-process hosts acquire ANativeWindow in the UI process and pass
+ * the pointer through the protocol. These helpers are only present in Android
+ * builds of libbsdbg; other platforms return 0 / do nothing. */
+BSDBG_API intptr_t Bsdbg_AcquireAndroidNativeWindow(intptr_t surfaceJObject);
+BSDBG_API void Bsdbg_ReleaseAndroidNativeWindow(intptr_t nativeWindow);
 
 /* Returns the ABI version of the built library (currently 1). */
 BSDBG_API int32_t Bsdbg_AbiVersion(void);

@@ -103,13 +103,14 @@ namespace UndertaleModTool
         public bool ShowButterscotchDebug { get; set; } = true;
 
         /// <summary>
-        /// Which Butterscotch runtime "Run with Butterscotch" uses. InProcess is the embedded
-        /// bsdbg session; the other values launch a standalone executable of that architecture.
+        /// Which Butterscotch runtime "Run/Debug with Butterscotch" uses. Auto picks
+        /// an out-of-process host from the game's native DLLs; InProcess keeps the
+        /// embedded session for Android and troubleshooting.
         /// </summary>
-        public ButterscotchArchitecture ButterscotchArchitecture { get; set; } = ButterscotchArchitecture.InProcess;
+        public ButterscotchArchitecture ButterscotchArchitecture { get; set; } = ButterscotchArchitecture.Auto;
 
         /// <summary>
-        /// Optional path to a standalone Butterscotch executable. Empty means auto-probe next to
+        /// Optional path to a bsdbg-host.exe. Empty means auto-probe next to
         /// UndertaleModTool.exe and in native/win-&lt;arch&gt;.
         /// </summary>
         public string ButterscotchExecutablePath { get; set; } = "";

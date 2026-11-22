@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace UndertaleModRunner;
@@ -12,7 +13,7 @@ namespace UndertaleModRunner;
 /// Events are raised on the native game thread; callers that touch UI must
 /// marshal to the UI thread themselves.
 /// </summary>
-public sealed class ButterscotchSession : IDisposable
+public sealed class ButterscotchSession : IButterscotchSession
 {
     private IntPtr _session;
     private readonly List<IntPtr> _allocatedStrings = new();
@@ -332,6 +333,28 @@ public sealed class ButterscotchSession : IDisposable
         return Marshal.StringToCoTaskMemUTF8(value);
     }
 
+    public Task RefreshStateAsync() => Task.CompletedTask;
+
+    public Task RefreshInspectionAsync() => Task.CompletedTask;
+
+    public void PublishSurface(IntPtr handle, BsdbgEmbedWindowKind kind)
+    {
+        // The embedded session receives its surface through ButterscotchConfig.EmbedWindow.
+    }
+
+    public void WithdrawSurface()
+    {
+        // The embedded session owns the surface until it is disposed.
+    }
+
+    public void InjectKey(int gmlKey, bool down) => NativeMethods.Bsdbg_InjectKey(gmlKey, down ? 1 : 0);
+    public void InjectText(uint character) => NativeMethods.Bsdbg_InjectKeyText(character);
+    public void InjectMouseButton(int button, bool down) => NativeMethods.Bsdbg_InjectMouseButton(button, down ? 1 : 0);
+    public void InjectMousePos(double x, double y) => NativeMethods.Bsdbg_InjectMousePos(x, y);
+    public void InjectWheel(double offset) => NativeMethods.Bsdbg_InjectMouseWheel(offset);
+    public void InjectGamepadButton(int button, bool down, float value) =>
+        NativeMethods.Bsdbg_InjectGamepadButton(button, down ? 1 : 0, value);
+    public void InjectGamepadAxis(int axis, float value) => NativeMethods.Bsdbg_InjectGamepadAxis(axis, value);
     public void Dispose()
     {
         if (_disposed)

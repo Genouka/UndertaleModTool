@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Underanalyzer\Underanalyzer\Underanalyzer.csproj" />
-    <ProjectReference Include="..\UndertaleModLib\UndertaleModLib.csproj" />
+    <ProjectReference Include="..\UndertaleModRunner\UndertaleModRunner.csproj" AdditionalProperties="BuildButterscotch=false" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting">

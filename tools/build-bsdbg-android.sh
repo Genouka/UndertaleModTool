@@ -183,6 +183,12 @@ for abi in "${ABIS[@]}"; do
 
     mkdir -p "$OUT_DIR"
     cp -f "$LIB" "$OUT_DIR/libbsdbg.so"
+    HOST="$BUILD_DIR/libbsdbg-host.so"
+    if [[ ! -f "$HOST" ]]; then
+        echo "ERROR: libbsdbg-host.so was not produced under $BUILD_DIR" >&2
+        exit 1
+    fi
+    cp -f "$HOST" "$OUT_DIR/libbsdbg-host.so"
 
     # Strip debug info: the unstripped library is ~14 MB per ABI, which is too
     # much to ship inside the APK. This NDK ships Windows (or Linux) host tools,
@@ -197,6 +203,7 @@ for abi in "${ABIS[@]}"; do
     done
     if [[ -n "$STRIP" ]]; then
         "$STRIP" --strip-unneeded "$(to_cmake_path "$OUT_DIR/libbsdbg.so")"
+        "$STRIP" --strip-unneeded "$(to_cmake_path "$OUT_DIR/libbsdbg-host.so")"
     else
         echo "==> [$abi] llvm-strip not found; shipping the unstripped library"
     fi

@@ -21,6 +21,11 @@ public sealed class AndroidButterscotchSurfaceView : ButterscotchNativeSurfaceVi
     SurfaceView? surfaceView;
     Surface? surface;
     bool destroyed;
+    IntPtr nativeWindow;
+
+    public override BsdbgEmbedWindowKind WindowKind => ButterscotchSurfaceHost.UseRemoteHost
+        ? BsdbgEmbedWindowKind.AndroidNativeWindow
+        : BsdbgEmbedWindowKind.AndroidSurface;
 
     public AndroidButterscotchSurfaceView()
     {
@@ -52,6 +57,7 @@ public sealed class AndroidButterscotchSurfaceView : ButterscotchNativeSurfaceVi
         // Only drop our own references; do not call base, which would dispose it again.
         destroyed = true;
         WithdrawSurface();
+        ReleaseNativeWindow();
         surfaceView = null;
         DisposeSurface();
     }
@@ -81,16 +87,42 @@ public sealed class AndroidButterscotchSurfaceView : ButterscotchNativeSurfaceVi
             return;
         }
 
-        // The runner calls ANativeWindow_fromSurface on this android.view.Surface jobject.
-        PublishSurface(surface.Handle);
+        // Remote host: the debug host process renders through a raw ANativeWindow
+        // pointer. The UI process keeps one reference until the host has acquired
+        // its own; Bsdbg_ReleaseAndroidNativeWindow drops it.
+        if (ButterscotchSurfaceHost.UseRemoteHost)
+        {
+            ReleaseNativeWindow();
+            nativeWindow = AndroidSurfaceBridge.Acquire(surface.Handle);
+            if (nativeWindow == IntPtr.Zero)
+            {
+                WithdrawSurface();
+                return;
+            }
+            PublishSurface(nativeWindow);
+        }
+        else
+        {
+            // The runner calls ANativeWindow_fromSurface on this android.view.Surface jobject.
+            PublishSurface(surface.Handle);
+        }
     }
 
     void OnSurfaceDestroyed()
     {
         WithdrawSurface();
+        ReleaseNativeWindow();
         DisposeSurface();
     }
 
+    void ReleaseNativeWindow()
+    {
+        if (nativeWindow != IntPtr.Zero)
+        {
+            AndroidSurfaceBridge.Release(nativeWindow);
+            nativeWindow = IntPtr.Zero;
+        }
+    }
     /// <summary>
     /// Touch is translated into the runner's mouse input: a finger is the left button and the
     /// viewport position, which is what most GameMaker games respond to on touch devices.

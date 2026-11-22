@@ -77,6 +77,7 @@ public class MainActivity : AvaloniaMainActivity
         // inside the Avalonia tree instead of opening a window of its own.
         ButterscotchSurfaceHost.Factory = () => new AndroidButterscotchSurfaceView().AsGameSurface();
         ButterscotchSurfaceHost.FullscreenRequested = SetGameFullscreen;
+        AndroidDebugHost.Install();
     }
 
     /// <summary>
@@ -153,8 +154,15 @@ public class MainActivity : AvaloniaMainActivity
         // audio devices on lifecycle events automatically, but this app only uses the context shim,
         // so nothing would pause it for us (and previews have no business playing in background).
         AudioPlayer.StopAll();
+        AndroidDebugHost.OnPause();
 
         base.OnPause();
+    }
+
+    protected override void OnResume()
+    {
+        base.OnResume();
+        AndroidDebugHost.OnResume();
     }
 
     protected override void OnDestroy()
@@ -162,7 +170,10 @@ public class MainActivity : AvaloniaMainActivity
         // Tear the shared SDL audio stack down while the activity (SDL.Context) is still alive;
         // a later launch within the same process re-initializes everything transparently.
         if (IsFinishing)
+        {
+            AndroidDebugHost.OnDestroy();
             AudioPlayer.Shutdown();
+        }
 
         SDL.Context = null;
         base.OnDestroy();

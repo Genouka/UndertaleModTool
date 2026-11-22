@@ -3816,50 +3816,38 @@ namespace UndertaleModTool
                 return;
 
             ButterscotchArchitecture architecture = Settings.Instance.ButterscotchArchitecture;
-
-            if (architecture == ButterscotchArchitecture.InProcess && !ExternalButterscotch.CanUseEmbeddedSession)
+            string dataPath = Project?.SaveDataPath ?? FilePath;
+            if (string.IsNullOrEmpty(dataPath) || !File.Exists(dataPath))
             {
-                this.ShowError(LocalizationSource.GetString("Msg_ButterscotchEmbeddedUnsupported"));
+                this.ShowError(LocalizationSource.GetString("Msg_ButterscotchSaveBeforeRun"));
                 return;
             }
 
-            if (architecture != ButterscotchArchitecture.InProcess)
+            // Windows desktop uses the isolated host for both Run and Debug.
+            // Android / other platforms keep the embedded session.
+            if (OperatingSystem.IsWindows() && architecture != ButterscotchArchitecture.InProcess)
             {
-                // Debugging is only available through the embedded bsdbg session.
-                if (stopOnEntry)
-                {
-                    this.ShowError(LocalizationSource.GetString("Msg_ButterscotchExternalDebugUnsupported"));
-                    return;
-                }
-
-                if (_externalButterscotchProcess is { HasExited: false })
-                {
-                    this.ShowError(LocalizationSource.GetString("Msg_ButterscotchExternalAlreadyRunning"));
-                    return;
-                }
-                if (_externalButterscotchProcess is not null)
-                {
-                    _externalButterscotchProcess.Dispose();
-                    _externalButterscotchProcess = null;
-                }
-
-                string dataPath = Project?.SaveDataPath ?? FilePath;
-                if (string.IsNullOrEmpty(dataPath) || !File.Exists(dataPath))
-                {
-                    this.ShowError(LocalizationSource.GetString("Msg_ButterscotchSaveBeforeRun"));
-                    return;
-                }
-
-                if (!ExternalButterscotch.TryStart(architecture, Settings.Instance.ButterscotchExecutablePath,
-                                                   dataPath, out Process process, out string error))
+                ButterscotchArchitecture effective = ButterscotchHost.ResolveArchitecture(architecture, dataPath);
+                if (!ButterscotchHost.TryResolveExecutable(effective, Settings.Instance.ButterscotchExecutablePath,
+                                                           out string hostPath, out string error))
                 {
                     this.ShowError(error);
                     return;
                 }
 
-                _externalButterscotchProcess = process;
-                DebugSession.Log($"Started external {ExternalButterscotch.DescribeArchitecture(architecture)} Butterscotch: " +
-                                 $"{process.StartInfo.FileName} (pid {process.Id})");
+                if (!DebugSession.StartRemote(dataPath, stopOnEntry, effective, hostPath))
+                    return;
+
+                DebugSession.Log($"Started out-of-process {ButterscotchHost.DescribeArchitecture(effective)} Butterscotch: " +
+                                 $"{hostPath}");
+                if (stopOnEntry)
+                    UpdateDebugPanelState();
+                return;
+            }
+
+            if (architecture == ButterscotchArchitecture.InProcess && !ExternalButterscotch.CanUseEmbeddedSession)
+            {
+                this.ShowError(LocalizationSource.GetString("Msg_ButterscotchEmbeddedUnsupported"));
                 return;
             }
 
