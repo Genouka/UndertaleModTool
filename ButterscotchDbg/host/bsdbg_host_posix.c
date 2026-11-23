@@ -644,7 +644,15 @@ static int connect_socket(const char* path) {
 static void send_hello(void) {
     char hello[512];
     int abi = g_api.AbiVersion ? g_api.AbiVersion() : 0;
+#if defined(__aarch64__) || defined(_M_ARM64)
+    const char* arch = "arm64";
+#elif defined(__x86_64__) || defined(_M_X64)
+    const char* arch = "x64";
+#elif defined(__i386__) || defined(_M_IX86)
+    const char* arch = "x86";
+#else
     const char* arch = sizeof(void*) == 8 ? "x64" : "x86";
+#endif
     snprintf(hello, sizeof(hello),
              "{\"protocol\":%d,\"abi\":%d,\"arch\":\"%s\",\"pid\":%d,\"build\":\"posix\"}",
              HOST_PROTOCOL, abi, arch, (int) getpid());
