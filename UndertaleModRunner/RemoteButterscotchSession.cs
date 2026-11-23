@@ -363,8 +363,11 @@ public sealed class RemoteButterscotchSession : IButterscotchSession
         if (!string.Equals(hello.Arch, expected, StringComparison.OrdinalIgnoreCase))
             throw new ButterscotchRemoteException(
                 $"Debug host architecture mismatch (host {hello.Arch}, expected {expected}).");
-        if (_process is not null && hello.Pid != 0 && hello.Pid != _process.Id)
-            throw new ButterscotchRemoteException("Debug host handshake PID does not match the started process.");
+        // Java.Lang.Process on Android does not expose the child PID, so JavaHostProcess.Id is 0
+        // and the handshake PID is only informational. Compare only when the launcher knows it.
+        if (_process is not null && _process.Id > 0 && hello.Pid > 0 && hello.Pid != _process.Id)
+            throw new ButterscotchRemoteException(
+                $"Debug host handshake PID does not match the started process (host {hello.Pid}, started {_process.Id}).");
     }
 
     private void CleanupAfterStartFailure()
