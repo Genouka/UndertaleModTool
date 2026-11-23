@@ -21,6 +21,7 @@
             <TextBlock Name="MessageTextBlock" Text="{Binding Message}" TextWrapping="Wrap" />
         </ScrollViewer>
         <StackPanel Grid.Row="1" Name="ButtonsStackPanel" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Command="{Binding Copy}" Content="{l:Loc Common_Copy}" />
             <Button Command="{Binding OkClick}" IsVisible="{Binding HasOKButton}" IsDefault="True" Content="{l:Loc Common_OK}"/>
             <Button Command="{Binding YesClick}" IsVisible="{Binding HasYesButton}" IsDefault="True" Content="{l:Loc Common_Yes}"/>
             <Button Command="{Binding NoClick}" IsVisible="{Binding HasNoButton}" Content="{l:Loc Common_No}"/>

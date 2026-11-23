@@ -93,6 +93,9 @@ public class Scripting
         "Magick.NET-Q8-AnyCPU",
         "ICSharpCode.SharpZipLib",
         "Newtonsoft",
+        // Audio metadata readers used by the GMS2 decompiler scripts.
+        "NAudio",
+        "NVorbis",
     ];
 
     static bool IsScriptReferenceCandidate(string path)

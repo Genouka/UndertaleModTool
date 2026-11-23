@@ -56,4 +56,6 @@ public partial class TextBoxWindow : Window
     {
         Close(null);
     }
+
+    public void Copy() => _ = WindowHost.CopyToClipboard(this, TextTextBox.Text);
 }
