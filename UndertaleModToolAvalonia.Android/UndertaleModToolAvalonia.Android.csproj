@@ -55,6 +55,10 @@
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.6" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
         <PackageReference Include="Magick.NET.Core" Version="14.16.0" />
+        <!-- The GMS2 decompiler scripts read WAV/OGG/MP3 metadata with NAudio, like the WPF
+             scripting host. NAudio.Vorbis brings NVorbis and the portable Vorbis reader. -->
+        <PackageReference Include="NAudio" Version="2.3.0" />
+        <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
         <!-- Android 版 Magick 原生包：arm64 / x64 都引用，打包时按当前 ABI 只打进对应的 .so。
              ExcludeAssets="native" 阻止包内 runtimes/android-*/native/Magick.Native-Q8-<abi>.dll.so
              直接进 APK（见下方 StageMagickNativeLibraries 的原因），改由该目标以 lib 前缀名字打包。
@@ -271,7 +275,7 @@
                  assets/ScriptAssemblies/.
                  Keep the prefix list in sync with ScriptReferencePrefixes in Core/Scripting.cs. -->
             <_ScriptDllFiltered Include="@(_ScriptDll)"
-                                Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(_ScriptDll.Filename)', '(?i)^(System|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|QiuForms|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft)(\..*)?$'))" />
+                                Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(_ScriptDll.Filename)', '(?i)^(System|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|QiuForms|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft|NAudio|NVorbis)(\..*)?$'))" />
         </ItemGroup>
         <ItemGroup>
             <AndroidAsset Include="@(_ScriptDllFiltered)"
@@ -288,9 +292,15 @@
         and the AOT runtime can execute - their complete API, as in an untrimmed Debug build.
 
         Rooting every System.* library (root-all) OOMs ILLink on a 16 GB machine, so the framework
-        set keeps the default reachability trimming; the packaged reference DLLs stay usable because
-        the only framework members Roslyn's submissions invoke beyond app-reachable ones are in the
-        reflection/async/linq core paths that the scripting engine itself references.
+        set keeps the default reachability trimming, with targeted exceptions for APIs used by the
+        bundled scripts. The decompilers use `dynamic`: the compiler needs
+        System.Runtime.CompilerServices.DynamicAttribute and the runtime binder needs the full
+        expression-tree implementation from System.Linq.Expressions. They also use LINQ's
+        ToHashSet (System.Linq). The GMS1 decompiler builds XDocument/XElement trees (constructors
+        live in System.Private.Xml.Linq), FontEditor creates ZIP archives with the short
+        ZipArchive constructors (System.IO.Compression), and the GMS2 decompilers read audio
+        metadata through NAudio. Without these, Release APKs compile those scripts with
+        CS1980/CS1729/CS7036/CS1061/CS0246 even though Debug works.
 
         System.Private.CoreLib is an implementation assembly (not part of ReferencePath), so it is
         rooted by name - its namespace prefix would otherwise match the System.* regex anyway.
@@ -301,7 +311,7 @@
             Condition="'$(PublishTrimmed)' == 'true' And '$(EmbedAssembliesIntoApk)' == 'True'">
         <ItemGroup>
             <TrimmerRootAssembly Include="@(ManagedAssemblyToLink->'%(Filename)')"
-                                 Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Filename)', '(?i)^(System\.Private\.CoreLib|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|QiuForms|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft)(\..*)?$'))"
+                                 Condition="$([System.Text.RegularExpressions.Regex]::IsMatch('%(Filename)', '(?i)^(System\.Private\.CoreLib|System\.Linq|System\.Xml\.Linq|System\.Xml\.XDocument|System\.Private\.Xml\.Linq|System\.IO\.Compression|mscorlib|netstandard|Microsoft\.CSharp|UndertaleModLib|QiuForms|Underanalyzer|UndertaleModToolAvalonia|UndertaleModToolLocalization|Magick\.NET\.Core|Magick\.NET-Q8-AnyCPU|ICSharpCode\.SharpZipLib|Newtonsoft|NAudio|NVorbis)(\..*)?$'))"
                                  RootMode="All" />
         </ItemGroup>
     </Target>
