@@ -30,8 +30,12 @@ public static class AvaloniaQiuFormsHost
 
         // Windows (and every control in them) belong to the UI thread. Scripts run on their own
         // thread, so marshal there and block the script thread until the dialog is done.
+        //
+        // Do not recurse through Show here: on single-window platforms such as Android the UI
+        // thread cannot pump a nested dispatcher frame (PushFrame throws PlatformNotSupportedException).
+        // Awaiting the simulated dialog instead keeps the UI thread free for input and rendering.
         if (!Dispatcher.UIThread.CheckAccess())
-            return Dispatcher.UIThread.InvokeAsync(() => Show(form, mainVM)).GetAwaiter().GetResult();
+            return Dispatcher.UIThread.InvokeAsync(() => ShowCoreAsync(form, mainVM)).GetAwaiter().GetResult();
 
         Task<QiuDialogResult> dialog = ShowCoreAsync(form, mainVM);
         return dialog.WaitOnDispatcherFrame();

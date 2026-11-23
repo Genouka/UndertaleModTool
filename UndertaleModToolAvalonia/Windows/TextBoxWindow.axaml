@@ -21,3 +21,4 @@
         </StackPanel>
     </Grid>
 </Window>
+            <Button Command="{Binding Copy}" Content="{l:Loc Common_Copy}" />
