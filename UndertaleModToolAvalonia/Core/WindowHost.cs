@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input.Platform;
 using Avalonia.LogicalTree;
 
 namespace UndertaleModToolAvalonia;
@@ -70,6 +71,25 @@ public static class WindowHost
         };
     }
 
+    /// <summary>
+    /// Copies <paramref name="text"/> to the platform clipboard, if one is available.
+    /// Clipboard access is optional on single-window/headless hosts and can be denied at runtime.
+    /// </summary>
+    public static async Task CopyToClipboard(Control view, string? text)
+    {
+        if (string.IsNullOrEmpty(text) || TryGetTopLevel(view)?.Clipboard is not { } clipboard)
+            return;
+
+        try
+        {
+            await clipboard.SetTextAsync(text);
+        }
+        catch (Exception)
+        {
+            // Copy is best-effort: a failed clipboard write must not fault the UI thread.
+        }
+    }
+
     /// <summary>Shows a dialog window, returning its typed result.</summary>
     public static async Task<TResult> ShowDialog<TResult>(Window? owner, Window dialog)
     {
@@ -117,24 +137,4 @@ public static class WindowHost
         else
             window.Activate();
     }
-using Avalonia.Input.Platform;
-    /// <summary>
-    /// Copies <paramref name="text"/> to the platform clipboard, if one is available.
-    /// Clipboard access is optional on single-window/headless hosts and can be denied at runtime.
-    /// </summary>
-    public static async Task CopyToClipboard(Control view, string? text)
-    {
-        if (string.IsNullOrEmpty(text) || TryGetTopLevel(view)?.Clipboard is not { } clipboard)
-            return;
-
-        try
-        {
-            await clipboard.SetTextAsync(text);
-        }
-        catch (Exception)
-        {
-            // Copy is best-effort: a failed clipboard write must not fault the UI thread.
-        }
-    }
-
 }

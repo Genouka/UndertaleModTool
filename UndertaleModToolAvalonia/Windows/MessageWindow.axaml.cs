@@ -1,6 +1,5 @@
 using System;
 using Avalonia.Controls;
-using Avalonia.Input.Platform;
 using UndertaleModTool.Localization;
 
 namespace UndertaleModToolAvalonia;
@@ -80,9 +79,5 @@ public partial class MessageWindow : Window
         Close(Result.Cancel);
     }
 
-    public async void Copy()
-    {
-        if (WindowHost.TryGetTopLevel(this)?.Clipboard is { } clipboard)
-            await clipboard.SetTextAsync(Message);
-    }
+    public void Copy() => _ = WindowHost.CopyToClipboard(this, Message);
 }
