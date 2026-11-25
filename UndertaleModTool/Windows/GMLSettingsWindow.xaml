@@ -208,6 +208,12 @@
                     <CheckBox Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_InlinePropagateVariableTypes}"
                               ToolTip="{loc:Loc GML_InlinePropagateVariableTypes_Tooltip}"
                               IsChecked="{Binding DecompilerSettings.InlinePropagateVariableTypes}"/>
+                    <CheckBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_InferObjectIdFromMemberAccess}"
+                              ToolTip="{loc:Loc GML_InferObjectIdFromMemberAccess_Tooltip}"
+                              IsChecked="{Binding DecompilerSettings.InferObjectIdFromMemberAccess}"/>
+                    <CheckBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="3" Content="{loc:Loc GML_PreScanAllCodeForTypes}"
+                              ToolTip="{loc:Loc GML_PreScanAllCodeForTypes_Tooltip}"
+                              IsChecked="{Binding DecompilerSettings.PreScanAllCodeForTypes}"/>
                 </Grid>
             </Grid>
             <Separator Margin="10,0,10,0"/>
