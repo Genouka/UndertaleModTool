@@ -263,6 +263,31 @@
             </StackPanel>
 
             <StackPanel Classes="Section">
+                <TextBlock Classes="Header" Text="{l:Loc GML_AutoInfer}"/>
+                <Separator />
+
+                <CheckBox Content="{l:Loc GML_InferFunctionArgumentTypes}"
+                          ToolTip.Tip="{l:Loc GML_InferFunctionArgumentTypes_Tooltip}"
+                          IsChecked="{Binding MainVM.Settings.DecompileSettings.InferFunctionArgumentTypes}"/>
+
+                <CheckBox Content="{l:Loc GML_ReverseInferVariableTypes}"
+                          ToolTip.Tip="{l:Loc GML_ReverseInferVariableTypes_Tooltip}"
+                          IsChecked="{Binding MainVM.Settings.DecompileSettings.ReverseInferVariableTypes}"/>
+
+                <CheckBox Content="{l:Loc GML_InlinePropagateVariableTypes}"
+                          ToolTip.Tip="{l:Loc GML_InlinePropagateVariableTypes_Tooltip}"
+                          IsChecked="{Binding MainVM.Settings.DecompileSettings.InlinePropagateVariableTypes}"/>
+
+                <CheckBox Content="{l:Loc GML_InferObjectIdFromMemberAccess}"
+                          ToolTip.Tip="{l:Loc GML_InferObjectIdFromMemberAccess_Tooltip}"
+                          IsChecked="{Binding MainVM.Settings.DecompileSettings.InferObjectIdFromMemberAccess}"/>
+
+                <CheckBox Content="{l:Loc GML_PreScanAllCodeForTypes}"
+                          ToolTip.Tip="{l:Loc GML_PreScanAllCodeForTypes_Tooltip}"
+                          IsChecked="{Binding MainVM.Settings.DecompileSettings.PreScanAllCodeForTypes}"/>
+            </StackPanel>
+
+            <StackPanel Classes="Section">
                 <TextBlock Classes="Header" Text="{l:Loc GML_AddEmptyLines}"/>
                 <Separator />
 
