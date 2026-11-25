@@ -1625,8 +1625,10 @@ namespace UndertaleModTool.Windows
             stringReferences = new();
             funcReferences = new();
             variReferences = new();
-            foreach (var code in data.Code)
+            if (data.Code is not null) // YYC-compiled games have no bytecode
             {
+                foreach (var code in data.Code)
+                {
                 var strings = new HashSet<UndertaleString>();
                 var functions = new HashSet<UndertaleFunction>();
                 var variables = new HashSet<UndertaleVariable>();
@@ -1648,6 +1650,7 @@ namespace UndertaleModTool.Windows
                     funcReferences[code] = functions;
                 if (variables.Count != 0)
                     variReferences[code] = variables;
+                }
             }
 
             mainWindow.IsEnabled = false;
