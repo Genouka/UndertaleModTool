@@ -476,16 +476,25 @@ namespace UndertaleModTool.Windows
             typeof(UndertaleFunction)
         };
 
+        /// <summary>
+        /// Gets the effective GameMaker version of the given game data.
+        /// LTS 2022.0 reports itself as 2022.0 in <see cref="UndertaleGeneralInfo"/>,
+        /// but its asset layout matches regular GM 2022.9 releases.
+        /// </summary>
+        public static (uint Major, uint Minor, uint Release) GetGameVersion(UndertaleGeneralInfo generalInfo)
+        {
+            if (generalInfo.Branch == UndertaleGeneralInfo.BranchType.LTS2022_0)
+                return (2022, 9, 0);
+
+            return (generalInfo.Major, generalInfo.Minor, generalInfo.Release);
+        }
+
         public static (Type, string)[] GetTypeMapForVersion(Type type, UndertaleData data)
         {
             if (!typeMap.TryGetValue(type, out TypesForVersion[] typesForVer))
                 return null;
 
-            GameVersion version;
-            if (data.GeneralInfo.Branch == UndertaleGeneralInfo.BranchType.LTS2022_0)
-                version = (2022, 0, 0);
-            else
-                version = (data.GeneralInfo.Major, data.GeneralInfo.Minor, data.GeneralInfo.Release);
+            GameVersion version = GetGameVersion(data.GeneralInfo);
             byte bytecodeVersion = data.GeneralInfo.BytecodeVersion;
 
             IEnumerable<(Type, string)> outTypes = Enumerable.Empty<(Type, string)>();

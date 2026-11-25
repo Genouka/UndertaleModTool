@@ -1557,7 +1557,7 @@ namespace UndertaleModTool.Windows
 
             bool onlyEmptyResult = true;
 
-            var ver = (data.GeneralInfo.Major, data.GeneralInfo.Minor, data.GeneralInfo.Release);
+            var ver = UndertaleResourceReferenceMap.GetGameVersion(data.GeneralInfo);
             Dictionary<string, List<object>> outDict = new();
             foreach (var predicateForVer in predicatesForVer)
             {
