@@ -8,6 +8,7 @@ using UndertaleModLib.Models;
 using Underanalyzer.Compiler;
 using UndertaleModLib.Compiler;
 using static UndertaleModLib.Util.AssetReferenceTypes;
+using System.Linq;
 using System.Diagnostics.CodeAnalysis;
 
 namespace UndertaleModLib.Decompiler;
@@ -113,6 +114,18 @@ public class GlobalDecompileContext : IGameContext, IFunctionArgTypeProvider
         else
         {
            GlobalFunctions = globalFunctions;
+        }
+
+        // Infer and register variable types from every code entry before any entry is decompiled
+        // for display, so literal expansion does not depend on the order entries are opened.
+        IDecompileSettings settings = Data?.ToolInfo?.DecompilerSettings;
+        if (settings is { PreScanAllCodeForTypes: true, InferFunctionArgumentTypes: true, ReverseInferVariableTypes: true } &&
+            Data.Code is not null &&
+            Data.GameSpecificRegistry?.MacroResolver is GlobalMacroTypeResolver resolver &&
+            !resolver.TypesPreScanned)
+        {
+            resolver.TypesPreScanned = true;
+            GlobalTypePreScanner.Scan(this, Data.Code.Where(c => c.ParentEntry is null), settings);
         }
     }
 
