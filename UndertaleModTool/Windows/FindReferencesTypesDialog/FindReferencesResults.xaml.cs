@@ -176,33 +176,39 @@ Title = LocalizationSource.GetString("Dialog_UnreferencedGameAssets");
                 </HierarchicalDataTemplate>
             ") as HierarchicalDataTemplate;
 
-            foreach (var result in results)
+            // The raw results come from unordered dictionaries (and, for unreferenced assets, from merged
+            // parallel partitions), so sort them here - the single point both dialogs build their tree from,
+            // and the order the export reuses - instead of wherever the lists were produced.
+            foreach (var result in ReferenceResultsOrdering.Sort(results, data))
             {
+                List<object> items = result.Value;
+                object firstItem = items[0];
+
                 var item = new TreeViewItem()
                 {
                     Header = result.Key,
-                    DataContext = result.Value
+                    DataContext = items
                 };
                 item.SetBinding(TreeView.ItemsSourceProperty, new Binding(".")
                 {
                     Converter = filterConv,
                     Mode = BindingMode.OneWay
                 });
-                if (result.Value[0] is UndertaleNamedResource)
+                if (firstItem is UndertaleNamedResource)
                     item.ItemTemplate = namedResTemplate;
-                else if (result.Value[0] is UndertaleString)
+                else if (firstItem is UndertaleString)
                     item.ItemTemplate = TryFindResource("StringTemplate") as HierarchicalDataTemplate;
-                else if (result.Value[0] is GeneralInfoEditor or GlobalInitEditor or GameEndEditor)
+                else if (firstItem is GeneralInfoEditor or GlobalInitEditor or GameEndEditor)
                 {
                     ResultsTree.Items.Add(new TextBlock()
                     {
                         Text = result.Key,
-                        DataContext = result.Value[0],
+                        DataContext = firstItem,
                         ContextMenu = TryFindResource("StandaloneTabMenu") as ContextMenu
                     });
                     continue;
                 }
-                else if (result.Value[0] is object[])
+                else if (firstItem is object[])
                     item.ItemTemplate = TryFindResource("ChildInstTemplate") as HierarchicalDataTemplate;
 
                 ResultsTree.Items.Add(item);
