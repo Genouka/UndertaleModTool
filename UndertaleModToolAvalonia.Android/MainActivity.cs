@@ -20,12 +20,40 @@ namespace UndertaleModToolAvalonia.Android;
     Label = "QiuUTMTv5",
     Theme = "@style/AppTheme",
     MainLauncher = true,
+    // The launcher activity is exported anyway; stating it keeps the intent filters below valid
+    // (Android 12+ refuses exported components without the attribute).
+    Exported = true,
+    // singleTask: an "open with" intent that arrives while the app is running must reach
+    // OnNewIntent instead of stacking a second activity (and a second Avalonia app) on top.
+    LaunchMode = LaunchMode.SingleTask,
     // Resize the activity for the software keyboard instead of panning the UI behind it: with
     // adjustPan the header and the caret end up off screen. Android 15+ ignores this while the
     // app is laid out edge to edge (targetSdk 35+); there MockStackWindow reserves the IME inset
     // itself, because the platform no longer resizes the window for the keyboard.
     WindowSoftInputMode = SoftInput.AdjustResize,
+    // Note: the generated activity node in AndroidManifest.xml carries exported="true" and
+    // launchMode="singleTask"; the intent filters are the attributes right below.
     ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
+// Data files on Android travel as application/octet-stream (there is no shared MIME type for a
+// GameMaker data file). Both URI schemes a sender can hand over are covered: content:// (share
+// sheet and most file managers, browsable so the app resolves from anywhere) and file:// (older
+// apps and shell commands). "*/*" is deliberately not claimed: it would offer the app for every
+// file on the device.
+[IntentFilter(
+    [Intent.ActionView],
+    Categories = [Intent.CategoryDefault, Intent.CategoryBrowsable],
+    DataScheme = "content",
+    DataMimeType = "application/octet-stream")]
+[IntentFilter(
+    [Intent.ActionView],
+    Categories = [Intent.CategoryDefault],
+    DataScheme = "file",
+    DataMimeType = "application/octet-stream")]
+// ACTION_SEND carries the file in EXTRA_STREAM instead of the data URI (handled in MainActivity).
+[IntentFilter(
+    [Intent.ActionSend],
+    Categories = [Intent.CategoryDefault],
+    DataMimeType = "application/octet-stream")]
 public class MainActivity : AvaloniaMainActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)
@@ -35,6 +63,15 @@ public class MainActivity : AvaloniaMainActivity
         // 所以它要先于 base.OnCreate（Avalonia 启动）执行。
         MagickNativeLibraryResolver.Register();
         base.OnCreate(savedInstanceState);
+
+        // A cold start from "open with"/the share sheet puts the file in the launch intent. Only
+        // handle it for a real cold start: an activity recreated from a saved state (e.g. after
+        // being killed in the background) carries the same intent again, and the file has already
+        // been delivered then. Resolution runs on a background task and buffers the path until the
+        // main view model attaches, so it does not matter that Avalonia is already starting here.
+        if (savedInstanceState is null)
+            IncomingFileHandler.Handle(this, Intent);
+
         // SDL3 on Android resolves its Android context (asset manager, file IO, etc.) through
         // SDLActivity.getContext(), which just returns SDL.getContext(). Apps that host SDL inside
         // a non-SDL activity (like Avalonia's) must register the real activity context here so SDL
@@ -78,6 +115,17 @@ public class MainActivity : AvaloniaMainActivity
         ButterscotchSurfaceHost.Factory = () => new AndroidButterscotchSurfaceView().AsGameSurface();
         ButterscotchSurfaceHost.FullscreenRequested = SetGameFullscreen;
         AndroidDebugHost.Install();
+    }
+
+    /// <summary>
+    /// Warm start: with <c>launchMode="singleTask"</c> the system reuses this activity and delivers
+    /// a new "open with"/share intent here instead of calling <see cref="OnCreate"/> again.
+    /// </summary>
+    protected override void OnNewIntent(Intent? intent)
+    {
+        base.OnNewIntent(intent);
+        Intent = intent;
+        IncomingFileHandler.Handle(this, intent);
     }
 
     /// <summary>
