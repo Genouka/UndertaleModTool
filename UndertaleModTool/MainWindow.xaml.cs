@@ -63,6 +63,10 @@ namespace UndertaleModTool
 
         private Tab _currentTab;
 
+        // Periodic auto-save of the open project's pending assets; null when no project is open or
+        // auto-save is disabled (and temporarily during a whole-data-file save).
+        private ProjectAutoSaver _projectAutoSaver;
+
         public UndertaleData Data { get; set; }
         public string FilePath { get; set; }
         public ProjectContext Project { get; set; } = null;
@@ -1270,6 +1274,9 @@ namespace UndertaleModTool
 
                 IsAppClosed = true;
 
+                // No background project auto-save while the app is shutting down.
+                StopProjectAutoSaver();
+
                 Closing -= DataWindow_Closing; // Disable "on window closed" event handler (prevent recursion)
                 _ = Task.Run(() => Dispatcher.Invoke(Close));
             }
@@ -1646,6 +1653,10 @@ namespace UndertaleModTool
             DebugDataDialog.DebugDataMode debugMode = DebugDataDialog.DebugDataMode.NoDebug;
             if (!suppressDebug && Data.GeneralInfo != null && !Data.GeneralInfo.IsDebuggerDisabled)
                 this.ShowWarning(LocalizationSource.GetString("Msg_GMSDebuggerSaveWarning"), LocalizationSource.GetString("Msg_GMSDebuggerTitle"));
+
+            // Pause the periodic project auto-save while the data file itself is being written (which
+            // may also recompile all code sources); it is restarted on the way out.
+            StopProjectAutoSaver();
             Task<bool> t = Task.Run(() =>
             {
                 // Recompile code sources before doing anything, if needed
@@ -1839,8 +1850,16 @@ namespace UndertaleModTool
 
                 return saveSucceeded;
             });
-            dialog.ShowDialog();
-            bool succeeded = await t;
+            bool succeeded;
+            try
+            {
+                dialog.ShowDialog();
+                succeeded = await t;
+            }
+            finally
+            {
+                StartProjectAutoSaver();
+            }
 
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
 
@@ -4954,9 +4973,46 @@ namespace UndertaleModTool
 
         private void UnloadProject()
         {
+            StopProjectAutoSaver();
+
             Project = null;
             _projectAssetsWindow?.Close();
             _projectAssetsWindow = null;
+        }
+
+        /// <summary>
+        /// Starts periodic auto-saving for the currently assigned project, if the setting is
+        /// enabled. Replaces any auto-saver that was previously running.
+        /// </summary>
+        private void StartProjectAutoSaver()
+        {
+            StopProjectAutoSaver();
+
+            ProjectContext project = Project;
+            if (project is null || !Settings.Instance.AutoSaveProjectEnabled)
+            {
+                return;
+            }
+
+            _projectAutoSaver = ProjectAutoSaver.ForProject(
+                project,
+                TimeSpan.FromSeconds(Settings.Instance.AutoSaveProjectIntervalSeconds),
+                exception => SetUMTConsoleText(
+                    string.Format(LocalizationSource.GetString("Msg_AutoSaveFailed"), exception.Message)),
+                savedAt => SetUMTConsoleText(
+                    string.Format(LocalizationSource.GetString("Msg_AutoSaved"), savedAt.ToString("HH:mm"))));
+            _projectAutoSaver.Start();
+        }
+
+        /// <summary>
+        /// Stops and releases the current auto-saver, if any. A save that is already running is
+        /// allowed to finish; the project export lock keeps it from overlapping a manual save.
+        /// </summary>
+        private void StopProjectAutoSaver()
+        {
+            ProjectAutoSaver autoSaver = _projectAutoSaver;
+            _projectAutoSaver = null;
+            autoSaver?.Dispose();
         }
 
         private void AssignNewProject(ProjectContext project)
@@ -4969,6 +5025,7 @@ namespace UndertaleModTool
                 UpdateObjectLabel(Selected);
             };
             UpdateObjectLabel(Selected);
+            StartProjectAutoSaver();
         }
 
         private string ChooseProjectSaveFile(string sourceFilePath)

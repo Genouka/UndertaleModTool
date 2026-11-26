@@ -166,6 +166,11 @@ public partial class ProjectContext
     // for duplicate detection (to catch this user error early)
     private HashSet<string> _streamedSoundFilenames = null;
 
+    // Serializes calls to Export. Manual saves and automatic saves (ProjectAutoSaver) are issued
+    // from independent background threads, and both walk and modify the same export state, so they
+    // must never interleave.
+    private readonly object _exportLock = new();
+
     /// <summary>
     /// Initializes a project context based on its existing main file path.
     /// </summary>
@@ -564,9 +569,39 @@ public partial class ProjectContext
     /// <summary>
     /// Exports all assets that are marked for export.
     /// </summary>
+    /// <remarks>
+    /// Exports are serialized by an internal lock: a periodic auto-save (see <see cref="ProjectAutoSaver"/>)
+    /// runs on its own background thread and must never interleave with a manual save, since both walk
+    /// and update the same export state. The <see cref="UnexportedAssetsChanged"/> notification is raised
+    /// after the lock is released, because it runs on the main thread and must not be able to deadlock
+    /// against another export waiting for that same thread.
+    /// </remarks>
     /// <param name="clearMarkedAssets">Whether to clear the current set of assets marked for export.</param>
     /// <exception cref="ProjectException">When a project-specific exception occurs</exception>
     public void Export(bool clearMarkedAssets)
+    {
+        bool marksCleared;
+        lock (_exportLock)
+        {
+            marksCleared = ExportAssets(clearMarkedAssets);
+        }
+
+        if (marksCleared)
+        {
+            MainThreadAction(() =>
+            {
+                // Trigger event
+                UnexportedAssetsChanged?.Invoke(this, new());
+            });
+        }
+    }
+
+    /// <summary>
+    /// Performs the actual export work. The caller must hold <see cref="_exportLock"/>.
+    /// </summary>
+    /// <param name="clearMarkedAssets">Whether to clear the current set of assets marked for export.</param>
+    /// <returns>Whether assets marked for export were cleared, in which case the event must be raised.</returns>
+    private bool ExportAssets(bool clearMarkedAssets)
     {
         // Ensure project is imported
         if (_mainOptions is null)
@@ -583,9 +618,15 @@ public partial class ProjectContext
         // Initialize saving structures
         _audioGroups = new(Data.AudioGroups?.Count ?? 4);
 
+        // Snapshot the set of assets to export. A manual save blocks the UI, but a periodic
+        // auto-save does not, so the UI thread may mark or unmark assets while this export is
+        // running; enumerating the live set would throw in that case. Assets marked during the
+        // export keep their mark and are picked up by the next one.
+        IProjectAsset[] assetsToExport = [.. _assetsMarkedForExport];
+
         // Before main asset export, ensure all code entries have source code - if they don't, use the decompiler to generate some
         GlobalDecompileContext globalDecompileContext = null;
-        foreach (IProjectAsset asset in _assetsMarkedForExport)
+        foreach (IProjectAsset asset in assetsToExport)
         {
             if (asset is UndertaleCode code)
             {
@@ -618,7 +659,7 @@ public partial class ProjectContext
         // Export all assets that are marked as such
         try
         {
-            foreach (IProjectAsset asset in _assetsMarkedForExport)
+            foreach (IProjectAsset asset in assetsToExport)
             {
                 // If the asset isn't exportable anymore, throw an exception
                 if (!asset.ProjectExportable)
@@ -693,16 +734,12 @@ public partial class ProjectContext
         if (clearMarkedAssets)
         {
             _assetsMarkedForExport.Clear();
-
-            MainThreadAction(() =>
-            {
-                // Trigger event
-                UnexportedAssetsChanged?.Invoke(this, new());
-            });
         }
 
         // Clean up saving structures
         _audioGroups = null;
+
+        return clearMarkedAssets;
     }
 
     /// <summary>

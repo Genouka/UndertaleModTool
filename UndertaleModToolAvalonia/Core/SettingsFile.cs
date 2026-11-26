@@ -194,6 +194,23 @@ public partial class SettingsFile
     /// </summary>
     public bool RecompileAllCodeSourcesOnProjectSave { get; set; } = false;
 
+    /// <summary>
+    /// Whether project edits are auto-saved to the project's own files on a timer, so a crash
+    /// or a killed process cannot lose all unsaved work.
+    /// </summary>
+    public bool AutoSaveProjectEnabled { get; set; } = true;
+
+    private int _autoSaveProjectIntervalSeconds = 120;
+
+    /// <summary>
+    /// Interval between project auto-saves, in seconds. Clamped to 30..3600 seconds when read.
+    /// </summary>
+    public int AutoSaveProjectIntervalSeconds
+    {
+        get => Math.Clamp(_autoSaveProjectIntervalSeconds, 30, 3600);
+        set => _autoSaveProjectIntervalSeconds = value;
+    }
+
     /// <summary>Check for a newer nightly build automatically when the app starts.</summary>
     public bool CheckForUpdates { get; set; } = true;
 

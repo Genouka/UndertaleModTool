@@ -92,6 +92,10 @@ public partial class MainViewModel : ObservableObject
     /// used to enable/disable project menu items like the WPF version does.</summary>
     public bool ProjectActive => Project is not null && Data is not null && DataPath is not null;
 
+    // Periodic auto-save of the open project's pending assets; null when no project is open or
+    // auto-save is disabled (and temporarily during a whole-data-file save).
+    ProjectAutoSaver? _projectAutoSaver;
+
     // Left panel
     public DataExplorerViewModel DataExplorer { get; set; }
 
@@ -512,6 +516,10 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         ILoaderWindow w = View!.LoaderOpen();
         w.SetText(LocalizationSource.GetString("Msg_SavingDataFile"));
 
+        // Pause the periodic project auto-save while the data file itself is being written (which
+        // may also recompile all code sources); it is restarted on the way out.
+        StopProjectAutoSaver();
+
         try
         {
             // Recompile all code sources before saving, if requested and a project is open (mirrors the WPF version)
@@ -557,6 +565,7 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         {
             IsEnabled = true;
             w.Close();
+            StartProjectAutoSaver();
         }
 
         return false;
@@ -1416,6 +1425,8 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
 
     void ClearProject()
     {
+        StopProjectAutoSaver();
+
         Project = null;
 
         if (View is MainView mainView)
@@ -1434,6 +1445,40 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         };
 
         UpdateSelectedTabProperties();
+        StartProjectAutoSaver();
+    }
+
+    /// <summary>
+    /// Starts periodic auto-saving for the current project, if the setting is enabled. Replaces any
+    /// auto-saver that was previously running.
+    /// </summary>
+    void StartProjectAutoSaver()
+    {
+        StopProjectAutoSaver();
+
+        ProjectContext? project = Project;
+        if (project is null || !Settings.AutoSaveProjectEnabled)
+            return;
+
+        _projectAutoSaver = ProjectAutoSaver.ForProject(
+            project,
+            TimeSpan.FromSeconds(Settings.AutoSaveProjectIntervalSeconds),
+            exception => Dispatcher.UIThread.Post(() => CommandTextBoxText =
+                string.Format(LocalizationSource.GetString("Msg_AutoSaveFailed"), exception.Message)),
+            savedAt => Dispatcher.UIThread.Post(() => CommandTextBoxText =
+                string.Format(LocalizationSource.GetString("Msg_AutoSaved"), savedAt.ToString("HH:mm"))));
+        _projectAutoSaver.Start();
+    }
+
+    /// <summary>
+    /// Stops and releases the current auto-saver, if any. A save that is already running is allowed
+    /// to finish; the project export lock keeps it from overlapping a manual save.
+    /// </summary>
+    void StopProjectAutoSaver()
+    {
+        ProjectAutoSaver? autoSaver = _projectAutoSaver;
+        _projectAutoSaver = null;
+        autoSaver?.Dispose();
     }
 
     /// <summary>Asks the user to choose the destination data file for a project, checking that it's not in the same
