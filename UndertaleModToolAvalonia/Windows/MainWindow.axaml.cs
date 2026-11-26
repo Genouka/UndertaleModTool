@@ -36,7 +36,10 @@ public partial class MainWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         if (DataContext is MainViewModel vm)
+        {
             vm.Scripting.IsAppClosed = true;
+            vm.DetachPlatformIncomingFiles();
+        }
 
         base.OnClosed(e);
     }

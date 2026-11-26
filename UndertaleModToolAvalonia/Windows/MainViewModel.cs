@@ -8,6 +8,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -261,6 +262,11 @@ public partial class MainViewModel : ObservableObject
                     }
                 }
             }
+
+            // Android "open with"/share intents: the path may have been resolved before the UI was
+            // ready (cold start), in which case it waits in the platform bridge and is delivered as
+            // soon as this subscription is installed. Warm starts arrive through the same handler.
+            AttachPlatformIncomingFiles();
         }
         catch (Exception e)
         {
@@ -274,6 +280,96 @@ public partial class MainViewModel : ObservableObject
                 Debug.WriteLine(e);
             }
         }
+    }
+
+    /// <summary>
+    /// Opens a data file the operating system handed to the app (Android "open with"/share sheet).
+    /// The path has already been resolved into a readable local file by the platform code; this is
+    /// the same flow as <see cref="OpenDroppedFiles"/> so an already open data file is not thrown
+    /// away without asking. Load failures keep their existing dialog treatment and never escape.
+    /// </summary>
+    async Task OpenIncomingFileAsync(string path)
+    {
+        // Only one incoming file may be opened at a time: two intents delivered in quick
+        // succession would otherwise interleave the save prompt and CloseData/LoadData.
+        await incomingFileGate.WaitAsync();
+        try
+        {
+            if (!await AskFileSave(LocalizationSource.GetString("Msg_SaveDataFileBeforeOpeningNew")))
+                return;
+
+            CloseData();
+
+            using FileStream stream = File.OpenRead(path);
+            if (await LoadData(stream))
+                DataPath = path;
+        }
+        catch (Exception e)
+        {
+            if (View is { } view)
+            {
+                await view.MessageDialog(string.Format(LocalizationSource.GetString("Msg_ErrorOpeningDataFile"), e.Message));
+            }
+            else
+            {
+                Debug.WriteLine(e);
+            }
+        }
+        finally
+        {
+            incomingFileGate.Release();
+        }
+    }
+
+    /// <summary>Serializes incoming file opens; see <see cref="OpenIncomingFileAsync"/>.</summary>
+    readonly SemaphoreSlim incomingFileGate = new(1, 1);
+
+    bool platformIncomingFileAttached;
+
+    /// <summary>
+    /// Subscribes to files the platform hands to the app. Idempotent; the platform bridge also
+    /// delivers whatever arrived before this call (cold start from an intent).
+    /// </summary>
+    public void AttachPlatformIncomingFiles()
+    {
+        if (platformIncomingFileAttached)
+            return;
+        platformIncomingFileAttached = true;
+        PlatformIncomingFile.Attach(OnPlatformIncomingFile, OnPlatformIncomingFileError);
+    }
+
+    /// <summary>Drops the platform subscription when the app shuts down.</summary>
+    public void DetachPlatformIncomingFiles()
+    {
+        if (!platformIncomingFileAttached)
+            return;
+        platformIncomingFileAttached = false;
+        PlatformIncomingFile.Detach();
+    }
+
+    /// <summary>
+    /// Platform bridge callback: called from the platform's worker thread (the file copy runs off
+    /// the UI thread), so the UI-bound load is marshalled to the dispatcher.
+    /// </summary>
+    void OnPlatformIncomingFile(string path)
+    {
+        Dispatcher.UIThread.Post(() => _ = OpenIncomingFileAsync(path));
+    }
+
+    void OnPlatformIncomingFileError(string message)
+    {
+        Dispatcher.UIThread.Post(async () =>
+        {
+            try
+            {
+                if (View is { } view)
+                    await view.MessageDialog(string.Format(LocalizationSource.GetString("Msg_ErrorOpeningDataFile"), message));
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
+        });
     }
 
     [RelayCommand]
