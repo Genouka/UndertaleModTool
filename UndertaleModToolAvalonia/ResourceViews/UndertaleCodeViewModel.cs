@@ -82,7 +82,8 @@ public partial class UndertaleCodeViewModel : ObservableObject, IUndertaleResour
 
     // TODO: Not use static
     static Dictionary<string, string>? localizationData = null;
-    static readonly Regex localizationFunctionRegex = new("""(?:scr_gettext|scr_84_get_lang_string)\(\"(.*?)\"\)""", RegexOptions.Compiled);
+    static readonly Regex gettextRegex = new("""scr_gettext\(\"(.*?)\"(?:\s*,[^)]*)?\)(?!(.*?\/\/.*?$))""", RegexOptions.Compiled);
+    static readonly Regex getlangRegex = new("""scr_84_get_lang_string\(\"(.*?)\"\)""", RegexOptions.Compiled);
     static readonly Regex textdataRegex = new("""^ds_map_add\(global\.text_data_en, "(.*?)", ["'](.*)["']\)""", RegexOptions.Compiled);
 
     ILoaderWindow? loaderWindow;
@@ -346,7 +347,10 @@ public partial class UndertaleCodeViewModel : ObservableObject, IUndertaleResour
             string? line;
             while ((line = decompLinesReader.ReadLine()) is not null)
             {
-                var matches = localizationFunctionRegex.Matches(line).Where(m => m.Success).ToArray();
+                var matches = gettextRegex.Matches(line).Where(m => m.Success)
+                    .Concat(getlangRegex.Matches(line).Where(m => m.Success))
+                    .OrderBy(m => m.Index)
+                    .ToArray();
 
                 decompLinesBuilder.Append(line);
 
