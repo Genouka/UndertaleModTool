@@ -8,6 +8,7 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="UndertaleModToolAvalonia.MainView"
              x:DataType="l:MainViewModel"
+             Classes.touch="{Binding Settings.UiTouchMode}"
              Background="Transparent">
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -39,8 +40,8 @@
             <l:DrawerPage.MainContent>
                 <Grid RowDefinitions="Auto,1*">
                     <ToggleButton Grid.Row="0"
+                                  Classes="DrawerToggle"
                                   HorizontalAlignment="Left"
-                                  Padding="10,2"
                                   IsVisible="{Binding #DrawerPageHost.IsCollapsible}"
                                   IsChecked="{Binding #DrawerPageHost.IsDrawerOpen, Mode=TwoWay}">
                         <l:TablerIcon Data="{x:Static l:TablerIcons.Menu}" />

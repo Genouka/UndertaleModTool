@@ -9,7 +9,8 @@
         Title="{l:Loc Settings_WindowTitle}"
         Width="700"
         Height="500"
-        Classes="SettingsWindow">
+        Classes="SettingsWindow"
+        Classes.touch="{Binding MainVM.Settings.UiTouchMode}">
 
     <ScrollViewer>
         <StackPanel Name="ContentStackPanel">
@@ -54,6 +55,10 @@
                         <ComboBoxItem Content="{l:Loc Settings_DrawerModeAlwaysCollapsed}"/>
                     </ComboBox>
                 </Grid>
+
+                <CheckBox Content="{l:Loc Settings_UiTouchMode}"
+                          ToolTip.Tip="{l:Loc Settings_UiTouchMode_ToolTip}"
+                          IsChecked="{Binding MainVM.Settings.UiTouchMode}"/>
 
                 <Grid ColumnDefinitions="Auto,60,60" Classes="SpacedGrid">
                     <Label Grid.Column="0" VerticalAlignment="Center" Content="{l:Loc Settings_DefaultRoomGridSize}"/>
