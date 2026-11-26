@@ -1325,6 +1325,107 @@ await View!.MessageDialog(LocalizationSource.GetString("Msg_WarningsOccurred") +
         }
     }
 
+    /// <summary>
+    /// Returns the project asset wrapped by a resource tab, or <see langword="null"/> if the tab
+    /// does not represent a project-exportable asset.
+    /// </summary>
+    private static IProjectAsset? GetTabProjectAsset(ITabContent? content) => content switch
+    {
+        UndertaleCodeViewModel vm => vm.Code,
+        UndertaleSpriteViewModel vm => vm.Sprite,
+        UndertaleRoomViewModel vm => vm.Room,
+        UndertaleGameObjectViewModel vm => vm.GameObject,
+        UndertaleSoundViewModel vm => vm.Sound,
+        UndertaleBackgroundViewModel vm => vm.Background,
+        UndertaleFontViewModel vm => vm.Font,
+        UndertaleShaderViewModel vm => vm.Shader,
+        UndertalePathViewModel vm => vm.Path,
+        UndertaleScriptViewModel vm => vm.Script,
+        UndertaleAnimationCurveViewModel vm => vm.AnimationCurve,
+        _ => null,
+    };
+
+    /// <summary>
+    /// Writes the given code's current GML to a temporary file, for external editing in sessions
+    /// that have no project (and thus no project file for it). The file is left on disk.
+    /// </summary>
+    private static string WriteTemporaryCodeFile(UndertaleCodeViewModel codeVm, string source)
+    {
+        string directory = Path.Join(Path.GetTempPath(), "utmt-external-editor");
+        Directory.CreateDirectory(directory);
+
+        string name = codeVm.Code.Name?.Content ?? "code";
+        foreach (char invalid in Path.GetInvalidFileNameChars())
+            name = name.Replace(invalid, '_');
+        if (string.IsNullOrWhiteSpace(name))
+            name = "code";
+
+        string path = Path.Join(directory, $"{name}.gml");
+        string temporaryPath = path + ".tmp";
+        File.WriteAllText(temporaryPath, source);
+        File.Move(temporaryPath, path, overwrite: true);
+        return path;
+    }
+
+    /// <summary>
+    /// Opens the selected asset in the user's external editor, via the OS default handler for the
+    /// project file that backs it. Requires a project, except for code entries, which can fall
+    /// back to a temporary <c>.gml</c> file containing their decompiled source.
+    /// </summary>
+    [RelayCommand]
+    public async Task ToolsOpenInExternalEditor()
+    {
+        // There is no external-editor concept on Android (no shell handlers for these files).
+        if (OperatingSystem.IsAndroid())
+            return;
+
+        if (Tabs.TabSelected is not { } tab
+            || GetTabProjectAsset(tab.Content) is not { ProjectExportable: true } asset)
+        {
+            await View!.MessageDialog(LocalizationSource.GetString("Msg_ExternalEditorNotSaved"));
+            return;
+        }
+
+        // Save the tab first, so the file the editor opens contains the current edits.
+        if (!await tab.Save())
+            return;
+
+        string path;
+        try
+        {
+            if (Project is not null)
+            {
+                Project.MarkAssetForExport(asset);
+                await Task.Run(() => Project.Export(false));
+
+                if (!Project.TryGetAssetFilePath(asset, out path))
+                {
+                    await View!.MessageDialog(LocalizationSource.GetString("Msg_ExternalEditorNotSaved"));
+                    return;
+                }
+            }
+            else
+            {
+                // Without a project only code has a standalone editable form.
+                if (tab.Content is not UndertaleCodeViewModel codeVm
+                    || codeVm.GMLTextDocument is not { } document)
+                {
+                    await View!.MessageDialog(LocalizationSource.GetString("Msg_ExternalEditorNotSaved"));
+                    return;
+                }
+
+                path = WriteTemporaryCodeFile(codeVm, document.Text);
+            }
+
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception e)
+        {
+            // No handler for the file type, IO failure, or the export itself failing.
+            await View!.MessageDialog(string.Format(LocalizationSource.GetString("Msg_ExternalEditorFailed"), e.Message));
+        }
+    }
+
     public async void ScriptsRunOtherScript()
     {
         var files = await View!.OpenFileDialog(new FilePickerOpenOptions()

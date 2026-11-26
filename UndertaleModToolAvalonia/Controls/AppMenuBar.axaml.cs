@@ -197,6 +197,9 @@ public partial class AppMenuBar : UserControl
         tools.Items.Add(new NativeMenuItemSeparator());
         Item(tools, "Menu_Tools_CompareDataFiles", command: new RelayCommand(vm.ToolsCompareDataFiles));
         Item(tools, "Menu_Tools_ApplyDataFilePatch", command: new RelayCommand(vm.ToolsApplyDataFilePatch));
+        // Single-window hosts have no external editors to hand files to, so the entry is omitted.
+        if (!isMobile)
+            Item(tools, "Menu_Tools_OpenInExternalEditor", command: new AsyncRelayCommand(vm.ToolsOpenInExternalEditor));
 
         NativeMenu project = new();
         Item(project, "Menu_Project_New", command: new RelayCommand(vm.ProjectNew));

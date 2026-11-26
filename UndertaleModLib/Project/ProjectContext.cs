@@ -562,6 +562,69 @@ public partial class ProjectContext
     }
 
     /// <summary>
+    /// Attempts to retrieve the path of the project file that stores the given asset.
+    /// </summary>
+    /// <remarks>
+    /// This is a pure lookup and never invents a path: it returns <see langword="true"/> only when
+    /// the asset's file already exists on disk, so a caller that needs the file to be current must
+    /// export first (see <see cref="Export(bool)"/>). The path recorded for the asset when the
+    /// project was loaded or last exported is preferred; otherwise the canonical destination that
+    /// <see cref="Export(bool)"/> would use for a new asset is checked. For
+    /// <see cref="UndertaleCode"/>, the sibling <c>.gml</c> source file is returned when it exists,
+    /// as that is the file meant to be edited (the JSON sidecar is often omitted).
+    /// </remarks>
+    /// <param name="asset">Asset to look up a file for.</param>
+    /// <param name="path">Existing on-disk path of the asset's file, when found.</param>
+    /// <returns><see langword="true"/> if an existing file for the asset was found; <see langword="false"/> otherwise.</returns>
+    public bool TryGetAssetFilePath(IProjectAsset asset, [NotNullWhen(true)] out string path)
+    {
+        ISerializableProjectAsset serializable = asset.GenerateSerializableProjectAsset(this);
+        string dataName = serializable.DataName ?? asset.ProjectName;
+
+        // Prefer the path recorded when loading the project, or when the asset was last exported
+        if (_assetDataNamesToPaths.TryGetValue(new(dataName, asset.ProjectAssetType), out string existingPath)
+            && TryUseAssetFile(asset, existingPath, out path))
+        {
+            return true;
+        }
+
+        // Otherwise, check the canonical destination that Export uses for an asset with no recorded path
+        string friendlyName = MakeValidFilenameIdentifier(serializable.AssetType, dataName);
+        string filesystemDirectory = serializable.AssetType.ToFilesystemNamePlural();
+        string destinationFile = serializable.IndividualDirectory
+            ? Path.Join(MainDirectory, filesystemDirectory, friendlyName, $"{friendlyName}.json")
+            : Path.Join(MainDirectory, filesystemDirectory, $"{friendlyName}.json");
+
+        return TryUseAssetFile(asset, destinationFile, out path);
+    }
+
+    /// <summary>
+    /// Checks whether an existing file for the given asset is found at the supplied main (JSON)
+    /// path, preferring the sibling code source file for code entries.
+    /// </summary>
+    private static bool TryUseAssetFile(IProjectAsset asset, string mainFilePath, [NotNullWhen(true)] out string path)
+    {
+        if (asset is UndertaleCode)
+        {
+            string sourcePath = Path.ChangeExtension(mainFilePath, "gml");
+            if (File.Exists(sourcePath))
+            {
+                path = sourcePath;
+                return true;
+            }
+        }
+
+        if (File.Exists(mainFilePath))
+        {
+            path = mainFilePath;
+            return true;
+        }
+
+        path = null;
+        return false;
+    }
+
+    /// <summary>
     /// Exports all assets that are marked for export.
     /// </summary>
     /// <param name="clearMarkedAssets">Whether to clear the current set of assets marked for export.</param>
