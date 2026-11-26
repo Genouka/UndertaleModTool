@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,9 +12,16 @@ using UndertaleModLib.Scripting;
 
 namespace UndertaleModToolAvalonia;
 
-public partial class SettingsFile
+public partial class SettingsFile : INotifyPropertyChanged
 {
     static readonly string roamingAppData = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "UndertaleModToolAvalonia");
+
+    /// <summary>
+    /// Raised for the few settings that the UI reads as live bindings (currently only
+    /// <see cref="UiTouchMode"/>). Most settings are written on dialog close and need no change
+    /// notification.
+    /// </summary>
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public SettingsFile() { }
 
@@ -229,6 +237,26 @@ public partial class SettingsFile
     /// How the asset explorer sidebar (the former fixed left panel) is displayed.
     /// </summary>
     public DrawerModeValue DrawerMode { get; set; } = DrawerModeValue.Auto;
+
+    bool uiTouchMode = OperatingSystem.IsAndroid();
+
+    /// <summary>
+    /// Enlarges interactive hit targets (buttons, tabs, text/combo boxes, checkboxes, tree rows)
+    /// for finger input, without changing fonts or theme. Applied as the <c>touch</c> style class
+    /// on the UI root; defaults to on for Android and off for desktop.
+    /// </summary>
+    public bool UiTouchMode
+    {
+        get => uiTouchMode;
+        set
+        {
+            if (uiTouchMode == value)
+                return;
+
+            uiTouchMode = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(UiTouchMode)));
+        }
+    }
 
     public bool AlwaysSaveDataInProjectDestination { get; set; } = true;
 

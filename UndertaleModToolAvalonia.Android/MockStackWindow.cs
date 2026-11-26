@@ -105,6 +105,10 @@ public class MockStackWindow : UserControl
         // Keep the simulated main page's tab name in sync with MainViewModel.Title,
         // which is the single-window equivalent of the title bar on this platform.
         mainVM.PropertyChanged += OnMainViewModelPropertyChanged;
+
+        // The simulated-window chrome is built in code, so it cannot rely on a XAML binding for
+        // the touch class; mirror the setting (and follow it live) here instead.
+        ApplyTouchMode();
     }
 
     /// <summary>The simulated main page (the actual UndertaleModTool UI).</summary>
@@ -365,6 +369,14 @@ public class MockStackWindow : UserControl
     /// </summary>
     void OnMainViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(MainViewModel.Settings))
+        {
+            // Settings are loaded asynchronously: the instance (and its touch-mode value) may be
+            // replaced after this control was built.
+            ApplyTouchMode();
+            return;
+        }
+
         if (e.PropertyName != nameof(MainViewModel.Title))
             return;
 
@@ -378,6 +390,35 @@ public class MockStackWindow : UserControl
         }
 
         UpdateStack();
+    }
+
+    SettingsFile? touchSettings;
+
+    /// <summary>
+    /// Applies the touch-mode setting to the simulated-window chrome. The shared "touch" styles
+    /// enlarge the buttons built here (tab close, modal back/close); the tab strip also sets its
+    /// own metrics in code, which override styles, so it is rebuilt with touch-sized values.
+    /// Follows the setting live, including replacement of the settings object during startup.
+    /// </summary>
+    void ApplyTouchMode()
+    {
+        if (!ReferenceEquals(touchSettings, mainVM.Settings))
+        {
+            if (touchSettings is not null)
+                touchSettings.PropertyChanged -= OnSettingsPropertyChanged;
+
+            touchSettings = mainVM.Settings;
+            touchSettings.PropertyChanged += OnSettingsPropertyChanged;
+        }
+
+        Classes.Set("touch", mainVM.Settings.UiTouchMode);
+        RebuildTabs();
+    }
+
+    void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsFile.UiTouchMode))
+            ApplyTouchMode();
     }
 
     void CloseModalPage(MockPage page)
@@ -493,6 +534,10 @@ public class MockStackWindow : UserControl
         TouchToolTip.Close();
         tabPanel.Children.Clear();
 
+        // Local values beat style setters, so the touch metrics are applied here explicitly
+        // (same numbers as the "touch" styles: 44 px targets, roomier padding).
+        bool touch = mainVM.Settings.UiTouchMode;
+
         for (int i = 0; i < nonModalPages.Count; i++)
         {
             MockPage page = nonModalPages[i];
@@ -511,8 +556,8 @@ public class MockStackWindow : UserControl
                     Text = page.EffectiveTitle,
                     TextTrimming = TextTrimming.CharacterEllipsis,
                 },
-                Width = 88,
-                Padding = new Thickness(10, 4),
+                Width = touch ? 112 : 88,
+                Padding = touch ? new Thickness(12, 10) : new Thickness(10, 4),
                 Margin = new Thickness(0, 0, 4, 0),
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
             };

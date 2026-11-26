@@ -171,6 +171,71 @@
         <Setter Property="Grid.ColumnSpan" Value="2" />
     </Style>
 
+    <!-- Touch mode -->
+    <!-- Enabled by the "touch" class on the UI root (Settings.UiTouchMode). Only hit targets grow;
+         fonts, colors and the theme's compact density stay untouched, and nothing is applied while
+         the class is absent, so desktop rendering is unchanged. -->
+    <Style Selector=".touch Button">
+        <Setter Property="MinWidth" Value="44" />
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="Padding" Value="10,8" />
+    </Style>
+
+    <Style Selector=".touch ToggleButton">
+        <Setter Property="MinWidth" Value="44" />
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="Padding" Value="10,8" />
+    </Style>
+
+    <Style Selector=".touch TabItem, .touch TabStripItem">
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="12,6" />
+    </Style>
+
+    <Style Selector=".touch TextBox">
+        <Setter Property="MinHeight" Value="40" />
+    </Style>
+
+    <Style Selector=".touch ComboBox">
+        <Setter Property="MinHeight" Value="40" />
+    </Style>
+
+    <Style Selector=".touch CheckBox">
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Padding" Value="4,6" />
+    </Style>
+
+    <Style Selector=".touch TreeViewItem">
+        <Setter Property="MinHeight" Value="32" />
+    </Style>
+
+    <!-- Buttons that templates embed as decoration (tree expander, scrollbar paging) must keep
+         their own compact metrics; enlarging them would distort indentation and scrollbar layout
+         while adding no hit-target benefit. -->
+    <Style Selector=".touch TreeViewItem ToggleButton">
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <Style Selector=".touch ScrollBar RepeatButton">
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <!-- The drawer toggle carries its own compact padding (it sits above the tab strip); in touch
+         mode it becomes a full-size target. -->
+    <Style Selector="ToggleButton.DrawerToggle">
+        <Setter Property="Padding" Value="10,2" />
+    </Style>
+
+    <Style Selector=".touch ToggleButton.DrawerToggle">
+        <Setter Property="MinWidth" Value="44" />
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="Padding" Value="10,10" />
+    </Style>
+
     <!-- Custom -->
     <Style Selector="Grid#LeftPanel">
         <Setter Property="Margin" Value="4" />
