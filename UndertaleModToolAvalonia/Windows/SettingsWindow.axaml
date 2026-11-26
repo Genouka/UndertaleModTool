@@ -82,6 +82,18 @@
                 <CheckBox Content="{l:Loc Settings_RecompileOnSave}"
                             ToolTip.Tip="{l:Loc Settings_RecompileOnSaveToolTip}"
                             IsChecked="{Binding MainVM.Settings.RecompileAllCodeSourcesOnProjectSave}"/>
+                <CheckBox Content="{l:Loc Settings_AutoSaveProject}"
+                            ToolTip.Tip="{l:Loc Settings_AutoSaveProjectToolTip}"
+                            IsChecked="{Binding MainVM.Settings.AutoSaveProjectEnabled}"/>
+                <Grid ColumnDefinitions="Auto,1*" Classes="SpacedGrid"
+                      IsEnabled="{Binding MainVM.Settings.AutoSaveProjectEnabled}">
+                    <Label Grid.Column="0" VerticalAlignment="Center"
+                           Content="{l:Loc Settings_AutoSaveProjectInterval}"
+                           ToolTip.Tip="{l:Loc Settings_AutoSaveProjectIntervalToolTip}"/>
+                    <TextBox Grid.Column="1" MaxWidth="120" HorizontalAlignment="Left"
+                             Text="{Binding MainVM.Settings.AutoSaveProjectIntervalSeconds}"
+                             ToolTip.Tip="{l:Loc Settings_AutoSaveProjectIntervalToolTip}"/>
+                </Grid>
                 <CheckBox Content="{l:Loc Settings_CheckForUpdates}"
                             ToolTip.Tip="{l:Loc Settings_CheckForUpdatesToolTip}"
                             IsChecked="{Binding MainVM.Settings.CheckForUpdates}"/>

@@ -130,6 +130,27 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition SharedSizeGroup="g1" Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <CheckBox Grid.ColumnSpan="2" IsChecked="{Binding AutoSaveProjectEnabled}"
+                              Content="{loc:Loc Settings_AutoSaveProject}"
+                              ToolTip="{loc:Loc Settings_AutoSaveProjectToolTip}"/>
+                    <TextBlock Grid.Row="1" Text="{loc:Loc Settings_AutoSaveProjectInterval}" VerticalAlignment="Center"
+                               ToolTip="{loc:Loc Settings_AutoSaveProjectIntervalToolTip}"/>
+                    <local:TextBoxDark Grid.Row="1" Grid.Column="1" Width="100" HorizontalAlignment="Left"
+                                       IsEnabled="{Binding AutoSaveProjectEnabled}"
+                                       Text="{Binding AutoSaveProjectIntervalSeconds}"
+                                       ToolTip="{loc:Loc Settings_AutoSaveProjectIntervalToolTip}"/>
+                </Grid>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>

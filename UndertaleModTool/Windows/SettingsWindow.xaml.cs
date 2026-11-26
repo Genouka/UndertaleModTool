@@ -385,6 +385,26 @@ namespace UndertaleModTool
             }
         }
 
+        public static bool AutoSaveProjectEnabled
+        {
+            get => Settings.Instance.AutoSaveProjectEnabled;
+            set
+            {
+                Settings.Instance.AutoSaveProjectEnabled = value;
+                Settings.Save();
+            }
+        }
+
+        public static int AutoSaveProjectIntervalSeconds
+        {
+            get => Settings.Instance.AutoSaveProjectIntervalSeconds;
+            set
+            {
+                Settings.Instance.AutoSaveProjectIntervalSeconds = value;
+                Settings.Save();
+            }
+        }
+
         public static bool ChangeTrackingEnabled
         {
             get => Settings.Instance.ChangeTrackingEnabled;
