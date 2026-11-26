@@ -87,11 +87,7 @@ namespace UndertaleModTool.Windows
                 return;
             }
 
-            GameVersion ver;
-            if (data.GeneralInfo.Branch == UndertaleGeneralInfo.BranchType.LTS2022_0)
-                ver = (2022, 0, 0);
-            else
-                ver = (data.GeneralInfo.Major, data.GeneralInfo.Minor, data.GeneralInfo.Release);
+            GameVersion ver = UndertaleResourceReferenceMap.GetGameVersion(data.GeneralInfo);
             var sourceTypes = UndertaleResourceReferenceMap.GetReferenceableTypes(ver);
 
             foreach (var typePair in sourceTypes)
