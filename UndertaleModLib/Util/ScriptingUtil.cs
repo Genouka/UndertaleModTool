@@ -34,7 +34,14 @@ public static class ScriptingUtil
                             typeof(System.Text.RegularExpressions.Regex).GetTypeInfo().Assembly,
                             typeof(ImageMagick.MagickImage).GetTypeInfo().Assembly,
                             typeof(Underanalyzer.Decompiler.DecompileContext).Assembly,
-                            typeof(QiuForm).GetTypeInfo().Assembly)
+                            typeof(QiuForm).GetTypeInfo().Assembly,
+                            // The GMS1 decompiler uses dynamic dispatch for resource chunk export.
+                            typeof(Microsoft.CSharp.RuntimeBinder.Binder).GetTypeInfo().Assembly,
+                            // The GMS2 decompilers read audio metadata with these readers.
+                            typeof(NAudio.Wave.WaveStream).GetTypeInfo().Assembly,
+                            typeof(NAudio.Wave.Mp3FileReader).GetTypeInfo().Assembly,
+                            typeof(NAudio.Wave.MediaFoundationReader).GetTypeInfo().Assembly,
+                            typeof(NAudio.Vorbis.VorbisWaveReader).GetTypeInfo().Assembly)
             .WithEmitDebugInformation(true); // When script throws an exception, adds an exception location (line number)
     }
 

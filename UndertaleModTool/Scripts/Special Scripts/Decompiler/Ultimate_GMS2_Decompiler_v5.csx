@@ -1,3 +1,8 @@
+﻿// ==UndertaleModTool==
+// @name        Ultimate GMS2 Decompiler v5
+// @name:zh-Hans Ultimate GMS2 反编译 v5
+// @name:zh-CN  Ultimate GMS2 反编译 v5
+// ==/UndertaleModTool==
 #region LICENSE
 /*
                                  Apache License
@@ -260,6 +265,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -290,6 +296,17 @@ if (Data.ToolInfo.DecompilerSettings.CreateEnumDeclarations == true)
 	if (!ScriptQuestion("The 'Create Enum Declarations' Setting is ENABLED\nDecompiling with this Enabled will almost certainly break your decompilation\n\nContinue Anyways?"))
 		return;
 }
+#endregion
+
+#region Script UI Host
+public static class ScriptQiuForms
+{
+    public static Func<QiuForm, QiuDialogResult> Show = _ => QiuDialogResult.Cancel;
+    public static Action<string> Message = _ => { };
+}
+
+ScriptQiuForms.Show = form => ShowQiuForm(form);
+ScriptQiuForms.Message = message => ScriptMessage(message);
 #endregion
 
 #region Classes
@@ -1631,8 +1648,8 @@ public Dictionary<string, List<string>> extensionGML = new();
 // the folder of the data.win
 public string rootDir = Path.GetDirectoryName(FilePath) + "\\";
 // for macro stuff!
-public string definitionDir = $"{Program.GetExecutableDirectory()}\\GameSpecificData\\Definitions\\";
-public string macroDir = $"{Program.GetExecutableDirectory()}\\GameSpecificData\\Underanalyzer\\";
+public string definitionDir = $"{ExePath}\\GameSpecificData\\Definitions\\";
+public string macroDir = $"{ExePath}\\GameSpecificData\\Underanalyzer\\";
 // the folder the project is exported to
 public string scriptDir = $"{rootDir}Exported_Project\\";
 // delete old decompiling attempt
@@ -1680,6 +1697,7 @@ public static class TilesetSaveData
 
 public class UIWindow
 {
+    private readonly UndertaleData data;
     private readonly QiuForm form;
     private readonly QiuCheckBox _OBJT, _ROOM, _EXTN, _SCPT, _TMLN, _SOND, _SHDR, _PATH;
     private readonly QiuCheckBox _ACRV, _SEQN, _FONT, _SPRT, _BGND;
@@ -1687,8 +1705,9 @@ public class UIWindow
     private readonly QiuCheckBox _CSTM, _FIXT;
     private readonly QiuSlider _CPU;
 
-    public UIWindow()
+    public UIWindow(UndertaleData data)
     {
+        this.data = data;
         form = new("Ultimate_GMS2_Decompiler_v5");
         form.Message = "Original Script by setupwitch\n\tImproved by burnedpopcorn180";
 
@@ -1707,7 +1726,7 @@ public class UIWindow
         _PATH = form.Check("Paths", true);
 
         _ACRV = form.Check("Anim. Curves", true);
-        if (Data.AnimationCurves is null)
+        if (data.AnimationCurves is null)
         {
             _ACRV.IsEnabled = false;
             _ACRV.SetValueFromHost(false);
@@ -1715,7 +1734,7 @@ public class UIWindow
         }
 
         _SEQN = form.Check("Sequences", true);
-        if (Data.Sequences is null)
+        if (data.Sequences is null)
         {
             _SEQN.IsEnabled = false;
             _SEQN.SetValueFromHost(false);
@@ -1737,10 +1756,10 @@ public class UIWindow
         _ADDFILES = form.Check("Add Datafiles", true);
         _FIXA = form.Check("Fix Audio", false);
         _GENROOM = form.Check("Generate Room Name", false);
-        _STRCLEAN = form.Check("Clean String Function", Data.IsVersionAtLeast(2022, 9));
+        _STRCLEAN = form.Check("Clean String Function", data.IsVersionAtLeast(2022, 9));
 
         _CPU = form.Slider("CPU usage (%)", UISettings.CPU_Usage, 1, 100);
-        _CPU.Changed += value => UISettings.CPU_Usage = value;
+        _CPU.Changed += (_, value) => UISettings.CPU_Usage = value;
 
         _FIXT = form.Check("Fix Tilesets (open the tileset editor after this dialog)", false);
         _FIXT.ToolTip = "Opens a cross-platform tileset editor after this dialog, allowing the tile columns to be adjusted.";
@@ -1750,7 +1769,7 @@ public class UIWindow
 
     public void ShowDialog()
     {
-        if (ShowQiuForm(form) != QiuDialogResult.Submit)
+        if (ScriptQiuForms.Show(form) != QiuDialogResult.Submit)
             return;
 
         UISettings.DUMP = true;
@@ -1782,10 +1801,10 @@ public class UIWindow
         UISettings.FIXTILE = _FIXT.Value;
         UISettings.CPU_Usage = _CPU.Value;
 
-        UISettings.CSTM = UISettings.CSTM_Enable ? AssetPicker.Pick(Data, UISettings.CSTM) : new List<string>();
+        UISettings.CSTM = UISettings.CSTM_Enable ? AssetPicker.Pick(data, UISettings.CSTM) : new List<string>();
 
         if (UISettings.FIXTILE)
-            TilesetEditor.Run(Data);
+            TilesetEditor.Run(data);
     }
 }
 
@@ -1805,14 +1824,14 @@ public static class AssetPicker
         QiuTreeView tree = left.Tree("Data", height: 320, width: 260, id: "tree");
 
         QiuPanel middle = columns.Panel(QiuOrientation.Vertical);
-        middle.Button("->", _ => AddSelected(tree.SelectedNode?.Tag as string));
-        middle.Button("<-", _ => RemoveSelected(list.SelectedItem));
 
         QiuPanel right = columns.Panel(QiuOrientation.Vertical);
         QiuTextBox listSearch = right.Text("", "", id: "listSearch");
         listSearch.ShowLabel = false;
         listSearch.Placeholder = "Search selection";
         QiuListBox list = right.List(height: 320, width: 260, id: "selected");
+        middle.Button("->", _ => AddSelected(tree.SelectedNode?.Tag as string));
+        middle.Button("<-", _ => RemoveSelected(list.SelectedItem));
 
         void AddSelected(string? name)
         {
@@ -1847,15 +1866,15 @@ public static class AssetPicker
         void RefreshList() =>
             list.SetItems(chosen.Where(item => item.Contains(listSearch.Value, StringComparison.OrdinalIgnoreCase)));
 
-        search.Changed += _ => RefreshTree();
-        listSearch.Changed += _ => RefreshList();
+        search.Changed += (_, _) => RefreshTree();
+        listSearch.Changed += (_, _) => RefreshList();
         tree.ItemActivated += _ => AddSelected(tree.SelectedNode?.Tag as string);
         list.ItemActivated += _ => RemoveSelected(list.SelectedItem);
 
         RefreshTree();
         RefreshList();
 
-        return ShowQiuForm(form) == QiuDialogResult.Submit ? chosen : initial;
+        return ScriptQiuForms.Show(form) == QiuDialogResult.Submit ? chosen : initial;
     }
 
     private static IEnumerable<(string Category, IEnumerable<string> Items)> Categories(UndertaleData data)
@@ -1891,7 +1910,7 @@ public static class TilesetEditor
     {
         if (data.Backgrounds.Count == 0)
         {
-            ScriptMessage("This data file has no tilesets.");
+            ScriptQiuForms.Message("This data file has no tilesets.");
             return;
         }
 
@@ -1916,11 +1935,11 @@ public static class TilesetEditor
         QiuCheckBox lowPerformance = form.Check("Low performance mode (manual reload)", false);
         QiuButton reload = form.Button("Reload canvas", _ => Rebuild(), isDefault: false);
 
-        UndertaleBackground CurrentBackground => backgrounds[Math.Clamp(tilesetChoice.SelectedIndex, 0, backgrounds.Count - 1)];
+        UndertaleBackground CurrentBackground() => backgrounds[Math.Clamp(tilesetChoice.SelectedIndex, 0, backgrounds.Count - 1)];
 
         void Rebuild()
         {
-            UndertaleBackground background = CurrentBackground;
+            UndertaleBackground background = CurrentBackground();
             string name = background.Name.Content;
             TilesetSaveData.TileColumnsMap[name] = (uint)Math.Max(1, (int)columnsBox.Value);
 
@@ -1948,18 +1967,18 @@ public static class TilesetEditor
 
         void Load()
         {
-            UndertaleBackground background = CurrentBackground;
+            UndertaleBackground background = CurrentBackground();
             columnsBox.SetValueFromHost(TilesetSaveData.TileColumnsMap[background.Name.Content]);
             Rebuild();
         }
 
-        tilesetChoice.Changed += _ => Load();
-        columnsBox.Changed += _ =>
+        tilesetChoice.Changed += (_, _) => Load();
+        columnsBox.Changed += (_, _) =>
         {
             if (!lowPerformance.Value)
                 Rebuild();
         };
-        lowPerformance.Changed += value => reload.IsEnabled = value;
+        lowPerformance.Changed += (_, value) => reload.IsEnabled = value;
         reload.IsEnabled = false;
 
         form.Button("<- Previous", _ =>
@@ -1972,7 +1991,7 @@ public static class TilesetEditor
         });
 
         Load();
-        ShowQiuForm(form);
+        ScriptQiuForms.Show(form);
     }
 }
 
@@ -2167,7 +2186,7 @@ public static class TilesetRenderer
 }
 
 // open main window
-new UIWindow().ShowDialog();
+new UIWindow(Data).ShowDialog();
 
 // if exit
 if (!UISettings.DUMP)
@@ -2400,21 +2419,16 @@ string GetRunnerFile(string fileDir)
     bool doSearch = ScriptQuestion("The runner was not found! Would you like to point me to it please?");
     while (doSearch)
     {
-        System.Windows.Forms.OpenFileDialog fileDialog = new()
-        {
-            Title = "Select the Game Executable",
-            InitialDirectory = rootDir,
-            Filter = "Executable Files (*.exe)|*.exe",
-        };
-        if (fileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-        {
-            // If runner is an executable
-            // don't force other check, since some executables don't have those last strings for some reason
-            if (Path.GetExtension(fileDialog.FileName) == ".exe")
-                return fileDialog.FileName;
-            else
-                doSearch = ScriptQuestion("Thats not the runner! The runner is the game executable that loads the data.win file! Would you like to try again?");
-        }
+        string selected = PromptLoadFile("exe", "Executable Files (*.exe)|*.exe");
+        if (string.IsNullOrEmpty(selected))
+            break;
+
+        // If runner is an executable
+        // don't force other check, since some executables don't have those last strings for some reason
+        if (Path.GetExtension(selected) == ".exe")
+            return selected;
+
+        doSearch = ScriptQuestion("Thats not the runner! The runner is the game executable that loads the data.win file! Would you like to try again?");
     }
     return String.Empty;
 }
@@ -2625,8 +2639,8 @@ string? DumpCode(UndertaleCode code, IDecompileSettings? set = null)
             if (UISettings.ENUM)
             {
                 // crystal didn't account for this, so i'll do it i guess
-                string uName = SettingsWindow.DecompilerSettings.UnknownEnumName;
-                string uVal = SettingsWindow.DecompilerSettings.UnknownEnumValuePattern;
+                string uName = decompilerSettings.UnknownEnumName;
+                string uVal = decompilerSettings.UnknownEnumValuePattern;
 
                 //@"UnknownEnum\.Value_(m?)(\d+)"
                 dumpedCode = Regex.Replace(dumpedCode, $@"{uName}\.{uVal.Replace("{0}", "")}(m?)(\d+)", match =>
@@ -5395,6 +5409,175 @@ async Task DumpOptions()
     finalExport.Options.Add(new AssetReference { name = dumpedMainOptions.name, path = $"options/main/options_main.yy" });
     finalExport.Options.Add(new AssetReference { name = dumpedWindowsOptions.name, path = $"options/windows/options_windows.yy" });
 }
+
+public class RunnerData
+{
+    public RunnerData(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            return;
+
+        name = Path.GetFileNameWithoutExtension(filePath);
+        path = filePath;
+
+        try
+        {
+            iconData = ExtractIcon(filePath);
+        }
+        catch
+        {
+            iconData = null;
+        }
+
+        try
+        {
+            FileVersionInfo info = FileVersionInfo.GetVersionInfo(filePath);
+            version = info.FileVersion ?? "";
+            companyName = info.CompanyName ?? "";
+            productName = info.ProductName ?? "";
+            copyright = info.LegalCopyright ?? "";
+            description = info.FileDescription ?? "";
+        }
+        catch
+        {
+            // Metadata is optional; a missing or unreadable runner must not abort the dump.
+        }
+    }
+
+    private static IMagickImage? ExtractIcon(string filePath)
+    {
+        if (!OperatingSystem.IsWindows())
+            return null;
+
+        const uint LOAD_LIBRARY_AS_DATAFILE = 0x00000002;
+        IntPtr RT_ICON = (IntPtr)3;
+        IntPtr RT_GROUP_ICON = (IntPtr)14;
+
+        IntPtr module = LoadLibraryEx(filePath, IntPtr.Zero, LOAD_LIBRARY_AS_DATAFILE);
+        if (module == IntPtr.Zero)
+            return null;
+
+        try
+        {
+            byte[]? icon = null;
+            EnumResourceNames(module, RT_GROUP_ICON, (h, type, name, param) =>
+            {
+                byte[] dir = GetResource(h, RT_GROUP_ICON, name);
+                int count = BitConverter.ToUInt16(dir, 4);
+                int length = 6 + 16 * count;
+                for (int i = 0; i < count; i++)
+                    length += BitConverter.ToInt32(dir, 6 + 14 * i + 8);
+
+                using MemoryStream stream = new(length);
+                using BinaryWriter writer = new(stream);
+                writer.Write(dir, 0, 6);
+                int offset = 6 + 16 * count;
+                for (int i = 0; i < count; i++)
+                {
+                    ushort id = BitConverter.ToUInt16(dir, 6 + 14 * i + 12);
+                    byte[] picture = GetResource(h, RT_ICON, (IntPtr)id);
+                    writer.Seek(6 + 16 * i, SeekOrigin.Begin);
+                    writer.Write(dir, 6 + 14 * i, 8);
+                    writer.Write(picture.Length);
+                    writer.Write(offset);
+                    writer.Seek(offset, SeekOrigin.Begin);
+                    writer.Write(picture, 0, picture.Length);
+                    offset += picture.Length;
+                }
+
+                writer.Flush();
+                icon = stream.ToArray();
+                return true;
+            }, IntPtr.Zero);
+
+            return icon is { Length: > 0 } ? new MagickImage(icon) : null;
+        }
+        finally
+        {
+            FreeLibrary(module);
+        }
+    }
+
+    private static byte[] GetResource(IntPtr module, IntPtr type, IntPtr name)
+    {
+        IntPtr info = FindResource(module, name, type);
+        IntPtr data = LoadResource(module, info);
+        IntPtr pointer = LockResource(data);
+        uint size = SizeofResource(module, info);
+        byte[] buffer = new byte[size];
+        Marshal.Copy(pointer, buffer, 0, buffer.Length);
+        return buffer;
+    }
+
+    private delegate bool EnumResNameProc(IntPtr module, IntPtr type, IntPtr name, IntPtr param);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern IntPtr LoadLibraryEx(string fileName, IntPtr file, uint flags);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern bool EnumResourceNames(IntPtr module, IntPtr type, EnumResNameProc callback, IntPtr param);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern IntPtr FindResource(IntPtr module, IntPtr name, IntPtr type);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr LoadResource(IntPtr module, IntPtr info);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr LockResource(IntPtr data);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern uint SizeofResource(IntPtr module, IntPtr info);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool FreeLibrary(IntPtr module);
+
+    public string name { get; set; } = "decompiledGame";
+    public string path { get; set; } = "";
+    public IMagickImage? iconData { get; set; } = null;
+    public string version { get; set; } = "";
+    public string companyName { get; set; } = "";
+    public string productName { get; set; } = "";
+    public string copyright { get; set; } = "";
+    public string description { get; set; } = "";
+
+    public void DumpIcon(string filepath, uint width = 256, uint height = 256)
+    {
+        if (iconData is null)
+            return;
+
+        iconData.FilterType = FilterType.Point;
+        MagickGeometry size = new(width, height) { IgnoreAspectRatio = false };
+        iconData.Resize(size);
+        iconData.Write(filepath);
+    }
+}
+
+public class ImageAssetData
+{
+    public ImageAssetData(dynamic image, string filePath, string imageName, string spriteName)
+    {
+        this.image = image;
+        this.filePath = filePath;
+        this.imageName = imageName;
+        this.spriteName = spriteName;
+    }
+
+    // Either UndertaleTexturePageItem or MagickImage.
+    public dynamic image { get; set; }
+    public string filePath { get; set; }
+    public string imageName { get; set; }
+    public string spriteName { get; set; }
+
+    public void Dump(TextureWorker tw)
+    {
+        if (image is null)
+            return;
+
+        tw.ExportAsPNG(image, filePath + imageName, null, true);
+    }
+}
+#endregion
 #endregion
 
 #region Main Program
@@ -5764,7 +5947,7 @@ if (UISettings.SCPT
                 foreach (IStatementNode stmt in rootBlock.Children)
                 {
                     // also account for bitwise unknown enum setting
-                    if (stmt is EnumDeclNode decl && !(UISettings.ENUM && decl.Enum.Name == SettingsWindow.DecompilerSettings.UnknownEnumName))
+                    if (stmt is EnumDeclNode decl && !(UISettings.ENUM && decl.Enum.Name == decompilerSettings.UnknownEnumName))
                     {
                         // add enum set if not there already
                         if (!EnumSets.ContainsKey(decl.Enum.Name))

@@ -318,7 +318,12 @@ public class Scripting
                 // Used by bundled scripts: System.Timers (AutoBackup) and System.Text.Json (the JSON importers and exporters).
                 "System.ComponentModel.TypeConverter",
                 "System.Text.Json",
-                "System.Text.Encodings.Web");
+                "System.Text.Encodings.Web",
+                // The GMS1 decompiler uses dynamic dispatch; the GMS2 decompilers read audio metadata.
+                "Microsoft.CSharp",
+                "NAudio",
+                "NAudio.Vorbis",
+                "NVorbis");
         }
 
         return CSharpScript.Create(text, options, typeof(IScriptInterface));

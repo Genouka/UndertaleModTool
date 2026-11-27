@@ -37,6 +37,9 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="5.3.0" />
     <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" PrivateAssets="All" />
     <PackageReference Include="SharpZipLib" Version="1.4.2" />
+    <!-- Audio metadata readers used by the bundled GMS2 decompiler scripts. -->
+    <PackageReference Include="NAudio" Version="2.3.0" />
+    <PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="GameSpecificData\Definitions\deltarune.json" />
