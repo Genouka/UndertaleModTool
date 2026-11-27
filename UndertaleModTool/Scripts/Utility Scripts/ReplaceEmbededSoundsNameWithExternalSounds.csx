@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Replace Embedded Sound Names with External Sounds
+// @name:zh-Hans 用外部声音替换嵌入声音名称
+// @name:zh-CN  用外部声音替换嵌入声音名称
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Linq;

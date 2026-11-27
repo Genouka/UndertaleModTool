@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Switch and Xbox on PC
+// @name:zh-Hans Undertale Switch/Xbox 转 PC
+// @name:zh-CN  Undertale Switch/Xbox 转 PC
+// ==/UndertaleModTool==
 // Sets up NXTALE to run well on PC.
 using System.Linq;
 using UndertaleModLib.Models;

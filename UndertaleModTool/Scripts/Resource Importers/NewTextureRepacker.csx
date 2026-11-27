@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        New Texture Repacker
+// @name:zh-Hans 新建纹理重打包器
+// @name:zh-CN  新建纹理重打包器
+// ==/UndertaleModTool==
 // Texture Repacker by JohnnyonFlame
 // Licensed under GPLv3 for UndertaleModTool
 // This script is meant to be edited by the user - search for "User Configurable".

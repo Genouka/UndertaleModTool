@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Scale All Textures
+// @name:zh-Hans 缩放所有纹理
+// @name:zh-CN  缩放所有纹理
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Collections;

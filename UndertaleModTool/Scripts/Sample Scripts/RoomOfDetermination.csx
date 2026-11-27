@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Room of Determination
+// @name:zh-Hans 决心房间模组
+// @name:zh-CN  决心房间模组
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 if (Data?.GeneralInfo?.DisplayName?.Content.ToLower() == "deltarune chapter 1 & 2")

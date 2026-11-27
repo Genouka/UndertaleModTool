@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Fix Alphys Lab Crash on Android
+// @name:zh-Hans Undertale 修复 Alphys 实验室 Android 崩溃
+// @name:zh-CN  Undertale 修复 Alphys 实验室 Android 崩溃
+// ==/UndertaleModTool==
 // Made by GitMuslim
 
 using System;

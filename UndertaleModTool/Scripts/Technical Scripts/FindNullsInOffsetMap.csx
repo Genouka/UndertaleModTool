@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Find Nulls in Offset Map
+// @name:zh-Hans 查找偏移映射中的空值
+// @name:zh-CN  查找偏移映射中的空值
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Linq;

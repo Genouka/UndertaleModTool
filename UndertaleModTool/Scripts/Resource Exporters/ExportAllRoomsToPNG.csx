@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export All Rooms to PNG
+// @name:zh-Hans 导出所有房间为 PNG
+// @name:zh-CN  导出所有房间为 PNG
+// ==/UndertaleModTool==
 // Exports every room as a PNG image.
 // Version for the cross-platform UndertaleModTool: it renders rooms with ExportRoomAsPNG
 // (the same renderer as "Save as image" in the room editor), instead of driving the WPF room editor.

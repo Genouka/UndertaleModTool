@@ -1,4 +1,9 @@
-﻿//Upgrade from bytecode 13 (experimental), 14, 15, 17 to 16 - by Grossley
+﻿// ==UndertaleModTool==
+// @name        15/17 to 16
+// @name:zh-Hans 15/17 转 16
+// @name:zh-CN  15/17 转 16
+// ==/UndertaleModTool==
+//Upgrade from bytecode 13 (experimental), 14, 15, 17 to 16 - by Grossley
 //13 and 14 do not work apparently due to variable issues that I don't know how to fix.
 //Need to test this, once I do then I can obsolete the other two scripts
 if (Data.IsVersionAtLeast(2, 3))

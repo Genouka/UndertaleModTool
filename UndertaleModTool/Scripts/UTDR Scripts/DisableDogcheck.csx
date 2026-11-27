@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Disable Dogcheck
+// @name:zh-Hans 禁用 Dogcheck
+// @name:zh-CN  禁用 Dogcheck
+// ==/UndertaleModTool==
 // Disables Dogcheck for all Undertale and Deltarune versions.
 // Made by Grossley.
 

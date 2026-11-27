@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        15 to 16
+// @name:zh-Hans 15 转 16
+// @name:zh-CN  15 转 16
+// ==/UndertaleModTool==
 //Upgrade from bytecode 13 (experimental), 14,
 //Upgrade from 15 to 16 - by Grossley (The other 2 didn't work apparently due to variable issues that I don't know how to fix)
 

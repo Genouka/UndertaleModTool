@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export All Textures
+// @name:zh-Hans 导出所有纹理
+// @name:zh-CN  导出所有纹理
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Collections;

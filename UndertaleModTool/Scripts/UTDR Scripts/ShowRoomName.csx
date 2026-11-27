@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Show Room Name
+// @name:zh-Hans 显示房间名称
+// @name:zh-CN  显示房间名称
+// ==/UndertaleModTool==
 // Adds room ID and name display under the debug mode timer display
 EnsureDataLoaded();
 ScriptMessage("Show room name and ID in debug mode\nby krzys_h, Kneesnap\n");

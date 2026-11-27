@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Deltarune Clear Shader Data
+// @name:zh-Hans Deltarune 清除着色器数据
+// @name:zh-CN  Deltarune 清除着色器数据
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

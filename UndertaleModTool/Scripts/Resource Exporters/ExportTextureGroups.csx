@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export Texture Groups
+// @name:zh-Hans 导出纹理组
+// @name:zh-CN  导出纹理组
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Collections;

@@ -1,3 +1,8 @@
+﻿// ==UndertaleModTool==
+// @name        Ultimate GMS2 Decompiler v3 (new1 patched)
+// @name:zh-Hans Ultimate GMS2 反编译 v3（new1 修正版）
+// @name:zh-CN  Ultimate GMS2 反编译 v3（new1 修正版）
+// ==/UndertaleModTool==
 /*
     Qiuming Decompiler v4.1
         2025 - Genouka (Qiuming)
@@ -124,6 +129,15 @@ public static class IniParser
     }
 }
 
+#endregion
+
+#region Script UI Host
+public static class ScriptQiuForms
+{
+    public static Func<QiuForm, QiuDialogResult> Show = _ => QiuDialogResult.Cancel;
+}
+
+ScriptQiuForms.Show = form => ShowQiuForm(form);
 #endregion
 
 #region Classes
@@ -1564,8 +1578,8 @@ public Dictionary<string, List<string>> extensionGML = new();
 // the folder of the data.win
 public string rootDir = Path.GetDirectoryName(FilePath) + "\\";
 // for macro stuff!
-public string definitionDir = $"{Program.GetExecutableDirectory()}\\GameSpecificData\\Definitions\\";
-public string macroDir = $"{Program.GetExecutableDirectory()}\\GameSpecificData\\Underanalyzer\\";
+public string definitionDir = $"{ExePath}\\GameSpecificData\\Definitions\\";
+public string macroDir = $"{ExePath}\\GameSpecificData\\Underanalyzer\\";
 // the folder the project is exported to
 public string scriptDir = $"{rootDir}Exported_Project\\";
 // delete old decompiling attempt
@@ -1584,6 +1598,15 @@ Underanalyzer.Decompiler.IDecompileSettings decompilerSettings = Data.ToolInfo.D
 // progress bar
 public int r_num = 0;
 
+#endregion
+
+#region Main UI state
+public bool DUMP, OBJT, ROOM, EXTN, SCPT, TMLN, SOND, SHDR, PATH, ACRV, SEQN, FONT, SPRT, BGND, LOG, YYMPS, ENUM, ADDFILES, FIXAUDIO, FIXTILE, GENROOM;
+public bool CSTM_Enable = false;
+public bool WRAPSCRIPTS = true;
+public List<string> CSTM = new List<string>();
+public int cpu_usage = 70;
+public IMagickImage? mainoptionimg = null, winoptionimg = null;
 #endregion
 
 #region Main Window stuffs
@@ -1681,14 +1704,14 @@ public class MainWindow
         }
 
         _CPU = form.Slider("CPU usage (%)", cpu_usage, 1, 100);
-        _CPU.Changed += value => cpu_usage = value;
+        _CPU.Changed += (_, value) => cpu_usage = value;
 
         form.SubmitText = Directory.Exists(scriptDir) ? "Overwrite Dump" : "Start Dump";
     }
 
     public void ShowDialog()
     {
-        if (ShowQiuForm(form) != QiuDialogResult.Submit)
+        if (ScriptQiuForms.Show(form) != QiuDialogResult.Submit)
             return;
 
         DUMP = true;
@@ -1742,14 +1765,14 @@ public static class AssetPicker
         QiuTreeView tree = left.Tree("Data", height: 320, width: 260, id: "tree");
 
         QiuPanel middle = columns.Panel(QiuOrientation.Vertical);
-        middle.Button("->", _ => AddSelected(tree.SelectedNode?.Tag as string));
-        middle.Button("<-", _ => RemoveSelected(list.SelectedItem));
 
         QiuPanel right = columns.Panel(QiuOrientation.Vertical);
         QiuTextBox listSearch = right.Text("", "", id: "listSearch");
         listSearch.ShowLabel = false;
         listSearch.Placeholder = "Search selection";
         QiuListBox list = right.List(height: 320, width: 260, id: "selected");
+        middle.Button("->", _ => AddSelected(tree.SelectedNode?.Tag as string));
+        middle.Button("<-", _ => RemoveSelected(list.SelectedItem));
 
         void AddSelected(string? name)
         {
@@ -1784,15 +1807,15 @@ public static class AssetPicker
         void RefreshList() =>
             list.SetItems(chosen.Where(item => item.Contains(listSearch.Value, StringComparison.OrdinalIgnoreCase)));
 
-        search.Changed += _ => RefreshTree();
-        listSearch.Changed += _ => RefreshList();
+        search.Changed += (_, _) => RefreshTree();
+        listSearch.Changed += (_, _) => RefreshList();
         tree.ItemActivated += _ => AddSelected(tree.SelectedNode?.Tag as string);
         list.ItemActivated += _ => RemoveSelected(list.SelectedItem);
 
         RefreshTree();
         RefreshList();
 
-        return ShowQiuForm(form) == QiuDialogResult.Submit ? chosen : initial;
+        return ScriptQiuForms.Show(form) == QiuDialogResult.Submit ? chosen : initial;
     }
 
     private static IEnumerable<(string Category, IEnumerable<string> Items)> Categories(UndertaleData data)
@@ -2290,8 +2313,8 @@ string? DumpCode(UndertaleCode code, IDecompileSettings? set = null)
             if (ENUM)
             {
                 // crystal didn't account for this, so i'll do it i guess
-                var unknownName = SettingsWindow.DecompilerSettings.UnknownEnumName;
-                var unknownVal = SettingsWindow.DecompilerSettings.UnknownEnumValuePattern;
+                var unknownName = decompilerSettings.UnknownEnumName;
+                var unknownVal = decompilerSettings.UnknownEnumValuePattern;
 
                 //@"UnknownEnum\.Value_(m?)(\d+)"
                 dumpedCode = Regex.Replace(dumpedCode, $@"{unknownName}\.{unknownVal.Replace("{0}", "")}(m?)(\d+)", match =>

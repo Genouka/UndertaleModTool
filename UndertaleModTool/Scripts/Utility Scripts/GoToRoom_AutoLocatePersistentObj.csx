@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Go to Room (Auto-Locate Persistent Object)
+// @name:zh-Hans 前往房间（自动定位持久对象）
+// @name:zh-CN  前往房间（自动定位持久对象）
+// ==/UndertaleModTool==
 // Replaces the debug mode "Create system_information_962" option with "Go to room"
 
 EnsureDataLoaded();

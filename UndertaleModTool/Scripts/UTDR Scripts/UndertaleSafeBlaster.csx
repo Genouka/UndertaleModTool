@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Safe Blaster
+// @name:zh-Hans Undertale 安全 Gaster Blaster
+// @name:zh-CN  Undertale 安全 Gaster Blaster
+// ==/UndertaleModTool==
 // By Creepersbane
 // v1.0 - 08/15/2020
 

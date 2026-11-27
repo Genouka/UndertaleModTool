@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import Assembly
+// @name:zh-Hans 导入汇编
+// @name:zh-CN  导入汇编
+// ==/UndertaleModTool==
 // Script by Jockeholm based off of a script by Kneesnap.
 // Major help and edited by Samuel Roy
 

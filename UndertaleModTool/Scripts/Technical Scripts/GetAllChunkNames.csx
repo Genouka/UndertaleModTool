@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Get All Chunk Names
+// @name:zh-Hans 获取所有块名称
+// @name:zh-CN  获取所有块名称
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 string x = "String[] order = {\"";

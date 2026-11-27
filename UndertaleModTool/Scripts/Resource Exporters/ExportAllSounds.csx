@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export All Sounds
+// @name:zh-Hans 导出所有声音
+// @name:zh-CN  导出所有声音
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Font Editor
+// @name:zh-Hans 字体编辑器
+// @name:zh-CN  字体编辑器
+// ==/UndertaleModTool==
 // by porog
 // Cross-platform rewrite: uses QiuForms (WPF / Avalonia / CLI) instead of WinForms and System.Drawing.
 

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export All Strings to JSON
+// @name:zh-Hans 导出所有字符串为 JSON
+// @name:zh-CN  导出所有字符串为 JSON
+// ==/UndertaleModTool==
 using System.Linq;
 using System.Text;
 

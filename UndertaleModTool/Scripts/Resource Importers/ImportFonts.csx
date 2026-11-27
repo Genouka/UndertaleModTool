@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import Fonts
+// @name:zh-Hans 导入字体
+// @name:zh-CN  导入字体
+// ==/UndertaleModTool==
 //Texture packer by Samuel Roy
 // Uses code from https://github.com/mfascia/TexturePacker
 

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import Asset Order
+// @name:zh-Hans 导入资源顺序
+// @name:zh-CN  导入资源顺序
+// ==/UndertaleModTool==
 // Takes an existing text file exported from ExportAssetOrder, and uses it to reorganize the assets in the current data file.
 // Made by colinator27.
 

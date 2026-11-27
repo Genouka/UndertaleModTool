@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        MixMod
+// @name:zh-Hans MixMod 模组
+// @name:zh-CN  MixMod 模组
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 if (Data?.GeneralInfo?.DisplayName?.Content.ToLower() == "deltarune chapter 1 & 2")

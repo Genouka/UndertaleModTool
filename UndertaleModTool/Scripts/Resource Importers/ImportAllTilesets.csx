@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import All Tilesets
+// @name:zh-Hans 导入所有图块集
+// @name:zh-CN  导入所有图块集
+// ==/UndertaleModTool==
 // Adapted from original script by Grossley
 
 using System.Text;

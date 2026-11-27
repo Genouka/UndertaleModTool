@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Ultimate GMS1 Decompiler v4
+// @name:zh-Hans Ultimate GMS1 反编译 v4
+// @name:zh-CN  Ultimate GMS1 反编译 v4
+// ==/UndertaleModTool==
 /*
     Ultimate_GMS1_Decompiler_v4.csx
         Improved by burnedpopcorn180
@@ -47,7 +52,6 @@ using UndertaleModLib.Models;
 using UndertaleModLib.Util;
 using Underanalyzer.Decompiler;
 using Underanalyzer;
-using UndertaleModTool;
 
 // just to shorten options code
 using OptFlags = UndertaleModLib.Models.UndertaleOptions.OptionsFlags;

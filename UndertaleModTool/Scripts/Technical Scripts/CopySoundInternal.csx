@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Copy Sound (Internal)
+// @name:zh-Hans 复制声音（内部）
+// @name:zh-CN  复制声音（内部）
+// ==/UndertaleModTool==
 // By Grossley
 
 using System;

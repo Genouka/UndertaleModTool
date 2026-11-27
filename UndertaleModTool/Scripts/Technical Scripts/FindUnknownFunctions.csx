@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Find Unknown Functions
+// @name:zh-Hans 查找未知函数
+// @name:zh-CN  查找未知函数
+// ==/UndertaleModTool==
 // Adapted from original script by Grossley
 using System.Text;
 using System;

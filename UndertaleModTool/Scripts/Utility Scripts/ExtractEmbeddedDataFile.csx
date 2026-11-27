@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Extract Embedded Data File
+// @name:zh-Hans 提取嵌入数据文件
+// @name:zh-CN  提取嵌入数据文件
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using UndertaleModLib.Util;

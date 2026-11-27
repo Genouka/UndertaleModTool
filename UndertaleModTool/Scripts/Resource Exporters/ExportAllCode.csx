@@ -1,4 +1,9 @@
-﻿using System.Text;
+﻿// ==UndertaleModTool==
+// @name        Export All Code
+// @name:zh-Hans 导出所有代码
+// @name:zh-CN  导出所有代码
+// ==/UndertaleModTool==
+using System.Text;
 using System;
 using System.IO;
 using System.Threading;

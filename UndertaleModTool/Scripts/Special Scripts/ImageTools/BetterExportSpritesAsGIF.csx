@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Better Export Sprites as GIF
+// @name:zh-Hans 更好的精灵 GIF 导出
+// @name:zh-CN  更好的精灵 GIF 导出
+// ==/UndertaleModTool==
 /*
     BetterExportSpritesAsGIF.csx
 		by burnedpopcorn180, with parts based off of ExportSpritesAsGIFDLL.csx by CST1229

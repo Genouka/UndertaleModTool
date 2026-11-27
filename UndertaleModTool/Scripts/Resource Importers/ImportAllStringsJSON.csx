@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import All Strings from JSON
+// @name:zh-Hans 从 JSON 导入所有字符串
+// @name:zh-CN  从 JSON 导入所有字符串
+// ==/UndertaleModTool==
 using System.Text.Json;
 
 EnsureDataLoaded();

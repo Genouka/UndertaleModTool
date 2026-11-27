@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import Graphics Advanced
+// @name:zh-Hans 导入图形（高级）
+// @name:zh-CN  导入图形（高级）
+// ==/UndertaleModTool==
 // ImportGraphics but it can also set sprite properties and import more types of files.
 
 // Based off of ImportGraphics.csx by the UTMT team

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Merge Images
+// @name:zh-Hans 合并图像
+// @name:zh-CN  合并图像
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Collections;

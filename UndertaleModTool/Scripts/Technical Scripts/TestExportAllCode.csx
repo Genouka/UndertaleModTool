@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Test Export All Code
+// @name:zh-Hans 测试导出所有代码
+// @name:zh-CN  测试导出所有代码
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

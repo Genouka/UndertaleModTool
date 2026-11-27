@@ -1,4 +1,9 @@
-﻿using System.Text;
+﻿// ==UndertaleModTool==
+// @name        Export All Masks
+// @name:zh-Hans 导出所有遮罩
+// @name:zh-CN  导出所有遮罩
+// ==/UndertaleModTool==
+using System.Text;
 using System;
 using System.IO;
 using System.Threading;

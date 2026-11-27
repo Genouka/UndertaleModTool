@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Find Unused Strings
+// @name:zh-Hans 查找未使用字符串
+// @name:zh-CN  查找未使用字符串
+// ==/UndertaleModTool==
 // Made by Grossley
 using System.Text;
 using System.Linq;

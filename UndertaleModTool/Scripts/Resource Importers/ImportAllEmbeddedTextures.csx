@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import All Embedded Textures
+// @name:zh-Hans 导入所有嵌入纹理
+// @name:zh-CN  导入所有嵌入纹理
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

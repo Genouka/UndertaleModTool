@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export All Sprites with Origin
+// @name:zh-Hans 导出所有精灵（含原点）
+// @name:zh-CN  导出所有精灵（含原点）
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Text;

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Fancy Room Select
+// @name:zh-Hans 高级房间选择
+// @name:zh-CN  高级房间选择
+// ==/UndertaleModTool==
 // Originally created by _creepersbane#2074
 // Adapted to work with all games by Grossley
 // Adapted to GMS 2.3+ by Space Core/Jacky720

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        The Whole World Revolving
+// @name:zh-Hans 整个世界旋转模组
+// @name:zh-CN  整个世界旋转模组
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 if (Data?.GeneralInfo?.DisplayName?.Content.ToLower() == "deltarune chapter 1 & 2")

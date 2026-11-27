@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Game Object Copy
+// @name:zh-Hans 游戏对象复制
+// @name:zh-CN  游戏对象复制
+// ==/UndertaleModTool==
 using System;
 using System.ComponentModel;
 using System.IO;

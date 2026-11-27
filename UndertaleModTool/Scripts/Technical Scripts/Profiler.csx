@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Profiler
+// @name:zh-Hans 性能分析器
+// @name:zh-CN  性能分析器
+// ==/UndertaleModTool==
 // By colinator27 and BenjaminUrquhart, ImportGMLString at end from UndertaleModTool sample scripts
 // Reworked to be a profiler and stack tracer (to identify freeze locations) by Grossley
 // Removed built in ImportGML, that has been integrated into the tool itself now, replace with ImportGMLString - Grossley

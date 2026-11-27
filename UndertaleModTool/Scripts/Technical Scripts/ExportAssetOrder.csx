@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export Asset Order
+// @name:zh-Hans 导出资源顺序
+// @name:zh-CN  导出资源顺序
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

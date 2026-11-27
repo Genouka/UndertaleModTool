@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        16 to 17
+// @name:zh-Hans 16 转 17
+// @name:zh-CN  16 转 17
+// ==/UndertaleModTool==
 if (Data?.GeneralInfo.BytecodeVersion == 16)
 {
     if (!ScriptQuestion("Upgrade bytecode from 16 to 17?"))

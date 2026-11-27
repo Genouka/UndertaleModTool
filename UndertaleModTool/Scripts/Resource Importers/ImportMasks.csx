@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import Masks
+// @name:zh-Hans 导入遮罩
+// @name:zh-CN  导入遮罩
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Collections;

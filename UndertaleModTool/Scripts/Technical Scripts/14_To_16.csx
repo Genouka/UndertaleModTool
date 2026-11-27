@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        14 to 16
+// @name:zh-Hans 14 转 16
+// @name:zh-CN  14 转 16
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Collections;

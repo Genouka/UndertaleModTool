@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import Sounds
+// @name:zh-Hans 导入声音
+// @name:zh-CN  导入声音
+// ==/UndertaleModTool==
 using UndertaleModLib;
 using UndertaleModLib.Models;
 using UndertaleModLib.Util;
