@@ -1,4 +1,9 @@
-﻿// Written by VladiStep (VladStepu2001#3453 on Discord)
+﻿// ==UndertaleModTool==
+// @name        Find Objects with Sprite
+// @name:zh-Hans 查找使用指定精灵的对象
+// @name:zh-CN  查找使用指定精灵的对象
+// ==/UndertaleModTool==
+// Written by VladiStep (VladStepu2001#3453 on Discord)
 
 using System.Text;
 using System;

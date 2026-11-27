@@ -1,4 +1,9 @@
-﻿using System.Text;
+﻿// ==UndertaleModTool==
+// @name        Export All Tilesets
+// @name:zh-Hans 导出所有图块集
+// @name:zh-CN  导出所有图块集
+// ==/UndertaleModTool==
+using System.Text;
 using System;
 using System.IO;
 using System.Threading;

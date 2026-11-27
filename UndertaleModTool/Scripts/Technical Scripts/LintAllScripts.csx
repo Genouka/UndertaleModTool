@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Lint All Scripts
+// @name:zh-Hans 检查所有脚本
+// @name:zh-CN  检查所有脚本
+// ==/UndertaleModTool==
 using System;
 using System.Text;
 using System.IO;

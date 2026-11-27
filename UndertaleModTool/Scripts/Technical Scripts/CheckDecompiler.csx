@@ -1,4 +1,9 @@
-﻿// Made by Grossley ( Grossley#2869 on Discord )
+﻿// ==UndertaleModTool==
+// @name        Check Decompiler
+// @name:zh-Hans 检查反编译器
+// @name:zh-CN  检查反编译器
+// ==/UndertaleModTool==
+// Made by Grossley ( Grossley#2869 on Discord )
 // Changes:
 // Version 01 (November 13th, 2020): Initial release
 // Version 02 (April 21st, 2021): Updated for GMS 2.3, general refactor

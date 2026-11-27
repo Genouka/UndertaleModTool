@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Copy Sprite/Background/Font (Internal)
+// @name:zh-Hans 复制精灵/背景/字体（内部）
+// @name:zh-CN  复制精灵/背景/字体（内部）
+// ==/UndertaleModTool==
 //Adapted from original script by Grossley
 using System.Text;
 using System;

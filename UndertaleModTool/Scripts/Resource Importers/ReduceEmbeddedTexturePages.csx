@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Reduce Embedded Texture Pages
+// @name:zh-Hans 减少嵌入纹理页
+// @name:zh-CN  减少嵌入纹理页
+// ==/UndertaleModTool==
 // Texture packer by Samuel Roy
 // Uses code from https://github.com/mfascia/TexturePacker
 // Uses code from ExportAllTextures.csx

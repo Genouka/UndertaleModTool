@@ -1,4 +1,9 @@
-﻿EnsureDataLoaded();
+﻿// ==UndertaleModTool==
+// @name        HeCanBeEverywhere
+// @name:zh-Hans HeCanBeEverywhere 模组
+// @name:zh-CN  HeCanBeEverywhere 模组
+// ==/UndertaleModTool==
+EnsureDataLoaded();
 
 if (Data?.GeneralInfo?.DisplayName?.Content.ToLower() == "deltarune chapter 1 & 2")
 {

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export Specific Sprites
+// @name:zh-Hans 导出指定精灵
+// @name:zh-CN  导出指定精灵
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

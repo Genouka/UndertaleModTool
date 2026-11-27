@@ -1,5 +1,6 @@
 // ==UndertaleModTool==
 // @name        QiuForms Demo
+// @name:zh-Hans QiuForms 演示
 // @name:zh-CN  QiuForms 演示
 // @description Exercises the cross-platform QiuForms API on every host.
 // @description:zh-CN 在所有宿主上演示跨平台 QiuForms 接口。

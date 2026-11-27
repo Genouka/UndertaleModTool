@@ -1,4 +1,9 @@
-﻿EnsureDataLoaded();
+﻿// ==UndertaleModTool==
+// @name        DeltaMILK
+// @name:zh-Hans DeltaMILK 模组
+// @name:zh-CN  DeltaMILK 模组
+// ==/UndertaleModTool==
+EnsureDataLoaded();
 
 ScriptMessage("Select the MILK that you prefer\nReplace every non-background sprite with milk (for Deltarune)\nby krzys_h");
 

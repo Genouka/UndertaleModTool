@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export Specific Code
+// @name:zh-Hans 导出指定代码
+// @name:zh-CN  导出指定代码
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

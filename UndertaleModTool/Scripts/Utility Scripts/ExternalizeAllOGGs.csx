@@ -1,4 +1,9 @@
-﻿// Made for simple use with all games by Grossley.
+﻿// ==UndertaleModTool==
+// @name        Externalize All OGGs
+// @name:zh-Hans 外部化所有 OGG
+// @name:zh-CN  外部化所有 OGG
+// ==/UndertaleModTool==
+// Made for simple use with all games by Grossley.
 // Based on the work of: nik the neko.
 
 using System.Text;

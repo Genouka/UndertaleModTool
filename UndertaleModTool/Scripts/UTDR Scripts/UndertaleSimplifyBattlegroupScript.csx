@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Simplify Battlegroup Script
+// @name:zh-Hans Undertale 简化战斗组脚本
+// @name:zh-CN  Undertale 简化战斗组脚本
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 if (Data?.GeneralInfo?.DisplayName?.Content.ToLower() == "deltarune chapter 1 & 2")

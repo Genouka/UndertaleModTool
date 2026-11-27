@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export Sprites as GIF
+// @name:zh-Hans 将精灵导出为 GIF
+// @name:zh-CN  将精灵导出为 GIF
+// ==/UndertaleModTool==
 /*
     Exports sprites as a GIF.
     Script made by CST1229, with parts based off of ExportAllSprites.csx.

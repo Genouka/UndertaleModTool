@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Go to Room
+// @name:zh-Hans Undertale 前往房间
+// @name:zh-CN  Undertale 前往房间
+// ==/UndertaleModTool==
 // Replaces the debug mode "Create system_information_962" option with "Go to room"
 
 EnsureDataLoaded();

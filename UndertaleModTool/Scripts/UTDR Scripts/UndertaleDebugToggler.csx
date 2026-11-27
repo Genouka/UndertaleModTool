@@ -1,4 +1,9 @@
-﻿// Makes it possible to switch debug mode on and off using F1
+﻿// ==UndertaleModTool==
+// @name        Undertale Debug Toggler
+// @name:zh-Hans Undertale 调试开关
+// @name:zh-CN  Undertale 调试开关
+// ==/UndertaleModTool==
+// Makes it possible to switch debug mode on and off using F1
 
 EnsureDataLoaded();
 

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Convert from 17 to 16 for 2.3
+// @name:zh-Hans 从 17 转换为 16（2.3 版）
+// @name:zh-CN  从 17 转换为 16（2.3 版）
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Collections;

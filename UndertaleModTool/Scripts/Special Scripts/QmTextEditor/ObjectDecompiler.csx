@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Object Decompiler
+// @name:zh-Hans 对象反编译器
+// @name:zh-CN  对象反编译器
+// ==/UndertaleModTool==
 // Made with the help of QuantumV and The United Modders Of Pizza Tower Team
 using System.Text;
 using System;

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Restore Missing Code Locals
+// @name:zh-Hans 恢复缺失的代码局部变量
+// @name:zh-CN  恢复缺失的代码局部变量
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 if (Data.CodeLocals is null)
 {

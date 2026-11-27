@@ -1,4 +1,9 @@
-﻿EnsureDataLoaded();
+﻿// ==UndertaleModTool==
+// @name        Undertale Debug Message
+// @name:zh-Hans Undertale 调试消息
+// @name:zh-CN  Undertale 调试消息
+// ==/UndertaleModTool==
+EnsureDataLoaded();
 ScriptMessage("DebugMsg - Displays dialogue messages\nwhile debug mode is enabled.\n\nAuthor: krzys-h, Kneesnap");
 
 var code = Data.GameObjects.ByName("obj_time").EventHandlerFor(EventType.Draw, EventSubtypeDraw.DrawGUI, Data);

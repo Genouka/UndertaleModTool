@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export All Fonts
+// @name:zh-Hans 导出所有字体
+// @name:zh-CN  导出所有字体
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale WASD
+// @name:zh-Hans Undertale WASD 控制
+// @name:zh-CN  Undertale WASD 控制
+// ==/UndertaleModTool==
 // Enables WASD controls for all Undertale versions
 // Made by Grossley with invaluable help from Lil Alien.
 

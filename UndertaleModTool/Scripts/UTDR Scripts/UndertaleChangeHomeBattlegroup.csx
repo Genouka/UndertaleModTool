@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Change Home Battlegroup
+// @name:zh-Hans Undertale 更改主战斗组
+// @name:zh-CN  Undertale 更改主战斗组
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Deltarune TTF Fonts
+// @name:zh-Hans Deltarune TTF 字体
+// @name:zh-CN  Deltarune TTF 字体
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 if (Data?.GeneralInfo?.DisplayName?.Content.ToLower() == "deltarune chapter 1 & 2")

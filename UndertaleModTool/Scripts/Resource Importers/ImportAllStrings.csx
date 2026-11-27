@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import All Strings
+// @name:zh-Hans 导入所有字符串
+// @name:zh-CN  导入所有字符串
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

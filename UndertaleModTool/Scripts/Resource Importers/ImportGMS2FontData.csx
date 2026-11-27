@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import GMS2 Font Data
+// @name:zh-Hans 导入 GMS2 字体数据
+// @name:zh-CN  导入 GMS2 字体数据
+// ==/UndertaleModTool==
 // ImportGMS2FontData by Dobby233Liu
 
 using System;

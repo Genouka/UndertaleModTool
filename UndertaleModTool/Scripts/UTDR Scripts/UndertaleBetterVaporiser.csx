@@ -1,4 +1,9 @@
-﻿// Script and mod by Agentalex9, with some help from Grossley
+﻿// ==UndertaleModTool==
+// @name        Undertale Better Vaporiser
+// @name:zh-Hans Undertale 更好的蒸发器
+// @name:zh-CN  Undertale 更好的蒸发器
+// ==/UndertaleModTool==
+// Script and mod by Agentalex9, with some help from Grossley
 // Repurposed these pieces of code:
 // https://www.reddit.com/r/gamemaker/comments/60qj6u/extracting_color_values_from_images/
 // https://www.zackbanack.com/blog/image-to-level

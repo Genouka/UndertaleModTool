@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Sprite Origin Copy
+// @name:zh-Hans 精灵原点复制
+// @name:zh-CN  精灵原点复制
+// ==/UndertaleModTool==
 using System;
 using System.ComponentModel;
 using System.IO;

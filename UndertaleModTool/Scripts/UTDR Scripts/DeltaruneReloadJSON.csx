@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Deltarune Reload JSON
+// @name:zh-Hans Deltarune 重新加载 JSON
+// @name:zh-CN  Deltarune 重新加载 JSON
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 if (Data?.GeneralInfo?.DisplayName?.Content.ToLower() == "deltarune chapter 1 & 2")

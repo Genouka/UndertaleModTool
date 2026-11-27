@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Touch Controls Enabler
+// @name:zh-Hans 启用触屏控制
+// @name:zh-CN  启用触屏控制
+// ==/UndertaleModTool==
 // Made by GitMuslim, Some fixes by NC-devC
 
 using System;

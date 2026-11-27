@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Execution Order
+// @name:zh-Hans 执行顺序
+// @name:zh-CN  执行顺序
+// ==/UndertaleModTool==
 // By colinator27 and BenjaminUrquhart, ImportGMLString at end from UndertaleModTool sample scripts
 // Removed built in ImportGML, that has been integrated into the tool itself now - Grossley
 // Reworked for Profile Mode by Grossley - 04/29/2021

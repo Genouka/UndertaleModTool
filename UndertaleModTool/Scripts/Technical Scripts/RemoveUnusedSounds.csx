@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Remove Unused Sounds
+// @name:zh-Hans 移除未使用声音
+// @name:zh-CN  移除未使用声音
+// ==/UndertaleModTool==
 // By Grossley
 
 using System.Text;

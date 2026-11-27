@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Apply Basic Graphics Mod
+// @name:zh-Hans 应用基础图形模组
+// @name:zh-CN  应用基础图形模组
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Collections;

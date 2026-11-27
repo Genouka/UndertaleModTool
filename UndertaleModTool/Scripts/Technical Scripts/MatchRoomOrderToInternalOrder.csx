@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Match Room Order to Internal Order
+// @name:zh-Hans 匹配房间顺序与内部顺序
+// @name:zh-CN  匹配房间顺序与内部顺序
+// ==/UndertaleModTool==
 using System;
 using System.IO;
 using System.Collections;

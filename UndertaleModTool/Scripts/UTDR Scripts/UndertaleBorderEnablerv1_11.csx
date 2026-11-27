@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Border Enabler v1.11
+// @name:zh-Hans Undertale 边框解锁器 v1.11
+// @name:zh-CN  Undertale 边框解锁器 v1.11
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

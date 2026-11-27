@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import Graphics (Full Repack)
+// @name:zh-Hans 导入图形（完全重打包）
+// @name:zh-CN  导入图形（完全重打包）
+// ==/UndertaleModTool==
 // Texture packer by Samuel Roy
 // Uses code from https://github.com/mfascia/TexturePacker
 // Uses code from ExportAllTextures.csx

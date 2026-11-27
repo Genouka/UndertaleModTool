@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale with JSONs
+// @name:zh-Hans Undertale JSON 支持
+// @name:zh-CN  Undertale JSON 支持
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

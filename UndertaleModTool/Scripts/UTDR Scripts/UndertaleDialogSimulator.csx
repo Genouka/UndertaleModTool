@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Dialog Simulator
+// @name:zh-Hans Undertale 对话模拟器
+// @name:zh-CN  Undertale 对话模拟器
+// ==/UndertaleModTool==
 // Uses add a new room script components made by Lil'Alien (Last updated 21/12/21) [Nice date]
 // Converted to a dialogue editor script application by Grossley on January 4th, 2022.
 

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Border Enabler
+// @name:zh-Hans Undertale 边框解锁器
+// @name:zh-CN  Undertale 边框解锁器
+// ==/UndertaleModTool==
 // Imports and unlocks border images into PC version of the game
 
 using UndertaleModLib.Util;

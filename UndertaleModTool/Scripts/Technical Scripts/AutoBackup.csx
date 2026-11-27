@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Auto Backup
+// @name:zh-Hans 自动备份
+// @name:zh-CN  自动备份
+// ==/UndertaleModTool==
 // Backup System by Grossley.
 
 using System;

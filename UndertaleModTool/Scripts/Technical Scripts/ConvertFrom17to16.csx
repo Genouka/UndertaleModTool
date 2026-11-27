@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Convert from 17 to 16
+// @name:zh-Hans 从 17 转换为 16
+// @name:zh-CN  从 17 转换为 16
+// ==/UndertaleModTool==
 //For use playing the Switch version of Deltarune on PC with the regular Deltarune runner - by Grossley
 
 EnsureDataLoaded();

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Battlegroup Selector
+// @name:zh-Hans Undertale 战斗组选择器
+// @name:zh-CN  Undertale 战斗组选择器
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 string? name = Data?.GeneralInfo?.DisplayName?.Content?.ToLower();

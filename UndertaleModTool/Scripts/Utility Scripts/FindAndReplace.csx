@@ -1,4 +1,9 @@
-﻿using System.Text;
+﻿// ==UndertaleModTool==
+// @name        Find and Replace
+// @name:zh-Hans 查找并替换
+// @name:zh-CN  查找并替换
+// ==/UndertaleModTool==
+using System.Text;
 using System;
 using System.IO;
 using System.Threading;

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export All Shaders
+// @name:zh-Hans 导出所有着色器
+// @name:zh-CN  导出所有着色器
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Find Objects in Rooms
+// @name:zh-Hans 查找房间中的对象
+// @name:zh-CN  查找房间中的对象
+// ==/UndertaleModTool==
 //By Grossley
 
 using System;

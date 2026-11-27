@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Debug
+// @name:zh-Hans 调试模式
+// @name:zh-CN  调试模式
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 bool enable = ScriptQuestion("Enable debug mode?\n\n(No = disable debug mode, if enabled)");

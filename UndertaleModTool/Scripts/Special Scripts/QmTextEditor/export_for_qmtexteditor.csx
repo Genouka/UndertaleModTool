@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export for QMTextEditor
+// @name:zh-Hans 导出供 QMTextEditor 使用
+// @name:zh-CN  导出供 QMTextEditor 使用
+// ==/UndertaleModTool==
 //=====================================================================
 // export_for_qmtexteditor.csx
 //---------------------------------------------------------------------

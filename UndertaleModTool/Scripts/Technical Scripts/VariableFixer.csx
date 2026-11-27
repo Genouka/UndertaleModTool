@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Variable Fixer
+// @name:zh-Hans 变量修复器
+// @name:zh-CN  变量修复器
+// ==/UndertaleModTool==
 // Made by Creepersbane
 
 EnsureDataLoaded();

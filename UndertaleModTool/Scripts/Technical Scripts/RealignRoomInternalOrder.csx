@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Realign Room Internal Order
+// @name:zh-Hans 重新对齐房间内部顺序
+// @name:zh-CN  重新对齐房间内部顺序
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 Data.GeneralInfo.RoomOrder.Clear();

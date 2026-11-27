@@ -1,4 +1,9 @@
-﻿using System.Linq;
+﻿// ==UndertaleModTool==
+// @name        DeltaHATE
+// @name:zh-Hans DeltaHATE 模组
+// @name:zh-CN  DeltaHATE 模组
+// ==/UndertaleModTool==
+using System.Linq;
 
 EnsureDataLoaded();
 

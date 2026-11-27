@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Import Shaders
+// @name:zh-Hans 导入着色器
+// @name:zh-CN  导入着色器
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.Linq;

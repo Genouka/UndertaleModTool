@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Export Sprite Strip
+// @name:zh-Hans 导出精灵条带
+// @name:zh-CN  导出精灵条带
+// ==/UndertaleModTool==
 /*
 	ExportSpriteStrip.csx
 		by burnedpopcorn180, with parts based off of ExportSpritesAsGIFDLL.csx by CST1229

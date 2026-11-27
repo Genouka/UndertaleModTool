@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale TTF Fonts
+// @name:zh-Hans Undertale TTF 字体
+// @name:zh-CN  Undertale TTF 字体
+// ==/UndertaleModTool==
 EnsureDataLoaded();
 
 var displayName = Data.GeneralInfo?.DisplayName?.Content.ToLower();

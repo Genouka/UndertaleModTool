@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Undertale Run Button
+// @name:zh-Hans Undertale 奔跑按钮
+// @name:zh-CN  Undertale 奔跑按钮
+// ==/UndertaleModTool==
 using System.Text;
 using System;
 using System.IO;

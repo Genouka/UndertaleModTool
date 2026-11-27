@@ -1,3 +1,8 @@
+// ==UndertaleModTool==
+// @name        Toggle Alignment
+// @name:zh-Hans 切换对齐
+// @name:zh-CN  切换对齐
+// ==/UndertaleModTool==
 // TPAG 4 byte alignment toggler by Grossley
 EnsureDataLoaded();
 
